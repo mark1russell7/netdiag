@@ -1,0 +1,67 @@
+# The kernel lab of netdiag (ND-7, step 3). Each case makes one network fault with real kernels in Docker, through the
+# harness of systems: a client, one router `gw`, the target, a reference host and a DNS resolver. The agent of the
+# lab visits the target from the client. The lab diagnoses each case and scores the diagnosis against the true fault.
+#
+# The command is packages/lab/src/kernel/main.ts. The job fails when a case gives no read. Step 4 adds the bars of
+# the gate.
+name: Lab (kernel)
+
+on:
+  push:
+    branches: [main]
+  # No path filter: a summary job of a pull request runs on each pull request.
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: The number of rounds. Each round starts a new world and operates each case once.
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-kernel-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lab:
+    name: Kernel lab
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      ROUNDS: ${{ inputs.rounds || '5' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: The runner, beside the records
+        run: |
+          mkdir -p lab-kernel-out
+          {
+            echo "kernel: $(uname -r)"
+            echo "docker: $(docker version --format '{{.Server.Version}}')"
+            echo "cpus: $(nproc)"
+            echo "memory: $(free -m | awk '/^Mem:/ {print $2}') MiB"
+            echo "image: $ImageOS $ImageVersion"
+          } | tee lab-kernel-out/runner.txt
+      - name: Start the kernel lab
+        run: node packages/lab/src/kernel/main.ts --rounds "$ROUNDS" --out lab-kernel-out
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: lab-kernel-${{ github.sha }}
+          path: lab-kernel-out/
+          if-no-files-found: error
+          retention-days: 30
