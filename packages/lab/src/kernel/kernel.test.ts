@@ -10,7 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startAgent } from "./agent.ts";
 import { KERNEL_CASES, KERNEL_LATER, KERNEL_REFERENCE_NAME, KERNEL_TARGET_NAME, TOWARD_TARGET, applySteps, faultPlan, kernelZone, type StepLab } from "./cases.ts";
 import { httpsArgs, parseHttpsArgs, startHttps } from "./https.ts";
-import { agentArgs, parseAgentArgs, visitOf, type AgentLine, type AgentPlan } from "./protocol.ts";
+import { agentArgs, parseAgentArgs, visitInputOf, visitOf, type AgentLine, type AgentPlan } from "./protocol.ts";
 import { parseZoneArg, zoneArg } from "./resolver.ts";
 import { IMAGE_FILES, NODE_IMAGE, REPOSITORY_ROOT, kernelPlan, kernelTarget } from "./world.ts";
 
@@ -29,10 +29,10 @@ describe("the kernel cases", () => {
     }
   });
 
-  it("cover the first slice, and the list for later has the other kernel classes of the catalog", () => {
-    expect(KERNEL_CASES.map((c) => c.truth)).toEqual(["none", "filter.drop", "filter.icmp", "path.loss", "path.mtu"]);
+  it("cover the second slice, and the list for later has the other kernel classes of the catalog", () => {
+    expect(KERNEL_CASES.map((c) => c.truth)).toEqual(["none", "filter.drop", "filter.icmp", "path.loss", "path.mtu", "host.down", "filter.reset", "gateway.down"]);
     const ids = new Set(STANDARD_CATALOG.hypotheses.map((h) => h.id));
-    expect(KERNEL_LATER.map((later) => later.hypothesis)).toEqual(["host.down", "filter.reset", "gateway.down", "ipv6.broken"]);
+    expect(KERNEL_LATER.map((later) => later.hypothesis)).toEqual(["ipv6.broken"]);
     for (const later of KERNEL_LATER) expect(ids.has(later.hypothesis), later.hypothesis).toBe(true);
   });
 });
@@ -58,6 +58,16 @@ describe("faultPlan and applySteps", () => {
       { op: "offload", on: true, at: "target" },
       { op: "forget" },
     ]);
+  });
+
+  it("gives the options of each network fault to its fault and to its lift", () => {
+    const planOf = (id: string) => faultPlan(KERNEL_CASES.find((c) => c.id === id)!.fault, PEERS);
+    const reject = { direction: "out", protocol: "all", code: "host" };
+    expect(planOf("host.down").apply).toEqual([{ op: "fault", kind: "reject", at: TOWARD_TARGET, options: reject }]);
+    expect(planOf("host.down").lift).toEqual([{ op: "lift", kind: "reject", at: TOWARD_TARGET, options: reject }, { op: "forget" }]);
+    expect(planOf("filter.reset").apply).toEqual([{ op: "fault", kind: "rst", at: "target", options: { handshake: "pass" } }]);
+    // a silence takes no options: the harness refuses each option of it
+    expect(planOf("gateway.down").apply).toEqual([{ op: "fault", kind: "silence", at: TOWARD_TARGET, options: {} }]);
   });
 
   it("does each step on the lab in sequence", async () => {
@@ -94,17 +104,31 @@ describe("faultPlan and applySteps", () => {
       'offload true {"hop":"gw","toward":"target"}',
       'offload true "target"',
       "forget",
+      'fault reject {"hop":"gw","toward":"target"}',
+      'lift reject {"hop":"gw","toward":"target"}',
+      "forget",
+      'fault rst "target"',
+      'lift rst "target"',
+      "forget",
+      'fault silence {"hop":"gw","toward":"target"}',
+      'lift silence {"hop":"gw","toward":"target"}',
+      "forget",
     ]);
   });
 });
 
 describe("the protocol of the agent", () => {
-  const plan: AgentPlan = kernelPlan({ ...PEERS, resolver: "172.20.0.4" });
+  const plan: AgentPlan = kernelPlan({ ...PEERS, resolver: "172.20.0.4", gateway: "172.21.0.1" });
 
-  it("reads its own arguments back, and has the three lab hosts in the scope", () => {
+  it("reads its own arguments back, and has the three lab hosts and the gateway in the scope", () => {
     expect(parseAgentArgs(agentArgs(plan))).toEqual(plan);
-    expect(plan.grants).toEqual(["172.20.0.2/32", "172.20.0.3/32", "172.20.0.4/32"]);
+    expect(plan.grants).toEqual(["172.20.0.2/32", "172.20.0.3/32", "172.20.0.4/32", "172.21.0.1/32"]);
     expect(plan.references).toEqual([KERNEL_REFERENCE_NAME]);
+    expect(visitInputOf(plan).gateway).toBe("172.21.0.1");
+    const plain: AgentPlan = { ...plan, gateway: undefined };
+    expect(agentArgs(plain)).not.toContain("--gateway");
+    expect(parseAgentArgs(agentArgs(plain))).not.toHaveProperty("gateway");
+    expect(visitInputOf(plain)).not.toHaveProperty("gateway");
   });
 
   it("refuses an empty scope and a port that is not a number", () => {
@@ -135,6 +159,20 @@ describe("the protocol of the agent", () => {
     expect(visit.facts.map((each) => each.id)).toEqual(["f1", "f2"]);
     expect(visit.facts.map((each) => visit.read.primary?.(each))).toEqual([true, false]);
     expect(visit.problems).toEqual(["The ping of x did not end."]);
+    expect(visit.read.gateway).toBeUndefined();
+  });
+
+  it("reads the facts of the roles local and gateway as facts that are not primary, and keeps the gateway", () => {
+    const lines: AgentLine[] = [
+      { ev: "fact", t: 1, role: "local", host: "172.21.0.1", fact: fact("f1", "172.21.0.1") },
+      { ev: "fact", t: 2, role: "gateway", host: "172.21.0.1", fact: fact("f2", "172.21.0.1") },
+      { ev: "done", t: 3 },
+    ];
+    const visit = visitOf(JSON.parse(JSON.stringify(lines)) as AgentLine[], undefined, "172.21.0.1");
+    if (visit.status !== "visited") throw new Error("no visit");
+    expect(visit.facts.map((each) => visit.read.primary?.(each))).toEqual([false, false]);
+    expect(visit.read.gateway).toBe("172.21.0.1");
+    expect(visit.problems).toEqual([]);
   });
 
   it("gives a problem for no line done and for a line that is not valid, and no visit for a line fail", () => {
@@ -207,12 +245,13 @@ describe("the HTTPS host and the agent on loopback addresses", () => {
     const root = join(folder, "root.pem");
     writeFileSync(root, ca.cert);
     try {
-      const base = kernelPlan({ target: "127.0.0.2", reference: "127.0.0.3", resolver: "127.0.0.1" });
+      const base = kernelPlan({ target: "127.0.0.2", reference: "127.0.0.3", resolver: "127.0.0.1", gateway: "127.0.0.4" });
       const plan: AgentPlan = { ...base, port: host.port, references: [], resolverPort: dns.port, pingCount: 0, root };
       const tools = fakeToolHost<ToolRunOptions>("linux", []);
       const lines: AgentLine[] = [];
       await startAgent(agentArgs(plan), { tools, clock: realClock, write: (line) => lines.push(line) });
       expect(lines.map((line) => (line.ev === "fact" ? `${line.role} ${line.fact.kind}` : line.ev))).toEqual([
+        "local link.state",
         "target dns.answer",
         "target dns.answer",
         "target tcp.connect",

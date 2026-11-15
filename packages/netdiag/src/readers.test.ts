@@ -1,3 +1,4 @@
+import { uniformDouble } from "@mark1russell7/rigor-testkit/arbitrary";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
@@ -14,6 +15,8 @@ import {
   HTTP_TTFB_BINS,
   ICMP_ECHO,
   ICMP_REPLY_VALUES,
+  LINK_STATE,
+  LINK_STATE_VALUES,
   LOSS_MIN_SENT,
   PATH_LOSS_BINS,
   PATH_REPORT,
@@ -41,6 +44,7 @@ import {
   type FactKind,
   type HttpResponse,
   type IcmpEcho,
+  type LinkState,
   type PathReport,
   type PathTrace,
   type TcpConnect,
@@ -148,6 +152,7 @@ describe("the tables of the readers", () => {
     ["tls.trust", TLS_TRUST_VALUES],
     ["icmp.reply", ICMP_REPLY_VALUES],
     ["gateway.reply", GATEWAY_REPLY_VALUES],
+    ["link.state", LINK_STATE_VALUES],
   ])("give only values of the feature %s", (id, table) => {
     for (const value of Object.values(table)) if (value !== undefined) expect(featureValues(id)).toContain(value);
   });
@@ -174,7 +179,7 @@ describe("the tables of the readers", () => {
   });
 
   it("name only features of the catalog, with the fact kinds of the readers", () => {
-    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT].map((kind) => kind.kind);
+    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE].map((kind) => kind.kind);
     for (const [feature, sources] of Object.entries(FEATURE_SOURCES)) {
       expect(STANDARD_FEATURES.map((f) => f.id)).toContain(feature);
       for (const source of sources) for (const kind of source) expect(kinds).toContain(kind);
@@ -188,6 +193,7 @@ describe("the tables of the readers", () => {
     expect(featuresOf([ICMP_ECHO.kind], { gateway: true })).toEqual(["gateway.reply", "path.loss"]);
     expect(featuresOf([ICMP_ECHO.kind], { gateway: false })).toEqual(["icmp.reply", "path.loss"]);
     expect(featuresOf([PATH_REPORT.kind, PATH_TRACE.kind])).toEqual(["path.loss"]);
+    expect(featuresOf([LINK_STATE.kind])).toEqual(["link.state"]);
     expect(featuresOf([])).toEqual([]);
   });
 
@@ -262,6 +268,25 @@ describe("readEvidence", () => {
       ["icmp.reply", "unreachable", ["f2"]],
     ]);
     expect(valuesOf(readEvidence(facts).evidence, "icmp.reply")).toEqual(["unreachable", "none", "unreachable"]);
+  });
+
+  it("gives link.state for each gateway of the link facts, and the last fact of a gateway decides", () => {
+    const link = (value: LinkState): Entry => [LINK_STATE, value];
+    const eth0 = [{ name: "eth0", addresses: ["192.0.2.10/24"] }];
+    const facts = factsOf([
+      link({ state: "down", interfaces: [], gateway: "192.0.2.1" }),
+      link({ state: "up", interfaces: eth0, gateway: "192.0.2.1", via: "eth0" }),
+      link({ state: "up", interfaces: eth0 }),
+    ]);
+    const { evidence, skipped } = readEvidence(facts);
+    expect(skipped).toEqual([]);
+    expect(evidence.map((e) => [e.feature, e.value, e.facts])).toEqual([
+      ["link.state", "up", ["f0", "f1"]],
+      ["link.state", "up", ["f2"]],
+    ]);
+    const broken = readEvidence(factsOf([link({ state: "up", interfaces: [], gateway: "192.0.2.1" })]));
+    expect(broken.evidence).toEqual([]);
+    expect(broken.skipped[0]?.reason).toBe("The value does not pass the check of the kind link.state.");
   });
 
   it("gives path.loss only for replies to LOSS_MIN_SENT requests or more", () => {
@@ -352,7 +377,7 @@ describe("the readers and the model", () => {
 
 describe("a property of the readers", () => {
   const address = fc.constantFrom("93.184.216.34", "10.0.0.1", "2606:2800::1", "fd00::1");
-  const ms = fc.double({ min: 0, max: 5000, noNaN: true });
+  const ms = uniformDouble({ min: 0, max: 5000 });
   const dnsEntry = fc
     .record({ name: fc.constantFrom("example.com", "router.lan"), record: fc.constantFrom("A" as const, "AAAA" as const), outcome: fc.constantFrom(...DNS_OUTCOMES), ms })
     .map(({ name, record, outcome, ms: time }): Entry => {
@@ -366,10 +391,10 @@ describe("a property of the readers", () => {
     ({ trust, ...v }): Entry => [TLS_HANDSHAKE, { ...v, port: 443, ...(trust === undefined ? {} : { certificate: certificate(trust) }) }, 1],
   );
   const icmpEntry = fc
-    .record({ address, outcome: fc.constantFrom(...ECHO_OUTCOMES), sent: fc.integer({ min: 1, max: 40 }), share: fc.double({ min: 0, max: 1, noNaN: true }) })
+    .record({ address, outcome: fc.constantFrom(...ECHO_OUTCOMES), sent: fc.integer({ min: 1, max: 40 }), share: uniformDouble({ min: 0, max: 1 }) })
     .map(({ address: a, outcome, sent, share }) => echo(a, outcome, outcome === "error" ? 0 : sent, outcome === "reply" ? Math.max(1, Math.round(share * sent)) : 0));
   const reportEntry = fc
-    .record({ address, outcome: fc.constantFrom("reached" as const, "stopped" as const, "error" as const), sent: fc.integer({ min: 1, max: 40 }), share: fc.double({ min: 0, max: 1, noNaN: true }) })
+    .record({ address, outcome: fc.constantFrom("reached" as const, "stopped" as const, "error" as const), sent: fc.integer({ min: 1, max: 40 }), share: uniformDouble({ min: 0, max: 1 }) })
     .map(({ address: a, outcome, sent, share }) => report(a, outcome, sent, Math.max(1, Math.round(share * sent))));
   const traceEntry = address.map((a) => trace(a));
   const httpEntry = fc

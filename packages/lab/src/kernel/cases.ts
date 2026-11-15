@@ -1,4 +1,4 @@
-import type { FaultPlace, HopPlace, Lab } from "@mark1russell7/harness";
+import type { FaultOptions, FaultPlace, HopPlace, Lab, NetworkFault } from "@mark1russell7/harness";
 import type { Sign } from "../cases.ts";
 import type { LaterClass } from "../report.ts";
 import type { CaseBase } from "../run.ts";
@@ -21,13 +21,14 @@ export const TOWARD_TARGET: HopPlace = { hop: KERNEL_HOP, toward: "target" };
 /**
  * A fault of a kernel case, as data.
  *
- * - `blackhole`: the target drops each packet from the client and to it.
+ * - `network`: a rule of the injector of the harness at a place, with its options. For example `blackhole` at the target
+ *   drops each packet from the client and to it.
  * - `netem`: `tc netem` with the spec on the egress of the target.
  * - `sysctl`: the sysctls of the namespace of the target, and the values that put them back.
  * - `mtu`: the router drops each packet from the target and the reference host above `above` bytes.
  */
 export type KernelFault =
-  | { readonly kind: "blackhole"; readonly at: "target" }
+  | { readonly kind: "network"; readonly fault: Exclude<NetworkFault, "mtu">; readonly at: FaultPlace; readonly options?: FaultOptions | undefined }
   | { readonly kind: "netem"; readonly at: "target"; readonly spec: string }
   | { readonly kind: "sysctl"; readonly values: Readonly<Record<string, string>>; readonly undo: Readonly<Record<string, string>> }
   | { readonly kind: "mtu"; readonly at: HopPlace; readonly above: number };
@@ -38,16 +39,10 @@ export interface KernelCase extends CaseBase {
   readonly fault: KernelFault | null;
 }
 
-/** The options of a network fault step: the longest packet that passes, and the addresses that the rule faces. */
-export interface StepOptions {
-  readonly above?: number;
-  readonly peers?: readonly string[];
-}
-
 /** One operation of the harness, as data. */
 export type LabStep =
-  | { readonly op: "fault"; readonly kind: "blackhole" | "mtu"; readonly at: FaultPlace; readonly options: StepOptions }
-  | { readonly op: "lift"; readonly kind: "blackhole" | "mtu"; readonly at: FaultPlace; readonly options: StepOptions }
+  | { readonly op: "fault"; readonly kind: NetworkFault; readonly at: FaultPlace; readonly options: FaultOptions }
+  | { readonly op: "lift"; readonly kind: NetworkFault; readonly at: FaultPlace; readonly options: FaultOptions }
   | { readonly op: "netem"; readonly spec: string | null; readonly at: FaultPlace }
   | { readonly op: "sysctl"; readonly values: Readonly<Record<string, string>> }
   | { readonly op: "offload"; readonly on: boolean; readonly at: FaultPlace }
@@ -75,7 +70,7 @@ export function kernelZone(peers: KernelPeers): KernelZone {
 
 const sign = (feature: string, value: string, primary = true): Sign => ({ feature, primary, value });
 
-/** The cases of the kernel lab: a control and four faults. Each case is in each round. */
+/** The cases of the kernel lab: a control and seven faults. Each case is in each round. */
 export const KERNEL_CASES: readonly KernelCase[] = [
   {
     id: "none",
@@ -88,7 +83,7 @@ export const KERNEL_CASES: readonly KernelCase[] = [
     id: "filter.drop",
     truth: "filter.drop",
     summary: "The target drops each packet from the client and to it.",
-    fault: { kind: "blackhole", at: "target" },
+    fault: { kind: "network", fault: "blackhole", at: "target" },
     signs: [sign("tcp.connect", "timeout"), sign("icmp.reply", "none")],
   },
   {
@@ -112,13 +107,32 @@ export const KERNEL_CASES: readonly KernelCase[] = [
     fault: { kind: "mtu", at: TOWARD_TARGET, above: 1200 },
     signs: [sign("tcp.connect", "connected"), sign("tls.handshake", "timeout"), sign("tls.handshake", "timeout", false)],
   },
+  {
+    id: "host.down",
+    truth: "host.down",
+    summary: "The router answers each packet to the target with an ICMP host unreachable, as a router does for a host that is down.",
+    fault: { kind: "network", fault: "reject", at: TOWARD_TARGET, options: { direction: "out", protocol: "all", code: "host" } },
+    signs: [sign("icmp.reply", "unreachable"), sign("tcp.connect", "unreachable"), sign("tcp.connect", "connected", false)],
+  },
+  {
+    id: "filter.reset",
+    truth: "filter.reset",
+    summary: "The target lets each SYN pass, and resets each later segment from the client. The connect succeeds, and the TLS handshake fails.",
+    fault: { kind: "network", fault: "rst", at: "target", options: { handshake: "pass" } },
+    signs: [sign("tcp.connect", "connected"), sign("tls.handshake", "reset"), sign("icmp.reply", "reply")],
+  },
+  {
+    id: "gateway.down",
+    truth: "gateway.down",
+    summary: "The router drops each packet that it gets, and its link stays up. The DNS queries and the pings of the gateway get no answer.",
+    // a silence acts on each packet of the router, so the side of its place has no effect
+    fault: { kind: "network", fault: "silence", at: TOWARD_TARGET },
+    signs: [sign("link.state", "up", false), sign("gateway.reply", "none", false), sign("dns.answer", "timeout")],
+  },
 ];
 
 /** The kernel classes of the roadmap with no case yet. The gate shows them with no bar. */
 export const KERNEL_LATER: readonly LaterClass[] = [
-  { hypothesis: "host.down", reason: "The harness has no ICMP host-unreachable reject at the router (PR-C)." },
-  { hypothesis: "filter.reset", reason: "The harness has no reset that lets the SYN pass (PR-D)." },
-  { hypothesis: "gateway.down", reason: "The harness does not give the address of the router or a silence fault (PR-A, PR-B). netdiag has no `link.state` fact (N5)." },
   { hypothesis: "ipv6.broken", reason: "The networks of the harness have no IPv6 (PR-E)." },
 ];
 
@@ -130,15 +144,17 @@ export function faultPlan(fault: KernelFault | null, peers: KernelPeers): FaultP
   const forget: LabStep = { op: "forget" };
   if (fault === null) return { apply: [], lift: [forget] };
   switch (fault.kind) {
-    case "blackhole":
-      return { apply: [{ op: "fault", kind: "blackhole", at: fault.at, options: {} }], lift: [{ op: "lift", kind: "blackhole", at: fault.at, options: {} }, forget] };
+    case "network": {
+      const options = fault.options ?? {};
+      return { apply: [{ op: "fault", kind: fault.fault, at: fault.at, options }], lift: [{ op: "lift", kind: fault.fault, at: fault.at, options }, forget] };
+    }
     case "netem":
       return { apply: [{ op: "netem", spec: fault.spec, at: fault.at }], lift: [{ op: "netem", spec: null, at: fault.at }, forget] };
     case "sysctl":
       return { apply: [{ op: "sysctl", values: fault.values }], lift: [{ op: "sysctl", values: fault.undo }, forget] };
     case "mtu": {
       // With TSO, GSO and GRO off, the length match acts on segments, not on super-packets of up to 64 KB.
-      const options: StepOptions = { above: fault.above, peers: [peers.target, peers.reference] };
+      const options: FaultOptions = { above: fault.above, peers: [peers.target, peers.reference] };
       return {
         apply: [{ op: "offload", on: false, at: fault.at }, { op: "offload", on: false, at: "target" }, { op: "fault", kind: "mtu", at: fault.at, options }],
         lift: [{ op: "lift", kind: "mtu", at: fault.at, options }, { op: "offload", on: true, at: fault.at }, { op: "offload", on: true, at: "target" }, forget],

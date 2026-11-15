@@ -44,13 +44,14 @@ Each round starts one world. Each case adds its fault to the world, starts the a
 | Host | Image | What it does |
 | --- | --- | --- |
 | Client | The netdiag image | The agent (`src/kernel/agent.ts`) visits the target and writes one JSON line for each fact. |
-| Router `gw` | The router of the harness | It joins the network of the client to the network of the target. |
+| Router `gw` | The router of the harness | It joins the network of the client to the network of the target. Its address on the network of the client is the gateway of the visit. |
 | Target | The stock Node image | `www.shop.test` on HTTPS, from `src/kernel/https.ts`. |
 | Reference | The netdiag image | `www.ref.test` on HTTPS, a second site for the comparison. |
 | Resolver | The netdiag image | It answers the two names from a fixed zone (`src/kernel/resolver.ts`). |
 
 - The netdiag image is `kernel/Dockerfile`: Node 24 on a base pinned by digest, with `ping`, `mtr`, `traceroute` and `ip`.
-- The agent probes only the three lab hosts. Its scope grants each lab address as a `/32` range.
+- The agent probes only the three lab hosts and the gateway. Its scope grants each of these addresses as a `/32` range.
+- The visit first reads the link of the client to the gateway. At the end, it pings the gateway.
 - The agent starts `ping` through `commandHost` of netdiag and `runCommand` of `@procedures/shell`, with a list of arguments and no shell.
 
 ### The cases
@@ -62,8 +63,11 @@ Each round starts one world. Each case adds its fault to the world, starts the a
 | `filter.icmp` | The target ignores each echo request (`net.ipv4.icmp_echo_ignore_all`). |
 | `path.loss` | `netem` drops 20% of the packets of the target. |
 | `path.mtu` | The router drops each TCP packet above 1200 bytes toward the two servers. |
+| `host.down` | The router answers each packet to the target with an ICMP host unreachable. |
+| `filter.reset` | The target lets each SYN pass, and resets each later segment from the client. |
+| `gateway.down` | The router drops each packet, and the link of the client stays up. |
 
-The gate lists `host.down`, `filter.reset`, `gateway.down` and `ipv6.broken` with no bar. Each class needs a change of the harness first. `KERNEL_LATER` in `src/kernel/cases.ts` gives the reasons.
+The gate lists `ipv6.broken` with no bar, because the networks of the harness have no IPv6. `KERNEL_LATER` in `src/kernel/cases.ts` gives the reason.
 
 ### How to start the kernel lab
 

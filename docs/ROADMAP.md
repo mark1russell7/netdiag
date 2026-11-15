@@ -54,14 +54,14 @@ ND-7 has four steps:
 
 1. **The score.** A lab record has the true hypothesis and the diagnosis. `scoreLab` gives the confusion table, the recall of each hypothesis with its Wilson interval, and the Brier score. `labGate` holds the lower end of each recall. The table and the intervals come from `@mark1russell7/rigor-statistics`.
 2. **The loopback lab.** The package `@netdiag/lab` starts real servers on lab addresses of `lo`: a resolver, the target, a reference host and a captive portal. `@mark1russell7/rigor-proxy` holds the first reply of a TLS proxy. Its 13 cases make the 11 classes of the loopback row. The workflow `lab.yml` runs 5 rounds in CI, because the times are part of the evidence. A case that does not show the signs of its fault gives no read.
-3. **The kernel lab.** The command `packages/lab/src/kernel/main.ts` makes faults with real kernels in Docker, through `@mark1russell7/harness`. Each round has one world: a client, the router `gw`, the target, a reference host and a resolver. The agent in the client starts `visitTarget` of netdiag and writes one JSON line for each fact. The first slice has the cases `none`, `filter.drop`, `filter.icmp`, `path.loss` and `path.mtu`. The gate lists the other kernel classes with no bar, until the harness can make their faults. The workflow `lab-kernel.yml` starts 5 rounds in CI.
+3. **The kernel lab.** The command `packages/lab/src/kernel/main.ts` makes faults with real kernels in Docker, through `@mark1russell7/harness`. Each round has one world: a client, the router `gw`, the target, a reference host and a resolver. The agent in the client starts `visitTarget` of netdiag and writes one JSON line for each fact. The first slice has the cases `none`, `filter.drop`, `filter.icmp`, `path.loss` and `path.mtu`. The second slice adds `host.down`, `filter.reset` and `gateway.down`, with the faults of harness 0.16.2 and the passive probe `link.state`. The gate lists `ipv6.broken` with no bar, until the harness has IPv6. The workflow `lab-kernel.yml` starts 5 rounds in CI.
 4. **The bars.** The bar of each class is the worst of 5 or more CI runs, minus their spread.
 
 | Lab | Fault classes |
 | --- | --- |
 | Loopback | `none`, `resolver.down`, `resolver.failing`, `name.missing`, `port.closed`, `tls.cert-invalid`, `tls.mismatch`, `tls.proxy`, `server.slow`, `server.error`, `captive.portal` |
-| Kernel | `none`, `filter.drop`, `filter.icmp`, `path.loss`, `path.mtu` |
-| Kernel, later | `host.down`, `filter.reset`, `gateway.down`, `ipv6.broken`. Each class needs a change of the harness first. The gate lists them with no bar. |
+| Kernel | `none`, `filter.drop`, `filter.icmp`, `path.loss`, `path.mtu`, `host.down`, `filter.reset`, `gateway.down` |
+| Kernel, later | `ipv6.broken`. The networks of the harness have no IPv6 yet. The gate lists it with no bar. |
 | None yet | `interface.down`, `wifi.weak`. The gate lists them with no bar. |
 
 ### The licenses of the outside tools

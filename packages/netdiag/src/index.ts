@@ -34,6 +34,18 @@ export * from "./address/index.ts";
 export * from "./diagnosis/index.ts";
 export * from "./kinds.ts";
 export {
+  LINK_PROBE,
+  LINK_SUBJECT,
+  interfaceOf,
+  linkProbe,
+  linkStateOf,
+  upInterfaces,
+  type InterfaceAddress,
+  type InterfaceTable,
+  type LinkInput,
+  type LinkRaw,
+} from "./probes/link.ts";
+export {
   DEFAULT_MAX_BYTES,
   DNS_PROBE,
   HTTP_PROBE,

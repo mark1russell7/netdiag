@@ -2,7 +2,8 @@ import { createServer as createHttpsServer } from "node:https";
 import { realClock } from "@mark1russell7/algebra/clock";
 import { authority, fakeToolHost, listen, startDnsServer, type Authority, type FakeRule, type Pems, type Zone } from "@netdiag/fixtures";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { DNS_ANSWER, HTTP_RESPONSE, ICMP_ECHO, isFactOf, visitTarget, type Grant, type VisitInput, type VisitOptions, type VisitStep } from "./index.ts";
+import { DNS_ANSWER, HTTP_RESPONSE, ICMP_ECHO, LINK_STATE, isFactOf, visitTarget, type Grant, type VisitInput, type VisitOptions, type VisitStep } from "./index.ts";
+import type { InterfaceTable } from "./probes/link.ts";
 import type { ToolRunOptions } from "./tools/index.ts";
 
 // The visit operates on the loopback addresses: a DNS server of the fixtures on 127.0.0.1, an HTTPS server on
@@ -11,6 +12,11 @@ import type { ToolRunOptions } from "./tools/index.ts";
 const NAME = "www.shop.test";
 const RESOLVER = "127.0.0.1";
 const SERVER = "127.0.0.2";
+/** The interfaces of the link probe: loopback, and one interface on the network of the gateway `192.0.2.1`. */
+const TABLE: InterfaceTable = {
+  lo: [{ address: "127.0.0.1", cidr: "127.0.0.1/8", internal: true }],
+  eth0: [{ address: "192.0.2.10", cidr: "192.0.2.10/24", internal: false }],
+};
 const closers: (() => Promise<void>)[] = [];
 
 afterEach(async () => {
@@ -61,7 +67,7 @@ const range = (cidr: string): Grant => ({ kind: "range", cidr, basis: "owned" })
 
 async function visit(input: VisitInput, options: Partial<VisitOptions> = {}): Promise<VisitStep[]> {
   const steps: VisitStep[] = [];
-  for await (const step of visitTarget(input, { clock: realClock, tls: { roots: [ca.cert] }, ...options })) steps.push(step);
+  for await (const step of visitTarget(input, { clock: realClock, tls: { roots: [ca.cert] }, interfaces: () => TABLE, ...options })) steps.push(step);
   return steps;
 }
 
@@ -119,7 +125,8 @@ describe("the visit of a target", () => {
 
   it("gives a problem for a name with no resolver", async () => {
     const steps = await visit({ target: { host: NAME }, grants: [range(`${RESOLVER}/32`)] });
-    expect(steps).toEqual([{ kind: "problem", role: "target", host: NAME, problem: `The visit has no DNS resolver for the name ${NAME}.` }]);
+    expect(steps.filter((step) => step.kind === "problem")).toEqual([{ kind: "problem", role: "target", host: NAME, problem: `The visit has no DNS resolver for the name ${NAME}.` }]);
+    expect(shape(steps)).toEqual(["local link.state localhost"]);
   });
 
   it("starts no tool with a ping count of 0, and no tool with no tool host", async () => {
@@ -128,7 +135,22 @@ describe("the visit of a target", () => {
     const quiet = await visit({ target: { host: SERVER, port }, gateway: SERVER, grants: [range(`${SERVER}/32`)] }, { tools, pingCount: 0 });
     expect(tools.calls).toEqual([]);
     const plain = await visit({ target: { host: SERVER, port }, gateway: SERVER, grants: [range(`${SERVER}/32`)] });
-    for (const steps of [quiet, plain]) expect(shape(steps)).toEqual([`target tcp.connect ${SERVER}`, `target tls.handshake ${SERVER}`, `target http.response ${SERVER}`]);
+    for (const steps of [quiet, plain]) expect(shape(steps)).toEqual([`local link.state ${SERVER}`, `target tcp.connect ${SERVER}`, `target tls.handshake ${SERVER}`, `target http.response ${SERVER}`]);
+  });
+
+  it("reads the link first, to the gateway of the input, and sends no packet for it", async () => {
+    const tools = pingHost([]);
+    const states: [string, string | undefined][] = [];
+    for (const gateway of ["192.0.2.1", "198.51.100.1", undefined]) {
+      const steps = await visit({ target: { host: NAME }, gateway, grants: [range(`${RESOLVER}/32`)] }, { tools, pingCount: 0 });
+      const first = steps[0];
+      expect(first?.kind === "fact" && first.role === "local" && isFactOf(LINK_STATE, first.fact)).toBe(true);
+      if (first?.kind === "fact" && isFactOf(LINK_STATE, first.fact)) states.push([first.fact.value.state, first.fact.value.via]);
+    }
+    expect(states).toEqual([["up", "eth0"], ["down", undefined], ["up", undefined]]);
+    expect(tools.calls).toEqual([]);
+    const alone = await visit({ target: { host: NAME }, grants: [] }, { interfaces: () => ({ lo: TABLE["lo"] }) });
+    expect(alone[0]?.kind === "fact" && isFactOf(LINK_STATE, alone[0].fact) && alone[0].fact.value.state).toBe("down");
   });
 
   it("refuses a grant with a problem before the first probe", async () => {

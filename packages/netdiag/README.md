@@ -78,6 +78,7 @@ The native probes use only the `node:` modules. They need no outside tool.
 | `tcpProbe()` | `tcp.connect` | `tcp.connect`: the outcome and the time of one connect. |
 | `tlsProbe()` | `tls.handshake` | `tcp.connect` and `tls.handshake`: the time of the handshake, the version, the cipher, ALPN and the certificate. |
 | `httpProbe()` | `http.request` | `tcp.connect`, `tls.handshake` for `https`, and `http.response`: the status, some fields of the head and the time to the first byte. |
+| `LINK_PROBE` | `link.state` | `link.state`: the interfaces that are up, and the interface of the network of the gateway. |
 
 - A probe connects only to an IP address. The DNS probe gives the addresses of a name first. Thus the runner examines each address against the scope.
 - The peer of the DNS probe is the resolver, not the name.
@@ -87,6 +88,7 @@ The native probes use only the `node:` modules. They need no outside tool.
 - The option `roots` adds roots that the user trusts, for example the root of a company. Their trust is `private`.
 - The option `publicRoots` adds roots with the trust `public`. A lab gives its own root here, so its servers stand for servers on the internet.
 - The HTTP probe follows no redirect. It reads the body up to 64 KiB.
+- The link probe is passive. It reads `os.networkInterfaces()` and sends no packet. Node.js lists only the interfaces that are up.
 - For `https`, the HTTP probe sends its request only when the certificate passes its check. Thus an interceptor does not get the path.
 
 ```ts
@@ -194,6 +196,7 @@ const result = diagnose(STANDARD_CATALOG, [
 | `tls.handshake`, `tls.trust` | The outcome of the handshake and the root of the certificate chain. A chain with no root of the store gives `private`. |
 | `tls.ratio` | The time of the handshake divided by the time of the last TCP connect to the same address and port. |
 | `http.status`, `http.ttfb` | The class of the status, and the time to the first byte divided by the time of the TCP connect. |
+| `link.state` | The link fact of each gateway. An interface that is up on the network of the gateway gives `up`. With no gateway, an interface that is up and not loopback gives `up`. |
 | `gateway.reply` | The echo requests to the address of the option `gateway`. An unreachable gateway gives `none`. |
 | `icmp.reply` | The echo requests to each other address: `reply`, `none` or `unreachable`. |
 | `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. |

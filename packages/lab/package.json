@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@mark1russell7/algebra": "^0.8.8",
-    "@mark1russell7/harness": "^0.16.1",
+    "@mark1russell7/harness": "^0.16.2",
     "@mark1russell7/netdiag": "workspace:*",
     "@mark1russell7/quantity": "^0.4.0",
     "@mark1russell7/rigor-chaos": "^0.2.2",

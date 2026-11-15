@@ -5,6 +5,7 @@ import {
   DNS_ANSWER,
   HTTP_RESPONSE,
   ICMP_ECHO,
+  LINK_STATE,
   PATH_REPORT,
   PATH_TRACE,
   TCP_CONNECT,
@@ -16,6 +17,8 @@ import {
   type HandshakeOutcome,
   type HttpResponse,
   type IcmpEcho,
+  type LinkState,
+  type LinkStateValue,
   type PathReport,
   type PathTrace,
   type TcpConnect,
@@ -108,6 +111,9 @@ export const TLS_TRUST_VALUES: Readonly<Record<Trust, string>> = { public: "publ
 /** The value of the feature `icmp.reply` for each outcome of the ICMP echo requests to an address. */
 export const ICMP_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>> = { reply: "reply", none: "none", unreachable: "unreachable" };
 
+/** The value of the feature `link.state` for each state of a link fact. */
+export const LINK_STATE_VALUES: Readonly<Record<LinkStateValue, string>> = { up: "up", down: "down" };
+
 /**
  * The value of the feature `gateway.reply` for each outcome of the ICMP echo requests to the gateway. When this computer
  * tells that the gateway is unreachable, the gateway gives no reply.
@@ -157,6 +163,7 @@ interface Facts {
   readonly icmp: Fact<IcmpEcho>[];
   readonly report: Fact<PathReport>[];
   readonly trace: Fact<PathTrace>[];
+  readonly link: Fact<LinkState>[];
 }
 
 /**
@@ -174,6 +181,7 @@ export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[
   "tls.ratio": [[TLS_HANDSHAKE.kind, TCP_CONNECT.kind]],
   "http.status": [[HTTP_RESPONSE.kind]],
   "http.ttfb": [[HTTP_RESPONSE.kind, TCP_CONNECT.kind]],
+  "link.state": [[LINK_STATE.kind]],
   "gateway.reply": [[ICMP_ECHO.kind]],
   "icmp.reply": [[ICMP_ECHO.kind]],
   "path.loss": [[ICMP_ECHO.kind], [PATH_REPORT.kind]],
@@ -208,6 +216,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["icmp", ICMP_ECHO],
   ["report", PATH_REPORT],
   ["trace", PATH_TRACE],
+  ["link", LINK_STATE],
 ];
 
 /**
@@ -217,6 +226,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - For `dns.answer`, one answer `ok` of a name and a resolver decides. For `dns.address`, one private address decides.
  * - The order of the facts is the order of the runner. A ratio uses the last TCP connect before the handshake or the request.
  * - An ICMP echo fact gives `gateway.reply` for the gateway, and `icmp.reply` for each other address.
+ * - A link fact gives `link.state`, one for each gateway.
  * - An ICMP echo fact with replies to `LOSS_MIN_SENT` requests or more gives `path.loss`. A report of `mtr` gives it from
  *   the last hop, when the address answered there.
  * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
@@ -225,7 +235,7 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
   const primaryOf = options.primary ?? (() => true);
   const slots = new Map<string, Slot>();
   const skipped: Skipped[] = [];
-  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [] };
+  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [] };
 
   for (const fact of facts) {
     const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
@@ -338,6 +348,8 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     if (typeof loss === "string") skipped.push({ fact: fact.id, reason: loss });
     else if (loss !== undefined) note("path.loss", loss.address, fact, binOf(PATH_LOSS_BINS, loss.share));
   }
+
+  for (const fact of sorted.link) note("link.state", fact.value.gateway ?? "", fact, LINK_STATE_VALUES[fact.value.state]);
 
   for (const fact of sorted.trace) {
     skipped.push({ fact: fact.id, reason: "The catalog has no feature for the hops of a path. The lab runs fit such a feature later." });
