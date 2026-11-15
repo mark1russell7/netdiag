@@ -1,0 +1,263 @@
+import fc from "fast-check";
+import { describe, expect, it } from "vitest";
+import {
+  FLOOR,
+  NONE,
+  STANDARD_CATALOG,
+  STANDARD_CATALOG_SPEC,
+  STANDARD_FEATURES,
+  UNKNOWN,
+  compileCatalog,
+  diagnose,
+  expand,
+  explain,
+  predictive,
+  type CatalogSpec,
+  type Evidence,
+  type Feature,
+} from "./index.ts";
+
+const catalog = STANDARD_CATALOG;
+
+function e(feature: string, value: string, primary = true): Evidence {
+  return { feature, value, primary };
+}
+
+function top(evidence: readonly Evidence[]): string {
+  return diagnose(catalog, evidence).causes[0]?.id ?? "";
+}
+
+function probability(evidence: readonly Evidence[], id: string): number {
+  return diagnose(catalog, evidence).causes.find((cause) => cause.id === id)?.probability ?? Number.NaN;
+}
+
+const tcp: Feature = {
+  id: "tcp.connect",
+  layer: "tcp",
+  summary: "",
+  values: ["connected", "refused", "timeout"],
+  healthy: { connected: 0.98, refused: 0.01, timeout: 0.01 },
+};
+
+describe("the catalog", () => {
+  it("compiles the standard catalog with no problem", () => {
+    expect(compileCatalog(STANDARD_CATALOG_SPEC)).toMatchObject({ tag: "ok" });
+    expect(catalog.hypotheses[0]?.id).toBe(NONE);
+    expect(catalog.hypotheses.at(-1)?.id).toBe(UNKNOWN);
+    const priors = catalog.hypotheses.map((h) => catalog.prior(h.id));
+    expect(priors.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
+    expect(new Set(priors).size).toBe(1);
+  });
+
+  it("gives each fault a summary and a step in plain words", () => {
+    for (const h of catalog.hypotheses) {
+      expect(h.summary).toMatch(/^[A-Z].*\.$/);
+      expect(h.step).toMatch(/^[A-Z].*\.$/);
+    }
+  });
+
+  it("expands an expectation: the expected values share the strength, the others share the rest", () => {
+    const strong = expand(tcp, { expect: "refused", strength: "strong" });
+    expect(strong.tag === "ok" ? strong.value["refused"] : 0).toBe(0.9);
+    expect(strong.tag === "ok" ? strong.value["connected"] : 0).toBeCloseTo(0.05, 12);
+    expect(expand(tcp, { expect: ["refused", "timeout"], strength: "usual" })).toEqual({
+      tag: "ok",
+      value: { refused: 0.375, timeout: 0.375, connected: 0.25 },
+    });
+    expect(expand(tcp, { expect: ["connected", "refused", "timeout"], strength: "weak" })).toMatchObject({ tag: "ok", value: { connected: 1 / 3 } });
+    expect(expand(tcp, { expect: "maybe", strength: "weak" }).tag).toBe("err");
+    expect(expand(tcp, { expect: [], strength: "weak" }).tag).toBe("err");
+  });
+
+  it.each<[string, CatalogSpec]>([
+    ["a sum that is not 1", { version: "t", features: [{ ...tcp, healthy: { connected: 0.5, refused: 0.1, timeout: 0.1 } }], faults: [] }],
+    ["a probability below the floor", { version: "t", features: [{ ...tcp, healthy: { connected: 1, refused: 0, timeout: 0 } }], faults: [] }],
+    ["a value with no probability", { version: "t", features: [{ ...tcp, healthy: { connected: 0.99, refused: 0.01 } }], faults: [] }],
+    ["an unknown value", { version: "t", features: [{ ...tcp, healthy: { connected: 0.98, refused: 0.01, timeout: 0.005, other: 0.005 } }], faults: [] }],
+    ["a repeated feature", { version: "t", features: [tcp, tcp], faults: [] }],
+    ["a feature with one value", { version: "t", features: [{ ...tcp, values: ["connected"], healthy: { connected: 1 } }], faults: [] }],
+    [
+      "an unknown feature in a prediction",
+      { version: "t", features: [tcp], faults: [{ id: "x", part: "service", reach: "target", summary: "", step: "", predicts: { "dns.answer": { expect: "ok", strength: "weak" } } }] },
+    ],
+    ["a fault that predicts nothing", { version: "t", features: [tcp], faults: [{ id: "x", part: "service", reach: "target", summary: "", step: "", predicts: {} }] }],
+    [
+      "a repeated fault",
+      {
+        version: "t",
+        features: [tcp],
+        faults: [
+          { id: "x", part: "service", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } },
+          { id: "x", part: "service", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } },
+        ],
+      },
+    ],
+    [
+      "a fault with a reserved id",
+      { version: "t", features: [tcp], faults: [{ id: "none", part: "service", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } }] },
+    ],
+    ["a prior of 0", { version: "t", features: [tcp], faults: [], priors: { unknown: 0 } }],
+  ])("refuses %s", (_name, spec) => {
+    expect(compileCatalog(spec).tag).toBe("err");
+  });
+
+  it("keeps each probability of the standard catalog at the floor or above", () => {
+    for (const h of catalog.hypotheses) {
+      for (const feature of STANDARD_FEATURES) {
+        for (const value of feature.values) {
+          expect(catalog.likelihood(h.id, feature.id, value, true)).toBeGreaterThanOrEqual(FLOOR);
+        }
+      }
+    }
+  });
+});
+
+describe("the rules of practice", () => {
+  it("names a missing name when the DNS answer is NXDOMAIN", () => {
+    expect(top([e("dns.answer", "nxdomain")])).toBe("name.missing");
+  });
+
+  it("names the resolver when DNS times out, and the gateway and the link are up", () => {
+    expect(top([e("dns.answer", "timeout"), e("gateway.reply", "reply"), e("link.state", "up")])).toBe("resolver.down");
+  });
+
+  it("names a filter of ICMP when ping fails and a TCP connect succeeds", () => {
+    expect(top([e("icmp.reply", "none"), e("tcp.connect", "connected")])).toBe("filter.icmp");
+  });
+
+  it("names a closed port when the TCP connect is refused", () => {
+    expect(top([e("tcp.connect", "refused")])).toBe("port.closed");
+  });
+
+  it("names a filter that drops packets when the TCP connect times out and the host answers ping", () => {
+    expect(top([e("tcp.connect", "timeout"), e("icmp.reply", "reply")])).toBe("filter.drop");
+  });
+
+  it("names a TLS proxy when the TLS handshake is slow and the TCP connect is fast", () => {
+    expect(top([e("tcp.connect", "connected"), e("tcp.time", "short"), e("tls.handshake", "ok"), e("tls.ratio", "high"), e("tls.trust", "private")])).toBe(
+      "tls.proxy",
+    );
+  });
+
+  it("names a slow server when the first byte is slow and the handshakes are fast", () => {
+    expect(top([e("tcp.time", "short"), e("tls.ratio", "low"), e("http.status", "ok"), e("http.ttfb", "high")])).toBe("server.slow");
+  });
+
+  it("names an MTU black hole when TCP connects and the TLS handshake times out", () => {
+    expect(top([e("tcp.connect", "connected"), e("tls.handshake", "timeout"), e("http.status", "none")])).toBe("path.mtu");
+  });
+
+  it("names no fault when each observation is healthy", () => {
+    const healthy = [e("dns.answer", "ok"), e("tcp.connect", "connected"), e("tcp.time", "short"), e("tls.handshake", "ok"), e("tls.ratio", "low"), e("http.status", "ok"), e("http.ttfb", "low")];
+    expect(top(healthy)).toBe(NONE);
+  });
+
+  it("names an unknown cause for observations that no fault of the catalog explains", () => {
+    const strange = [
+      e("link.state", "down"),
+      e("dns.answer", "ok"),
+      e("tcp.connect", "connected"),
+      e("tls.handshake", "alert"),
+      e("http.status", "client-error"),
+      e("http.ttfb", "high"),
+    ];
+    expect(top(strange)).toBe(UNKNOWN);
+  });
+});
+
+describe("a reference host", () => {
+  const primary = [e("tcp.time", "short"), e("tls.ratio", "high")];
+  const odds = (evidence: readonly Evidence[]): number => probability(evidence, "tls.proxy") / probability(evidence, "server.slow");
+
+  it("tells a shared fault from a fault of the target", () => {
+    const sameOnReference = odds([...primary, e("tls.ratio", "high", false)]);
+    const alone = odds(primary);
+    const fastOnReference = odds([...primary, e("tls.ratio", "low", false)]);
+    expect(sameOnReference).toBeGreaterThan(alone);
+    expect(alone).toBeGreaterThan(fastOnReference);
+  });
+
+  it("uses the healthy distribution for a fault of the target on a reference host", () => {
+    expect(catalog.likelihood("server.slow", "http.ttfb", "high", false)).toBe(catalog.likelihood(NONE, "http.ttfb", "high", false));
+    expect(catalog.likelihood("tls.proxy", "tls.trust", "private", false)).toBe(catalog.likelihood("tls.proxy", "tls.trust", "private", true));
+  });
+});
+
+describe("the evidence", () => {
+  it("ignores an unknown feature or value, with the reason", () => {
+    const result = diagnose(catalog, [e("tcp.connect", "refused"), e("smtp.banner", "ok"), e("tcp.connect", "maybe")]);
+    expect(result.used).toHaveLength(1);
+    expect(result.ignored.map((item) => item.reason)).toEqual(["The catalog has no feature smtp.banner.", '"maybe" is not a value of tcp.connect.']);
+  });
+
+  it("gives the priors when there is no evidence", () => {
+    for (const cause of diagnose(catalog, []).causes) expect(cause.probability).toBeCloseTo(catalog.prior(cause.id), 12);
+  });
+
+  it("explains a cause by the weight of each observation", () => {
+    const evidence = [e("dns.answer", "ok"), e("tcp.connect", "refused")];
+    const why = explain(catalog, evidence, "port.closed");
+    expect(why[0]?.evidence.feature).toBe("tcp.connect");
+    expect(why[0]?.weight).toBeCloseTo(Math.log10(0.9 / 0.01), 12);
+    expect(why[1]?.weight).toBe(0);
+  });
+
+  it("predicts the values of a feature that is not observed", () => {
+    const d = diagnose(catalog, [e("tcp.connect", "refused")]);
+    const dist = predictive(catalog, d, "icmp.reply", true);
+    expect(Object.values(dist).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
+    expect(() => predictive(catalog, d, "smtp.banner", true)).toThrow(RangeError);
+  });
+});
+
+const evidenceArb = fc.array(
+  fc
+    .constantFrom(...STANDARD_FEATURES)
+    .chain((feature) => fc.record({ feature: fc.constant(feature.id), value: fc.constantFrom(...feature.values), primary: fc.boolean() })),
+  { maxLength: 30 },
+);
+
+describe("the properties of the model", () => {
+  it("gives probabilities from 0 to 1 with a sum of 1, from the most probable", () => {
+    fc.assert(
+      fc.property(evidenceArb, (evidence) => {
+        const causes = diagnose(catalog, evidence).causes;
+        const sum = causes.reduce((a, c) => a + c.probability, 0);
+        expect(sum).toBeCloseTo(1, 9);
+        for (let i = 0; i < causes.length; i += 1) {
+          const p = causes[i]?.probability ?? Number.NaN;
+          expect(p).toBeGreaterThanOrEqual(0);
+          expect(p).toBeLessThanOrEqual(1);
+          if (i > 0) expect(p).toBeLessThanOrEqual(causes[i - 1]?.probability ?? Number.NaN);
+        }
+      }),
+      { seed: 20261115, numRuns: 300 },
+    );
+  });
+
+  it("gives the same result for each order of the evidence", () => {
+    fc.assert(
+      fc.property(evidenceArb.chain((evidence) => fc.tuple(fc.constant(evidence), fc.shuffledSubarray(evidence, { minLength: evidence.length }))), ([a, b]) => {
+        const pa = new Map(diagnose(catalog, a).causes.map((c) => [c.id, c.probability]));
+        for (const cause of diagnose(catalog, b).causes) expect(cause.probability).toBeCloseTo(pa.get(cause.id) ?? Number.NaN, 12);
+      }),
+      { seed: 20261115, numRuns: 200 },
+    );
+  });
+
+  it("changes the odds of two causes by the ratio of their likelihoods for one more observation", () => {
+    const ids = catalog.hypotheses.map((h) => h.id);
+    fc.assert(
+      fc.property(evidenceArb, evidenceArb.filter((x) => x.length > 0), fc.constantFrom(...ids), fc.constantFrom(...ids), (before, [extra], a, b) => {
+        if (extra === undefined) return;
+        const p = (evidence: readonly Evidence[], id: string): number => diagnose(catalog, evidence).causes.find((c) => c.id === id)?.probability ?? Number.NaN;
+        const oddsBefore = Math.log(p(before, a)) - Math.log(p(before, b));
+        const oddsAfter = Math.log(p([...before, extra], a)) - Math.log(p([...before, extra], b));
+        const ratio =
+          Math.log(catalog.likelihood(a, extra.feature, extra.value, extra.primary)) - Math.log(catalog.likelihood(b, extra.feature, extra.value, extra.primary));
+        if (Number.isFinite(oddsBefore) && Number.isFinite(oddsAfter)) expect(oddsAfter - oddsBefore).toBeCloseTo(ratio, 6);
+      }),
+      { seed: 20261115, numRuns: 300 },
+    );
+  });
+});
