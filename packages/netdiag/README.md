@@ -2,7 +2,7 @@
 
 This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1, ND-2 and ND-4 of the [roadmap](../../docs/ROADMAP.md).** The lab ground truth and the accuracy gate (ND-7) come next.
+**State: ND-1, ND-2, ND-4 and the lab score of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The labs and the accuracy gate in CI come next.
 
 ## Facts
 
@@ -132,6 +132,34 @@ if (outcome.status === "done") {
   const result = diagnose(STANDARD_CATALOG, evidence);
   // A connect with the outcome refused gives result.causes[0].id "port.closed".
 }
+```
+
+## The lab score
+
+A lab makes one fault on purpose. Then netdiag must name it. The entry `@mark1russell7/netdiag/diagnosis` has the score of these runs.
+
+| Function | What it gives |
+| --- | --- |
+| `labRecordOf(catalog, case, truth, diagnosis)` | The record of one run: the true hypothesis, the predicted cause, the rank of the truth and the probability of each cause. |
+| `scoreLab(catalog, records)` | The confusion table, the recall of each hypothesis with its Wilson interval, the accuracy and the mean Brier score. |
+| `labGate(score, bars)` | A verdict for each hypothesis with a bar: `pass`, `fail` or `no-read`. |
+
+- The recall of a hypothesis is the part of its runs where the diagnosis names it.
+- A hypothesis passes when the lower end of its recall interval is its bar or more.
+- A hypothesis with no runs gets `no-read`, and the gate does not pass.
+- A hypothesis with no bar goes in `unbarred`, for example a fault that no lab can make.
+
+```ts
+import { STANDARD_CATALOG, diagnose, labGate, labRecordOf, scoreLab } from "@mark1russell7/netdiag/diagnosis";
+
+const diagnosis = diagnose(STANDARD_CATALOG, [{ feature: "tcp.connect", value: "refused", primary: true }]);
+const record = labRecordOf(STANDARD_CATALOG, "port.closed/refused", "port.closed", diagnosis);
+if (record.tag === "err") throw new Error(record.error);
+
+const score = scoreLab(STANDARD_CATALOG, [record.value]);
+if (score.tag === "err") throw new Error(score.error.join(" "));
+const gate = labGate(score.value, { "port.closed": 0.1 });
+// gate.value.verdicts[0].status is "pass": the lower end of the recall of 1 run of 1 is 0.21.
 ```
 
 ## Example

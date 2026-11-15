@@ -50,6 +50,19 @@ The network labs of [mark1russell7/systems](https://github.com/mark1russell7/sys
 
 The score is the hit rate of each fault class, from a confusion matrix. A gate in CI holds each rate. The lab runs need Docker, so only CI starts them.
 
+ND-7 has four steps:
+
+1. **The score.** A lab record has the true hypothesis and the diagnosis. `scoreLab` gives the confusion table, the recall of each hypothesis with its Wilson interval, and the Brier score. `labGate` holds the lower end of each recall. The table and the intervals come from `@mark1russell7/rigor-statistics`.
+2. **The loopback lab.** Servers on `127.0.0.1` and `@mark1russell7/rigor-proxy` make the faults of DNS, TCP, TLS and HTTP. This lab needs no root and no Docker. It runs in CI only, because its times are part of the evidence.
+3. **The kernel lab.** The cells of `@mark1russell7/harness` drop, reset and delay packets, and make a small MTU. They make the faults of the path and of IPv6.
+4. **The bars.** The bar of each class is the worst of 5 or more CI runs, minus their spread.
+
+| Lab | Fault classes |
+| --- | --- |
+| Loopback | `none`, `resolver.down`, `resolver.failing`, `name.missing`, `port.closed`, `tls.cert-invalid`, `tls.mismatch`, `tls.proxy`, `server.slow`, `server.error`, `captive.portal` |
+| Kernel | `host.down`, `filter.drop`, `filter.icmp`, `filter.reset`, `path.loss`, `path.mtu`, `ipv6.broken`, `gateway.down` |
+| None yet | `interface.down`, `wifi.weak`. The gate lists them with no bar. |
+
 ### The licenses of the outside tools
 
 The table of licenses is data in the adapter package (ND-3). The project bundles no tool with a restrictive license.
