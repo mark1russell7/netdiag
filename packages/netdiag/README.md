@@ -2,7 +2,7 @@
 
 This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1, ND-2, ND-4, and the lab score and the loopback lab of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The kernel lab and the bars of the gate come next.
+**State: ND-1, ND-2, ND-4, the adapters of ND-3, and the lab score and the loopback lab of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The kernel lab and the bars of the gate come next.
 
 ## Facts
 
@@ -110,6 +110,8 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 | `pingProbe(host)` | `icmp.ping` | `ping` | `icmp.echo`: the echo replies, their round-trip times, and the messages of an unreachable address. |
 | `tracerouteProbe(host)` | `path.traceroute` | `traceroute`, `tracert` on Windows | `path.trace`: the routers that answered each TTL, their round-trip times, and the messages of an unreachable address. |
 | `mtrProbe(host)` | `path.mtr` | `mtr` (Linux and macOS) | `path.report`: the loss and the round-trip times of each hop over many cycles. |
+| `iperf3Probe(host)` | `path.iperf3` | `iperf3` (3.1 or later) | `path.throughput`: the rates of the sender and the receiver, the TCP retransmits, the UDP jitter and loss, and each interval. |
+| `captureProbe(host)` | `path.capture` | `tshark` | `path.capture`: the packets of one flow, with the time, the addresses, the ports and the TCP fields of each packet. |
 
 - A host starts each tool. Its `run(command, args, options)` starts a program with a list of arguments and no shell.
 - The function `runCommand` of `@procedures/shell` is a host with no change. A test gives a fake host.
@@ -117,6 +119,11 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 - On Linux, the adapter reads the `ping` of iputils. On macOS, it uses `ping6` for an IPv6 address.
 - On Linux, the trace adapter reads the Modern traceroute (the package `traceroute`). On macOS, it uses `traceroute6` for an IPv6 address.
 - The `mtr` adapter reads the JSON report of `mtr --json` (version 0.92 or later). The default of 20 cycles takes approximately 20 seconds.
+- The `iperf3` adapter reads the JSON report of `iperf3 -J`. The user operates the server. A UDP test always has a target rate, 1 Mbit/s by default.
+- The capture adapter builds the capture filter from typed fields: an address, a port and a protocol. It does not accept free text.
+- A capture needs the privilege to capture on the interface. The adapter does not use promiscuous mode or name lookups.
+- The scope rule applies to the server of `iperf3` and to the address of a capture, as to the other adapters.
+- The estimators of ND-6 read the facts `path.throughput` and `path.capture`. This step has no readers for them.
 - Output that netdiag cannot read gives the outcome `error` with the reason. It does not give a reply that did not occur.
 - The table `TOOL_LICENSES` holds the license of each tool as data. A tool with a restrictive license has no adapter.
 

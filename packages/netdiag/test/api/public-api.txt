@@ -11,9 +11,14 @@ AddressClass: build/address.d.ts#AddressClass
 AddressFamily: build/address.d.ts#AddressFamily
 type Availability: build/kinds.chunk.d.ts#Availability
 Bin: build/index.d.ts#Bin
+CAPTURE_OUTCOMES: build/kinds.chunk.d.ts#CAPTURE_OUTCOMES
+CAPTURE_PROTOCOLS: build/kinds.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/kinds.chunk.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/kinds.chunk.d.ts#CONNECT_OUTCOMES
 type Candidate: build/index.chunk.d.ts#Candidate
+CaptureOutcome: build/kinds.chunk.d.ts#CaptureOutcome
+CaptureProtocol: build/kinds.chunk.d.ts#CaptureProtocol
+CapturedPacket: build/kinds.chunk.d.ts#CapturedPacket
 type Catalog: build/index.chunk.d.ts#Catalog
 type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
 type Cause: build/index.chunk.d.ts#Cause
@@ -91,12 +96,18 @@ NATIVE_KINDS: build/kinds.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk.d.ts#NONE
 type Observable: build/index.chunk.d.ts#Observable
 type Observation: build/kinds.chunk.d.ts#Observation
+PACKET_PROTOCOLS: build/kinds.chunk.d.ts#PACKET_PROTOCOLS
 PARTS: build/index.chunk.d.ts#PARTS
+PATH_CAPTURE: build/kinds.chunk.d.ts#PATH_CAPTURE
 PATH_LOSS_BINS: build/index.d.ts#PATH_LOSS_BINS
 PATH_REPORT: build/kinds.chunk.d.ts#PATH_REPORT
+PATH_THROUGHPUT: build/kinds.chunk.d.ts#PATH_THROUGHPUT
 PATH_TRACE: build/kinds.chunk.d.ts#PATH_TRACE
+PacketProtocol: build/kinds.chunk.d.ts#PacketProtocol
 type Part: build/index.chunk.d.ts#Part
+PathCapture: build/kinds.chunk.d.ts#PathCapture
 PathReport: build/kinds.chunk.d.ts#PathReport
+PathThroughput: build/kinds.chunk.d.ts#PathThroughput
 PathTrace: build/kinds.chunk.d.ts#PathTrace
 type PortLedger: build/index.d.ts#PortLedger
 type Prediction: build/index.chunk.d.ts#Prediction
@@ -128,6 +139,8 @@ TCP_CONNECT: build/kinds.chunk.d.ts#TCP_CONNECT
 TCP_CONNECT_VALUES: build/index.d.ts#TCP_CONNECT_VALUES
 TCP_PROBE: build/index.d.ts#TCP_PROBE
 TCP_TIME_BINS: build/index.d.ts#TCP_TIME_BINS
+THROUGHPUT_OUTCOMES: build/kinds.chunk.d.ts#THROUGHPUT_OUTCOMES
+THROUGHPUT_PROTOCOLS: build/kinds.chunk.d.ts#THROUGHPUT_PROTOCOLS
 TLS_HANDSHAKE: build/kinds.chunk.d.ts#TLS_HANDSHAKE
 TLS_HANDSHAKE_VALUES: build/index.d.ts#TLS_HANDSHAKE_VALUES
 TLS_PROBE: build/index.d.ts#TLS_PROBE
@@ -141,6 +154,9 @@ TcpConnect: build/kinds.chunk.d.ts#TcpConnect
 type TcpInput: build/index.d.ts#TcpInput
 type TcpPhase: build/index.d.ts#TcpPhase
 type TcpRaw: build/index.d.ts#TcpRaw
+ThroughputInterval: build/kinds.chunk.d.ts#ThroughputInterval
+ThroughputOutcome: build/kinds.chunk.d.ts#ThroughputOutcome
+ThroughputProtocol: build/kinds.chunk.d.ts#ThroughputProtocol
 TlsCertificate: build/kinds.chunk.d.ts#TlsCertificate
 TlsHandshake: build/kinds.chunk.d.ts#TlsHandshake
 type TlsInput: build/index.d.ts#TlsInput
@@ -274,11 +290,27 @@ scoreLab: build/index.chunk.d.ts#scoreLab
 ## ./tools (build/tools.d.ts): names
 
 AVAILABILITY_TIMEOUT_MS: build/tools.d.ts#AVAILABILITY_TIMEOUT_MS
+CAPTURE_FIELDS: build/tools.d.ts#CAPTURE_FIELDS
+CAPTURE_SETUP_MS: build/tools.d.ts#CAPTURE_SETUP_MS
+type CaptureInput: build/tools.d.ts#CaptureInput
+DEFAULT_CAPTURE_PACKETS: build/tools.d.ts#DEFAULT_CAPTURE_PACKETS
+DEFAULT_CAPTURE_SECONDS: build/tools.d.ts#DEFAULT_CAPTURE_SECONDS
+DEFAULT_IPERF3_PORT: build/tools.d.ts#DEFAULT_IPERF3_PORT
+DEFAULT_IPERF3_SECONDS: build/tools.d.ts#DEFAULT_IPERF3_SECONDS
 DEFAULT_MTR_CYCLES: build/tools.d.ts#DEFAULT_MTR_CYCLES
 DEFAULT_PING_COUNT: build/tools.d.ts#DEFAULT_PING_COUNT
 DEFAULT_PING_WAIT_MS: build/tools.d.ts#DEFAULT_PING_WAIT_MS
 DEFAULT_TRACE_HOPS: build/tools.d.ts#DEFAULT_TRACE_HOPS
 DEFAULT_TRACE_WAIT_MS: build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
+DEFAULT_UDP_BITS_PER_SECOND: build/tools.d.ts#DEFAULT_UDP_BITS_PER_SECOND
+IPERF3_MIN_VERSION: build/tools.d.ts#IPERF3_MIN_VERSION
+IPERF3_SETUP_MS: build/tools.d.ts#IPERF3_SETUP_MS
+type Iperf3Input: build/tools.d.ts#Iperf3Input
+MAX_CAPTURE_PACKETS: build/tools.d.ts#MAX_CAPTURE_PACKETS
+MAX_CAPTURE_SECONDS: build/tools.d.ts#MAX_CAPTURE_SECONDS
+MAX_IPERF3_BITS_PER_SECOND: build/tools.d.ts#MAX_IPERF3_BITS_PER_SECOND
+MAX_IPERF3_SECONDS: build/tools.d.ts#MAX_IPERF3_SECONDS
+MAX_IPERF3_STREAMS: build/tools.d.ts#MAX_IPERF3_STREAMS
 MAX_MTR_CYCLES: build/tools.d.ts#MAX_MTR_CYCLES
 MAX_PING_COUNT: build/tools.d.ts#MAX_PING_COUNT
 MAX_TRACE_HOPS: build/tools.d.ts#MAX_TRACE_HOPS
@@ -299,12 +331,21 @@ type ToolRunOptions: build/tools.d.ts#ToolRunOptions
 type ToolUse: build/tools.d.ts#ToolUse
 type TraceInput: build/tools.d.ts#TraceInput
 availabilityOf: build/tools.d.ts#availabilityOf
+captureAvailability: build/tools.d.ts#captureAvailability
+captureCommand: build/tools.d.ts#captureCommand
+captureFilter: build/tools.d.ts#captureFilter
+captureProbe: build/tools.d.ts#captureProbe
+iperf3Availability: build/tools.d.ts#iperf3Availability
+iperf3Command: build/tools.d.ts#iperf3Command
+iperf3Probe: build/tools.d.ts#iperf3Probe
 mtrAvailability: build/tools.d.ts#mtrAvailability
 mtrCommand: build/tools.d.ts#mtrCommand
 mtrProbe: build/tools.d.ts#mtrProbe
 pingAvailability: build/tools.d.ts#pingAvailability
 pingCommand: build/tools.d.ts#pingCommand
 pingProbe: build/tools.d.ts#pingProbe
+readCapture: build/tools.d.ts#readCapture
+readIperf3: build/tools.d.ts#readIperf3
 readMtr: build/tools.d.ts#readMtr
 readPing: build/tools.d.ts#readPing
 readTraceroute: build/tools.d.ts#readTraceroute
@@ -973,11 +1014,40 @@ type Availability = {
   readonly reason: string;
 };
 
+### build/kinds.chunk.d.ts#CAPTURE_OUTCOMES
+declare const CAPTURE_OUTCOMES: readonly ["captured", "none", "error"];
+
+### build/kinds.chunk.d.ts#CAPTURE_PROTOCOLS
+declare const CAPTURE_PROTOCOLS: readonly ["tcp", "udp", "icmp"];
+
 ### build/kinds.chunk.d.ts#CERT_PROBLEMS
 declare const CERT_PROBLEMS: readonly ["expired", "not-yet-valid", "name", "untrusted", "revoked", "other"];
 
 ### build/kinds.chunk.d.ts#CONNECT_OUTCOMES
 declare const CONNECT_OUTCOMES: readonly ["connected", "refused", "timeout", "unreachable", "reset", "error"];
+
+### build/kinds.chunk.d.ts#CaptureOutcome
+type CaptureOutcome = (typeof CAPTURE_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#CaptureProtocol
+type CaptureProtocol = (typeof CAPTURE_PROTOCOLS)[number];
+
+### build/kinds.chunk.d.ts#CapturedPacket
+interface CapturedPacket {
+  readonly atMs: number;
+  readonly src: string;
+  readonly dst: string;
+  readonly protocol: PacketProtocol;
+  readonly srcPort?: number | undefined;
+  readonly dstPort?: number | undefined;
+  readonly seq?: number | undefined;
+  readonly ack?: number | undefined;
+  readonly payload?: number | undefined;
+  readonly flags?: number | undefined;
+  readonly retransmission?: boolean | undefined;
+  readonly ackRttMs?: number | undefined;
+  readonly bytes: number;
+}
 
 ### build/kinds.chunk.d.ts#CertProblem
 type CertProblem = (typeof CERT_PROBLEMS)[number];
@@ -1107,11 +1177,37 @@ interface Observation<V = unknown> {
   readonly time?: FactTime | undefined;
 }
 
+### build/kinds.chunk.d.ts#PACKET_PROTOCOLS
+declare const PACKET_PROTOCOLS: readonly ["tcp", "udp", "other"];
+
+### build/kinds.chunk.d.ts#PATH_CAPTURE
+declare const PATH_CAPTURE: FactKind<PathCapture>;
+
 ### build/kinds.chunk.d.ts#PATH_REPORT
 declare const PATH_REPORT: FactKind<PathReport>;
 
+### build/kinds.chunk.d.ts#PATH_THROUGHPUT
+declare const PATH_THROUGHPUT: FactKind<PathThroughput>;
+
 ### build/kinds.chunk.d.ts#PATH_TRACE
 declare const PATH_TRACE: FactKind<PathTrace>;
+
+### build/kinds.chunk.d.ts#PacketProtocol
+type PacketProtocol = (typeof PACKET_PROTOCOLS)[number];
+
+### build/kinds.chunk.d.ts#PathCapture
+interface PathCapture {
+  readonly address: string;
+  readonly port?: number | undefined;
+  readonly protocol?: CaptureProtocol | undefined;
+  readonly device: string;
+  readonly filter: string;
+  readonly outcome: CaptureOutcome;
+  readonly epoch?: string | undefined;
+  readonly packets: readonly CapturedPacket[];
+  readonly dropped?: number | undefined;
+  readonly detail?: string | undefined;
+}
 
 ### build/kinds.chunk.d.ts#PathReport
 interface PathReport {
@@ -1119,6 +1215,27 @@ interface PathReport {
   readonly outcome: TraceOutcome;
   readonly cycles: number;
   readonly hops: readonly ReportHop[];
+  readonly detail?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#PathThroughput
+interface PathThroughput {
+  readonly address: string;
+  readonly port: number;
+  readonly protocol: ThroughputProtocol;
+  readonly reverse: boolean;
+  readonly streams: number;
+  readonly seconds: number;
+  readonly outcome: ThroughputOutcome;
+  readonly sentBitsPerSecond?: number | undefined;
+  readonly receivedBitsPerSecond?: number | undefined;
+  readonly sentBytes?: number | undefined;
+  readonly receivedBytes?: number | undefined;
+  readonly retransmits?: number | undefined;
+  readonly jitterMs?: number | undefined;
+  readonly lostDatagrams?: number | undefined;
+  readonly datagrams?: number | undefined;
+  readonly intervals: readonly ThroughputInterval[];
   readonly detail?: string | undefined;
 }
 
@@ -1175,6 +1292,12 @@ interface ReportHop {
 ### build/kinds.chunk.d.ts#TCP_CONNECT
 declare const TCP_CONNECT: FactKind<TcpConnect>;
 
+### build/kinds.chunk.d.ts#THROUGHPUT_OUTCOMES
+declare const THROUGHPUT_OUTCOMES: readonly ["measured", "refused", "busy", "error"];
+
+### build/kinds.chunk.d.ts#THROUGHPUT_PROTOCOLS
+declare const THROUGHPUT_PROTOCOLS: readonly ["tcp", "udp"];
+
 ### build/kinds.chunk.d.ts#TLS_HANDSHAKE
 declare const TLS_HANDSHAKE: FactKind<TlsHandshake>;
 
@@ -1203,6 +1326,24 @@ interface TcpConnect {
   readonly ms: number;
   readonly code?: string | undefined;
 }
+
+### build/kinds.chunk.d.ts#ThroughputInterval
+interface ThroughputInterval {
+  readonly startMs: number;
+  readonly endMs: number;
+  readonly bytes: number;
+  readonly bitsPerSecond: number;
+  readonly retransmits?: number | undefined;
+  readonly datagrams?: number | undefined;
+  readonly lostDatagrams?: number | undefined;
+  readonly jitterMs?: number | undefined;
+}
+
+### build/kinds.chunk.d.ts#ThroughputOutcome
+type ThroughputOutcome = (typeof THROUGHPUT_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#ThroughputProtocol
+type ThroughputProtocol = (typeof THROUGHPUT_PROTOCOLS)[number];
 
 ### build/kinds.chunk.d.ts#TlsCertificate
 interface TlsCertificate {
@@ -1299,6 +1440,34 @@ declare function layerRank(layer: Layer): number;
 ### build/tools.d.ts#AVAILABILITY_TIMEOUT_MS
 export declare const AVAILABILITY_TIMEOUT_MS = 5e3;
 
+### build/tools.d.ts#CAPTURE_FIELDS
+export declare const CAPTURE_FIELDS: readonly string[];
+
+### build/tools.d.ts#CAPTURE_SETUP_MS
+export declare const CAPTURE_SETUP_MS = 5e3;
+
+### build/tools.d.ts#CaptureInput
+interface CaptureInput {
+  readonly device: string;
+  readonly address: string;
+  readonly port?: number | undefined;
+  readonly protocol?: CaptureProtocol | undefined;
+  readonly seconds?: number | undefined;
+  readonly packets?: number | undefined;
+}
+
+### build/tools.d.ts#DEFAULT_CAPTURE_PACKETS
+export declare const DEFAULT_CAPTURE_PACKETS = 1e3;
+
+### build/tools.d.ts#DEFAULT_CAPTURE_SECONDS
+export declare const DEFAULT_CAPTURE_SECONDS = 10;
+
+### build/tools.d.ts#DEFAULT_IPERF3_PORT
+export declare const DEFAULT_IPERF3_PORT = 5201;
+
+### build/tools.d.ts#DEFAULT_IPERF3_SECONDS
+export declare const DEFAULT_IPERF3_SECONDS = 10;
+
 ### build/tools.d.ts#DEFAULT_MTR_CYCLES
 export declare const DEFAULT_MTR_CYCLES = 20;
 
@@ -1313,6 +1482,41 @@ export declare const DEFAULT_TRACE_HOPS = 30;
 
 ### build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
 export declare const DEFAULT_TRACE_WAIT_MS = 1e3;
+
+### build/tools.d.ts#DEFAULT_UDP_BITS_PER_SECOND
+export declare const DEFAULT_UDP_BITS_PER_SECOND = 1e6;
+
+### build/tools.d.ts#IPERF3_MIN_VERSION
+export declare const IPERF3_MIN_VERSION: readonly [number, number];
+
+### build/tools.d.ts#IPERF3_SETUP_MS
+export declare const IPERF3_SETUP_MS = 5e3;
+
+### build/tools.d.ts#Iperf3Input
+interface Iperf3Input {
+  readonly address: string;
+  readonly port?: number | undefined;
+  readonly seconds?: number | undefined;
+  readonly protocol?: ThroughputProtocol | undefined;
+  readonly reverse?: boolean | undefined;
+  readonly streams?: number | undefined;
+  readonly bitsPerSecond?: number | undefined;
+}
+
+### build/tools.d.ts#MAX_CAPTURE_PACKETS
+export declare const MAX_CAPTURE_PACKETS = 1e4;
+
+### build/tools.d.ts#MAX_CAPTURE_SECONDS
+export declare const MAX_CAPTURE_SECONDS = 120;
+
+### build/tools.d.ts#MAX_IPERF3_BITS_PER_SECOND
+export declare const MAX_IPERF3_BITS_PER_SECOND = 1e10;
+
+### build/tools.d.ts#MAX_IPERF3_SECONDS
+export declare const MAX_IPERF3_SECONDS = 60;
+
+### build/tools.d.ts#MAX_IPERF3_STREAMS
+export declare const MAX_IPERF3_STREAMS = 16;
 
 ### build/tools.d.ts#MAX_MTR_CYCLES
 export declare const MAX_MTR_CYCLES = 100;
@@ -1415,6 +1619,27 @@ interface TraceInput {
 ### build/tools.d.ts#availabilityOf
 export declare function availabilityOf(tool: string, output: ToolOutput, version?: RegExp): Availability;
 
+### build/tools.d.ts#captureAvailability
+export declare function captureAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#captureCommand
+export declare function captureCommand(input: CaptureInput): ToolCommand;
+
+### build/tools.d.ts#captureFilter
+export declare function captureFilter(flow: Pick<CaptureInput, "address" | "port" | "protocol">): string;
+
+### build/tools.d.ts#captureProbe
+export declare function captureProbe(host: ToolHost): Probe<CaptureInput, ToolRaw>;
+
+### build/tools.d.ts#iperf3Availability
+export declare function iperf3Availability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#iperf3Command
+export declare function iperf3Command(input: Iperf3Input): ToolCommand;
+
+### build/tools.d.ts#iperf3Probe
+export declare function iperf3Probe(host: ToolHost): Probe<Iperf3Input, ToolRaw>;
+
 ### build/tools.d.ts#mtrAvailability
 export declare function mtrAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
 
@@ -1432,6 +1657,12 @@ export declare function pingCommand(platform: string, input: PingInput): ToolCom
 
 ### build/tools.d.ts#pingProbe
 export declare function pingProbe(host: ToolHost): Probe<PingInput, ToolRaw>;
+
+### build/tools.d.ts#readCapture
+export declare function readCapture(raw: ToolRaw, input: CaptureInput): PathCapture;
+
+### build/tools.d.ts#readIperf3
+export declare function readIperf3(raw: ToolRaw, input: Iperf3Input): PathThroughput;
 
 ### build/tools.d.ts#readMtr
 export declare function readMtr(raw: ToolRaw, input: {
