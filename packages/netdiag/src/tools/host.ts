@@ -48,6 +48,9 @@ export interface ToolRaw extends ToolOutput {
 /** The time limit of the command that examines if a tool is available, in milliseconds. */
 export const AVAILABILITY_TIMEOUT_MS = 5000;
 
+/** The time that an adapter adds to the time limit of a command, in milliseconds. In this time, a tool writes its last lines. */
+export const TOOL_MARGIN_MS = 3000;
+
 /**
  * This function gives the availability of a tool from the output of a harmless command. A tool is available when its
  * program starts. The first group of `version` gives the version of the tool.

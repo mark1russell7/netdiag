@@ -1,8 +1,10 @@
+import { isIP } from "node:net";
 import { observe, type Observation } from "../fact.ts";
 import { ICMP_ECHO, type IcmpEcho } from "../kinds.ts";
 import { defineProbe, type Availability, type Probe, type ProbeContext } from "../probe.ts";
-import { hostKind, target, type Target } from "../target.ts";
-import { AVAILABILITY_TIMEOUT_MS, availabilityOf, runTool, type ToolCommand, type ToolHost, type ToolRaw } from "./host.ts";
+import { target, type Target } from "../target.ts";
+import { ENGLISH, firstLine, integerIn, LINES, LOCAL_UNREACHABLE, toolAddress, type ToolAddress } from "./common.ts";
+import { AVAILABILITY_TIMEOUT_MS, availabilityOf, runTool, TOOL_MARGIN_MS, type ToolCommand, type ToolHost, type ToolRaw } from "./host.ts";
 
 // The adapter of the tool `ping`. It reads the English output of iputils on Linux, of the BSD ping on macOS and of
 // ping.exe on Windows. On Linux and macOS, `LC_ALL=C` makes the output English. On Windows, the language of the
@@ -29,33 +31,24 @@ export const MAX_PING_COUNT = 100;
 /** The time between two echo requests on Linux and macOS, in milliseconds. A user without privileges can set it. */
 export const PING_INTERVAL_MS = 200;
 
-/** The time that the host adds to the time limit of a command, in milliseconds. In this time, ping writes its statistics. */
-export const PING_MARGIN_MS = 3000;
-
 /**
  * The time that the `ping6` of macOS waits after its last request when a reply is missing, in milliseconds. The tool
  * has no option for it.
  */
 export const PING6_LAST_WAIT_MS = 10_000;
 
-interface CheckedInput {
-  readonly address: string;
-  readonly family: 4 | 6;
+interface CheckedInput extends ToolAddress {
   readonly count: number;
   readonly waitMs: number;
 }
 
 function checked(input: PingInput): CheckedInput {
-  const kind = hostKind(input.address);
-  if (kind === "name") throw new TypeError(`"${input.address}" is not an IP address. Get the addresses of a name with the DNS probe first.`);
-  const count = input.count ?? DEFAULT_PING_COUNT;
-  if (!Number.isInteger(count) || count < 1 || count > MAX_PING_COUNT) throw new RangeError(`${count} is not a number of requests from 1 to ${MAX_PING_COUNT}.`);
-  const waitMs = input.waitMs ?? DEFAULT_PING_WAIT_MS;
-  if (!Number.isInteger(waitMs) || waitMs < 1 || waitMs > 60_000) throw new RangeError(`${waitMs} is not a time from 1 to 60000 milliseconds.`);
-  return { address: input.address, family: kind === "ipv6" ? 6 : 4, count, waitMs };
+  return {
+    ...toolAddress(input.address),
+    count: integerIn(input.count ?? DEFAULT_PING_COUNT, 1, MAX_PING_COUNT, "a number of requests"),
+    waitMs: integerIn(input.waitMs ?? DEFAULT_PING_WAIT_MS, 1, 60_000, "a time in milliseconds"),
+  };
 }
-
-const ENGLISH: Readonly<Record<string, string>> = { LC_ALL: "C" };
 
 /**
  * This function gives the command of ping for an operating system and an input. For an operating system that the adapter
@@ -75,20 +68,20 @@ export function pingCommand(platform: string, input: PingInput): ToolCommand | u
       return {
         command: "ping",
         args: ["-n", "-c", String(count), "-i", seconds(PING_INTERVAL_MS), "-W", String(Math.ceil(waitMs / 1000)), "-w", String(deadlineS), address],
-        timeoutMs: deadlineS * 1000 + PING_MARGIN_MS,
+        timeoutMs: deadlineS * 1000 + TOOL_MARGIN_MS,
         env: ENGLISH,
       };
     case "darwin":
-      return family === 4
+      return family === "ipv4"
         ? {
             command: "ping",
             args: ["-n", "-c", String(count), "-i", seconds(PING_INTERVAL_MS), "-W", String(waitMs), "-t", String(deadlineS), address],
-            timeoutMs: deadlineS * 1000 + PING_MARGIN_MS,
+            timeoutMs: deadlineS * 1000 + TOOL_MARGIN_MS,
             env: ENGLISH,
           }
-        : { command: "ping6", args: ["-n", "-c", String(count), address], timeoutMs: (count - 1) * 1000 + PING6_LAST_WAIT_MS + PING_MARGIN_MS, env: ENGLISH };
+        : { command: "ping6", args: ["-n", "-c", String(count), address], timeoutMs: (count - 1) * 1000 + PING6_LAST_WAIT_MS + TOOL_MARGIN_MS, env: ENGLISH };
     case "win32":
-      return { command: "ping", args: ["-n", String(count), "-w", String(waitMs), address], timeoutMs: count * Math.max(1000, waitMs) + waitMs + PING_MARGIN_MS };
+      return { command: "ping", args: ["-n", String(count), "-w", String(waitMs), address], timeoutMs: count * Math.max(1000, waitMs) + waitMs + TOOL_MARGIN_MS };
     default:
       return undefined;
   }
@@ -122,11 +115,6 @@ interface PingLines {
   readonly failure?: string | undefined;
 }
 
-const LINES = /\r?\n/;
-
-/** The messages of a local send that tell that the address is unreachable, on Linux and macOS. */
-const LOCAL_UNREACHABLE = /\b(Network is unreachable|No route to host|Host is down|Network is down)\b/i;
-
 /** The messages of a failed send of ping on Linux and macOS, for example `socket: Operation not permitted`. */
 const SEND_FAILURE = /^(?:socket|bind|connect|sendmsg|sendto|send): \S/;
 
@@ -135,17 +123,19 @@ function readUnix(stdout: string, stderr: string): PingLines {
   let unreachable: PingLines["unreachable"];
   let failure: string | undefined;
   for (const line of stdout.split(LINES)) {
-    const reply = /^\d+ bytes from ([^\s,]+?)[:,] .*\btime[=<]([\d.]+) ?ms/.exec(line);
-    if (reply !== null && !line.includes("DUP!")) {
-      const ttl = /\b(?:ttl|hlim)=(\d+)/.exec(line)?.[1];
-      replies.push(ttl === undefined ? { rttMs: Number(reply[2]) } : { rttMs: Number(reply[2]), ttl: Number(ttl) });
-      continue;
-    }
+    // Each pattern has one way to match, so a long line cannot make it slow. A second test examines the rest of the line.
     // iputils: "From 192.0.2.5 icmp_seq=1 Destination Host Unreachable". macOS: "92 bytes from 192.0.2.5: Destination Host Unreachable".
-    const message = /^(?:From (\S+?):? icmp_seq=\d+|\d+ bytes from ([^\s,]+?)[:,]) (.*unreachable.*)$/i.exec(line);
-    if (message !== null && unreachable === undefined) {
-      const from = message[1] ?? message[2];
-      unreachable = { ...(from === undefined ? {} : { from }), detail: (message[3] ?? "").trim() };
+    const head = /^\d+ bytes from (\S+) (.*)$/.exec(line) ?? /^From (\S+) icmp_seq=\d+ (.*)$/.exec(line);
+    if (head === null) continue;
+    const from = withoutSeparator(head[1] ?? "");
+    const rest = head[2] ?? "";
+    const time = line.startsWith("From ") ? null : /\btime[=<]([\d.]+) ?ms/.exec(rest);
+    if (time !== null) {
+      if (rest.includes("DUP!")) continue;
+      const ttl = /\b(?:ttl|hlim)=(\d+)/.exec(rest)?.[1];
+      replies.push(ttl === undefined ? { rttMs: Number(time[1]) } : { rttMs: Number(time[1]), ttl: Number(ttl) });
+    } else if (/unreachable/i.test(rest) && unreachable === undefined) {
+      unreachable = { from, detail: rest.trim() };
     }
   }
   // A warning on stderr is not a failure. Only a failed send is a failure.
@@ -157,6 +147,11 @@ function readUnix(stdout: string, stderr: string): PingLines {
   }
   const sent = /^(\d+) packets transmitted, \d+ (?:packets )?received/m.exec(stdout)?.[1];
   return { sent: sent === undefined ? undefined : Number(sent), replies, unreachable, failure };
+}
+
+/** This function removes the `:` or `,` after an address in a line of ping. An IPv6 address keeps its own last `:`. */
+function withoutSeparator(text: string): string {
+  return isIP(text) === 0 ? text.replace(/[:,]$/, "") : text;
 }
 
 function readWindows(stdout: string): PingLines {
@@ -171,10 +166,14 @@ function readWindows(stdout: string): PingLines {
       replies.push(ttl === undefined ? { rttMs: Number(reply[3]) } : { rttMs: Number(reply[3]), ttl: Number(ttl) });
       continue;
     }
-    const message = /^(?:Reply from (\S+?): )?(Destination [a-z ]*unreachable)\.?\s*$/i.exec(line);
-    if (message !== null && unreachable === undefined) unreachable = { ...(message[1] === undefined ? {} : { from: message[1] }), detail: message[2] ?? "" };
-    const transmit = /^PING: transmit failed\. (.+?)\s*$/.exec(line);
-    if (transmit !== null) failure ??= `transmit failed. ${transmit[1] ?? ""}`.trim();
+    // "Reply from 192.168.1.191: Destination host unreachable." or "Destination net unreachable."
+    const text = line.trim();
+    const message = /^(?:Reply from (\S+): )?(Destination .*)$/i.exec(text);
+    if (message !== null && unreachable === undefined && /unreachable\.?$/i.test(message[2] ?? "")) {
+      const detail = (message[2] ?? "").replace(/\.$/, "");
+      unreachable = message[1] === undefined ? { detail } : { from: message[1], detail };
+    }
+    if (text.startsWith("PING: transmit failed. ")) failure ??= text.slice("PING: ".length);
   }
   const sent = /Packets: Sent = (\d+), Received = \d+/.exec(stdout)?.[1];
   return { sent: sent === undefined ? undefined : Number(sent), replies, unreachable, failure };
@@ -205,10 +204,6 @@ export function readPing(raw: ToolRaw, address: string): IcmpEcho {
   if (unreachable !== undefined) return { address, outcome: "unreachable", sent, received: 0, rttMs: [], ...from, detail: unreachable.detail };
   if (failure !== undefined) return error(failure);
   return { address, outcome: "none", sent, received: 0, rttMs: [] };
-}
-
-function firstLine(text: string): string | undefined {
-  return text.split(LINES).find((line) => line.trim().length > 0)?.trim();
 }
 
 /**
