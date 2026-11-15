@@ -254,6 +254,9 @@ importers:
       '@mark1russell7/rigor-proxy':
         specifier: ^0.2.1
         version: 0.2.1(zod@4.6.7)
+      '@mark1russell7/text':
+        specifier: ^0.0.6
+        version: 0.0.6
       '@netdiag/fixtures':
         specifier: workspace:*
         version: link:../fixtures
@@ -291,6 +294,9 @@ importers:
       '@mark1russell7/rigor-statistics':
         specifier: ^0.2.3
         version: 0.2.3
+      '@mark1russell7/text':
+        specifier: ^0.0.6
+        version: 0.0.6
     devDependencies:
       '@mark1russell7/cue':
         specifier: ^2.0.0
@@ -2721,7 +2727,7 @@ snapshots:
     dependencies:
       '@mark1russell7/algebra': 0.8.8(zod@4.6.7)
       '@mark1russell7/optional': 1.2.0
-      '@mark1russell7/rigor-statistics': 0.2.2
+      '@mark1russell7/rigor-statistics': 0.2.3
     transitivePeerDependencies:
       - zod
 
@@ -2737,7 +2743,7 @@ snapshots:
       '@mark1russell7/quantity': 0.4.0(zod@4.6.7)
       '@mark1russell7/rigor-bench': 0.2.40(esbuild@0.28.2)
       '@mark1russell7/rigor-chaos': 0.2.2
-      '@mark1russell7/rigor-statistics': 0.2.2
+      '@mark1russell7/rigor-statistics': 0.2.3
       testcontainers: 12.2.1(bare-buffer@3.7.2)(supports-color@7.2.0)
       zod: 4.6.7
     transitivePeerDependencies:
@@ -2765,7 +2771,7 @@ snapshots:
   '@mark1russell7/rigor-bench@0.2.40(esbuild@0.28.2)':
     dependencies:
       '@mark1russell7/rigor-generators': 0.1.16
-      '@mark1russell7/rigor-statistics': 0.2.2
+      '@mark1russell7/rigor-statistics': 0.2.3
       '@mark1russell7/text': 0.0.6
     optionalDependencies:
       esbuild: 0.28.2

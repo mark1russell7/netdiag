@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { imageOf, openLab, type BuildImage, type ClientImage, type Lab, type Sibling, type Target, type Topology } from "@mark1russell7/harness";
 import { quantity } from "@mark1russell7/quantity";
+import { errorMessage } from "@mark1russell7/text";
 import type { Authority, Pems } from "@netdiag/fixtures";
 import { DNS_TIMEOUT_MS, HTTP_TIMEOUT_MS, type LabRound, type Visit } from "../run.ts";
 import { KERNEL_HOP, KERNEL_PORT, KERNEL_REFERENCE_NAME, KERNEL_TARGET_NAME, applySteps, faultPlan, kernelZone, type KernelCase, type KernelPeers } from "./cases.ts";
@@ -119,10 +120,6 @@ export async function openKernelWorld(trust: KernelTrust, image: BuildImage = la
   }
 }
 
-function message(thrown: unknown): string {
-  return thrown instanceof Error ? thrown.message : String(thrown);
-}
-
 /**
  * This function adds the fault of a case to a world, starts the agent and waits for its last line. Then it removes the
  * fault. A wait that ends with no last line gives a problem, not a throw.
@@ -136,7 +133,7 @@ export async function visitKernel(world: KernelWorld, labCase: KernelCase, trust
     try {
       await probe.until(["done", "fail"], AGENT_LIMIT_MS);
     } catch (thrown) {
-      ended = message(thrown);
+      ended = errorMessage(thrown);
     } finally {
       await probe.stop();
     }

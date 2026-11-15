@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { realClock, type Clock } from "@mark1russell7/algebra/clock";
 import { visitTarget } from "@mark1russell7/netdiag";
 import type { ToolHost } from "@mark1russell7/netdiag/tools";
+import { errorMessage } from "@mark1russell7/text";
 import { runCommand } from "@procedures/shell/command";
 import { parseAgentArgs, stepLine, visitInputOf, type AgentLine } from "./protocol.ts";
 
@@ -46,7 +47,7 @@ export async function startAgent(args: readonly string[], deps: AgentDeps): Prom
     for await (const step of steps) write(stepLine(step, clock.now()));
     write({ ev: "done", t: clock.now() });
   } catch (thrown) {
-    write({ ev: "fail", t: clock.now(), why: thrown instanceof Error ? thrown.message : String(thrown) });
+    write({ ev: "fail", t: clock.now(), why: errorMessage(thrown) });
   }
 }
 

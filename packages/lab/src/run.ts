@@ -1,4 +1,5 @@
 import { realClock, type Clock } from "@mark1russell7/algebra/clock";
+import { errorMessage } from "@mark1russell7/text";
 import {
   DNS_ANSWER,
   DNS_PROBE,
@@ -82,10 +83,6 @@ function signLabel(sign: Sign): string {
   return `${sign.feature}=${sign.value}@${sign.primary ? "target" : "reference"}`;
 }
 
-function message(thrown: unknown): string {
-  return thrown instanceof Error ? thrown.message : String(thrown);
-}
-
 /** This function gives the signs of a case that the evidence does not show. */
 export function missingSigns(signs: readonly Sign[], evidence: readonly Evidence[]): Sign[] {
   return signs.filter((sign) => !evidence.some((item) => item.feature === sign.feature && item.primary === sign.primary && item.value === sign.value));
@@ -141,7 +138,7 @@ export async function runRounds<C extends CaseBase>(
     try {
       labRound = await startRound(round);
     } catch (thrown) {
-      for (const labCase of order) keep(readVisit(labCase, round, { status: "no-visit", reason: `The round did not start: ${message(thrown)}` }, catalog));
+      for (const labCase of order) keep(readVisit(labCase, round, { status: "no-visit", reason: `The round did not start: ${errorMessage(thrown)}` }, catalog));
       continue;
     }
     try {
@@ -150,7 +147,7 @@ export async function runRounds<C extends CaseBase>(
         try {
           visit = await labRound.visit(labCase);
         } catch (thrown) {
-          visit = { status: "no-visit", reason: `The visit did not end: ${message(thrown)}` };
+          visit = { status: "no-visit", reason: `The visit did not end: ${errorMessage(thrown)}` };
         }
         keep(readVisit(labCase, round, visit, catalog));
       }
@@ -199,7 +196,7 @@ export async function visitLoopback(labCase: LabCase, options: RunOptions): Prom
   try {
     world = await startWorld(options.hosts, labCase, options.trust);
   } catch (thrown) {
-    return { status: "no-visit", reason: `The world did not start: ${message(thrown)}` };
+    return { status: "no-visit", reason: `The world did not start: ${errorMessage(thrown)}` };
   }
   try {
     const runner = createRunner({ scope: scope.value, clock: options.clock ?? realClock });
