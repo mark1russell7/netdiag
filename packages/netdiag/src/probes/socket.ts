@@ -239,13 +239,14 @@ function systemRoots(): readonly string[] {
 /**
  * This function makes the store of trust of a TLS probe. It has the public roots of Node.js, the roots of the computer
  * and the roots that the user gives. A chain that ends at a public root has the trust `public`. A chain that ends at a
- * different root of the store has the trust `private`, for example the root of a proxy that examines TLS.
+ * different root of the store has the trust `private`, for example the root of a proxy that examines TLS. The roots
+ * in `extraPublic` count as public roots.
  */
-export function trustStore(extraRoots: readonly string[] = []): TrustStore {
+export function trustStore(extraRoots: readonly string[] = [], extraPublic: readonly string[] = []): TrustStore {
   const local = [...systemRoots(), ...extraRoots];
-  const publicRoots = new Set(tls.rootCertificates.flatMap(fingerprintOf));
+  const publicRoots = new Set([...tls.rootCertificates, ...extraPublic].flatMap(fingerprintOf));
   const privateRoots = new Set(local.flatMap(fingerprintOf).filter((fingerprint) => !publicRoots.has(fingerprint)));
-  const context = tls.createSecureContext({ ca: [...tls.rootCertificates, ...local] });
+  const context = tls.createSecureContext({ ca: [...tls.rootCertificates, ...extraPublic, ...local] });
   return { context, publicRoots, privateRoots };
 }
 

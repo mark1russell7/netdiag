@@ -1,4 +1,3 @@
-import { createSocket, type Socket as UdpSocket } from "node:dgram";
 import { createServer as createHttpServer, type Server as HttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
 import { createServer as createNetServer, Socket, type Server } from "node:net";
@@ -6,7 +5,7 @@ import { createServer as createTlsServer, type TlsOptions } from "node:tls";
 import { fakeClock, realClock, type Clock, type FakeClock } from "@mark1russell7/algebra/clock";
 import { faultPlanOf, type Fault } from "@mark1russell7/rigor-chaos";
 import { startFaultProxy, type FaultProxy } from "@mark1russell7/rigor-proxy";
-import { generate } from "selfsigned";
+import { authority, expiredValidity, listen, selfSigned as selfSignedPems, startDnsServer, type Authority, type Pems, type Zone } from "@netdiag/fixtures";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   DNS_ANSWER,
@@ -44,23 +43,9 @@ function runnerWith(clock: Clock): Runner {
 
 /** This function starts a server on a free port of the loopback address, and closes it after the test. */
 async function serve(server: Server | HttpServer): Promise<number> {
-  const sockets = new Set<Socket>();
-  server.on("connection", (socket: Socket) => {
-    sockets.add(socket);
-    socket.on("error", () => undefined);
-    socket.on("close", () => sockets.delete(socket));
-  });
-  await new Promise<void>((resolve) => server.listen(0, LOCAL, resolve));
-  closers.push(
-    () =>
-      new Promise<void>((resolve) => {
-        for (const socket of sockets) socket.destroy();
-        server.close(() => resolve());
-      }),
-  );
-  const address = server.address();
-  if (address === null || typeof address === "string") throw new Error("The server has no port.");
-  return address.port;
+  const listening = await listen(server, LOCAL);
+  closers.push(() => listening.close());
+  return listening.port;
 }
 
 async function proxyTo(port: number, fault: Fault): Promise<number> {
@@ -89,7 +74,6 @@ async function expire(clock: FakeClock, ms: number, ready: () => boolean = () =>
 }
 
 // A DNS server on UDP with a fixed zone. A name that is not in the zone gets NXDOMAIN.
-type Zone = Readonly<Record<string, { rcode: number; a?: string[]; aaaa?: string[] } | "silent">>;
 const ZONE: Zone = {
   "ok.test": { rcode: 0, a: ["192.0.2.10", "192.0.2.11"], aaaa: ["20010db8000000000000000000000010"] },
   "empty.test": { rcode: 0 },
@@ -98,43 +82,10 @@ const ZONE: Zone = {
   "slow.test": "silent",
 };
 
-async function dnsServer(): Promise<{ port: number; asked: string[] }> {
-  const asked: string[] = [];
-  const socket: UdpSocket = createSocket("udp4");
-  socket.on("message", (message, peer) => {
-    let offset = 12;
-    const labels: string[] = [];
-    while ((message[offset] ?? 0) !== 0) {
-      const length = message[offset] ?? 0;
-      labels.push(message.subarray(offset + 1, offset + 1 + length).toString("ascii"));
-      offset += 1 + length;
-    }
-    const type = message.readUInt16BE(offset + 1);
-    const end = offset + 5;
-    const name = labels.join(".").toLowerCase();
-    asked.push(name);
-    const entry = ZONE[name] ?? { rcode: 3 };
-    if (entry === "silent") return;
-    const records = type === 1 ? (entry.a ?? []).map((a) => Buffer.from(a.split(".").map(Number))) : type === 28 ? (entry.aaaa ?? []).map((hex) => Buffer.from(hex, "hex")) : [];
-    const head = Buffer.alloc(12);
-    head.writeUInt16BE(message.readUInt16BE(0), 0);
-    head.writeUInt16BE(0x8180 | entry.rcode, 2);
-    head.writeUInt16BE(1, 4);
-    head.writeUInt16BE(records.length, 6);
-    const answers = records.map((data, i) => {
-      const record = Buffer.alloc(12);
-      record.writeUInt16BE(0xc00c, 0);
-      record.writeUInt16BE(type, 2);
-      record.writeUInt16BE(1, 4);
-      record.writeUInt32BE(300 - i * 60, 6);
-      record.writeUInt16BE(data.length, 10);
-      return Buffer.concat([record, data]);
-    });
-    socket.send(Buffer.concat([head, message.subarray(12, end), ...answers]), peer.port, peer.address);
-  });
-  await new Promise<void>((resolve) => socket.bind(0, LOCAL, resolve));
-  closers.push(() => new Promise<void>((resolve) => socket.close(() => resolve())));
-  return { port: socket.address().port, asked };
+async function dnsServer(): Promise<{ port: number; asked: readonly string[] }> {
+  const server = await startDnsServer({ zone: ZONE, host: LOCAL });
+  closers.push(() => server.close());
+  return { port: server.port, asked: server.asked };
 }
 
 describe("the DNS probe", () => {
@@ -223,59 +174,16 @@ describe("the TCP probe", () => {
   });
 });
 
-interface Pems {
-  readonly key: string;
-  readonly cert: string;
-}
-
-let ca: Pems;
+let ca: Authority;
 let leaf: Pems;
 let expired: Pems;
 let selfSigned: Pems;
 
-type Extensions = NonNullable<NonNullable<Parameters<typeof generate>[1]>["extensions"]>;
-
-const LEAF_EXTENSIONS: Extensions = [
-  { name: "basicConstraints", cA: false },
-  { name: "keyUsage", digitalSignature: true, keyEncipherment: true },
-  { name: "extKeyUsage", serverAuth: true },
-  {
-    name: "subjectAltName",
-    altNames: [
-      { type: 2, value: "localhost" },
-      { type: 7, ip: LOCAL },
-    ],
-  },
-];
-
 beforeAll(async () => {
-  const pems = (result: { private: string; cert: string }): Pems => ({ key: result.private, cert: result.cert });
-  const now = Date.now();
-  ca = pems(
-    await generate([{ name: "commonName", value: "netdiag test root" }], {
-      keyType: "ec",
-      algorithm: "sha256",
-      notAfterDate: new Date(now + 86_400_000),
-      extensions: [
-        { name: "basicConstraints", cA: true },
-        { name: "keyUsage", keyCertSign: true, cRLSign: true, digitalSignature: true },
-      ],
-    }),
-  );
-  const signed = (notBeforeDate: Date, notAfterDate: Date) =>
-    generate([{ name: "commonName", value: "localhost" }], {
-      keyType: "ec",
-      algorithm: "sha256",
-      notBeforeDate,
-      notAfterDate,
-      extensions: LEAF_EXTENSIONS,
-      ca: { key: ca.key, cert: ca.cert },
-    });
-  leaf = pems(await signed(new Date(now - 60_000), new Date(now + 86_400_000)));
-  expired = pems(await signed(new Date(now - 3 * 86_400_000), new Date(now - 86_400_000)));
-  selfSigned = pems(
-    await generate([{ name: "commonName", value: "localhost" }], { keyType: "ec", algorithm: "sha256", notAfterDate: new Date(now + 86_400_000), extensions: LEAF_EXTENSIONS }),
-  );
+  ca = await authority("netdiag test root");
+  leaf = await ca.issue(["localhost", LOCAL]);
+  expired = await ca.issue(["localhost", LOCAL], expiredValidity());
+  selfSigned = await selfSignedPems(["localhost", LOCAL]);
 }, 60_000);
 
 async function tlsServer(options: TlsOptions): Promise<number> {
@@ -293,6 +201,15 @@ describe("the TLS probe", () => {
     expect(handshake).toMatchObject({ outcome: "ok", servername: "localhost", protocol: "TLSv1.3", alpn: "http/1.1" });
     expect(handshake.certificate).toMatchObject({ subject: "localhost", issuer: "netdiag test root", names: ["localhost", LOCAL], chain: 2, selfSigned: false, trust: "private" });
     expect(handshake.certificate?.problem).toBeUndefined();
+  });
+
+  it("gives the trust public to a chain that ends at a root of the option publicRoots", async () => {
+    const port = await tlsServer(leaf);
+    const runner = runnerWith(realClock);
+    const lab = factOf<TlsHandshake>(await runner.run(tlsProbe({ publicRoots: [ca.cert] }), { address: LOCAL, port, servername: "localhost" }), TLS_HANDSHAKE);
+    expect(lab).toMatchObject({ outcome: "ok", certificate: { trust: "public" } });
+    const both = factOf<TlsHandshake>(await runner.run(tlsProbe({ roots: [ca.cert], publicRoots: [ca.cert] }), { address: LOCAL, port, servername: "localhost" }), TLS_HANDSHAKE);
+    expect(both.certificate?.trust).toBe("public");
   });
 
   it("checks the address when the input has no name", async () => {

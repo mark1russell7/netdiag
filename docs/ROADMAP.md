@@ -50,9 +50,22 @@ The network labs of [mark1russell7/systems](https://github.com/mark1russell7/sys
 
 The score is the hit rate of each fault class, from a confusion matrix. A gate in CI holds each rate. The lab runs need Docker, so only CI starts them.
 
+ND-7 has four steps:
+
+1. **The score.** A lab record has the true hypothesis and the diagnosis. `scoreLab` gives the confusion table, the recall of each hypothesis with its Wilson interval, and the Brier score. `labGate` holds the lower end of each recall. The table and the intervals come from `@mark1russell7/rigor-statistics`.
+2. **The loopback lab.** The package `@netdiag/lab` starts real servers on lab addresses of `lo`: a resolver, the target, a reference host and a captive portal. `@mark1russell7/rigor-proxy` holds the first reply of a TLS proxy. Its 13 cases make the 11 classes of the loopback row. The workflow `lab.yml` runs 5 rounds in CI, because the times are part of the evidence. A case that does not show the signs of its fault gives no read.
+3. **The kernel lab.** The cells of `@mark1russell7/harness` drop, reset and delay packets, and make a small MTU. They make the faults of the path and of IPv6.
+4. **The bars.** The bar of each class is the worst of 5 or more CI runs, minus their spread.
+
+| Lab | Fault classes |
+| --- | --- |
+| Loopback | `none`, `resolver.down`, `resolver.failing`, `name.missing`, `port.closed`, `tls.cert-invalid`, `tls.mismatch`, `tls.proxy`, `server.slow`, `server.error`, `captive.portal` |
+| Kernel | `host.down`, `filter.drop`, `filter.icmp`, `filter.reset`, `path.loss`, `path.mtu`, `ipv6.broken`, `gateway.down` |
+| None yet | `interface.down`, `wifi.weak`. The gate lists them with no bar. |
+
 ### The licenses of the outside tools
 
-The table of licenses is data in the adapter package (ND-3). The project bundles no tool with a restrictive license.
+The table of licenses is data: `TOOL_LICENSES` in the entry `@mark1russell7/netdiag/tools` (ND-3). The project bundles no tool with a restrictive license.
 
 | Tool | License | In netdiag |
 | --- | --- | --- |
@@ -75,11 +88,11 @@ The status words are `active`, `waiting`, `blocked`, `later`, `done` and `droppe
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | ND-1 | The fact and probe model | done | P0 | M | core | - | The types of a fact: the layer, the time, the source and the value. The contract of a probe: available, run and parse. Each probe tells if it is active. The core starts an active probe only against a target that the user owns or names. |
 | ND-2 | Native probes: DNS, TCP, TLS and HTTP | done | P0 | L | probes | ND-1 | DNS lookups, TCP connects, the time of the TLS handshake and the time of each HTTP phase, in TypeScript on the `node:` modules. They need no outside tool. Tests run each probe against local servers. |
-| ND-3 | Adapters of outside tools, with the license table as data | later | P1 | M | probes | ND-1 | Optional adapters for `ping`, `traceroute`, `mtr`, `tshark` and `iperf3`. Each command starts with an argument list and no shell, through `@procedures/shell`. The license of each tool is a row of data. |
+| ND-3 | Adapters of outside tools, with the license table as data | active | P1 | M | probes | ND-1 | Optional adapters for `ping`, `traceroute`, `mtr`, `tshark` and `iperf3`, in the entry `@mark1russell7/netdiag/tools`. A host parameter starts each command with an argument list and no shell. The CLI (ND-8) gives `runCommand` of `@procedures/shell`. The license of each tool is a row of data. The `ping` adapter and its readers are the first step. The second step is the adapters of `traceroute` (`tracert` on Windows) and `mtr`, with the fact kinds `path.trace` and `path.report`. |
 | ND-4 | The fault catalog and the probability model | done | P0 | L | diagnosis | ND-1 | A model of the parts and a catalog of faults as data. Each fault tells what it predicts at each layer. The readers change the facts of the probes into evidence. The model gives the probability of each cause. The rules of practice are the first likelihoods. |
 | ND-5 | The choice of the next probe | later | P1 | M | diagnosis | ND-4 | The tool picks the probe with the largest expected information gain over the top causes. It gives that probe as the next step. |
 | ND-6 | The metric estimators | later | P1 | M | metrics | ND-1 | Jitter, delay variation, loss, the retransmission timeout, packet-pair bandwidth and the MTU, as "The metrics" tells. The statistics come from `@mark1russell7/rigor-statistics`. |
-| ND-7 | Lab ground truth and the accuracy gate | later | P0 | L | ground truth | ND-2, ND-4 | The labs of `mark1russell7/systems` inject each fault class, and netdiag must name it. A confusion matrix gives the hit rate of each class, and a gate in CI holds each rate. The runs need Docker, so only CI starts them. |
+| ND-7 | Lab ground truth and the accuracy gate | active | P0 | L | ground truth | ND-2, ND-4 | The labs of `mark1russell7/systems` inject each fault class, and netdiag must name it. A confusion matrix gives the hit rate of each class, and a gate in CI holds each rate. The runs need Docker, so only CI starts them. |
 | ND-8 | The command-line tool | later | P1 | M | cli | ND-2, ND-5 | One command takes a target and gives the probable causes, their probabilities and the next step. The arguments use `@procedures/cli-run` until the shared parser is ready. |
 | ND-9 | Views on the site | later | P2 | M | site | ND-8 | A flow of the probes, one ring for each layer and a timeline of the facts. The views read the records of the command-line tool. |
 | ND-10 | Wi-Fi facts for each operating system | later | P2 | M | probes | ND-1, ND-3 | The signal, the noise, the channel, the rate and the roams of the Wi-Fi link, as typed facts. Each operating system has its own adapter. |

@@ -5,10 +5,18 @@ import {
   DNS_ANSWER,
   DNS_ANSWER_VALUES,
   DNS_OUTCOMES,
+  ECHO_OUTCOMES,
+  GATEWAY_REPLY_VALUES,
   HANDSHAKE_OUTCOMES,
   HTTP_OUTCOMES,
   HTTP_RESPONSE,
   HTTP_TTFB_BINS,
+  ICMP_ECHO,
+  ICMP_REPLY_VALUES,
+  LOSS_MIN_SENT,
+  PATH_LOSS_BINS,
+  PATH_REPORT,
+  PATH_TRACE,
   STANDARD_CATALOG,
   STANDARD_FEATURES,
   TCP_CONNECT,
@@ -19,7 +27,6 @@ import {
   TLS_RATIO_BINS,
   TLS_TRUST_VALUES,
   TRUSTS,
-  addressKind,
   binOf,
   diagnose,
   isLocalName,
@@ -31,6 +38,9 @@ import {
   type Fact,
   type FactKind,
   type HttpResponse,
+  type IcmpEcho,
+  type PathReport,
+  type PathTrace,
   type TcpConnect,
   type TlsHandshake,
   type Trust,
@@ -58,6 +68,26 @@ function dns(name: string, record: "A" | "AAAA", outcome: DnsAnswer["outcome"], 
 function tcp(address: string, port: number, outcome: TcpConnect["outcome"], ms = 10): Entry {
   const value: TcpConnect = { address, port, family: address.includes(":") ? 6 : 4, outcome, ms };
   return [TCP_CONNECT, value, ms];
+}
+
+function echo(address: string, outcome: IcmpEcho["outcome"], sent = 4, received = outcome === "reply" ? sent : 0): Entry {
+  const value: IcmpEcho = { address, outcome, sent, received, rttMs: Array.from({ length: received }, () => 2) };
+  return [ICMP_ECHO, value, 50];
+}
+
+/** This function makes a report of mtr with two hops. The second hop is the address when the outcome is `reached`. */
+function report(address: string, outcome: PathReport["outcome"], sent = LOSS_MIN_SENT, received = sent): Entry {
+  const hops = [
+    { ttl: 1, address: "192.0.2.254", sent, received: sent },
+    outcome === "reached" ? { ttl: 2, address, sent, received } : { ttl: 2, sent, received: 0 },
+  ];
+  const value: PathReport = outcome === "error" ? { address, outcome, cycles: sent, hops: [], detail: "spawn mtr ENOENT" } : { address, outcome, cycles: sent, hops };
+  return [PATH_REPORT, value, 1000];
+}
+
+function trace(address: string): Entry {
+  const value: PathTrace = { address, outcome: "reached", maxHops: 30, hops: [{ ttl: 1, addresses: [address], sent: 3, received: 3, rttMs: [1, 1, 1] }] };
+  return [PATH_TRACE, value, 100];
 }
 
 function certificate(trust: Trust): NonNullable<TlsHandshake["certificate"]> {
@@ -114,6 +144,8 @@ describe("the tables of the readers", () => {
     ["tcp.connect", TCP_CONNECT_VALUES],
     ["tls.handshake", TLS_HANDSHAKE_VALUES],
     ["tls.trust", TLS_TRUST_VALUES],
+    ["icmp.reply", ICMP_REPLY_VALUES],
+    ["gateway.reply", GATEWAY_REPLY_VALUES],
   ])("give only values of the feature %s", (id, table) => {
     for (const value of Object.values(table)) if (value !== undefined) expect(featureValues(id)).toContain(value);
   });
@@ -127,19 +159,21 @@ describe("the tables of the readers", () => {
     expect(bins.at(-1)?.below).toBeUndefined();
   });
 
+  it("give each value of the feature path.loss from a bin of the share of replies", () => {
+    expect(PATH_LOSS_BINS.map((bin) => bin.value).sort()).toEqual([...featureValues("path.loss")].sort());
+    expect(PATH_LOSS_BINS.at(-1)?.below).toBeUndefined();
+  });
+
   it("put a number at a limit in the next bin", () => {
     expect([149.9, 150, 899, 900, 5000].map((ms) => binOf(TCP_TIME_BINS, ms))).toEqual(["short", "long", "long", "retry", "retry"]);
     expect([2.9, 3, 7.9, 8].map((r) => binOf(TLS_RATIO_BINS, r))).toEqual(["low", "mid", "mid", "high"]);
+    expect([18 / 20, 19 / 20, 57 / 60, 99 / 100, 1].map((r) => binOf(PATH_LOSS_BINS, r))).toEqual(["high", "some", "some", "some", "none"]);
     expect(() => binOf([{ below: 1, value: "a" }], 2)).toThrow(RangeError);
   });
 
-  it("tell a local name and a private address", () => {
+  it("tell a local name", () => {
     expect(["router", "nas.local", "printer.lan", "a.home.arpa", "x.test", "LOCALHOST", "srv.corp."].map(isLocalName)).toEqual([true, true, true, true, true, true, true]);
     expect(["example.com", "example.co.uk", "lan.example.com"].map(isLocalName)).toEqual([false, false, false]);
-    expect(["10.1.2.3", "172.31.0.1", "192.168.1.1", "100.64.0.1", "127.0.0.1", "169.254.1.1", "0.0.0.0"].map(addressKind)).toEqual(Array(7).fill("private"));
-    expect(["fd00::1", "fe80::1", "::1", "::", "::ffff:192.168.1.1"].map(addressKind)).toEqual(Array(5).fill("private"));
-    expect(["93.184.216.34", "172.32.0.1", "2606:4700::1111", "::ffff:8.8.8.8"].map(addressKind)).toEqual(Array(4).fill("public"));
-    expect(addressKind("example.com")).toBeUndefined();
   });
 });
 
@@ -199,6 +233,42 @@ describe("readEvidence", () => {
     expect(valuesOf(evidence, "http.ttfb")).toEqual(["high"]);
   });
 
+  it("gives gateway.reply for the gateway and icmp.reply for each other address", () => {
+    const facts = factsOf([echo("192.0.2.1", "reply"), echo("198.51.100.7", "none"), echo("203.0.113.9", "unreachable"), echo("::FFFF:192.0.2.1", "unreachable")]);
+    const { evidence } = readEvidence(facts, { gateway: "192.0.2.1" });
+    expect(evidence.map((e) => [e.feature, e.value, e.facts])).toEqual([
+      ["gateway.reply", "none", ["f0", "f3"]],
+      ["icmp.reply", "none", ["f1"]],
+      ["icmp.reply", "unreachable", ["f2"]],
+    ]);
+    expect(valuesOf(readEvidence(facts).evidence, "icmp.reply")).toEqual(["unreachable", "none", "unreachable"]);
+  });
+
+  it("gives path.loss only for replies to LOSS_MIN_SENT requests or more", () => {
+    const n = LOSS_MIN_SENT;
+    const facts = factsOf([echo("192.0.2.1", "reply", n, n), echo("192.0.2.2", "reply", n, n - 1), echo("192.0.2.3", "reply", n, n - 2), echo("192.0.2.4", "reply", n - 1, 1), echo("192.0.2.5", "none", n)]);
+    expect(valuesOf(readEvidence(facts).evidence, "path.loss")).toEqual(["none", "some", "high"]);
+  });
+
+  it("gives path.loss from the last hop of a report of mtr, and the last fact of ping or mtr decides", () => {
+    const n = LOSS_MIN_SENT;
+    expect(readEvidence(factsOf([report("192.0.2.1", "reached", n, n - 1)])).evidence).toEqual([{ feature: "path.loss", value: "some", primary: true, facts: ["f0"] }]);
+    const both = readEvidence(factsOf([report("192.0.2.1", "reached", n, n), echo("192.0.2.1", "reply", n, n - 2)])).evidence;
+    expect(both.filter((e) => e.feature === "path.loss")).toEqual([{ feature: "path.loss", value: "high", primary: true, facts: ["f0", "f1"] }]);
+  });
+
+  it("gives no evidence for a report that did not reach the address, a short report, or a trace", () => {
+    const facts = factsOf([report("192.0.2.1", "stopped"), report("192.0.2.1", "error"), report("192.0.2.1", "reached", LOSS_MIN_SENT - 1), trace("192.0.2.1")]);
+    const { evidence, skipped } = readEvidence(facts);
+    expect(evidence).toEqual([]);
+    expect(skipped.map((s) => s.reason)).toEqual([
+      'The outcome "stopped" of path.report has no value of the feature path.loss.',
+      'The outcome "error" of path.report has no value of the feature path.loss.',
+      `The last hop of the report has ${LOSS_MIN_SENT - 1} probes. The feature path.loss needs ${LOSS_MIN_SENT} probes or more.`,
+      "The catalog has no feature for the hops of a path. The lab runs fit such a feature later.",
+    ]);
+  });
+
   it("marks the facts of a reference host", () => {
     const facts = factsOf([tcp("192.0.2.1", 443, "connected"), tcp("198.51.100.1", 443, "connected")]);
     const { evidence } = readEvidence(facts, { primary: (fact) => (fact.value as TcpConnect).address === "192.0.2.1" });
@@ -215,10 +285,12 @@ describe("readEvidence", () => {
       tls("192.0.2.1", "closed", 3),
       http("192.0.2.1", "error"),
       http("192.0.2.1", "response", 101),
+      [ICMP_ECHO, { address: "192.0.2.1", outcome: "error", sent: 0, received: 0, rttMs: [], detail: "spawn ping ENOENT" }],
     ]);
     const { evidence, skipped } = readEvidence(facts);
     expect(evidence).toEqual([]);
-    expect(skipped.map((s) => s.fact)).toEqual(["f0", "f1", "f3", "f2", "f4", "f5", "f6", "f7"]);
+    expect(skipped.map((s) => s.fact)).toEqual(["f0", "f1", "f3", "f2", "f4", "f5", "f6", "f7", "f8"]);
+    expect(skipped.find((s) => s.fact === "f8")?.reason).toBe('The outcome "error" of icmp.echo has no value of the feature icmp.reply.');
     expect(skipped[0]?.reason).toBe("netdiag has no reader for the kind wifi.scan.");
     expect(skipped[1]?.reason).toBe("The value does not pass the check of the kind tcp.connect.");
     expect(skipped.find((s) => s.fact === "f4")?.reason).toBe('The outcome "not-tls" of tls.handshake has no value of the feature tls.handshake.');
@@ -238,6 +310,14 @@ describe("the readers and the model", () => {
     expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "connected", 20), tls("93.184.216.34", "ok", 40, "public"), http("93.184.216.34", "response", 503, 30)])).toBe(
       "server.error",
     );
+  });
+
+  it("names a silent resolver, not a down interface, when the gateway replies", () => {
+    const gateway = "192.0.2.254";
+    const cause = (entries: readonly Entry[]): string | undefined => diagnose(STANDARD_CATALOG, readEvidence(factsOf(entries), { gateway }).evidence).causes[0]?.id;
+    expect(cause([dns("example.com", "A", "timeout")])).not.toBe("resolver.down");
+    expect(cause([dns("example.com", "A", "timeout"), echo(gateway, "reply")])).toBe("resolver.down");
+    expect(cause([dns("example.com", "A", "timeout"), echo(gateway, "none")])).toMatch(/^(interface|gateway)\.down$/);
   });
 
   it("names a captive portal: a private address and a certificate with no root of the store", () => {
@@ -265,16 +345,23 @@ describe("a property of the readers", () => {
   const tlsEntry = fc.record({ address, outcome: fc.constantFrom(...HANDSHAKE_OUTCOMES), ms, trust: fc.option(fc.constantFrom(...TRUSTS), { nil: undefined }) }).map(
     ({ trust, ...v }): Entry => [TLS_HANDSHAKE, { ...v, port: 443, ...(trust === undefined ? {} : { certificate: certificate(trust) }) }, 1],
   );
+  const icmpEntry = fc
+    .record({ address, outcome: fc.constantFrom(...ECHO_OUTCOMES), sent: fc.integer({ min: 1, max: 40 }), share: fc.double({ min: 0, max: 1, noNaN: true }) })
+    .map(({ address: a, outcome, sent, share }) => echo(a, outcome, outcome === "error" ? 0 : sent, outcome === "reply" ? Math.max(1, Math.round(share * sent)) : 0));
+  const reportEntry = fc
+    .record({ address, outcome: fc.constantFrom("reached" as const, "stopped" as const, "error" as const), sent: fc.integer({ min: 1, max: 40 }), share: fc.double({ min: 0, max: 1, noNaN: true }) })
+    .map(({ address: a, outcome, sent, share }) => report(a, outcome, sent, Math.max(1, Math.round(share * sent))));
+  const traceEntry = address.map((a) => trace(a));
   const httpEntry = fc
     .record({ address, outcome: fc.constantFrom(...HTTP_OUTCOMES), status: fc.constantFrom(101, 200, 302, 404, 503), ttfb: fc.option(ms, { nil: undefined }) })
     .map(({ address: a, outcome, status, ttfb }) => http(a, outcome, outcome === "response" ? status : undefined, outcome === "response" ? ttfb : undefined));
 
   it("gives only evidence that the model uses, and accounts for each fact", () => {
     fc.assert(
-      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry), { maxLength: 24 }), fc.boolean(), (entries, split) => {
+      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry, icmpEntry, reportEntry, traceEntry), { maxLength: 24 }), fc.boolean(), fc.option(address, { nil: undefined }), (entries, split, gateway) => {
         const facts = factsOf(entries);
-        for (const fact of facts) expect([DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE].find((k) => k.kind === fact.kind)?.check(fact.value)).toBe(true);
-        const reading = readEvidence(facts, split ? { primary: (fact) => Number(fact.id.slice(1)) % 2 === 0 } : {});
+        for (const fact of facts) expect([DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, PATH_TRACE].find((k) => k.kind === fact.kind)?.check(fact.value)).toBe(true);
+        const reading = readEvidence(facts, { ...(split ? { primary: (fact: Fact) => Number(fact.id.slice(1)) % 2 === 0 } : {}), gateway });
         expect(diagnose(STANDARD_CATALOG, reading.evidence).ignored).toEqual([]);
         const seen = new Set([...reading.evidence.flatMap((e) => e.facts ?? []), ...reading.skipped.map((s) => s.fact)]);
         expect([...seen].sort()).toEqual(facts.map((f) => f.id).sort());

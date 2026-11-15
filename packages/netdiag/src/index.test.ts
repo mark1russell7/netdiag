@@ -102,6 +102,11 @@ describe("the scope", () => {
     expect(decideScope(s, target("2001:db8:ab::5")).allowed).toBe(false);
   });
 
+  it("allows an IPv4 address in IPv6 form when its IPv4 range is in the scope", () => {
+    expect(decideScope(s, target("::ffff:192.168.1.254", 80)).allowed).toBe(true);
+    expect(decideScope(s, target("::ffff:192.168.2.1", 80)).allowed).toBe(false);
+  });
+
   it("does not match an address against a host grant, or a name against a range", () => {
     const byName = scope([{ kind: "host", host: "router.home", basis: "configured" }]);
     expect(decideScope(byName, target("192.168.1.1")).allowed).toBe(false);
