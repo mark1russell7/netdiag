@@ -23,8 +23,8 @@ import type { CheckPlan } from "./plan.ts";
 // the facts of the probe give, and that the evidence does not have yet. `rankProbes` orders the candidates by the
 // information that they can give about the most probable causes.
 
-/** A probe of a visit: the DNS query, the ICMP echo requests, the TLS handshake, or the HTTP request. */
-export type NextProbeKind = "dns" | "ping" | "tls" | "http";
+/** A probe of a visit: the DNS query, the ICMP echo requests, the TLS handshake, the HTTP request or the HTTPS request. */
+export type NextProbeKind = "dns" | "ping" | "tls" | "http" | "https";
 
 /** A probe that the next step can start, for one role of the visit. */
 export interface NextProbe {
@@ -58,11 +58,18 @@ const PROBE_KINDS: Readonly<Record<NextProbeKind, readonly string[]>> = {
   ping: [ICMP_ECHO.kind],
   tls: [TCP_CONNECT.kind, TLS_HANDSHAKE.kind],
   http: [TCP_CONNECT.kind, HTTP_RESPONSE.kind],
+  https: [TCP_CONNECT.kind, TLS_HANDSHAKE.kind, HTTP_RESPONSE.kind],
 };
 
-const PROBE_COSTS: Readonly<Record<NextProbeKind, number>> = { dns: 1, tls: 2, http: 3, ping: 5 };
+const PROBE_COSTS: Readonly<Record<NextProbeKind, number>> = { dns: 1, tls: 2, http: 3, https: 3, ping: 5 };
 
-const PROBE_NAMES: Readonly<Record<NextProbeKind, string>> = { dns: "DNS query", ping: "ping", tls: "TLS handshake", http: "HTTP request" };
+const PROBE_NAMES: Readonly<Record<NextProbeKind, string>> = {
+  dns: "DNS query",
+  ping: "ping",
+  tls: "TLS handshake",
+  http: "HTTP request",
+  https: "HTTPS request",
+};
 
 function nextProbe(role: VisitRole, probe: NextProbeKind): NextProbe {
   return { id: `${role}.${probe}`, role, probe, kinds: PROBE_KINDS[probe], cost: PROBE_COSTS[probe] };
@@ -70,13 +77,23 @@ function nextProbe(role: VisitRole, probe: NextProbeKind): NextProbe {
 
 /**
  * The candidates of the next step: each probe of the target and of the reference hosts, and the ping of the gateway.
- * The TLS handshake and the HTTP request are two candidates, one for each stage. Each stage has its own conditions in
- * `ready`. One candidate for the whole HTTPS request is the next change of this list.
+ *
+ * - The HTTPS request is one candidate. It observes the features of the TCP connect, the TLS handshake and the HTTP
+ *   answer together, 7 in all. Thus its gain counts what the three stages tell together.
+ * - The TLS handshake is a second candidate. It costs less, so it comes first when the HTTP answer adds no gain.
+ * - The HTTP request is the candidate of the scheme `http`, and the HTTPS request is the candidate of the scheme `https`.
  */
 export const NEXT_PROBES: readonly NextProbe[] = [
-  ...(["target", "reference"] as const).flatMap((role) => (["dns", "ping", "tls", "http"] as const).map((probe) => nextProbe(role, probe))),
+  ...(["target", "reference"] as const).flatMap((role) => (["dns", "ping", "tls", "http", "https"] as const).map((probe) => nextProbe(role, probe))),
   nextProbe("gateway", "ping"),
 ];
+
+/** This function tells if a probe sends a request with the scheme of the check. Each other probe fits each scheme. */
+function fitsScheme(probe: NextProbeKind, plan: CheckPlan): boolean {
+  if (probe === "http") return plan.scheme === "http";
+  if (probe === "https") return plan.scheme === "https";
+  return true;
+}
 
 /** The instruction to add a reference host. */
 export const ADD_REFERENCE = "Add a host that works for you with --reference <host>, for example a large web site.";
@@ -114,10 +131,11 @@ function absent(role: VisitRole, plan: CheckPlan): boolean {
 
 /**
  * This function tells if a probe can give its facts in a new check. A probe after a stage that failed cannot: for
- * example, no TLS handshake follows a TCP connect that the server refused.
+ * example, no TLS handshake follows a TCP connect that the server refused. A request with the other scheme cannot.
  */
 function ready(probe: NextProbe, plan: CheckPlan, addressed: ReadonlySet<VisitRole>, evidence: readonly Evidence[]): boolean {
   const primary = probe.role === "target";
+  if (!fitsScheme(probe.probe, plan)) return false;
   if (absent(probe.role, plan)) return probe.probe !== "tls" || plan.scheme === "https";
   switch (probe.probe) {
     case "dns":
@@ -127,11 +145,9 @@ function ready(probe: NextProbe, plan: CheckPlan, addressed: ReadonlySet<VisitRo
     case "tls":
       return addressed.has(probe.role) && openOrIs(evidence, primary, "tcp.connect", "connected");
     case "http":
-      return (
-        addressed.has(probe.role) &&
-        openOrIs(evidence, primary, "tcp.connect", "connected") &&
-        (plan.scheme === "http" || openOrIs(evidence, primary, "tls.handshake", "ok"))
-      );
+      return addressed.has(probe.role) && openOrIs(evidence, primary, "tcp.connect", "connected");
+    case "https":
+      return addressed.has(probe.role) && openOrIs(evidence, primary, "tcp.connect", "connected") && openOrIs(evidence, primary, "tls.handshake", "ok");
   }
 }
 
@@ -152,6 +168,7 @@ export function stepText(probe: NextProbe, observes: readonly Observable[], plan
       if (plan.scheme === "http") return "Run the check again with --scheme https.";
       break;
     case "http":
+    case "https":
       break;
   }
   const features = [...new Set(observes.map((item) => item.feature))].join(", ");

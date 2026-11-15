@@ -48,6 +48,12 @@ describe("the candidates of the next step", () => {
   it("have a unique id each", () => {
     expect(new Set(NEXT_PROBES.map((item) => item.id)).size).toBe(NEXT_PROBES.length);
   });
+
+  it("have one HTTPS request that observes the connect, the TLS handshake and the HTTP answer together", () => {
+    const features = featuresOf(probe("target.https").kinds, { gateway: false });
+    expect(new Set(features)).toEqual(new Set(["tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio", "http.status", "http.ttfb"]));
+    expect(probe("target.tls").cost).toBeLessThan(probe("target.https").cost);
+  });
 });
 
 describe("the next steps", () => {
@@ -79,6 +85,27 @@ describe("the next steps", () => {
     expectRanked(found);
     expect(found.map((step) => step.id)).not.toContain("target.tls");
     expect(found.map((step) => step.id)).not.toContain("target.http");
+    expect(found.map((step) => step.id)).not.toContain("target.https");
+  });
+
+  it("start the request of the scheme of the check: an HTTPS request for https, an HTTP request for http", () => {
+    const evidence = [primary("icmp.reply", "reply")];
+    const secure = steps({ target: "192.0.2.10", gateway: "192.0.2.1" }, evidence, ["target", "gateway"]);
+    expectRanked(secure);
+    expect(secure.map((step) => step.id)).toContain("target.https");
+    expect(secure.map((step) => step.id)).not.toContain("target.http");
+    const plain = steps({ target: "http://192.0.2.10/", gateway: "192.0.2.1" }, evidence, ["target", "gateway"]);
+    expectRanked(plain);
+    expect(plain.map((step) => step.id)).toContain("target.http");
+    expect(plain.map((step) => step.id)).not.toContain("target.https");
+  });
+
+  it("start no HTTPS request after a failed TLS handshake, and keep the HTTP features out of the TLS handshake", () => {
+    const evidence = [primary("tcp.connect", "connected"), primary("tls.handshake", "timeout"), primary("icmp.reply", "reply")];
+    const found = steps({ target: "192.0.2.10", gateway: "192.0.2.1" }, evidence, ["target", "gateway"]);
+    expectRanked(found);
+    expect(found.map((step) => step.id)).not.toContain("target.https");
+    for (const step of found.filter((each) => each.id === "target.tls")) expect(step.observes.map((item) => item.feature)).not.toContain("http.status");
   });
 
   it("give no step when the diagnosis has no cause", () => {
@@ -92,7 +119,7 @@ describe("the instruction of a next step", () => {
   const reply = [{ feature: "icmp.reply", primary: true }];
 
   it("tells how to add an absent host", () => {
-    expect(stepText(probe("reference.http"), [], plan({ target: "example.com" }))).toBe(ADD_REFERENCE);
+    expect(stepText(probe("reference.https"), [], plan({ target: "example.com" }))).toBe(ADD_REFERENCE);
     expect(stepText(probe("gateway.ping"), [], plan({ target: "example.com" }))).toBe(ADD_GATEWAY);
     expect(stepText(probe("gateway.ping"), [], plan({ target: "example.com", pingCount: 0 }))).toBe(`${ADD_GATEWAY} Run the check again with --ping-count ${LOSS_MIN_SENT}.`);
   });
@@ -117,8 +144,11 @@ describe("the instruction of a next step", () => {
       { feature: "http.status", primary: true },
       { feature: "http.ttfb", primary: true },
     ];
-    expect(stepText(probe("target.http"), http, plan({ target: "example.com:8443" }))).toBe(
-      "The check has no value of http.status, http.ttfb from the HTTP request of example.com:8443. Look at the problems of the visit, then run the check again.",
+    expect(stepText(probe("target.https"), http, plan({ target: "example.com:8443" }))).toBe(
+      "The check has no value of http.status, http.ttfb from the HTTPS request of example.com:8443. Look at the problems of the visit, then run the check again.",
+    );
+    expect(stepText(probe("target.http"), http, plan({ target: "http://example.com:8080/" }))).toBe(
+      "The check has no value of http.status, http.ttfb from the HTTP request of example.com:8080. Look at the problems of the visit, then run the check again.",
     );
     const dns = [{ feature: "dns.answer", primary: false }];
     expect(stepText(probe("reference.dns"), dns, plan({ target: "example.com", reference: ["example.org"] }))).toMatch(/from the DNS query of the reference hosts\./);
