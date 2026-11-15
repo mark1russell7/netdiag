@@ -14,6 +14,8 @@ export interface AgentPlan {
   /** The address of the DNS resolver of the lab. */
   readonly resolver: string;
   readonly resolverPort: number;
+  /** The address of the default gateway of the client. The visit reads the link to it, and pings it. */
+  readonly gateway?: string | undefined;
   /** The CIDR ranges of the scope: the addresses of the lab only. */
   readonly grants: readonly string[];
   readonly pingCount: number;
@@ -43,6 +45,7 @@ export function agentArgs(plan: AgentPlan): string[] {
     plan.resolver,
     "--resolver-port",
     String(plan.resolverPort),
+    ...(plan.gateway === undefined ? [] : ["--gateway", plan.gateway]),
     ...plan.grants.flatMap((cidr) => ["--grant", cidr]),
     "--ping",
     String(plan.pingCount),
@@ -79,6 +82,7 @@ export function parseAgentArgs(args: readonly string[]): AgentPlan {
       reference: { type: "string", multiple: true },
       resolver: { type: "string" },
       "resolver-port": { type: "string" },
+      gateway: { type: "string" },
       grant: { type: "string", multiple: true },
       ping: { type: "string" },
       mtr: { type: "string" },
@@ -95,6 +99,7 @@ export function parseAgentArgs(args: readonly string[]): AgentPlan {
     references: values.reference ?? [],
     resolver: required(values.resolver, "--resolver"),
     resolverPort: count(values["resolver-port"], "--resolver-port"),
+    ...(values.gateway === undefined ? {} : { gateway: required(values.gateway, "--gateway") }),
     grants,
     pingCount: count(values.ping, "--ping"),
     mtrCycles: count(values.mtr, "--mtr"),
@@ -111,6 +116,7 @@ export function visitInputOf(plan: AgentPlan): VisitInput {
     target: { host: plan.target, port: plan.port },
     references: plan.references.map((host) => ({ host, port: plan.port })),
     resolver: { address: plan.resolver, port: plan.resolverPort },
+    ...(plan.gateway === undefined ? {} : { gateway: plan.gateway }),
     grants,
   };
 }
@@ -122,7 +128,7 @@ export function stepLine(step: VisitStep, t: number): AgentLine {
     : { ev: "problem", t, role: step.role, host: step.host, problem: step.problem };
 }
 
-const ROLE = z.enum(["target", "reference", "gateway"]);
+const ROLE = z.enum(["target", "reference", "gateway", "local"]);
 
 const FACT_LINE = z.object({
   ev: z.literal("fact"),
@@ -145,12 +151,14 @@ const FAIL_LINE = z.object({ ev: z.literal("fail"), why: z.string() });
  * This function reads the lines of the agent into the visit of a case.
  *
  * - A fact of the role `target` is a fact of the target. Each other fact is a fact of a reference host.
+ * - The ICMP echo facts of `gateway` give the feature `gateway.reply`, not `icmp.reply`.
  * - A line `fail` gives no visit. A missing line `done` and a line that is not valid give a problem.
  * - `ended` is the reason that the wait for the last line stopped, when it did not get one.
+ * - `gateway` is the address of the gateway of the plan.
  *
  * The readers check each value of a fact against its kind.
  */
-export function visitOf(lines: readonly { readonly ev: string }[], ended?: string): Visit {
+export function visitOf(lines: readonly { readonly ev: string }[], ended?: string, gateway?: string): Visit {
   const facts: Fact[] = [];
   const primary = new Set<string>();
   const problems: string[] = [];
@@ -185,5 +193,5 @@ export function visitOf(lines: readonly { readonly ev: string }[], ended?: strin
     }
   }
   if (!done) problems.push(`The agent did not end: ${ended ?? "it wrote no line done."}`);
-  return { status: "visited", facts, read: { primary: (fact) => primary.has(fact.id) }, problems };
+  return { status: "visited", facts, read: { primary: (fact) => primary.has(fact.id), gateway }, problems };
 }

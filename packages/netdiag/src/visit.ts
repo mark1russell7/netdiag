@@ -1,6 +1,7 @@
 import type { Clock } from "@mark1russell7/algebra/clock";
 import { factsOf, type Fact } from "./fact.ts";
 import { DNS_ANSWER, type RecordType } from "./kinds.ts";
+import { LINK_SUBJECT, linkProbe, type InterfaceTable } from "./probes/link.ts";
 import { DNS_PROBE, httpProbe, type TlsProbeOptions } from "./probes/native.ts";
 import type { Probe } from "./probe.ts";
 import { createRunner, type ProbeOutcome } from "./run.ts";
@@ -32,8 +33,9 @@ export interface VisitResolver {
  * - `target`: the host that the user diagnoses.
  * - `reference`: a host that works, for a comparison.
  * - `gateway`: the default gateway of this computer.
+ * - `local`: this computer, for example the state of its link.
  */
-export type VisitRole = "target" | "reference" | "gateway";
+export type VisitRole = "target" | "reference" | "gateway" | "local";
 
 /** One step of a visit: a fact, or a problem of a probe that did not end. `host` is the host of the role. */
 export type VisitStep =
@@ -57,6 +59,8 @@ export interface VisitOptions {
   readonly clock: Clock;
   /** The host of the outside tools. Without a host, the visit starts no `ping` and no `mtr`. */
   readonly tools?: ToolHost | undefined;
+  /** The source of the interfaces of the link probe. The default is `os.networkInterfaces()`. A test gives a table. */
+  readonly interfaces?: (() => InterfaceTable) | undefined;
   /** The number of echo requests to each address. The default is `DEFAULT_PING_COUNT`. 0 starts no `ping`. */
   readonly pingCount?: number | undefined;
   /** The number of cycles of `mtr` to each address. The default 0 starts no `mtr`. */
@@ -99,6 +103,7 @@ function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutc
 /**
  * This function starts the probes of a visit, and gives each fact and each problem when it occurs.
  *
+ * - First, it reads the state of the link of this computer, to the gateway when the input has it. This read sends no packet.
  * - For each name, it asks the resolver for the A records and then the AAAA records.
  * - When a host grant puts a name in the scope, the addresses of its answers go into the scope.
  * - For each address, it starts `ping`, then `mtr`, then one HTTP request. A probe of an address out of the scope gives a problem.
@@ -118,6 +123,8 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
   const mtr = options.tools === undefined || mtrCycles === 0 ? undefined : mtrProbe(options.tools);
   const http = httpProbe(options.tls);
   const scheme = options.scheme ?? "https";
+  const link = linkProbe(options.interfaces);
+  yield* stepsOf("local", input.gateway ?? LINK_SUBJECT, "read of the link", await run(link, { gateway: input.gateway }));
   const hosts: readonly { readonly role: VisitRole; readonly host: VisitHost }[] = [
     { role: "target", host: input.target },
     ...(input.references ?? []).map((host) => ({ role: "reference" as const, host })),

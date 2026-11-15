@@ -85,6 +85,22 @@ export interface Sign {
   readonly value: string;
 }
 
+/**
+ * A group of signs. The evidence shows the group when it shows one sign of the group or more. A fault with two forms
+ * has a group: for example, a reset at the connect or a reset at the TLS handshake.
+ */
+export interface SignGroup {
+  readonly anyOf: readonly Sign[];
+}
+
+/** A sign of a case: one sign, or a group of signs. */
+export type CaseSign = Sign | SignGroup;
+
+/** This function gives the signs of a sign of a case: the sign, or each sign of the group. */
+export function signsOf(sign: CaseSign): readonly Sign[] {
+  return "anyOf" in sign ? sign.anyOf : [sign];
+}
+
 /** A case of the lab: a fault, its world and its signs. */
 export interface LabCase {
   readonly id: string;
@@ -94,7 +110,7 @@ export interface LabCase {
   readonly dns: DnsSpec;
   readonly target: HostSpec;
   readonly reference: HostSpec;
-  readonly signs: readonly Sign[];
+  readonly signs: readonly CaseSign[];
 }
 
 /** The host of the captive portal. Its certificate is self-signed, for the name of the portal. */

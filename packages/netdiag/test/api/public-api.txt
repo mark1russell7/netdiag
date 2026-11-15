@@ -77,9 +77,16 @@ type Hypothesis: build/index.chunk.d.ts#Hypothesis
 ICMP_ECHO: build/host.chunk.d.ts#ICMP_ECHO
 ICMP_REPLY_VALUES: build/index.d.ts#ICMP_REPLY_VALUES
 IcmpEcho: build/host.chunk.d.ts#IcmpEcho
+type InterfaceAddress: build/index.d.ts#InterfaceAddress
+type InterfaceTable: build/index.d.ts#InterfaceTable
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
 LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
+LINK_PROBE: build/index.d.ts#LINK_PROBE
+LINK_STATE: build/host.chunk.d.ts#LINK_STATE
+LINK_STATES: build/host.chunk.d.ts#LINK_STATES
+LINK_STATE_VALUES: build/index.d.ts#LINK_STATE_VALUES
+LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
 LOCAL_SUFFIXES: build/index.d.ts#LOCAL_SUFFIXES
 LOSS_MIN_SENT: build/index.d.ts#LOSS_MIN_SENT
 type LabBars: build/index.chunk.d.ts#LabBars
@@ -90,6 +97,11 @@ type LabScore: build/index.chunk.d.ts#LabScore
 type LabStatus: build/index.chunk.d.ts#LabStatus
 type LabVerdict: build/index.chunk.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
+type LinkInput: build/index.d.ts#LinkInput
+LinkInterface: build/host.chunk.d.ts#LinkInterface
+type LinkRaw: build/index.d.ts#LinkRaw
+LinkState: build/host.chunk.d.ts#LinkState
+LinkStateValue: build/host.chunk.d.ts#LinkStateValue
 MAX_JOINT_VALUES: build/index.chunk.d.ts#MAX_JOINT_VALUES
 MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
 NATIVE_KINDS: build/host.chunk.d.ts#NATIVE_KINDS
@@ -203,12 +215,15 @@ grantProblems: build/index.d.ts#grantProblems
 handshakeOutcome: build/index.d.ts#handshakeOutcome
 hostKind: build/host.chunk.d.ts#hostKind
 httpProbe: build/index.d.ts#httpProbe
+interfaceOf: build/index.d.ts#interfaceOf
 isFactOf: build/host.chunk.d.ts#isFactOf
 isLayer: build/layer.chunk.d.ts#isLayer
 isLocalName: build/index.d.ts#isLocalName
 labGate: build/index.chunk.d.ts#labGate
 labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
+linkProbe: build/index.d.ts#linkProbe
+linkStateOf: build/index.d.ts#linkStateOf
 namedGrant: build/index.d.ts#namedGrant
 observe: build/host.chunk.d.ts#observe
 parseCidr: build/address.d.ts#parseCidr
@@ -223,6 +238,7 @@ scoreLab: build/index.chunk.d.ts#scoreLab
 target: build/host.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
+upInterfaces: build/index.d.ts#upInterfaces
 visitTarget: build/index.d.ts#visitTarget
 widen: build/index.d.ts#widen
 
@@ -592,6 +608,29 @@ interface IcmpEcho {
   readonly from?: string | undefined;
   readonly detail?: string | undefined;
 }
+
+### build/host.chunk.d.ts#LINK_STATE
+declare const LINK_STATE: FactKind<LinkState>;
+
+### build/host.chunk.d.ts#LINK_STATES
+declare const LINK_STATES: readonly ["up", "down"];
+
+### build/host.chunk.d.ts#LinkInterface
+interface LinkInterface {
+  readonly name: string;
+  readonly addresses: readonly string[];
+}
+
+### build/host.chunk.d.ts#LinkState
+interface LinkState {
+  readonly state: LinkStateValue;
+  readonly interfaces: readonly LinkInterface[];
+  readonly gateway?: string | undefined;
+  readonly via?: string | undefined;
+}
+
+### build/host.chunk.d.ts#LinkStateValue
+type LinkStateValue = (typeof LINK_STATES)[number];
 
 ### build/host.chunk.d.ts#NATIVE_KINDS
 declare const NATIVE_KINDS: readonly FactKind<unknown>[];
@@ -1270,14 +1309,46 @@ interface HttpRaw {
 ### build/index.d.ts#ICMP_REPLY_VALUES
 export declare const ICMP_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>>;
 
+### build/index.d.ts#InterfaceAddress
+interface InterfaceAddress {
+  readonly address: string;
+  readonly cidr: string | null;
+  readonly internal: boolean;
+}
+
+### build/index.d.ts#InterfaceTable
+type InterfaceTable = Readonly<Record<string, readonly InterfaceAddress[] | undefined>>;
+
 ### build/index.d.ts#KEPT_FIELDS
 export declare const KEPT_FIELDS: readonly string[];
+
+### build/index.d.ts#LINK_PROBE
+export declare const LINK_PROBE: Probe<LinkInput, LinkRaw>;
+
+### build/index.d.ts#LINK_STATE_VALUES
+export declare const LINK_STATE_VALUES: Readonly<Record<LinkStateValue, string>>;
+
+### build/index.d.ts#LINK_SUBJECT
+export declare const LINK_SUBJECT = "localhost";
 
 ### build/index.d.ts#LOCAL_SUFFIXES
 export declare const LOCAL_SUFFIXES: readonly string[];
 
 ### build/index.d.ts#LOSS_MIN_SENT
 export declare const LOSS_MIN_SENT = 20;
+
+### build/index.d.ts#LinkInput
+interface LinkInput {
+  readonly gateway?: string | undefined;
+}
+
+### build/index.d.ts#LinkRaw
+interface LinkRaw {
+  readonly interfaces: readonly LinkInterface[];
+  readonly gateway?: string | undefined;
+  readonly start: number;
+  readonly end: number;
+}
 
 ### build/index.d.ts#MIN_CONNECT_MS
 export declare const MIN_CONNECT_MS = 1;
@@ -1468,6 +1539,7 @@ interface VisitInput {
 interface VisitOptions {
   readonly clock: Clock;
   readonly tools?: ToolHost | undefined;
+  readonly interfaces?: (() => InterfaceTable) | undefined;
   readonly pingCount?: number | undefined;
   readonly mtrCycles?: number | undefined;
   readonly scheme?: "http" | "https" | undefined;
@@ -1486,7 +1558,7 @@ interface VisitResolver {
 }
 
 ### build/index.d.ts#VisitRole
-type VisitRole = "target" | "reference" | "gateway";
+type VisitRole = "target" | "reference" | "gateway" | "local";
 
 ### build/index.d.ts#VisitStep
 type VisitStep = {
@@ -1534,8 +1606,17 @@ export declare function handshakeOutcome(thrown: unknown, expired: boolean): Han
 ### build/index.d.ts#httpProbe
 export declare function httpProbe(options?: TlsProbeOptions): Probe<HttpInput, HttpRaw>;
 
+### build/index.d.ts#interfaceOf
+export declare function interfaceOf(interfaces: readonly LinkInterface[], gateway: string): string | undefined;
+
 ### build/index.d.ts#isLocalName
 export declare function isLocalName(name: string): boolean;
+
+### build/index.d.ts#linkProbe
+export declare function linkProbe(read?: () => InterfaceTable): Probe<LinkInput, LinkRaw>;
+
+### build/index.d.ts#linkStateOf
+export declare function linkStateOf(interfaces: readonly LinkInterface[], gateway?: string): LinkState;
 
 ### build/index.d.ts#namedGrant
 export declare function namedGrant(t: Target, note?: string): Grant;
@@ -1556,6 +1637,9 @@ export declare function tcpProbe(options?: ConnectOptions): Probe<TcpInput, TcpR
 
 ### build/index.d.ts#tlsProbe
 export declare function tlsProbe(options?: TlsProbeOptions): Probe<TlsInput, TlsRaw>;
+
+### build/index.d.ts#upInterfaces
+export declare function upInterfaces(table: InterfaceTable): LinkInterface[];
 
 ### build/index.d.ts#visitTarget
 export declare function visitTarget(input: VisitInput, options: VisitOptions): AsyncGenerator<VisitStep, void, undefined>;

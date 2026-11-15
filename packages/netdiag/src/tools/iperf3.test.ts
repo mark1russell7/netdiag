@@ -1,4 +1,5 @@
 import { fakeClock } from "@mark1russell7/algebra/clock";
+import { uniformDouble } from "@mark1russell7/rigor-testkit/arbitrary";
 import { fakeToolHost, type FakeRule } from "@netdiag/fixtures";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
@@ -239,11 +240,11 @@ interface SumModel {
   readonly jitterMs?: number | undefined;
 }
 
-const rate = fc.double({ min: 0, max: 1e11, noNaN: true });
+const rate = uniformDouble({ min: 0, max: 1e11 });
 const baseSum = fc.record({ startUs: fc.nat(60_000_000), lengthUs: fc.nat(2_000_000), bytes: fc.nat(), bitsPerSecond: rate });
 const tcpSum: fc.Arbitrary<SumModel> = fc.record({ base: baseSum, retransmits: fc.option(fc.nat(10_000), { nil: undefined }) }).map(({ base, retransmits }) => ({ ...base, retransmits }));
 const udpSum: fc.Arbitrary<SumModel> = fc
-  .record({ base: baseSum, datagrams: fc.nat(1_000_000), lost: fc.nat(1_000_000), jitterMs: fc.double({ min: 0, max: 1000, noNaN: true }) })
+  .record({ base: baseSum, datagrams: fc.nat(1_000_000), lost: fc.nat(1_000_000), jitterMs: uniformDouble({ min: 0, max: 1000 }) })
   .map(({ base, datagrams, lost, jitterMs }) => ({ ...base, datagrams, lostDatagrams: Math.min(lost, datagrams), jitterMs }));
 
 function sumJson(model: SumModel): Sum {
