@@ -212,6 +212,62 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  packages/fixtures:
+    dependencies:
+      selfsigned:
+        specifier: ^5.5.0
+        version: 5.5.0
+    devDependencies:
+      '@mark1russell7/cue':
+        specifier: ^2.0.0
+        version: 2.1.4
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.6
+      '@vitest/coverage-v8':
+        specifier: ^5.0.3
+        version: 5.1.0(vitest@5.1.0)
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^5.0.3
+        version: 5.1.0(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/lab:
+    dependencies:
+      '@mark1russell7/algebra':
+        specifier: ^0.8.8
+        version: 0.8.8
+      '@mark1russell7/netdiag':
+        specifier: workspace:*
+        version: link:../netdiag
+      '@mark1russell7/rigor-chaos':
+        specifier: ^0.2.2
+        version: 0.2.2
+      '@mark1russell7/rigor-proxy':
+        specifier: ^0.2.1
+        version: 0.2.1
+      '@netdiag/fixtures':
+        specifier: workspace:*
+        version: link:../fixtures
+    devDependencies:
+      '@mark1russell7/cue':
+        specifier: ^2.0.0
+        version: 2.1.4
+      '@types/node':
+        specifier: ^26.6.5
+        version: 26.6.6
+      '@vitest/coverage-v8':
+        specifier: ^5.0.3
+        version: 5.1.0(vitest@5.1.0)
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^5.0.3
+        version: 5.1.0(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+
   packages/netdiag:
     dependencies:
       '@mark1russell7/algebra':
@@ -233,6 +289,9 @@ importers:
       '@mark1russell7/rigor-proxy':
         specifier: ^0.2.1
         version: 0.2.1
+      '@netdiag/fixtures':
+        specifier: workspace:*
+        version: link:../fixtures
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.6
@@ -242,9 +301,6 @@ importers:
       fast-check:
         specifier: ^4.10.2
         version: 4.10.2
-      selfsigned:
-        specifier: ^5.5.0
-        version: 5.5.0
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(publint@0.3.25)(tsx@4.23.15)(typescript@7.0.2)
