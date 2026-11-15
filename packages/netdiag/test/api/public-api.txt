@@ -254,9 +254,9 @@ DEFAULT_PING_WAIT_MS: build/tools.d.ts#DEFAULT_PING_WAIT_MS
 MAX_PING_COUNT: build/tools.d.ts#MAX_PING_COUNT
 PING6_LAST_WAIT_MS: build/tools.d.ts#PING6_LAST_WAIT_MS
 PING_INTERVAL_MS: build/tools.d.ts#PING_INTERVAL_MS
-PING_MARGIN_MS: build/tools.d.ts#PING_MARGIN_MS
 type PingInput: build/tools.d.ts#PingInput
 TOOL_LICENSES: build/tools.d.ts#TOOL_LICENSES
+TOOL_MARGIN_MS: build/tools.d.ts#TOOL_MARGIN_MS
 type ToolCommand: build/tools.d.ts#ToolCommand
 type ToolHost: build/tools.d.ts#ToolHost
 type ToolLicense: build/tools.d.ts#ToolLicense
@@ -1176,9 +1176,6 @@ export declare const PING6_LAST_WAIT_MS = 1e4;
 ### build/tools.d.ts#PING_INTERVAL_MS
 export declare const PING_INTERVAL_MS = 200;
 
-### build/tools.d.ts#PING_MARGIN_MS
-export declare const PING_MARGIN_MS = 3e3;
-
 ### build/tools.d.ts#PingInput
 interface PingInput {
   readonly address: string;
@@ -1188,6 +1185,9 @@ interface PingInput {
 
 ### build/tools.d.ts#TOOL_LICENSES
 export declare const TOOL_LICENSES: readonly ToolLicense[];
+
+### build/tools.d.ts#TOOL_MARGIN_MS
+export declare const TOOL_MARGIN_MS = 3e3;
 
 ### build/tools.d.ts#ToolCommand
 interface ToolCommand {
