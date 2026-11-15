@@ -128,8 +128,8 @@ export function subjectText(role: string, host: string): string {
 const UNDER = " ".repeat(8);
 
 /**
- * This function gives the lines of the text report of a check: the most probable causes with their probabilities, the
- * next step with its gain, the problems of the visit and the count of the evidence.
+ * This function gives the lines of the text report of a check. The lines show the most probable causes with their
+ * probabilities and the next step with its gain. They also show the problems of the visit and the count of the evidence.
  */
 export function formatReport(report: CheckReport): string[] {
   const lines = [`netdiag check ${report.target} (${report.scheme}, path ${report.path})`, "", "The probable causes"];

@@ -49,11 +49,11 @@ The exit code is 0 after a check. It is 1 for an option that is not valid. A fau
 
 netdiag sends packets only to the hosts that you name or own. The check grants only these hosts:
 
-- the target and each reference host;
-- the DNS resolver, from `--resolver` or from the computer;
-- the gateway, when you give `--gateway`;
-- each range of `--grant`;
-- each address that the resolver gives for a granted name.
+- the target and each reference host
+- the DNS resolver, from `--resolver` or from the computer
+- the gateway, when you give `--gateway`
+- each range of `--grant`
+- each address that the resolver gives for a granted name
 
 The check sends no packet to another host. A grant with a problem stops the check before the first probe. Thus a typing error cannot make the scope wider.
 

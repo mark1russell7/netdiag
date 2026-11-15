@@ -103,10 +103,10 @@ function whole(value: number, low: number, high: number): boolean {
  *
  * The grants of the plan are the scope rule of the command. The plan grants only these hosts:
  *
- * - the target, and each reference host, with the basis `named`;
- * - the DNS resolver, with the basis `named` from `--resolver`, or `configured` from the computer;
- * - the gateway, when the user gives it, with the basis `named`;
- * - each range of `--grant`, with the basis `owned`.
+ * - the target, and each reference host, with the basis `named`
+ * - the DNS resolver, with the basis `named` from `--resolver`, or `configured` from the computer
+ * - the gateway, when the user gives it, with the basis `named`
+ * - each range of `--grant`, with the basis `owned`
  *
  * The visit also puts in the scope the addresses that the resolver gives for a named host.
  */
