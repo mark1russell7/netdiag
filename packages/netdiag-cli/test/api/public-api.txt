@@ -136,7 +136,7 @@ interface NextProbe {
 }
 
 ### build/index.d.ts#NextProbeKind
-type NextProbeKind = "dns" | "ping" | "tls" | "http";
+type NextProbeKind = "dns" | "ping" | "tls" | "http" | "https";
 
 ### build/index.d.ts#NextStep
 interface NextStep {

@@ -62,6 +62,7 @@ describe("the report of a check", () => {
   it("gives no probe of the target after the refused connect", () => {
     expect(report.choices.map((step) => step.id)).not.toContain("target.tls");
     expect(report.choices.map((step) => step.id)).not.toContain("target.http");
+    expect(report.choices.map((step) => step.id)).not.toContain("target.https");
   });
 
   it("gives the same report for the same steps", () => {
