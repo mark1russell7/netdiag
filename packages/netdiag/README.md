@@ -108,11 +108,15 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 | Probe | Id | Tool | Facts |
 | --- | --- | --- | --- |
 | `pingProbe(host)` | `icmp.ping` | `ping` | `icmp.echo`: the echo replies, their round-trip times, and the messages of an unreachable address. |
+| `tracerouteProbe(host)` | `path.traceroute` | `traceroute`, `tracert` on Windows | `path.trace`: the routers that answered each TTL, their round-trip times, and the messages of an unreachable address. |
+| `mtrProbe(host)` | `path.mtr` | `mtr` (Linux and macOS) | `path.report`: the loss and the round-trip times of each hop over many cycles. |
 
 - A host starts each tool. Its `run(command, args, options)` starts a program with a list of arguments and no shell.
 - The function `runCommand` of `@procedures/shell` is a host with no change. A test gives a fake host.
 - An adapter reads only English output. On Linux and macOS, it sets `LC_ALL=C`. On Windows, the language of the system sets the output.
 - On Linux, the adapter reads the `ping` of iputils. On macOS, it uses `ping6` for an IPv6 address.
+- On Linux, the trace adapter reads the Modern traceroute (the package `traceroute`). On macOS, it uses `traceroute6` for an IPv6 address.
+- The `mtr` adapter reads the JSON report of `mtr --json` (version 0.92 or later). The default of 20 cycles takes approximately 20 seconds.
 - Output that netdiag cannot read gives the outcome `error` with the reason. It does not give a reply that did not occur.
 - The table `TOOL_LICENSES` holds the license of each tool as data. A tool with a restrictive license has no adapter.
 
@@ -173,10 +177,11 @@ const result = diagnose(STANDARD_CATALOG, [
 | `http.status`, `http.ttfb` | The class of the status, and the time to the first byte divided by the time of the TCP connect. |
 | `gateway.reply` | The echo requests to the address of the option `gateway`. An unreachable gateway gives `none`. |
 | `icmp.reply` | The echo requests to each other address: `reply`, `none` or `unreachable`. |
-| `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. |
+| `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. |
 
 - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
 - A fact that gives no evidence goes in `skipped`, with the reason. For example, the catalog has no value for the TLS outcome `not-tls` yet.
+- A fact `path.trace` gives no evidence yet. The catalog has no feature for the hops of a path. The lab runs (ND-7) fit one.
 - The option `primary` tells which facts are about the target. The other facts are about a reference host.
 - The option `gateway` gives the IP address of the default gateway.
 

@@ -175,7 +175,7 @@ function addressOf(token: string): string | undefined {
   return isIP(text) === 0 ? undefined : text;
 }
 
-/** The failed system calls of traceroute on Linux and macOS, for example `socket: Operation not permitted`. */
+/** The messages of traceroute on Linux and macOS when a socket operation fails, for example `socket: Operation not permitted`. */
 const SEND_FAILURE = /^(?:socket|bind|connect|sendmsg|sendto|send): \S/;
 
 function readUnix(stdout: string, stderr: string): TraceLines {

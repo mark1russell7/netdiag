@@ -413,7 +413,7 @@ export interface ReportHop {
 /** The report of the tool `mtr` for the path to one address. */
 export interface PathReport {
   readonly address: string;
-  /** The outcome. A report of `mtr` has no messages of an unreachable address, so it never has the outcome `unreachable`. */
+  /** The outcome. A report of `mtr` has no messages of an unreachable address, so it does not have the outcome `unreachable`. */
   readonly outcome: TraceOutcome;
   /** The number of cycles of probes. */
   readonly cycles: number;
