@@ -30,7 +30,9 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./address": "./src/address/index.ts",
     "./diagnosis": "./src/diagnosis/index.ts",
+    "./tools": "./src/tools/index.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -50,9 +52,17 @@
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
       },
+      "./address": {
+        "types": "./build/address.d.ts",
+        "default": "./build/address.js"
+      },
       "./diagnosis": {
         "types": "./build/diagnosis.d.ts",
         "default": "./build/diagnosis.js"
+      },
+      "./tools": {
+        "types": "./build/tools.d.ts",
+        "default": "./build/tools.js"
       },
       "./package.json": "./package.json"
     }
@@ -72,10 +82,10 @@
     "@mark1russell7/cue": "^2.0.0",
     "@mark1russell7/rigor-chaos": "^0.2.2",
     "@mark1russell7/rigor-proxy": "^0.2.1",
+    "@netdiag/fixtures": "workspace:*",
     "@types/node": "^26.6.5",
     "@vitest/coverage-v8": "^5.0.3",
     "fast-check": "^4.10.2",
-    "selfsigned": "^5.5.0",
     "tsdown": "^0.23.7",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"
