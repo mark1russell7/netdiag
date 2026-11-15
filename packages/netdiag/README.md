@@ -2,7 +2,7 @@
 
 This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1 and the model of ND-4 of the [roadmap](../../docs/ROADMAP.md).** The native probes (ND-2) come next. Then the readers change their facts into evidence for the model.
+**State: ND-1, ND-2 and the model of ND-4 of the [roadmap](../../docs/ROADMAP.md).** The readers that change facts into evidence for the model come next.
 
 ## Facts
 
@@ -42,6 +42,36 @@ An active probe sends packets only to a peer that the user owns or names. The ru
 | `resolved` | A DNS answer for a granted name gave this address. |
 
 The scope also limits the number of ports of each host. The default limit is 8. Thus netdiag does no port scan.
+
+## Native probes
+
+The native probes use only the `node:` modules. They need no outside tool.
+
+| Probe | Id | Facts |
+| --- | --- | --- |
+| `DNS_PROBE` | `dns.query` | `dns.answer`: the outcome, the addresses and the lowest TTL of one query for `A` or `AAAA` records. |
+| `tcpProbe()` | `tcp.connect` | `tcp.connect`: the outcome and the time of one connect. |
+| `tlsProbe()` | `tls.handshake` | `tcp.connect` and `tls.handshake`: the time of the handshake, the version, the cipher, ALPN and the certificate. |
+| `httpProbe()` | `http.request` | `tcp.connect`, `tls.handshake` for `https`, and `http.response`: the status, some fields of the head and the time to the first byte. |
+
+- A probe connects only to an IP address. The DNS probe gives the addresses of a name first. Thus the runner examines each address against the scope.
+- The peer of the DNS probe is the resolver, not the name.
+- A time limit or a stop of the signal closes the socket. The probe then gives the outcome `timeout`, or the runner gives `aborted`.
+- The TLS probe does not refuse a certificate that is not valid. It records the problem, for example `expired`, `name` or `untrusted`.
+- The trust tells the root of the chain. `public` is a root of Node.js. `private` is a different root, for example the root of a proxy that examines TLS.
+- The HTTP probe follows no redirect. It reads the body up to 64 KiB.
+
+```ts
+import { realClock } from "@mark1russell7/algebra/clock";
+import { TCP_PROBE, createRunner, scopeOf } from "@mark1russell7/netdiag";
+
+const scope = scopeOf([{ kind: "range", cidr: "192.168.1.0/24", basis: "owned" }]);
+if (scope.tag === "err") throw new Error(scope.error.join(" "));
+
+const runner = createRunner({ scope: scope.value, clock: realClock });
+const outcome = await runner.run(TCP_PROBE, { address: "192.168.1.1", port: 443 });
+// The fact tcp.connect has the outcome connected, refused, timeout, unreachable, reset or error.
+```
 
 ## Diagnosis
 
