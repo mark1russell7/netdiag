@@ -1,7 +1,84 @@
 # Roadmap
 
-This file is the plan of netdiag. The Status page of the site reads it, and the tracker of the project mirrors it.
+This file is the plan of netdiag. The Status page of the site reads it.
 
-| ID | Item | Status | Summary |
-| --- | --- | --- | --- |
-| R1 | The first package | open | Make the first package with `pnpm package add`, and replace the first site with a demo. |
+netdiag finds the cause of a network problem at each layer of the stack, and gives the next step. The layers are the link, Wi-Fi, IP, the routes, DNS, TCP, TLS, HTTP and the path through the providers.
+
+## The design
+
+1. **Probes are adapters.** Each probe tells if it is available, runs, and parses its output into typed facts. A fact has a layer, a time, a source and a value.
+2. **The core needs no outside tool.** It does DNS lookups, TCP connects, the timing of the TLS handshake and the timing of each HTTP phase in TypeScript.
+3. **Outside tools are optional adapters.** Examples are `ping`, `traceroute`, `mtr`, `tshark` and `iperf3`. Each command starts with an argument list and no shell, through `@procedures/shell`.
+4. **The diagnosis is a calculation.** A model of the parts and a catalog of faults give the probability of each cause from the facts.
+5. **The next probe gives the most information.** The tool picks the probe with the largest expected information gain over the top causes.
+6. **A lab gives the ground truth.** The labs inject each fault class on purpose, and netdiag must name it. A gate in CI holds the hit rate of each fault class.
+7. **The scope rule.** Active probes run only against targets that the user owns or names. The core does no vulnerability scan.
+
+### The parts and the faults
+
+The model has these parts: the network interface, the Wi-Fi link, the gateway, the DNS resolver, the hops of each provider and the remote service. Each fault of the catalog is data. It tells what the fault predicts at each layer.
+
+The rules of practice are the first likelihoods of the model. They are not fixed thresholds. The results of the labs then correct them.
+
+| Facts | Most probable cause |
+| --- | --- |
+| The DNS lookup fails. | The chain stops at DNS. TCP, TLS and HTTP cannot start. |
+| `ping` fails, and a TCP connect succeeds. | A filter blocks ICMP. The host is up. |
+| The TCP connect gets "connection refused". | No program listens on the port. |
+| The TCP connect times out. | A filter drops the packets. |
+| The TLS handshake is slow, and the TCP connect is fast. | A proxy examines the TLS traffic. |
+| The time to the first byte is slow, and the handshakes are fast. | The server is slow. |
+
+### The metrics
+
+- Jitter: the standard deviation of the round-trip times, and the estimator of RFC 3550, `J += (abs(D) - J) / 16`. `D` is the change of the transit time between two packets.
+- Delay variation: the IP packet delay variation of RFC 3393.
+- Loss: the one-way packet loss of RFC 7680.
+- Retransmission timeout: the RTO of RFC 6298, with the smoothed RTT of Jacobson. By the rule of Karn, a retransmitted packet gives no sample.
+- Bandwidth: packet pairs. The packet size, divided by the gap between the two packets at the receiver.
+- MTU: the largest payload that passes with "do not fragment" set, plus 28 bytes for IPv4. The 28 bytes are the IP header (20) and the ICMP header (8).
+
+The statistics come from `@mark1russell7/rigor-statistics`. The timers and the backoff come from `@mark1russell7/algebra`. The loops come from `@mark1russell7/service`.
+
+### The ground truth
+
+The network labs of [mark1russell7/systems](https://github.com/mark1russell7/systems) inject each fault class on purpose:
+
+- `@mark1russell7/harness`: Docker topologies, Toxiproxy, and `iptables` and `tc netem` in a sidecar with `NET_ADMIN`.
+- `@mark1russell7/kind`: kind clusters with faults.
+- Later: containerlab, virtual machines and k3s.
+
+The score is the hit rate of each fault class, from a confusion matrix. A gate in CI holds each rate. The lab runs need Docker, so only CI starts them.
+
+### The licenses of the outside tools
+
+The table of licenses is data in the adapter package (ND-3). The project bundles no tool with a restrictive license.
+
+| Tool | License | In netdiag |
+| --- | --- | --- |
+| `ping` | The license of the operating system | Optional adapter |
+| `traceroute` | GPL on Linux | Optional adapter |
+| `mtr` | GPL | Optional adapter |
+| `tshark` | GPL | Optional adapter |
+| `iperf3` | BSD | Optional adapter |
+| `nmap` | NPSL | Not bundled |
+| `masscan` | AGPL | Not bundled |
+| Speedtest CLI | Ookla EULA | Not bundled |
+
+## Items
+
+The first path is ND-1, then ND-2 and ND-4, then ND-7. Priority P0 comes first. The size is S, M or L.
+
+| ID | Item | Status | Priority | Size | Area | Needs | Summary |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| ND-1 | The fact and probe model | next | P0 | M | core | - | The types of a fact: the layer, the time, the source and the value. The contract of a probe: available, run and parse. Each probe tells if it is active. The core starts an active probe only against a target that the user owns or names. |
+| ND-2 | Native probes: DNS, TCP, TLS and HTTP | next | P0 | L | probes | ND-1 | DNS lookups, TCP connects, the time of the TLS handshake and the time of each HTTP phase, in TypeScript on the `node:` modules. They need no outside tool. Tests run each probe against local servers. |
+| ND-3 | Adapters of outside tools, with the license table as data | next | P1 | M | probes | ND-1 | Optional adapters for `ping`, `traceroute`, `mtr`, `tshark` and `iperf3`. Each command starts with an argument list and no shell, through `@procedures/shell`. The license of each tool is a row of data. |
+| ND-4 | The fault catalog and the probability model | next | P0 | L | diagnosis | ND-1 | A model of the parts and a catalog of faults as data. Each fault tells what it predicts at each layer. The model gives the probability of each cause from the facts. The rules of practice are the first likelihoods. |
+| ND-5 | The choice of the next probe | next | P1 | M | diagnosis | ND-4 | The tool picks the probe with the largest expected information gain over the top causes. It gives that probe as the next step. |
+| ND-6 | The metric estimators | next | P1 | M | metrics | ND-1 | Jitter, delay variation, loss, the retransmission timeout, packet-pair bandwidth and the MTU, as "The metrics" tells. The statistics come from `@mark1russell7/rigor-statistics`. |
+| ND-7 | Lab ground truth and the accuracy gate | next | P0 | L | ground truth | ND-2, ND-4 | The labs of `mark1russell7/systems` inject each fault class, and netdiag must name it. A confusion matrix gives the hit rate of each class, and a gate in CI holds each rate. The runs need Docker, so only CI starts them. |
+| ND-8 | The command-line tool | next | P1 | M | cli | ND-2, ND-5 | One command takes a target and gives the probable causes, their probabilities and the next step. The arguments use `@procedures/cli-run` until the shared parser is ready. |
+| ND-9 | Views on the site | later | P2 | M | site | ND-8 | A flow of the probes, one ring for each layer and a timeline of the facts. The views read the records of the command-line tool. |
+| ND-10 | Wi-Fi facts for each operating system | later | P2 | M | probes | ND-1, ND-3 | The signal, the noise, the channel, the rate and the roams of the Wi-Fi link, as typed facts. Each operating system has its own adapter. |
+| ND-11 | The path through the providers | later | P2 | M | probes | ND-3 | The AS number of each hop of a route. Thus a fault gets the name of the provider network where it starts. The lookups in the public registries go through `polite-crawler`. |
