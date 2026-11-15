@@ -15,6 +15,7 @@ CAPTURE_OUTCOMES: build/kinds.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/kinds.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/kinds.chunk.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/kinds.chunk.d.ts#CONNECT_OUTCOMES
+type Candidate: build/index.chunk.d.ts#Candidate
 CaptureOutcome: build/kinds.chunk.d.ts#CaptureOutcome
 CaptureProtocol: build/kinds.chunk.d.ts#CaptureProtocol
 CapturedPacket: build/kinds.chunk.d.ts#CapturedPacket
@@ -46,6 +47,7 @@ ECHO_OUTCOMES: build/kinds.chunk.d.ts#ECHO_OUTCOMES
 EchoOutcome: build/kinds.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk.d.ts#Evidence
 type Expectation: build/index.chunk.d.ts#Expectation
+FEATURE_SOURCES: build/index.d.ts#FEATURE_SOURCES
 FLOOR: build/index.chunk.d.ts#FLOOR
 type Fact: build/kinds.chunk.d.ts#Fact
 type FactKind: build/kinds.chunk.d.ts#FactKind
@@ -53,6 +55,8 @@ type FactSource: build/kinds.chunk.d.ts#FactSource
 type FactTime: build/kinds.chunk.d.ts#FactTime
 type Fault: build/index.chunk.d.ts#Fault
 type Feature: build/index.chunk.d.ts#Feature
+FeaturesOptions: build/index.d.ts#FeaturesOptions
+GAIN_RESOLUTION: build/index.chunk.d.ts#GAIN_RESOLUTION
 GATEWAY_REPLY_VALUES: build/index.d.ts#GATEWAY_REPLY_VALUES
 type Grant: build/index.d.ts#Grant
 type GrantBasis: build/index.d.ts#GrantBasis
@@ -86,9 +90,11 @@ type LabScore: build/index.chunk.d.ts#LabScore
 type LabStatus: build/index.chunk.d.ts#LabStatus
 type LabVerdict: build/index.chunk.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
+MAX_JOINT_VALUES: build/index.chunk.d.ts#MAX_JOINT_VALUES
 MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
 NATIVE_KINDS: build/kinds.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk.d.ts#NONE
+type Observable: build/index.chunk.d.ts#Observable
 type Observation: build/kinds.chunk.d.ts#Observation
 PACKET_PROTOCOLS: build/kinds.chunk.d.ts#PACKET_PROTOCOLS
 PARTS: build/index.chunk.d.ts#PARTS
@@ -106,11 +112,13 @@ PathTrace: build/kinds.chunk.d.ts#PathTrace
 type PortLedger: build/index.d.ts#PortLedger
 type Prediction: build/index.chunk.d.ts#Prediction
 type Probe: build/kinds.chunk.d.ts#Probe
+type ProbeChoice: build/index.chunk.d.ts#ProbeChoice
 type ProbeContext: build/kinds.chunk.d.ts#ProbeContext
 type ProbeMode: build/kinds.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/index.d.ts#ProbeOutcome
 RECORD_TYPES: build/kinds.chunk.d.ts#RECORD_TYPES
 type RangeGrant: build/index.d.ts#RangeGrant
+type RankOptions: build/index.chunk.d.ts#RankOptions
 type Reach: build/index.chunk.d.ts#Reach
 ReadOptions: build/index.d.ts#ReadOptions
 Reading: build/index.d.ts#Reading
@@ -180,6 +188,7 @@ dnsOutcome: build/index.d.ts#dnsOutcome
 expand: build/index.chunk.d.ts#expand
 explain: build/index.chunk.d.ts#explain
 factsOf: build/kinds.chunk.d.ts#factsOf
+featuresOf: build/index.d.ts#featuresOf
 formatCidr: build/address.d.ts#formatCidr
 formatTarget: build/kinds.chunk.d.ts#formatTarget
 grantProblems: build/index.d.ts#grantProblems
@@ -197,6 +206,7 @@ observe: build/kinds.chunk.d.ts#observe
 parseCidr: build/address.d.ts#parseCidr
 parseTarget: build/kinds.chunk.d.ts#parseTarget
 predictive: build/index.chunk.d.ts#predictive
+rankProbes: build/index.chunk.d.ts#rankProbes
 readEvidence: build/index.d.ts#readEvidence
 resolvedGrant: build/index.d.ts#resolvedGrant
 sameTarget: build/kinds.chunk.d.ts#sameTarget
@@ -225,6 +235,7 @@ parseCidr: build/address.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
 
+type Candidate: build/index.chunk.d.ts#Candidate
 type Catalog: build/index.chunk.d.ts#Catalog
 type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
 type Cause: build/index.chunk.d.ts#Cause
@@ -236,6 +247,7 @@ type Expectation: build/index.chunk.d.ts#Expectation
 FLOOR: build/index.chunk.d.ts#FLOOR
 type Fault: build/index.chunk.d.ts#Fault
 type Feature: build/index.chunk.d.ts#Feature
+GAIN_RESOLUTION: build/index.chunk.d.ts#GAIN_RESOLUTION
 type Hypothesis: build/index.chunk.d.ts#Hypothesis
 LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
@@ -247,10 +259,14 @@ type LabScore: build/index.chunk.d.ts#LabScore
 type LabStatus: build/index.chunk.d.ts#LabStatus
 type LabVerdict: build/index.chunk.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
+MAX_JOINT_VALUES: build/index.chunk.d.ts#MAX_JOINT_VALUES
 NONE: build/index.chunk.d.ts#NONE
+type Observable: build/index.chunk.d.ts#Observable
 PARTS: build/index.chunk.d.ts#PARTS
 type Part: build/index.chunk.d.ts#Part
 type Prediction: build/index.chunk.d.ts#Prediction
+type ProbeChoice: build/index.chunk.d.ts#ProbeChoice
+type RankOptions: build/index.chunk.d.ts#RankOptions
 type Reach: build/index.chunk.d.ts#Reach
 STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk.d.ts#STANDARD_CATALOG_SPEC
@@ -268,6 +284,7 @@ labGate: build/index.chunk.d.ts#labGate
 labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
 predictive: build/index.chunk.d.ts#predictive
+rankProbes: build/index.chunk.d.ts#rankProbes
 scoreLab: build/index.chunk.d.ts#scoreLab
 
 ## ./tools (build/tools.d.ts): names
@@ -389,6 +406,13 @@ export declare function formatCidr(cidr: Cidr): string;
 ### build/address.d.ts#parseCidr
 export declare function parseCidr(text: string): Result<Cidr, string>;
 
+### build/index.chunk.d.ts#Candidate
+interface Candidate {
+  readonly id: string;
+  readonly observes: readonly Observable[];
+  readonly cost?: number | undefined;
+}
+
 ### build/index.chunk.d.ts#Catalog
 interface Catalog {
   readonly version: string;
@@ -470,6 +494,9 @@ interface Feature {
   readonly healthy: Distribution;
 }
 
+### build/index.chunk.d.ts#GAIN_RESOLUTION
+declare const GAIN_RESOLUTION = 1e-9;
+
 ### build/index.chunk.d.ts#Hypothesis
 interface Hypothesis {
   readonly id: string;
@@ -533,8 +560,17 @@ interface LabVerdict {
   readonly support: number;
 }
 
+### build/index.chunk.d.ts#MAX_JOINT_VALUES
+declare const MAX_JOINT_VALUES = 4096;
+
 ### build/index.chunk.d.ts#NONE
 declare const NONE = "none";
+
+### build/index.chunk.d.ts#Observable
+interface Observable {
+  readonly feature: string;
+  readonly primary: boolean;
+}
 
 ### build/index.chunk.d.ts#PARTS
 declare const PARTS: readonly ["interface", "wifi", "gateway", "resolver", "path", "service"];
@@ -544,6 +580,18 @@ type Part = (typeof PARTS)[number];
 
 ### build/index.chunk.d.ts#Prediction
 type Prediction = Distribution | Expectation;
+
+### build/index.chunk.d.ts#ProbeChoice
+interface ProbeChoice {
+  readonly candidate: Candidate;
+  readonly gain: number;
+  readonly counted: readonly Observable[];
+}
+
+### build/index.chunk.d.ts#RankOptions
+interface RankOptions {
+  readonly top?: number | undefined;
+}
 
 ### build/index.chunk.d.ts#Reach
 type Reach = "shared" | "target";
@@ -589,6 +637,9 @@ declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, di
 
 ### build/index.chunk.d.ts#predictive
 declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;
+
+### build/index.chunk.d.ts#rankProbes
+declare function rankProbes(catalog: Catalog, diagnosis: Diagnosis, candidates: readonly Candidate[], options?: RankOptions): ProbeChoice[];
 
 ### build/index.chunk.d.ts#scoreLab
 declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
@@ -648,6 +699,14 @@ interface DnsRaw {
   readonly addresses: readonly string[];
   readonly ttl?: number | undefined;
   readonly code?: string | undefined;
+}
+
+### build/index.d.ts#FEATURE_SOURCES
+export declare const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[])[]>>;
+
+### build/index.d.ts#FeaturesOptions
+export interface FeaturesOptions {
+  readonly gateway?: boolean | undefined;
 }
 
 ### build/index.d.ts#GATEWAY_REPLY_VALUES
@@ -907,6 +966,9 @@ export declare function decideScope(scope: Scope, peer: Target, ledger?: PortLed
 
 ### build/index.d.ts#dnsOutcome
 export declare function dnsOutcome(code: string | undefined): DnsOutcome;
+
+### build/index.d.ts#featuresOf
+export declare function featuresOf(kinds: readonly string[], options?: FeaturesOptions): string[];
 
 ### build/index.d.ts#grantProblems
 export declare function grantProblems(grant: Grant): string[];

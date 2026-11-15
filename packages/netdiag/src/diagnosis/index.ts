@@ -31,6 +31,7 @@ export {
   type Strength,
 } from "./model.ts";
 export { STANDARD_CATALOG, STANDARD_CATALOG_SPEC, STANDARD_FAULTS, STANDARD_FEATURES } from "./catalog.ts";
+export { GAIN_RESOLUTION, MAX_JOINT_VALUES, rankProbes, type Candidate, type Observable, type ProbeChoice, type RankOptions } from "./next.ts";
 export {
   LAB_RECORD_FORMAT,
   labGate,
