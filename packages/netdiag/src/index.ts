@@ -66,3 +66,14 @@ export {
   type TlsPhase,
 } from "./probes/socket.ts";
 export * from "./readers.ts";
+export {
+  VISIT_RECORDS,
+  describeOutcome,
+  visitTarget,
+  type VisitHost,
+  type VisitInput,
+  type VisitOptions,
+  type VisitResolver,
+  type VisitRole,
+  type VisitStep,
+} from "./visit.ts";

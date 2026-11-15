@@ -3,6 +3,7 @@ import { request } from "node:http";
 import { connect as netConnect, isIP, type Socket, type TcpNetConnectOpts } from "node:net";
 import * as tls from "node:tls";
 import type { Clock } from "@mark1russell7/algebra/clock";
+import { errorMessage } from "@mark1russell7/text";
 import { observe, type FactTime, type Observation } from "../fact.ts";
 import {
   HTTP_RESPONSE,
@@ -314,7 +315,7 @@ function certificateOf(socket: tls.TLSSocket, store: TrustStore): TlsCertificate
     selfSigned: isSelfSigned(leaf.raw),
     chain,
     trust,
-    ...(authorized ? {} : { problem: certProblem(reason instanceof Error ? (codeOf(reason) ?? reason.message) : String(reason)) }),
+    ...(authorized ? {} : { problem: certProblem(codeOf(reason) ?? errorMessage(reason)) }),
   };
 }
 

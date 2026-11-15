@@ -54,13 +54,14 @@ ND-7 has four steps:
 
 1. **The score.** A lab record has the true hypothesis and the diagnosis. `scoreLab` gives the confusion table, the recall of each hypothesis with its Wilson interval, and the Brier score. `labGate` holds the lower end of each recall. The table and the intervals come from `@mark1russell7/rigor-statistics`.
 2. **The loopback lab.** The package `@netdiag/lab` starts real servers on lab addresses of `lo`: a resolver, the target, a reference host and a captive portal. `@mark1russell7/rigor-proxy` holds the first reply of a TLS proxy. Its 13 cases make the 11 classes of the loopback row. The workflow `lab.yml` runs 5 rounds in CI, because the times are part of the evidence. A case that does not show the signs of its fault gives no read.
-3. **The kernel lab.** The cells of `@mark1russell7/harness` drop, reset and delay packets, and make a small MTU. They make the faults of the path and of IPv6.
+3. **The kernel lab.** The command `packages/lab/src/kernel/main.ts` makes faults with real kernels in Docker, through `@mark1russell7/harness`. Each round has one world: a client, the router `gw`, the target, a reference host and a resolver. The agent in the client starts `visitTarget` of netdiag and writes one JSON line for each fact. The first slice has the cases `none`, `filter.drop`, `filter.icmp`, `path.loss` and `path.mtu`. The gate lists the other kernel classes with no bar, until the harness can make their faults. The workflow `lab-kernel.yml` starts 5 rounds in CI.
 4. **The bars.** The bar of each class is the worst of 5 or more CI runs, minus their spread.
 
 | Lab | Fault classes |
 | --- | --- |
 | Loopback | `none`, `resolver.down`, `resolver.failing`, `name.missing`, `port.closed`, `tls.cert-invalid`, `tls.mismatch`, `tls.proxy`, `server.slow`, `server.error`, `captive.portal` |
-| Kernel | `host.down`, `filter.drop`, `filter.icmp`, `filter.reset`, `path.loss`, `path.mtu`, `ipv6.broken`, `gateway.down` |
+| Kernel | `none`, `filter.drop`, `filter.icmp`, `path.loss`, `path.mtu` |
+| Kernel, later | `host.down`, `filter.reset`, `gateway.down`, `ipv6.broken`. Each class needs a change of the harness first. The gate lists them with no bar. |
 | None yet | `interface.down`, `wifi.weak`. The gate lists them with no bar. |
 
 ### The licenses of the outside tools
@@ -93,7 +94,7 @@ The status words are `active`, `waiting`, `blocked`, `later`, `done` and `droppe
 | ND-5 | The choice of the next probe | done | P1 | M | diagnosis | ND-4 | The tool picks the probe with the largest expected information gain over the top causes. `rankProbes` and `featuresOf` shipped in 0.1.2. The command-line tool (ND-8) shows the next step. |
 | ND-6 | The metric estimators | later | P2 | M | metrics | ND-1, ND-3 | Jitter, delay variation, loss, the retransmission timeout, packet-pair bandwidth and the MTU, as "The metrics" tells. The estimators read the facts `path.capture` and `path.throughput` of ND-3. The statistics come from `@mark1russell7/rigor-statistics`. |
 | ND-7 | Lab ground truth and the accuracy gate | active | P0 | L | ground truth | ND-2, ND-4 | The labs of `mark1russell7/systems` inject each fault class, and netdiag must name it. A confusion matrix gives the hit rate of each class, and a gate in CI holds each rate. The runs need Docker, so only CI starts them. |
-| ND-8 | The command-line tool | later | P1 | M | cli | ND-2, ND-5 | One command takes a target and gives the probable causes, their probabilities and the next step. The arguments and the help come from `@procedures/cli-kit`. The probes come from the visit of the kernel lab (ND-7, step 3). |
+| ND-8 | The command-line tool | later | P1 | M | cli | ND-2, ND-5 | One command takes a target and gives the probable causes, their probabilities and the next step. The arguments and the help come from `@procedures/cli-kit`. The probes come from `visitTarget` of netdiag (ND-7, step 3), and the next step from `rankProbes` (ND-5). |
 | ND-9 | Views on the site | later | P2 | M | site | ND-8 | A flow of the probes, one ring for each layer and a timeline of the facts. The views read the records of the command-line tool. |
 | ND-10 | Wi-Fi facts for each operating system | later | P2 | M | probes | ND-1, ND-3 | The signal, the noise, the channel, the rate and the roams of the Wi-Fi link, as typed facts. Each operating system has its own adapter. |
 | ND-11 | The path through the providers | later | P2 | M | probes | ND-3 | The AS number of each hop of a route. Thus a fault gets the name of the provider network where it starts. The lookups in the public registries go through `polite-crawler`. |
