@@ -30,4 +30,39 @@ export {
   type ScopeDecision,
 } from "./scope.ts";
 export { createRunner, type ClockOrigin, type ProbeOutcome, type Runner, type RunnerOptions } from "./run.ts";
+export * from "./address/index.ts";
 export * from "./diagnosis/index.ts";
+export * from "./kinds.ts";
+export {
+  DEFAULT_MAX_BYTES,
+  DNS_PROBE,
+  HTTP_PROBE,
+  TCP_PROBE,
+  TLS_PROBE,
+  dnsOutcome,
+  httpProbe,
+  tcpProbe,
+  tlsProbe,
+  type DnsInput,
+  type DnsRaw,
+  type HttpInput,
+  type HttpRaw,
+  type TcpInput,
+  type TcpRaw,
+  type TlsInput,
+  type TlsProbeOptions,
+  type TlsRaw,
+} from "./probes/native.ts";
+export {
+  DEFAULT_TIMEOUT_MS,
+  KEPT_FIELDS,
+  certProblem,
+  connectOutcome,
+  handshakeOutcome,
+  type ConnectOptions,
+  type Dial,
+  type HttpPhase,
+  type TcpPhase,
+  type TlsPhase,
+} from "./probes/socket.ts";
+export * from "./readers.ts";

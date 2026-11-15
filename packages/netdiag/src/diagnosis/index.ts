@@ -31,4 +31,17 @@ export {
   type Strength,
 } from "./model.ts";
 export { STANDARD_CATALOG, STANDARD_CATALOG_SPEC, STANDARD_FAULTS, STANDARD_FEATURES } from "./catalog.ts";
+export {
+  LAB_RECORD_FORMAT,
+  labGate,
+  labRecordOf,
+  scoreLab,
+  type LabBars,
+  type LabCause,
+  type LabGate,
+  type LabRecord,
+  type LabScore,
+  type LabStatus,
+  type LabVerdict,
+} from "./score.ts";
 export { LAYERS, isLayer, layerRank, type Layer } from "../layer.ts";

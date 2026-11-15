@@ -2,7 +2,7 @@
 
 This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1 and the model of ND-4 of the [roadmap](../../docs/ROADMAP.md).** The native probes (ND-2) come next. Then the readers change their facts into evidence for the model.
+**State: ND-1, ND-2, ND-4, and the lab score and the loopback lab of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The kernel lab and the bars of the gate come next.
 
 ## Facts
 
@@ -43,6 +43,95 @@ An active probe sends packets only to a peer that the user owns or names. The ru
 
 The scope also limits the number of ports of each host. The default limit is 8. Thus netdiag does no port scan.
 
+## IP addresses
+
+The entry `@mark1russell7/netdiag/address` has plain functions for IP addresses and networks. It uses only the module `node:net`.
+
+| Function | What it gives |
+| --- | --- |
+| `addressFamily(address)` | `ipv4`, `ipv6`, or `undefined` for a text that is not an address. |
+| `addressClass(address)` | The class of the address, from the special-purpose ranges of RFC 6890. |
+| `addressKind(address)` | `private` for an address that the internet does not route to, else `public`. |
+| `parseCidr(text)` | A CIDR range, or the problem of the text. |
+| `cidrSet(ranges)` | A set of ranges. Its `has(address)` tells if an address is in a range of the set. |
+
+- The classes are `unspecified`, `loopback`, `private`, `shared`, `link-local`, `unique-local`, `documentation`, `benchmarking`, `multicast`, `reserved` and `public`.
+- The table `ADDRESS_CLASSES` holds the ranges of the classes as data.
+- An IPv4 address in IPv6 form, for example `::ffff:192.0.2.1`, is its IPv4 address.
+- An address for documentation is `public`. Thus a lab can use `203.0.113.0/24` for hosts on the internet.
+
+```ts
+import { addressClass, cidrSet, parseCidr } from "@mark1russell7/netdiag/address";
+
+addressClass("100.64.0.1"); // "shared": the carrier-grade NAT range
+const lab = parseCidr("203.0.113.0/24");
+if (lab.tag === "ok") cidrSet([lab.value]).has("::ffff:203.0.113.7"); // true
+```
+
+## Native probes
+
+The native probes use only the `node:` modules. They need no outside tool.
+
+| Probe | Id | Facts |
+| --- | --- | --- |
+| `DNS_PROBE` | `dns.query` | `dns.answer`: the outcome, the addresses and the lowest TTL of one query for `A` or `AAAA` records. |
+| `tcpProbe()` | `tcp.connect` | `tcp.connect`: the outcome and the time of one connect. |
+| `tlsProbe()` | `tls.handshake` | `tcp.connect` and `tls.handshake`: the time of the handshake, the version, the cipher, ALPN and the certificate. |
+| `httpProbe()` | `http.request` | `tcp.connect`, `tls.handshake` for `https`, and `http.response`: the status, some fields of the head and the time to the first byte. |
+
+- A probe connects only to an IP address. The DNS probe gives the addresses of a name first. Thus the runner examines each address against the scope.
+- The peer of the DNS probe is the resolver, not the name.
+- A time limit or a stop of the signal closes the socket. The probe then gives the outcome `timeout`, or the runner gives `aborted`.
+- The TLS probe does not refuse a certificate that is not valid. It records the problem, for example `expired`, `name` or `untrusted`.
+- The trust tells the root of the chain. `public` is a root of Node.js. `private` is a different root, for example the root of a proxy that examines TLS.
+- The option `roots` adds roots that the user trusts, for example the root of a company. Their trust is `private`.
+- The option `publicRoots` adds roots with the trust `public`. A lab gives its own root here, so its servers stand for servers on the internet.
+- The HTTP probe follows no redirect. It reads the body up to 64 KiB.
+- For `https`, the HTTP probe sends its request only when the certificate passes its check. Thus an interceptor does not get the path.
+
+```ts
+import { realClock } from "@mark1russell7/algebra/clock";
+import { TCP_PROBE, createRunner, scopeOf } from "@mark1russell7/netdiag";
+
+const scope = scopeOf([{ kind: "range", cidr: "192.168.1.0/24", basis: "owned" }]);
+if (scope.tag === "err") throw new Error(scope.error.join(" "));
+
+const runner = createRunner({ scope: scope.value, clock: realClock });
+const outcome = await runner.run(TCP_PROBE, { address: "192.168.1.1", port: 443 });
+// The fact tcp.connect has the outcome connected, refused, timeout, unreachable, reset or error.
+```
+
+## Outside tools
+
+The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools. netdiag bundles no tool. The user installs each tool.
+
+| Probe | Id | Tool | Facts |
+| --- | --- | --- | --- |
+| `pingProbe(host)` | `icmp.ping` | `ping` | `icmp.echo`: the echo replies, their round-trip times, and the messages of an unreachable address. |
+| `tracerouteProbe(host)` | `path.traceroute` | `traceroute`, `tracert` on Windows | `path.trace`: the routers that answered each TTL, their round-trip times, and the messages of an unreachable address. |
+| `mtrProbe(host)` | `path.mtr` | `mtr` (Linux and macOS) | `path.report`: the loss and the round-trip times of each hop over many cycles. |
+
+- A host starts each tool. Its `run(command, args, options)` starts a program with a list of arguments and no shell.
+- The function `runCommand` of `@procedures/shell` is a host with no change. A test gives a fake host.
+- An adapter reads only English output. On Linux and macOS, it sets `LC_ALL=C`. On Windows, the language of the system sets the output.
+- On Linux, the adapter reads the `ping` of iputils. On macOS, it uses `ping6` for an IPv6 address.
+- On Linux, the trace adapter reads the Modern traceroute (the package `traceroute`). On macOS, it uses `traceroute6` for an IPv6 address.
+- The `mtr` adapter reads the JSON report of `mtr --json` (version 0.92 or later). The default of 20 cycles takes approximately 20 seconds.
+- Output that netdiag cannot read gives the outcome `error` with the reason. It does not give a reply that did not occur.
+- The table `TOOL_LICENSES` holds the license of each tool as data. A tool with a restrictive license has no adapter.
+
+```ts
+import { runCommand } from "@procedures/shell";
+import { pingProbe, type ToolHost } from "@mark1russell7/netdiag/tools";
+
+const host: ToolHost = {
+  platform: process.platform,
+  run: (command, args, options) => runCommand(command, { args: [...args], timeout: options.timeoutMs, signal: options.signal, env: options.env }),
+};
+// The runner comes from the example of the native probes.
+const outcome = await runner.run(pingProbe(host), { address: "192.168.1.1", count: 20 });
+```
+
 ## Diagnosis
 
 The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It imports no `node:` module, so a browser can also use it.
@@ -71,6 +160,69 @@ const result = diagnose(STANDARD_CATALOG, [
   { feature: "tcp.connect", value: "connected", primary: true },
 ]);
 // result.causes[0].id is "filter.icmp": a filter blocks ICMP, and the host is up.
+```
+
+## Readers
+
+`readEvidence(facts, options)` changes the facts of the native probes and of the adapters into evidence for the model. Each value that it gives is a value of a feature of `STANDARD_CATALOG`.
+
+| Feature | The source of the value |
+| --- | --- |
+| `dns.answer` | The outcome of each DNS query. One answer `ok` for a name and a resolver decides. `nodata` gives `ok`, because the name exists. |
+| `dns.address` | The addresses of a public name. One private address decides. A local name, for example `nas.local`, gives no value. |
+| `ip.family` | The TCP connects to the IPv4 and the IPv6 addresses of one name. |
+| `tcp.connect`, `tcp.time` | The outcome and the time of each TCP connect. A time of 900 ms or more tells that the SYN went again. |
+| `tls.handshake`, `tls.trust` | The outcome of the handshake and the root of the certificate chain. A chain with no root of the store gives `private`. |
+| `tls.ratio` | The time of the handshake divided by the time of the last TCP connect to the same address and port. |
+| `http.status`, `http.ttfb` | The class of the status, and the time to the first byte divided by the time of the TCP connect. |
+| `gateway.reply` | The echo requests to the address of the option `gateway`. An unreachable gateway gives `none`. |
+| `icmp.reply` | The echo requests to each other address: `reply`, `none` or `unreachable`. |
+| `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. |
+
+- The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
+- A fact that gives no evidence goes in `skipped`, with the reason. For example, the catalog has no value for the TLS outcome `not-tls` yet.
+- A fact `path.trace` gives no evidence yet. The catalog has no feature for the hops of a path. The lab runs (ND-7) fit one.
+- The option `primary` tells which facts are about the target. The other facts are about a reference host.
+- The option `gateway` gives the IP address of the default gateway.
+
+```ts
+import { STANDARD_CATALOG, TCP_PROBE, diagnose, readEvidence } from "@mark1russell7/netdiag";
+
+// The runner comes from the example of the native probes.
+const outcome = await runner.run(TCP_PROBE, { address: "192.168.1.1", port: 443 });
+if (outcome.status === "done") {
+  const { evidence, skipped } = readEvidence(outcome.facts);
+  const result = diagnose(STANDARD_CATALOG, evidence);
+  // A connect with the outcome refused gives result.causes[0].id "port.closed".
+}
+```
+
+## The lab score
+
+A lab makes one fault on purpose. Then netdiag must name it. The entry `@mark1russell7/netdiag/diagnosis` has the score of these runs.
+
+| Function | What it gives |
+| --- | --- |
+| `labRecordOf(catalog, case, truth, diagnosis)` | The record of one run: the true hypothesis, the predicted cause, the rank of the truth and the probability of each cause. |
+| `scoreLab(catalog, records)` | The confusion table, the recall of each hypothesis with its Wilson interval, the accuracy and the mean Brier score. |
+| `labGate(score, bars)` | A verdict for each hypothesis with a bar: `pass`, `fail` or `no-read`. |
+
+- The recall of a hypothesis is the part of its runs where the diagnosis names it.
+- A hypothesis passes when the lower end of its recall interval is its bar or more.
+- A hypothesis with no runs gets `no-read`, and the gate does not pass.
+- A hypothesis with no bar goes in `unbarred`, for example a fault that no lab can make.
+
+```ts
+import { STANDARD_CATALOG, diagnose, labGate, labRecordOf, scoreLab } from "@mark1russell7/netdiag/diagnosis";
+
+const diagnosis = diagnose(STANDARD_CATALOG, [{ feature: "tcp.connect", value: "refused", primary: true }]);
+const record = labRecordOf(STANDARD_CATALOG, "port.closed/refused", "port.closed", diagnosis);
+if (record.tag === "err") throw new Error(record.error);
+
+const score = scoreLab(STANDARD_CATALOG, [record.value]);
+if (score.tag === "err") throw new Error(score.error.join(" "));
+const gate = labGate(score.value, { "port.closed": 0.1 });
+// gate.value.verdicts[0].status is "pass": the lower end of the recall of 1 run of 1 is 0.21.
 ```
 
 ## Example

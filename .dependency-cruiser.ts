@@ -5,11 +5,18 @@ import { boundaries, type Config } from "@mark1russell7/boundaries";
 const config: Config = boundaries(import.meta.dirname, {
   forbidden: [
     {
-      name: "diagnosis-imports-no-node-module",
+      name: "pure-modules-import-no-node-module",
       severity: "error",
-      comment: "The entry ./diagnosis of netdiag imports no node: module, so a browser can use it.",
-      from: { path: "^packages/netdiag/src/diagnosis/" },
+      comment: "The entry ./diagnosis and the fact kinds of netdiag import no node: module, so a browser can use them.",
+      from: { path: "^packages/netdiag/src/(diagnosis/|kinds\\.ts$|fact\\.ts$|layer\\.ts$)" },
       to: { dependencyTypes: ["core"] },
+    },
+    {
+      name: "kinds-import-only-pure-modules",
+      severity: "error",
+      comment: "The fact kinds of the native probes import values only from fact.ts and layer.ts.",
+      from: { path: "^packages/netdiag/src/kinds\\.ts$" },
+      to: { path: "^packages/netdiag/src/(?!fact\\.ts$|layer\\.ts$)", dependencyTypesNot: ["type-only"] },
     },
     {
       name: "diagnosis-imports-only-pure-modules",

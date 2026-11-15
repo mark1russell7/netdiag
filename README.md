@@ -2,7 +2,7 @@
 
 netdiag finds the cause of a network problem at each layer of the stack, and gives the next step.
 
-**State: early.** The package [`@mark1russell7/netdiag`](packages/netdiag) has the model of facts, the contract of a probe and the scope rule (ND-1). It also has the catalog of faults and the probability model (ND-4). It has no probes yet. The plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**State: early.** The package [`@mark1russell7/netdiag`](packages/netdiag) has the model of facts, the contract of a probe and the scope rule (ND-1). It also has the catalog of faults and the probability model (ND-4), and the native probes for DNS, TCP, TLS and HTTP (ND-2). The plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What it does
 

@@ -1,5 +1,6 @@
-import { BlockList, isIP } from "node:net";
+import { isIP } from "node:net";
 import { err, ok, type Result } from "@mark1russell7/optional";
+import { cidrContains, parseCidr } from "./address/index.ts";
 import { canonicalHost, formatTarget, type Target } from "./target.ts";
 
 /**
@@ -59,27 +60,10 @@ export type ScopeDecision =
 /** The ports that a runner sent packets to, for each host. */
 export type PortLedger = ReadonlyMap<string, ReadonlySet<number>>;
 
-interface Range {
-  readonly address: string;
-  readonly prefix: number;
-  readonly family: "ipv4" | "ipv6";
-}
-
-function parseRange(cidr: string): Result<Range, string> {
-  const slash = cidr.indexOf("/");
-  const address = canonicalHost(slash === -1 ? cidr : cidr.slice(0, slash));
-  const family = isIP(address);
-  if (family === 0) return err(`"${cidr}" is not an IP address or a CIDR range.`);
-  const max = family === 4 ? 32 : 128;
-  const prefixText = slash === -1 ? String(max) : cidr.slice(slash + 1);
-  if (!/^\d{1,3}$/.test(prefixText) || Number(prefixText) > max) return err(`"${cidr}" has no prefix from 0 to ${max}.`);
-  return ok({ address, prefix: Number(prefixText), family: family === 4 ? "ipv4" : "ipv6" });
-}
-
 /** This function gives the problems of a grant, or an empty list for a correct grant. */
 export function grantProblems(grant: Grant): string[] {
   if (grant.kind === "range") {
-    const range = parseRange(grant.cidr);
+    const range = parseCidr(grant.cidr);
     return range.tag === "err" ? [range.error] : [];
   }
   const host = canonicalHost(grant.host);
@@ -135,11 +119,8 @@ function grantFor(scope: Scope, peer: Target): Grant | undefined {
       continue;
     }
     if (family === 0) continue;
-    const range = parseRange(grant.cidr);
-    if (range.tag === "err" || (range.value.family === "ipv4") !== (family === 4)) continue;
-    const list = new BlockList();
-    list.addSubnet(range.value.address, range.value.prefix, range.value.family);
-    if (list.check(host, family === 4 ? "ipv4" : "ipv6")) return grant;
+    const range = parseCidr(grant.cidr);
+    if (range.tag === "ok" && cidrContains(range.value, host)) return grant;
   }
   return undefined;
 }
