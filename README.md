@@ -2,25 +2,30 @@
 
 netdiag finds the cause of a network problem at each layer of the stack, and gives the next step.
 
-**State: early.** The package [`@mark1russell7/netdiag`](packages/netdiag) has the model of facts, the contract of a probe and the scope rule (ND-1). It also has the catalog of faults and the probability model (ND-4), and the native probes for DNS, TCP, TLS and HTTP (ND-2). The plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**State: early.** The package [`@mark1russell7/netdiag`](packages/netdiag) has the model of facts, the contract of a probe and the scope rule (ND-1). It also has the catalog of faults and the probability model (ND-4), and the native probes for DNS, TCP, TLS and HTTP (ND-2). The package [`@mark1russell7/netdiag-cli`](packages/netdiag-cli) has the program `netdiag` (ND-8). The plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What it does
 
 A network problem can start at many layers, from the link and Wi-Fi up to HTTP and the path through the providers. The tool runs probes at these layers and collects typed facts. Then it calculates the probability of each cause, and tells you the next probe or the next step.
 
-This sketch shows the planned output. The names and the addresses are examples.
+In this example, no program listens on port 443 of the target. The names are examples. The [README of the command line](packages/netdiag-cli/README.md) tells each option.
 
 ```text
-$ netdiag https://example.com
-DNS   example.com -> 192.0.2.10      12 ms
-TCP   192.0.2.10:443 connected       18 ms
-TLS   handshake                     940 ms
-HTTP  first byte                     35 ms
+$ netdiag check shop.example.com --reference example.org
+netdiag check shop.example.com (https, path /)
 
-Probable causes
-  0.81  A proxy examines the TLS traffic
-  0.12  The server is slow
-Next probe: the TLS handshake to 198.51.100.7, a second server on another network
+The probable causes
+   89%  No program listens on the port.
+        To do: Start the service, or use the correct port.
+    2%  A device on the path resets the connections.
+        To do: Examine the firewalls and the filters of content on the path, and try a different network.
+    1%  A filter drops the packets to the port.
+        To do: Examine the firewall rules of the host and of each network on the path.
+
+The next step (it can give 0.01 bits of information about the causes)
+  Run the check again with --ping-count 20.
+
+12 observations from 8 facts. The option --json gives each fact.
 ```
 
 ## How it works

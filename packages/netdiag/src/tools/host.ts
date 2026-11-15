@@ -3,7 +3,7 @@ import type { Availability, ProbeContext } from "../probe.ts";
 /**
  * The output of one command of an outside tool.
  *
- * The function `runCommand` of `@procedures/shell` gives this shape, so it is a host with no change (refer to the README).
+ * The function `runCommand` of `@procedures/shell` gives this shape. `commandHost` makes a host from it.
  */
 export interface ToolOutput {
   /** The exit code of the program. */
@@ -34,6 +34,36 @@ export interface ToolRunOptions {
 export interface ToolHost {
   readonly platform: string;
   run(command: string, args: readonly string[], options: ToolRunOptions): Promise<ToolOutput>;
+}
+
+/** The options of a `CommandRunner`. These are the options of `runCommand` of `@procedures/shell` that a host uses. */
+export interface CommandRunOptions {
+  /** The arguments of the program. No shell reads them. */
+  readonly args: readonly string[];
+  /** The time limit of the command, in milliseconds. */
+  readonly timeout: number;
+  readonly signal: AbortSignal;
+  /** The environment variables to add to the environment of the program. */
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
+
+/**
+ * A function that starts a program with a list of arguments and no shell, and gives its output. It does not throw.
+ *
+ * The function `runCommand` of `@procedures/shell/command` has this shape. Thus netdiag does not depend on that package.
+ */
+export type CommandRunner = (command: string, options: CommandRunOptions) => Promise<ToolOutput>;
+
+/**
+ * This function gives the host of the outside tools from a `CommandRunner`, for example `runCommand` of
+ * `@procedures/shell/command`. `platform` has the values of `process.platform`.
+ */
+export function commandHost(runner: CommandRunner, platform: string): ToolHost {
+  return {
+    platform,
+    run: (command, args, options) =>
+      runner(command, { args: [...args], timeout: options.timeoutMs, signal: options.signal, ...(options.env === undefined ? {} : { env: options.env }) }),
+  };
 }
 
 /** The raw output of a probe of an outside tool: the command, its output, and the times on the clock of the runner. */

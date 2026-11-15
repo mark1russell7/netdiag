@@ -302,6 +302,8 @@ AVAILABILITY_TIMEOUT_MS: build/host.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
 CAPTURE_FIELDS: build/tools.d.ts#CAPTURE_FIELDS
 CAPTURE_SETUP_MS: build/tools.d.ts#CAPTURE_SETUP_MS
 type CaptureInput: build/tools.d.ts#CaptureInput
+type CommandRunOptions: build/host.chunk.d.ts#CommandRunOptions
+type CommandRunner: build/host.chunk.d.ts#CommandRunner
 DEFAULT_CAPTURE_PACKETS: build/tools.d.ts#DEFAULT_CAPTURE_PACKETS
 DEFAULT_CAPTURE_SECONDS: build/tools.d.ts#DEFAULT_CAPTURE_SECONDS
 DEFAULT_IPERF3_PORT: build/tools.d.ts#DEFAULT_IPERF3_PORT
@@ -344,6 +346,7 @@ captureAvailability: build/tools.d.ts#captureAvailability
 captureCommand: build/tools.d.ts#captureCommand
 captureFilter: build/tools.d.ts#captureFilter
 captureProbe: build/tools.d.ts#captureProbe
+commandHost: build/host.chunk.d.ts#commandHost
 iperf3Availability: build/tools.d.ts#iperf3Availability
 iperf3Command: build/tools.d.ts#iperf3Command
 iperf3Probe: build/tools.d.ts#iperf3Probe
@@ -464,6 +467,17 @@ interface CapturedPacket {
 
 ### build/host.chunk.d.ts#CertProblem
 type CertProblem = (typeof CERT_PROBLEMS)[number];
+
+### build/host.chunk.d.ts#CommandRunOptions
+interface CommandRunOptions {
+  readonly args: readonly string[];
+  readonly timeout: number;
+  readonly signal: AbortSignal;
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
+
+### build/host.chunk.d.ts#CommandRunner
+type CommandRunner = (command: string, options: CommandRunOptions) => Promise<ToolOutput>;
 
 ### build/host.chunk.d.ts#ConnectOutcome
 type ConnectOutcome = (typeof CONNECT_OUTCOMES)[number];
@@ -852,6 +866,9 @@ declare function availabilityOf(tool: string, output: ToolOutput, version?: RegE
 
 ### build/host.chunk.d.ts#canonicalHost
 declare function canonicalHost(host: string): string;
+
+### build/host.chunk.d.ts#commandHost
+declare function commandHost(runner: CommandRunner, platform: string): ToolHost;
 
 ### build/host.chunk.d.ts#defineFactKind
 declare function defineFactKind<V>(spec: FactKind<V>): FactKind<V>;

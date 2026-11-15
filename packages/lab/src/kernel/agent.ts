@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { realClock, type Clock } from "@mark1russell7/algebra/clock";
 import { visitTarget } from "@mark1russell7/netdiag";
-import type { ToolHost } from "@mark1russell7/netdiag/tools";
+import { commandHost, type ToolHost } from "@mark1russell7/netdiag/tools";
 import { errorMessage } from "@mark1russell7/text";
 import { runCommand } from "@procedures/shell/command";
 import { parseAgentArgs, stepLine, visitInputOf, type AgentLine } from "./protocol.ts";
@@ -10,14 +10,6 @@ import { parseAgentArgs, stepLine, visitInputOf, type AgentLine } from "./protoc
 // `agentArgs`. It operates the visit of netdiag on the lab hosts only, and writes one JSON line for each step.
 //
 //   node packages/lab/src/kernel/agent.ts --target www.shop.test --port 443 --resolver 172.20.0.4 --grant 172.20.0.2/32 ...
-
-/** This function gives the host of the outside tools: `runCommand` of `@procedures/shell`, with a list of arguments and no shell. */
-export function commandHost(platform: string): ToolHost {
-  return {
-    platform,
-    run: (command, args, options) => runCommand(command, { args: [...args], timeout: options.timeoutMs, signal: options.signal, env: options.env }),
-  };
-}
 
 /** The parts of the agent that a test replaces. */
 export interface AgentDeps {
@@ -53,7 +45,7 @@ export async function startAgent(args: readonly string[], deps: AgentDeps): Prom
 
 if (import.meta.main) {
   await startAgent(process.argv.slice(2), {
-    tools: commandHost(process.platform),
+    tools: commandHost(runCommand, process.platform),
     clock: realClock,
     write: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });

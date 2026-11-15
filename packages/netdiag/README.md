@@ -114,7 +114,8 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 | `captureProbe(host)` | `path.capture` | `tshark` | `path.capture`: the packets of one flow, with the time, the addresses, the ports and the TCP fields of each packet. |
 
 - A host starts each tool. Its `run(command, args, options)` starts a program with a list of arguments and no shell.
-- The function `runCommand` of `@procedures/shell` is a host with no change. A test gives a fake host.
+- `commandHost(runner, platform)` makes a host from a function with the shape of `runCommand` of `@procedures/shell`. A test gives a fake host.
+- netdiag does not depend on `@procedures/shell`. The caller gives the function.
 - An adapter reads only English output. On Linux and macOS, it sets `LC_ALL=C`. On Windows, the language of the system sets the output.
 - On Linux, the adapter reads the `ping` of iputils. On macOS, it uses `ping6` for an IPv6 address.
 - On Linux, the trace adapter reads the Modern traceroute (the package `traceroute`). On macOS, it uses `traceroute6` for an IPv6 address.
@@ -128,13 +129,10 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 - The table `TOOL_LICENSES` holds the license of each tool as data. A tool with a restrictive license has no adapter.
 
 ```ts
-import { runCommand } from "@procedures/shell";
-import { pingProbe, type ToolHost } from "@mark1russell7/netdiag/tools";
+import { runCommand } from "@procedures/shell/command";
+import { commandHost, pingProbe } from "@mark1russell7/netdiag/tools";
 
-const host: ToolHost = {
-  platform: process.platform,
-  run: (command, args, options) => runCommand(command, { args: [...args], timeout: options.timeoutMs, signal: options.signal, env: options.env }),
-};
+const host = commandHost(runCommand, process.platform);
 // The runner comes from the example of the native probes.
 const outcome = await runner.run(pingProbe(host), { address: "192.168.1.1", count: 20 });
 ```

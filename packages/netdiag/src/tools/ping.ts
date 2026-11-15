@@ -208,7 +208,7 @@ export function readPing(raw: ToolRaw, address: string): IcmpEcho {
 
 /**
  * This function makes the probe `icmp.ping`: the echo requests of the tool ping to one IP address. The host starts
- * the tool. Give `runCommand` of `@procedures/shell`, or a fake host in a test.
+ * the tool. Give `commandHost(runCommand, platform)` with `runCommand` of `@procedures/shell`, or a fake host in a test.
  */
 export function pingProbe(host: ToolHost): Probe<PingInput, ToolRaw> {
   return defineProbe<PingInput, ToolRaw>({

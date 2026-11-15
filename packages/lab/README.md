@@ -51,7 +51,7 @@ Each round starts one world. Each case adds its fault to the world, starts the a
 
 - The netdiag image is `kernel/Dockerfile`: Node 24 on a base pinned by digest, with `ping`, `mtr`, `traceroute` and `ip`.
 - The agent probes only the three lab hosts. Its scope grants each lab address as a `/32` range.
-- The agent starts `ping` with `runCommand` of `@procedures/shell`, with a list of arguments and no shell.
+- The agent starts `ping` through `commandHost` of netdiag and `runCommand` of `@procedures/shell`, with a list of arguments and no shell.
 
 ### The cases
 
