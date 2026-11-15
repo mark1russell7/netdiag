@@ -69,7 +69,7 @@ The table of licenses is data in the adapter package (ND-3). The project bundles
 
 The first path is ND-1, then ND-2 and ND-4, then ND-7. Priority P0 comes first. The size is S, M or L.
 
-The status words are the words of the fleet trackers: `active`, `waiting`, `blocked`, `later`, `done` and `dropped`. A `later` item with each need done is ready.
+The status words are `active`, `waiting`, `blocked`, `later`, `done` and `dropped`. A `later` item with each need done is ready.
 
 | ID | Item | Status | Priority | Size | Area | Needs | Summary |
 | --- | --- | --- | --- | --- | --- | --- | --- |
