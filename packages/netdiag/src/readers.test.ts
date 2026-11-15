@@ -5,6 +5,7 @@ import {
   DNS_ANSWER,
   DNS_ANSWER_VALUES,
   DNS_OUTCOMES,
+  FEATURE_SOURCES,
   ECHO_OUTCOMES,
   GATEWAY_REPLY_VALUES,
   HANDSHAKE_OUTCOMES,
@@ -29,6 +30,7 @@ import {
   TRUSTS,
   binOf,
   diagnose,
+  featuresOf,
   isLocalName,
   readEvidence,
   target,
@@ -169,6 +171,24 @@ describe("the tables of the readers", () => {
     expect([2.9, 3, 7.9, 8].map((r) => binOf(TLS_RATIO_BINS, r))).toEqual(["low", "mid", "mid", "high"]);
     expect([18 / 20, 19 / 20, 57 / 60, 99 / 100, 1].map((r) => binOf(PATH_LOSS_BINS, r))).toEqual(["high", "some", "some", "some", "none"]);
     expect(() => binOf([{ below: 1, value: "a" }], 2)).toThrow(RangeError);
+  });
+
+  it("name only features of the catalog, with the fact kinds of the readers", () => {
+    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT].map((kind) => kind.kind);
+    for (const [feature, sources] of Object.entries(FEATURE_SOURCES)) {
+      expect(STANDARD_FEATURES.map((f) => f.id)).toContain(feature);
+      for (const source of sources) for (const kind of source) expect(kinds).toContain(kind);
+    }
+  });
+
+  it("give the features of the kinds of a probe", () => {
+    expect(featuresOf([TCP_CONNECT.kind])).toEqual(["tcp.connect", "tcp.time"]);
+    expect(featuresOf([TLS_HANDSHAKE.kind])).toEqual(["tls.handshake", "tls.trust"]);
+    expect(featuresOf([TLS_HANDSHAKE.kind, TCP_CONNECT.kind])).toEqual(["tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio"]);
+    expect(featuresOf([ICMP_ECHO.kind], { gateway: true })).toEqual(["gateway.reply", "path.loss"]);
+    expect(featuresOf([ICMP_ECHO.kind], { gateway: false })).toEqual(["icmp.reply", "path.loss"]);
+    expect(featuresOf([PATH_REPORT.kind, PATH_TRACE.kind])).toEqual(["path.loss"]);
+    expect(featuresOf([])).toEqual([]);
   });
 
   it("tell a local name", () => {
@@ -369,6 +389,18 @@ describe("a property of the readers", () => {
         expect(new Set(keys).size).toBe(keys.length);
       }),
       { seed: 20261115, numRuns: 300 },
+    );
+  });
+
+  it("give only the features that featuresOf names for the kinds of the facts", () => {
+    fc.assert(
+      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry, icmpEntry, reportEntry, traceEntry), { maxLength: 24 }), fc.option(address, { nil: undefined }), (entries, gateway) => {
+        const facts = factsOf(entries);
+        const kinds = [...new Set(facts.map((fact) => fact.kind))];
+        const named = new Set(featuresOf(kinds, gateway === undefined ? { gateway: false } : {}));
+        for (const evidence of readEvidence(facts, { gateway }).evidence) expect(named).toContain(evidence.feature);
+      }),
+      { seed: 20261116, numRuns: 300 },
     );
   });
 });

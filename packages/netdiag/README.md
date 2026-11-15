@@ -146,7 +146,21 @@ The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It impor
 | --- | --- |
 | `diagnose(catalog, evidence)` | The probability of each hypothesis, from the most probable. The model is naive Bayes with logarithms. |
 | `explain(catalog, evidence, id)` | The weight of each observation for a cause: the `log10` of its likelihood ratio against `none`. |
-| `predictive(catalog, diagnosis, feature, primary)` | The probability of each value of a feature before a probe observes it. The choice of the next probe (ND-5) uses it. |
+| `predictive(catalog, diagnosis, feature, primary)` | The probability of each value of a feature before a probe observes it. |
+| `rankProbes(catalog, diagnosis, candidates, options)` | The candidate probes from the largest expected information gain over the causes, in bits. The first candidate is the next probe. |
+
+### The next probe
+
+`rankProbes` gives the expected information gain of each candidate: the mutual information of the causes and the features of the candidate.
+
+- A candidate names the features that its facts give. `featuresOf(probe.kinds, { gateway })` of the readers gives them.
+- The model takes the features as independent for a cause. Thus the probability of a joint value is the product of the probabilities of its values.
+- A feature that the evidence has, with the same role, adds nothing. A second observation of a feature is not independent of the first observation.
+- With the option `top`, the gain tells apart only the most probable causes. The other causes count as one group.
+- When two gains are equal, the lower `cost` comes first.
+- The entropy and the gain come from `@mark1russell7/rigor-statistics`.
+
+After a DNS timeout, the ping of the gateway comes first. Its reply tells a down resolver from a down gateway or interface.
 
 Evidence with `primary: false` comes from a reference host, for example a second public server. A fault with the reach `target` does not change the reference host. A fault with the reach `shared` changes both hosts. Thus a slow TLS handshake on both hosts points to a TLS proxy. A slow handshake on the target only points to a slow server.
 
@@ -184,6 +198,7 @@ const result = diagnose(STANDARD_CATALOG, [
 - A fact `path.trace` gives no evidence yet. The catalog has no feature for the hops of a path. The lab runs (ND-7) fit one.
 - The option `primary` tells which facts are about the target. The other facts are about a reference host.
 - The option `gateway` gives the IP address of the default gateway.
+- `FEATURE_SOURCES` gives the fact kinds that each feature needs. `featuresOf(kinds, { gateway })` gives the features that the facts of some kinds can give. A test holds the table against the readers.
 
 ```ts
 import { STANDARD_CATALOG, TCP_PROBE, diagnose, readEvidence } from "@mark1russell7/netdiag";

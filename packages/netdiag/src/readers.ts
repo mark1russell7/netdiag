@@ -159,6 +159,47 @@ interface Facts {
   readonly trace: Fact<PathTrace>[];
 }
 
+/**
+ * The fact kinds that each feature of the readers needs. A feature comes from the facts of each kind of one of its sets.
+ * For example, `tls.ratio` needs a TLS handshake and the TCP connect before it.
+ */
+export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[])[]>> = {
+  "dns.answer": [[DNS_ANSWER.kind]],
+  "dns.address": [[DNS_ANSWER.kind]],
+  "ip.family": [[DNS_ANSWER.kind, TCP_CONNECT.kind]],
+  "tcp.connect": [[TCP_CONNECT.kind]],
+  "tcp.time": [[TCP_CONNECT.kind]],
+  "tls.handshake": [[TLS_HANDSHAKE.kind]],
+  "tls.trust": [[TLS_HANDSHAKE.kind]],
+  "tls.ratio": [[TLS_HANDSHAKE.kind, TCP_CONNECT.kind]],
+  "http.status": [[HTTP_RESPONSE.kind]],
+  "http.ttfb": [[HTTP_RESPONSE.kind, TCP_CONNECT.kind]],
+  "gateway.reply": [[ICMP_ECHO.kind]],
+  "icmp.reply": [[ICMP_ECHO.kind]],
+  "path.loss": [[ICMP_ECHO.kind], [PATH_REPORT.kind]],
+};
+
+/** The options of `featuresOf`. */
+export interface FeaturesOptions {
+  /**
+   * This option tells if the ICMP echo facts are of the gateway (`true`) or of another address (`false`). The default
+   * gives the features of the two.
+   */
+  readonly gateway?: boolean | undefined;
+}
+
+/**
+ * This function gives the features that the facts of some kinds can give together, in the order of `FEATURE_SOURCES`.
+ * The choice of the next probe uses it: a probe gives the facts of its kinds.
+ */
+export function featuresOf(kinds: readonly string[], options: FeaturesOptions = {}): string[] {
+  const have = new Set(kinds);
+  return Object.entries(FEATURE_SOURCES)
+    .filter(([feature]) => !(feature === "gateway.reply" && options.gateway === false) && !(feature === "icmp.reply" && options.gateway === true))
+    .filter(([, sources]) => sources.some((source) => source.every((kind) => have.has(kind))))
+    .map(([feature]) => feature);
+}
+
 const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["dns", DNS_ANSWER],
   ["tcp", TCP_CONNECT],
