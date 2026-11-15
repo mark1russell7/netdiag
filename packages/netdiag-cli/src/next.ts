@@ -92,6 +92,20 @@ function openOrIs(evidence: readonly Evidence[], primary: boolean, feature: stri
   return values.length === 0 || values.includes(value);
 }
 
+/**
+ * The features that a probe gives only after a stage with one value. For example, a DNS answer gives addresses only
+ * when its outcome is `ok`. A new check cannot give such a feature when the evidence has another value of the stage.
+ */
+const AFTER_STAGE: Readonly<Record<string, readonly [feature: string, value: string]>> = {
+  "dns.address": ["dns.answer", "ok"],
+};
+
+/** This function tells if a new check can give a feature, from the stage before the feature. */
+function observable(item: Observable, evidence: readonly Evidence[]): boolean {
+  const stage = AFTER_STAGE[item.feature];
+  return stage === undefined || openOrIs(evidence, item.primary, stage[0], stage[1]);
+}
+
 /** This function tells if the user can add the host of a role with an option. The step of such a role tells how. */
 function absent(role: VisitRole, plan: CheckPlan): boolean {
   if (role === "reference") return (plan.visit.references ?? []).length === 0;
@@ -148,6 +162,7 @@ export function stepText(probe: NextProbe, observes: readonly Observable[], plan
  * This function gives the next steps of a check, from the largest information gain. The first step is the next step.
  *
  * - A candidate observes the features of its fact kinds that the evidence does not have, with the role of the probe.
+ *   A feature after a stage that gave another value is not observable: no address follows an answer `nxdomain`.
  * - A probe that cannot give its facts is not a candidate. `addressed` has the roles with an address to probe: an IP
  *   address, or an address of a DNS answer.
  * - A step with a gain of `GAIN_RESOLUTION` or less tells nothing, so the list does not have it.
@@ -164,7 +179,7 @@ export function nextSteps(diagnosis: Diagnosis, plan: CheckPlan, addressed: Read
       cost: probe.cost,
       observes: featuresOf(probe.kinds, { gateway: probe.role === "gateway" })
         .map((feature) => ({ feature, primary: probe.role === "target" }))
-        .filter((item) => !seen.has(keyOf(item))),
+        .filter((item) => !seen.has(keyOf(item)) && observable(item, diagnosis.used)),
     }))
     .filter((candidate) => candidate.observes.length > 0);
   if (candidates.length === 0) return [];
