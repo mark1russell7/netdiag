@@ -1058,7 +1058,7 @@ interface LabVerdict {
 }
 
 ### build/index.chunk.d.ts#MAX_JOINT_VALUES
-declare const MAX_JOINT_VALUES = 4096;
+declare const MAX_JOINT_VALUES = 65536;
 
 ### build/index.chunk.d.ts#NONE
 declare const NONE = "none";
