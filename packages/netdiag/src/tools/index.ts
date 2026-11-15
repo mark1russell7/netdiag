@@ -36,3 +36,32 @@ export {
   type TraceInput,
 } from "./traceroute.ts";
 export { DEFAULT_MTR_CYCLES, MAX_MTR_CYCLES, MTR_GRACE_MS, mtrAvailability, mtrCommand, mtrProbe, readMtr, type MtrInput } from "./mtr.ts";
+export {
+  DEFAULT_IPERF3_PORT,
+  DEFAULT_IPERF3_SECONDS,
+  DEFAULT_UDP_BITS_PER_SECOND,
+  IPERF3_MIN_VERSION,
+  IPERF3_SETUP_MS,
+  MAX_IPERF3_BITS_PER_SECOND,
+  MAX_IPERF3_SECONDS,
+  MAX_IPERF3_STREAMS,
+  iperf3Availability,
+  iperf3Command,
+  iperf3Probe,
+  readIperf3,
+  type Iperf3Input,
+} from "./iperf3.ts";
+export {
+  CAPTURE_FIELDS,
+  CAPTURE_SETUP_MS,
+  DEFAULT_CAPTURE_PACKETS,
+  DEFAULT_CAPTURE_SECONDS,
+  MAX_CAPTURE_PACKETS,
+  MAX_CAPTURE_SECONDS,
+  captureAvailability,
+  captureCommand,
+  captureFilter,
+  captureProbe,
+  readCapture,
+  type CaptureInput,
+} from "./capture.ts";

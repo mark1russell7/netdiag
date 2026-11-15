@@ -456,5 +456,240 @@ export const PATH_REPORT: FactKind<PathReport> = defineFactKind<PathReport>({
     optional(value["detail"], isText),
 });
 
+/** The transport protocols of a throughput test. */
+export const THROUGHPUT_PROTOCOLS = ["tcp", "udp"] as const;
+export type ThroughputProtocol = (typeof THROUGHPUT_PROTOCOLS)[number];
+
+/**
+ * The outcomes of a throughput test.
+ *
+ * - `measured`: the test ended, and the report has the rates.
+ * - `refused`: the server refused the connection. No server listens on the port.
+ * - `busy`: the server operates a test for a different client.
+ * - `error`: the tool failed, or netdiag cannot read its report.
+ */
+export const THROUGHPUT_OUTCOMES = ["measured", "refused", "busy", "error"] as const;
+export type ThroughputOutcome = (typeof THROUGHPUT_OUTCOMES)[number];
+
+/** One interval of a throughput test: the sum of the streams of the local side. */
+export interface ThroughputInterval {
+  /** The start of the interval, in milliseconds from the start of the test. */
+  readonly startMs: number;
+  /** The end of the interval, in milliseconds from the start of the test. */
+  readonly endMs: number;
+  readonly bytes: number;
+  readonly bitsPerSecond: number;
+  /** The TCP retransmits of the interval. Only a sender that reads them from its operating system has them. */
+  readonly retransmits?: number | undefined;
+  /** The UDP datagrams of the interval. */
+  readonly datagrams?: number | undefined;
+  /** The lost UDP datagrams of the interval. Only a receiver has them. */
+  readonly lostDatagrams?: number | undefined;
+  /** The UDP jitter of the interval, in milliseconds. Only a receiver has it. */
+  readonly jitterMs?: number | undefined;
+}
+
+/** The result of a throughput test of the tool `iperf3` against one server. */
+export interface PathThroughput {
+  readonly address: string;
+  readonly port: number;
+  readonly protocol: ThroughputProtocol;
+  /** This field is true when the server sends and this computer receives (the option `-R`). */
+  readonly reverse: boolean;
+  /** The number of parallel streams. */
+  readonly streams: number;
+  /** The planned time of the test, in seconds. */
+  readonly seconds: number;
+  readonly outcome: ThroughputOutcome;
+  /** The rate of the sender over the test, in bits per second. With `reverse`, the server is the sender. */
+  readonly sentBitsPerSecond?: number | undefined;
+  /** The rate of the receiver over the test, in bits per second. A UDP report before iperf3 3.10 does not have it. */
+  readonly receivedBitsPerSecond?: number | undefined;
+  readonly sentBytes?: number | undefined;
+  readonly receivedBytes?: number | undefined;
+  /** The TCP retransmits of the sender. Only a sender that reads them from its operating system has them. */
+  readonly retransmits?: number | undefined;
+  /** The mean UDP jitter of the streams, in milliseconds. */
+  readonly jitterMs?: number | undefined;
+  /** The lost UDP datagrams. */
+  readonly lostDatagrams?: number | undefined;
+  /** The UDP datagrams of the test. */
+  readonly datagrams?: number | undefined;
+  /** The intervals of the test, in their order. */
+  readonly intervals: readonly ThroughputInterval[];
+  /** The text of the tool for each outcome other than `measured`. */
+  readonly detail?: string | undefined;
+}
+
+function isThroughputInterval(value: unknown): value is ThroughputInterval {
+  return (
+    isRecord(value) &&
+    isDuration(value["startMs"]) &&
+    isDuration(value["endMs"]) &&
+    value["startMs"] <= value["endMs"] &&
+    isCount(value["bytes"]) &&
+    isDuration(value["bitsPerSecond"]) &&
+    optional(value["retransmits"], isCount) &&
+    optional(value["datagrams"], isCount) &&
+    optional(value["lostDatagrams"], isCount) &&
+    optional(value["jitterMs"], isDuration)
+  );
+}
+
+/** This function tells if the fields of one protocol are absent from a value of the other protocol. */
+function protocolFields(value: Readonly<Record<string, unknown>>): boolean {
+  if (value["protocol"] === "tcp") return value["jitterMs"] === undefined && value["lostDatagrams"] === undefined && value["datagrams"] === undefined;
+  return value["retransmits"] === undefined;
+}
+
+/** The fact kind `path.throughput`. */
+export const PATH_THROUGHPUT: FactKind<PathThroughput> = defineFactKind<PathThroughput>({
+  kind: "path.throughput",
+  layer: "path",
+  summary: "The rates of a throughput test of iperf3 against one server: the bits per second, the TCP retransmits, the UDP jitter and loss.",
+  check: (value): value is PathThroughput =>
+    isRecord(value) &&
+    isText(value["address"]) &&
+    isPort(value["port"]) &&
+    isOneOf(THROUGHPUT_PROTOCOLS, value["protocol"]) &&
+    typeof value["reverse"] === "boolean" &&
+    isCount(value["streams"]) &&
+    value["streams"] >= 1 &&
+    isCount(value["seconds"]) &&
+    value["seconds"] >= 1 &&
+    isOneOf(THROUGHPUT_OUTCOMES, value["outcome"]) &&
+    (value["outcome"] !== "measured" || value["sentBitsPerSecond"] !== undefined) &&
+    optional(value["sentBitsPerSecond"], isDuration) &&
+    optional(value["receivedBitsPerSecond"], isDuration) &&
+    optional(value["sentBytes"], isCount) &&
+    optional(value["receivedBytes"], isCount) &&
+    optional(value["retransmits"], isCount) &&
+    optional(value["jitterMs"], isDuration) &&
+    optional(value["lostDatagrams"], isCount) &&
+    optional(value["datagrams"], isCount) &&
+    (typeof value["lostDatagrams"] !== "number" || typeof value["datagrams"] !== "number" || value["lostDatagrams"] <= value["datagrams"]) &&
+    protocolFields(value) &&
+    Array.isArray(value["intervals"]) &&
+    value["intervals"].every(isThroughputInterval) &&
+    optional(value["detail"], isText),
+});
+
+/** The protocols of the capture filter of a capture. */
+export const CAPTURE_PROTOCOLS = ["tcp", "udp", "icmp"] as const;
+export type CaptureProtocol = (typeof CAPTURE_PROTOCOLS)[number];
+
+/** The transport protocols of a captured packet. `other` is a packet with no TCP and no UDP header, for example ICMP. */
+export const PACKET_PROTOCOLS = ["tcp", "udp", "other"] as const;
+export type PacketProtocol = (typeof PACKET_PROTOCOLS)[number];
+
+/**
+ * The outcomes of a capture.
+ *
+ * - `captured`: the capture has one or more packets.
+ * - `none`: no packet passed the capture filter in the time of the capture.
+ * - `error`: the tool failed, for example without the privilege to capture, or netdiag cannot read its output.
+ */
+export const CAPTURE_OUTCOMES = ["captured", "none", "error"] as const;
+export type CaptureOutcome = (typeof CAPTURE_OUTCOMES)[number];
+
+/**
+ * One packet of a capture of `tshark`. The estimators of ND-6 read these records, for example the RTO of RFC 6298 and
+ * packet pairs.
+ */
+export interface CapturedPacket {
+  /** The time of the packet, in milliseconds from the first packet of the capture. */
+  readonly atMs: number;
+  /** The source IP address. */
+  readonly src: string;
+  /** The destination IP address. */
+  readonly dst: string;
+  readonly protocol: PacketProtocol;
+  readonly srcPort?: number | undefined;
+  readonly dstPort?: number | undefined;
+  /** The relative TCP sequence number. */
+  readonly seq?: number | undefined;
+  /** The relative TCP acknowledgment number. */
+  readonly ack?: number | undefined;
+  /** The bytes of the TCP payload. */
+  readonly payload?: number | undefined;
+  /** The TCP flags as a number, for example 18 for SYN and ACK. */
+  readonly flags?: number | undefined;
+  /** This field is true when `tshark` marks the TCP segment as a retransmission. The rule of Karn ignores such a segment. */
+  readonly retransmission?: boolean | undefined;
+  /** On an ACK: the time from the segment that it acknowledges to the ACK, in milliseconds. */
+  readonly ackRttMs?: number | undefined;
+  /** The length of the frame, in bytes. */
+  readonly bytes: number;
+}
+
+/** The capture of the packets of one flow with the tool `tshark`. */
+export interface PathCapture {
+  /** The IP address of the capture filter. */
+  readonly address: string;
+  /** The port of the capture filter. A capture with no port takes each port. */
+  readonly port?: number | undefined;
+  /** The protocol of the capture filter. A capture with no protocol takes each protocol. */
+  readonly protocol?: CaptureProtocol | undefined;
+  /** The network interface of the capture, for example `eth0`. */
+  readonly device: string;
+  /** The capture filter that `tshark` received. */
+  readonly filter: string;
+  readonly outcome: CaptureOutcome;
+  /** The time of the first packet, as the text of `frame.time_epoch`: seconds since 1970 and a fraction. */
+  readonly epoch?: string | undefined;
+  /** The packets in the order of the capture. */
+  readonly packets: readonly CapturedPacket[];
+  /** The number of packets that the capture dropped, when `tshark` tells it. */
+  readonly dropped?: number | undefined;
+  /** The text of the tool for the outcome `error`. */
+  readonly detail?: string | undefined;
+}
+
+function isPortNumber(value: unknown): value is number {
+  return isCount(value) && value <= 65535;
+}
+
+function isCapturedPacket(value: unknown): value is CapturedPacket {
+  return (
+    isRecord(value) &&
+    isDuration(value["atMs"]) &&
+    isText(value["src"]) &&
+    isText(value["dst"]) &&
+    isOneOf(PACKET_PROTOCOLS, value["protocol"]) &&
+    optional(value["srcPort"], isPortNumber) &&
+    optional(value["dstPort"], isPortNumber) &&
+    (value["protocol"] !== "other" || (value["srcPort"] === undefined && value["dstPort"] === undefined)) &&
+    optional(value["seq"], isCount) &&
+    optional(value["ack"], isCount) &&
+    optional(value["payload"], isCount) &&
+    optional(value["flags"], isCount) &&
+    optional(value["retransmission"], (flag) => typeof flag === "boolean") &&
+    optional(value["ackRttMs"], isDuration) &&
+    isCount(value["bytes"])
+  );
+}
+
+/** The fact kind `path.capture`. */
+export const PATH_CAPTURE: FactKind<PathCapture> = defineFactKind<PathCapture>({
+  kind: "path.capture",
+  layer: "path",
+  summary: "The packets of one flow from a capture of tshark: the times, the addresses, the ports and the TCP fields of each packet.",
+  check: (value): value is PathCapture =>
+    isRecord(value) &&
+    isText(value["address"]) &&
+    optional(value["port"], isPort) &&
+    optional(value["protocol"], (protocol) => isOneOf(CAPTURE_PROTOCOLS, protocol)) &&
+    isText(value["device"]) &&
+    isText(value["filter"]) &&
+    isOneOf(CAPTURE_OUTCOMES, value["outcome"]) &&
+    Array.isArray(value["packets"]) &&
+    value["packets"].every(isCapturedPacket) &&
+    (value["outcome"] === "captured") === value["packets"].length > 0 &&
+    (value["packets"].length === 0 || isText(value["epoch"])) &&
+    optional(value["epoch"], isText) &&
+    optional(value["dropped"], isCount) &&
+    optional(value["detail"], isText),
+});
+
 /** The fact kinds of the adapters of outside tools (`@mark1russell7/netdiag/tools`). */
-export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT];
+export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE];
