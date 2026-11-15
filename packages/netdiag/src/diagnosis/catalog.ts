@@ -38,14 +38,14 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "dns.answer",
     layer: "dns",
-    summary: "The result of the DNS lookup of the name of the target.",
-    values: ["ok", "nxdomain", "servfail", "refused", "timeout"],
-    healthy: { ok: 0.97, nxdomain: 0.01, servfail: 0.005, refused: 0.005, timeout: 0.01 },
+    summary: "The result of the DNS lookup of the name of the target. The value unreachable tells that no DNS service listens on the resolver.",
+    values: ["ok", "nxdomain", "servfail", "refused", "timeout", "unreachable"],
+    healthy: { ok: 0.965, nxdomain: 0.01, servfail: 0.005, refused: 0.005, timeout: 0.01, unreachable: 0.005 },
   },
   {
     id: "dns.address",
     layer: "dns",
-    summary: "The kind of the addresses of a public name: public, or private (RFC 1918, RFC 4193 or loopback).",
+    summary: "The kind of the addresses of a public name: public, or private (RFC 1918, RFC 6598, RFC 4193, loopback, link-local or unspecified).",
     values: ["public", "private"],
     healthy: { public: 0.95, private: 0.05 },
   },
@@ -87,7 +87,7 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "tls.ratio",
     layer: "tls",
-    summary: "The time of the TLS handshake divided by the time of the TCP connect: low (below 3), mid, or high (above 8).",
+    summary: "The time of the TLS handshake divided by the time of the TCP connect: low (below 3), mid, or high (8 or more).",
     values: ["low", "mid", "high"],
     healthy: { low: 0.75, mid: 0.2, high: 0.05 },
   },
@@ -108,7 +108,7 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "http.ttfb",
     layer: "http",
-    summary: "The time to the first byte divided by the time of the TCP connect: low (below 4), mid, or high (above 20).",
+    summary: "The time to the first byte divided by the time of the TCP connect: low (below 4), mid, or high (20 or more).",
     values: ["low", "mid", "high"],
     healthy: { low: 0.6, mid: 0.3, high: 0.1 },
   },
@@ -177,7 +177,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     summary: "The DNS resolver does not answer.",
     step: "Use a different DNS resolver, or examine the resolver of the router.",
     predicts: {
-      "dns.answer": { expect: "timeout", strength: "strong" },
+      "dns.answer": { expect: ["timeout", "unreachable"], strength: "strong" },
     },
   },
   {
@@ -344,7 +344,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "1",
+  version: "2",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

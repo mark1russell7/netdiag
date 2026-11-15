@@ -30,6 +30,7 @@ export {
   type ScopeDecision,
 } from "./scope.ts";
 export { createRunner, type ClockOrigin, type ProbeOutcome, type Runner, type RunnerOptions } from "./run.ts";
+export * from "./address/index.ts";
 export * from "./diagnosis/index.ts";
 export * from "./kinds.ts";
 export {
@@ -64,3 +65,4 @@ export {
   type TcpPhase,
   type TlsPhase,
 } from "./probes/socket.ts";
+export * from "./readers.ts";

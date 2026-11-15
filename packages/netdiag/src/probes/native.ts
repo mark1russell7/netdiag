@@ -197,11 +197,16 @@ export interface TlsRaw {
 export interface TlsProbeOptions extends ConnectOptions {
   /** More roots of trust, as PEM text: the roots that the user trusts, for example the root of a company. */
   readonly roots?: readonly string[] | undefined;
+  /**
+   * More public roots, as PEM text. A chain that ends at one of them gets the trust `public`. A lab gives its own
+   * root here, so that its servers stand for servers on the internet.
+   */
+  readonly publicRoots?: readonly string[] | undefined;
 }
 
-function lazyStore(roots: readonly string[]): () => TrustStore {
+function lazyStore(options: TlsProbeOptions): () => TrustStore {
   let store: TrustStore | undefined;
-  return () => (store ??= trustStore(roots));
+  return () => (store ??= trustStore(options.roots ?? [], options.publicRoots ?? []));
 }
 
 /**
@@ -210,7 +215,7 @@ function lazyStore(roots: readonly string[]): () => TrustStore {
  */
 export function tlsProbe(options: TlsProbeOptions = {}): Probe<TlsInput, TlsRaw> {
   const dial = dialOf(options);
-  const store = lazyStore(options.roots ?? []);
+  const store = lazyStore(options);
   return defineProbe<TlsInput, TlsRaw>({
     id: "tls.handshake",
     version: "1",
@@ -289,7 +294,7 @@ function hostField(input: HttpInput, port: number): string {
  */
 export function httpProbe(options: TlsProbeOptions = {}): Probe<HttpInput, HttpRaw> {
   const dial = dialOf(options);
-  const store = lazyStore(options.roots ?? []);
+  const store = lazyStore(options);
   const portOf = (input: HttpInput): number => input.port ?? (input.scheme === "https" ? 443 : 80);
   return defineProbe<HttpInput, HttpRaw>({
     id: "http.request",

@@ -6,72 +6,105 @@
 
 ## . (build/index.d.ts): names
 
-type Availability: build/index.d.ts#Availability
-CERT_PROBLEMS: build/index.d.ts#CERT_PROBLEMS
-CONNECT_OUTCOMES: build/index.d.ts#CONNECT_OUTCOMES
+ADDRESS_CLASSES: build/address.d.ts#ADDRESS_CLASSES
+AddressClass: build/address.d.ts#AddressClass
+AddressFamily: build/address.d.ts#AddressFamily
+type Availability: build/kinds.chunk.d.ts#Availability
+Bin: build/index.d.ts#Bin
+CERT_PROBLEMS: build/kinds.chunk.d.ts#CERT_PROBLEMS
+CONNECT_OUTCOMES: build/kinds.chunk.d.ts#CONNECT_OUTCOMES
 type Catalog: build/index.chunk.d.ts#Catalog
 type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
 type Cause: build/index.chunk.d.ts#Cause
-CertProblem: build/index.d.ts#CertProblem
+CertProblem: build/kinds.chunk.d.ts#CertProblem
+Cidr: build/address.d.ts#Cidr
+CidrSet: build/address.d.ts#CidrSet
 type ClockOrigin: build/index.d.ts#ClockOrigin
 type ConnectOptions: build/index.d.ts#ConnectOptions
-ConnectOutcome: build/index.d.ts#ConnectOutcome
+ConnectOutcome: build/kinds.chunk.d.ts#ConnectOutcome
 type Contribution: build/index.chunk.d.ts#Contribution
 DEFAULT_MAX_BYTES: build/index.d.ts#DEFAULT_MAX_BYTES
 DEFAULT_MAX_PORTS_PER_HOST: build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
 DEFAULT_TIMEOUT_MS: build/index.d.ts#DEFAULT_TIMEOUT_MS
-DNS_ANSWER: build/index.d.ts#DNS_ANSWER
-DNS_OUTCOMES: build/index.d.ts#DNS_OUTCOMES
+DNS_ANSWER: build/kinds.chunk.d.ts#DNS_ANSWER
+DNS_ANSWER_VALUES: build/index.d.ts#DNS_ANSWER_VALUES
+DNS_OUTCOMES: build/kinds.chunk.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
 type Diagnosis: build/index.chunk.d.ts#Diagnosis
 type Dial: build/index.d.ts#Dial
 type Distribution: build/index.chunk.d.ts#Distribution
-DnsAnswer: build/index.d.ts#DnsAnswer
+DnsAnswer: build/kinds.chunk.d.ts#DnsAnswer
 type DnsInput: build/index.d.ts#DnsInput
-DnsOutcome: build/index.d.ts#DnsOutcome
+DnsOutcome: build/kinds.chunk.d.ts#DnsOutcome
 type DnsRaw: build/index.d.ts#DnsRaw
+ECHO_OUTCOMES: build/kinds.chunk.d.ts#ECHO_OUTCOMES
+EchoOutcome: build/kinds.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk.d.ts#Evidence
 type Expectation: build/index.chunk.d.ts#Expectation
 FLOOR: build/index.chunk.d.ts#FLOOR
-type Fact: build/index.d.ts#Fact
-type FactKind: build/index.d.ts#FactKind
-type FactSource: build/index.d.ts#FactSource
-type FactTime: build/index.d.ts#FactTime
+type Fact: build/kinds.chunk.d.ts#Fact
+type FactKind: build/kinds.chunk.d.ts#FactKind
+type FactSource: build/kinds.chunk.d.ts#FactSource
+type FactTime: build/kinds.chunk.d.ts#FactTime
 type Fault: build/index.chunk.d.ts#Fault
 type Feature: build/index.chunk.d.ts#Feature
+GATEWAY_REPLY_VALUES: build/index.d.ts#GATEWAY_REPLY_VALUES
 type Grant: build/index.d.ts#Grant
 type GrantBasis: build/index.d.ts#GrantBasis
-HANDSHAKE_OUTCOMES: build/index.d.ts#HANDSHAKE_OUTCOMES
-HTTP_OUTCOMES: build/index.d.ts#HTTP_OUTCOMES
+HANDSHAKE_OUTCOMES: build/kinds.chunk.d.ts#HANDSHAKE_OUTCOMES
+HTTP_OUTCOMES: build/kinds.chunk.d.ts#HTTP_OUTCOMES
 HTTP_PROBE: build/index.d.ts#HTTP_PROBE
-HTTP_RESPONSE: build/index.d.ts#HTTP_RESPONSE
-HandshakeOutcome: build/index.d.ts#HandshakeOutcome
+HTTP_RESPONSE: build/kinds.chunk.d.ts#HTTP_RESPONSE
+HTTP_TTFB_BINS: build/index.d.ts#HTTP_TTFB_BINS
+HandshakeOutcome: build/kinds.chunk.d.ts#HandshakeOutcome
 type HostGrant: build/index.d.ts#HostGrant
-type HostKind: build/index.d.ts#HostKind
+type HostKind: build/kinds.chunk.d.ts#HostKind
 type HttpInput: build/index.d.ts#HttpInput
-HttpOutcome: build/index.d.ts#HttpOutcome
+HttpOutcome: build/kinds.chunk.d.ts#HttpOutcome
 type HttpPhase: build/index.d.ts#HttpPhase
 type HttpRaw: build/index.d.ts#HttpRaw
-HttpResponse: build/index.d.ts#HttpResponse
+HttpResponse: build/kinds.chunk.d.ts#HttpResponse
 type Hypothesis: build/index.chunk.d.ts#Hypothesis
+ICMP_ECHO: build/kinds.chunk.d.ts#ICMP_ECHO
+ICMP_REPLY_VALUES: build/index.d.ts#ICMP_REPLY_VALUES
+IcmpEcho: build/kinds.chunk.d.ts#IcmpEcho
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
-LAYERS: build/index.chunk.d.ts#LAYERS
-type Layer: build/index.chunk.d.ts#Layer
-NATIVE_KINDS: build/index.d.ts#NATIVE_KINDS
+LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
+LAYERS: build/layer.chunk.d.ts#LAYERS
+LOCAL_SUFFIXES: build/index.d.ts#LOCAL_SUFFIXES
+LOSS_MIN_SENT: build/index.d.ts#LOSS_MIN_SENT
+type LabBars: build/index.chunk.d.ts#LabBars
+type LabCause: build/index.chunk.d.ts#LabCause
+type LabGate: build/index.chunk.d.ts#LabGate
+type LabRecord: build/index.chunk.d.ts#LabRecord
+type LabScore: build/index.chunk.d.ts#LabScore
+type LabStatus: build/index.chunk.d.ts#LabStatus
+type LabVerdict: build/index.chunk.d.ts#LabVerdict
+type Layer: build/layer.chunk.d.ts#Layer
+MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
+NATIVE_KINDS: build/kinds.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk.d.ts#NONE
-type Observation: build/index.d.ts#Observation
+type Observation: build/kinds.chunk.d.ts#Observation
 PARTS: build/index.chunk.d.ts#PARTS
+PATH_LOSS_BINS: build/index.d.ts#PATH_LOSS_BINS
+PATH_REPORT: build/kinds.chunk.d.ts#PATH_REPORT
+PATH_TRACE: build/kinds.chunk.d.ts#PATH_TRACE
 type Part: build/index.chunk.d.ts#Part
+PathReport: build/kinds.chunk.d.ts#PathReport
+PathTrace: build/kinds.chunk.d.ts#PathTrace
 type PortLedger: build/index.d.ts#PortLedger
 type Prediction: build/index.chunk.d.ts#Prediction
-type Probe: build/index.d.ts#Probe
-type ProbeContext: build/index.d.ts#ProbeContext
-type ProbeMode: build/index.d.ts#ProbeMode
+type Probe: build/kinds.chunk.d.ts#Probe
+type ProbeContext: build/kinds.chunk.d.ts#ProbeContext
+type ProbeMode: build/kinds.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/index.d.ts#ProbeOutcome
-RECORD_TYPES: build/index.d.ts#RECORD_TYPES
+RECORD_TYPES: build/kinds.chunk.d.ts#RECORD_TYPES
 type RangeGrant: build/index.d.ts#RangeGrant
 type Reach: build/index.chunk.d.ts#Reach
-RecordType: build/index.d.ts#RecordType
+ReadOptions: build/index.d.ts#ReadOptions
+Reading: build/index.d.ts#Reading
+RecordType: build/kinds.chunk.d.ts#RecordType
+ReportHop: build/kinds.chunk.d.ts#ReportHop
 type Runner: build/index.d.ts#Runner
 type RunnerOptions: build/index.d.ts#RunnerOptions
 STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
@@ -81,58 +114,98 @@ STANDARD_FEATURES: build/index.chunk.d.ts#STANDARD_FEATURES
 STRENGTHS: build/index.chunk.d.ts#STRENGTHS
 type Scope: build/index.d.ts#Scope
 type ScopeDecision: build/index.d.ts#ScopeDecision
+Skipped: build/index.d.ts#Skipped
 type Strength: build/index.chunk.d.ts#Strength
-TCP_CONNECT: build/index.d.ts#TCP_CONNECT
+TCP_CONNECT: build/kinds.chunk.d.ts#TCP_CONNECT
+TCP_CONNECT_VALUES: build/index.d.ts#TCP_CONNECT_VALUES
 TCP_PROBE: build/index.d.ts#TCP_PROBE
-TLS_HANDSHAKE: build/index.d.ts#TLS_HANDSHAKE
+TCP_TIME_BINS: build/index.d.ts#TCP_TIME_BINS
+TLS_HANDSHAKE: build/kinds.chunk.d.ts#TLS_HANDSHAKE
+TLS_HANDSHAKE_VALUES: build/index.d.ts#TLS_HANDSHAKE_VALUES
 TLS_PROBE: build/index.d.ts#TLS_PROBE
-TRUSTS: build/index.d.ts#TRUSTS
-type Target: build/index.d.ts#Target
-TcpConnect: build/index.d.ts#TcpConnect
+TLS_RATIO_BINS: build/index.d.ts#TLS_RATIO_BINS
+TLS_TRUST_VALUES: build/index.d.ts#TLS_TRUST_VALUES
+TOOL_KINDS: build/kinds.chunk.d.ts#TOOL_KINDS
+TRACE_OUTCOMES: build/kinds.chunk.d.ts#TRACE_OUTCOMES
+TRUSTS: build/kinds.chunk.d.ts#TRUSTS
+type Target: build/kinds.chunk.d.ts#Target
+TcpConnect: build/kinds.chunk.d.ts#TcpConnect
 type TcpInput: build/index.d.ts#TcpInput
 type TcpPhase: build/index.d.ts#TcpPhase
 type TcpRaw: build/index.d.ts#TcpRaw
-TlsCertificate: build/index.d.ts#TlsCertificate
-TlsHandshake: build/index.d.ts#TlsHandshake
+TlsCertificate: build/kinds.chunk.d.ts#TlsCertificate
+TlsHandshake: build/kinds.chunk.d.ts#TlsHandshake
 type TlsInput: build/index.d.ts#TlsInput
 type TlsPhase: build/index.d.ts#TlsPhase
 type TlsProbeOptions: build/index.d.ts#TlsProbeOptions
 type TlsRaw: build/index.d.ts#TlsRaw
-Trust: build/index.d.ts#Trust
+TraceHop: build/kinds.chunk.d.ts#TraceHop
+TraceOutcome: build/kinds.chunk.d.ts#TraceOutcome
+Trust: build/kinds.chunk.d.ts#Trust
 UNKNOWN: build/index.chunk.d.ts#UNKNOWN
-type ValueOf: build/index.d.ts#ValueOf
-canonicalHost: build/index.d.ts#canonicalHost
+type ValueOf: build/kinds.chunk.d.ts#ValueOf
+addressClass: build/address.d.ts#addressClass
+addressFamily: build/address.d.ts#addressFamily
+addressKind: build/address.d.ts#addressKind
+binOf: build/index.d.ts#binOf
+canonicalAddress: build/address.d.ts#canonicalAddress
+canonicalHost: build/kinds.chunk.d.ts#canonicalHost
 certProblem: build/index.d.ts#certProblem
+cidrContains: build/address.d.ts#cidrContains
+cidrSet: build/address.d.ts#cidrSet
 compileCatalog: build/index.chunk.d.ts#compileCatalog
 connectOutcome: build/index.d.ts#connectOutcome
 createRunner: build/index.d.ts#createRunner
 decideScope: build/index.d.ts#decideScope
-defineFactKind: build/index.d.ts#defineFactKind
-defineProbe: build/index.d.ts#defineProbe
+defineFactKind: build/kinds.chunk.d.ts#defineFactKind
+defineProbe: build/kinds.chunk.d.ts#defineProbe
 diagnose: build/index.chunk.d.ts#diagnose
 dnsOutcome: build/index.d.ts#dnsOutcome
 expand: build/index.chunk.d.ts#expand
 explain: build/index.chunk.d.ts#explain
-factsOf: build/index.d.ts#factsOf
-formatTarget: build/index.d.ts#formatTarget
+factsOf: build/kinds.chunk.d.ts#factsOf
+formatCidr: build/address.d.ts#formatCidr
+formatTarget: build/kinds.chunk.d.ts#formatTarget
 grantProblems: build/index.d.ts#grantProblems
 handshakeOutcome: build/index.d.ts#handshakeOutcome
-hostKind: build/index.d.ts#hostKind
+hostKind: build/kinds.chunk.d.ts#hostKind
 httpProbe: build/index.d.ts#httpProbe
-isFactOf: build/index.d.ts#isFactOf
-isLayer: build/index.chunk.d.ts#isLayer
-layerRank: build/index.chunk.d.ts#layerRank
+isFactOf: build/kinds.chunk.d.ts#isFactOf
+isLayer: build/layer.chunk.d.ts#isLayer
+isLocalName: build/index.d.ts#isLocalName
+labGate: build/index.chunk.d.ts#labGate
+labRecordOf: build/index.chunk.d.ts#labRecordOf
+layerRank: build/layer.chunk.d.ts#layerRank
 namedGrant: build/index.d.ts#namedGrant
-observe: build/index.d.ts#observe
-parseTarget: build/index.d.ts#parseTarget
+observe: build/kinds.chunk.d.ts#observe
+parseCidr: build/address.d.ts#parseCidr
+parseTarget: build/kinds.chunk.d.ts#parseTarget
 predictive: build/index.chunk.d.ts#predictive
+readEvidence: build/index.d.ts#readEvidence
 resolvedGrant: build/index.d.ts#resolvedGrant
-sameTarget: build/index.d.ts#sameTarget
+sameTarget: build/kinds.chunk.d.ts#sameTarget
 scopeOf: build/index.d.ts#scopeOf
-target: build/index.d.ts#target
+scoreLab: build/index.chunk.d.ts#scoreLab
+target: build/kinds.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
 widen: build/index.d.ts#widen
+
+## ./address (build/address.d.ts): names
+
+ADDRESS_CLASSES: build/address.d.ts#ADDRESS_CLASSES
+AddressClass: build/address.d.ts#AddressClass
+AddressFamily: build/address.d.ts#AddressFamily
+Cidr: build/address.d.ts#Cidr
+CidrSet: build/address.d.ts#CidrSet
+addressClass: build/address.d.ts#addressClass
+addressFamily: build/address.d.ts#addressFamily
+addressKind: build/address.d.ts#addressKind
+canonicalAddress: build/address.d.ts#canonicalAddress
+cidrContains: build/address.d.ts#cidrContains
+cidrSet: build/address.d.ts#cidrSet
+formatCidr: build/address.d.ts#formatCidr
+parseCidr: build/address.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
 
@@ -148,8 +221,16 @@ FLOOR: build/index.chunk.d.ts#FLOOR
 type Fault: build/index.chunk.d.ts#Fault
 type Feature: build/index.chunk.d.ts#Feature
 type Hypothesis: build/index.chunk.d.ts#Hypothesis
-LAYERS: build/index.chunk.d.ts#LAYERS
-type Layer: build/index.chunk.d.ts#Layer
+LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
+LAYERS: build/layer.chunk.d.ts#LAYERS
+type LabBars: build/index.chunk.d.ts#LabBars
+type LabCause: build/index.chunk.d.ts#LabCause
+type LabGate: build/index.chunk.d.ts#LabGate
+type LabRecord: build/index.chunk.d.ts#LabRecord
+type LabScore: build/index.chunk.d.ts#LabScore
+type LabStatus: build/index.chunk.d.ts#LabStatus
+type LabVerdict: build/index.chunk.d.ts#LabVerdict
+type Layer: build/layer.chunk.d.ts#Layer
 NONE: build/index.chunk.d.ts#NONE
 PARTS: build/index.chunk.d.ts#PARTS
 type Part: build/index.chunk.d.ts#Part
@@ -166,11 +247,106 @@ compileCatalog: build/index.chunk.d.ts#compileCatalog
 diagnose: build/index.chunk.d.ts#diagnose
 expand: build/index.chunk.d.ts#expand
 explain: build/index.chunk.d.ts#explain
-isLayer: build/index.chunk.d.ts#isLayer
-layerRank: build/index.chunk.d.ts#layerRank
+isLayer: build/layer.chunk.d.ts#isLayer
+labGate: build/index.chunk.d.ts#labGate
+labRecordOf: build/index.chunk.d.ts#labRecordOf
+layerRank: build/layer.chunk.d.ts#layerRank
 predictive: build/index.chunk.d.ts#predictive
+scoreLab: build/index.chunk.d.ts#scoreLab
+
+## ./tools (build/tools.d.ts): names
+
+AVAILABILITY_TIMEOUT_MS: build/tools.d.ts#AVAILABILITY_TIMEOUT_MS
+DEFAULT_MTR_CYCLES: build/tools.d.ts#DEFAULT_MTR_CYCLES
+DEFAULT_PING_COUNT: build/tools.d.ts#DEFAULT_PING_COUNT
+DEFAULT_PING_WAIT_MS: build/tools.d.ts#DEFAULT_PING_WAIT_MS
+DEFAULT_TRACE_HOPS: build/tools.d.ts#DEFAULT_TRACE_HOPS
+DEFAULT_TRACE_WAIT_MS: build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
+MAX_MTR_CYCLES: build/tools.d.ts#MAX_MTR_CYCLES
+MAX_PING_COUNT: build/tools.d.ts#MAX_PING_COUNT
+MAX_TRACE_HOPS: build/tools.d.ts#MAX_TRACE_HOPS
+MTR_GRACE_MS: build/tools.d.ts#MTR_GRACE_MS
+type MtrInput: build/tools.d.ts#MtrInput
+PING6_LAST_WAIT_MS: build/tools.d.ts#PING6_LAST_WAIT_MS
+PING_INTERVAL_MS: build/tools.d.ts#PING_INTERVAL_MS
+type PingInput: build/tools.d.ts#PingInput
+TOOL_LICENSES: build/tools.d.ts#TOOL_LICENSES
+TOOL_MARGIN_MS: build/tools.d.ts#TOOL_MARGIN_MS
+TRACE_QUERIES: build/tools.d.ts#TRACE_QUERIES
+type ToolCommand: build/tools.d.ts#ToolCommand
+type ToolHost: build/tools.d.ts#ToolHost
+type ToolLicense: build/tools.d.ts#ToolLicense
+type ToolOutput: build/tools.d.ts#ToolOutput
+type ToolRaw: build/tools.d.ts#ToolRaw
+type ToolRunOptions: build/tools.d.ts#ToolRunOptions
+type ToolUse: build/tools.d.ts#ToolUse
+type TraceInput: build/tools.d.ts#TraceInput
+availabilityOf: build/tools.d.ts#availabilityOf
+mtrAvailability: build/tools.d.ts#mtrAvailability
+mtrCommand: build/tools.d.ts#mtrCommand
+mtrProbe: build/tools.d.ts#mtrProbe
+pingAvailability: build/tools.d.ts#pingAvailability
+pingCommand: build/tools.d.ts#pingCommand
+pingProbe: build/tools.d.ts#pingProbe
+readMtr: build/tools.d.ts#readMtr
+readPing: build/tools.d.ts#readPing
+readTraceroute: build/tools.d.ts#readTraceroute
+runTool: build/tools.d.ts#runTool
+toolLicense: build/tools.d.ts#toolLicense
+tracerouteAvailability: build/tools.d.ts#tracerouteAvailability
+tracerouteCommand: build/tools.d.ts#tracerouteCommand
+tracerouteProbe: build/tools.d.ts#tracerouteProbe
 
 ## Declarations
+
+### build/address.d.ts#ADDRESS_CLASSES
+export declare const ADDRESS_CLASSES: readonly {
+  readonly cidr: string;
+  readonly class: Exclude<AddressClass, "public">;
+}[];
+
+### build/address.d.ts#AddressClass
+export type AddressClass = "unspecified" | "loopback" | "private" | "shared" | "link-local" | "unique-local" | "documentation" | "benchmarking" | "multicast" | "reserved" | "public";
+
+### build/address.d.ts#AddressFamily
+export type AddressFamily = "ipv4" | "ipv6";
+
+### build/address.d.ts#Cidr
+export interface Cidr {
+  readonly address: string;
+  readonly prefix: number;
+  readonly family: AddressFamily;
+}
+
+### build/address.d.ts#CidrSet
+export interface CidrSet {
+  readonly ranges: readonly Cidr[];
+  has(address: string): boolean;
+}
+
+### build/address.d.ts#addressClass
+export declare function addressClass(address: string): AddressClass | undefined;
+
+### build/address.d.ts#addressFamily
+export declare function addressFamily(address: string): AddressFamily | undefined;
+
+### build/address.d.ts#addressKind
+export declare function addressKind(address: string): "public" | "private" | undefined;
+
+### build/address.d.ts#canonicalAddress
+export declare function canonicalAddress(address: string): string;
+
+### build/address.d.ts#cidrContains
+export declare function cidrContains(cidr: Cidr, address: string): boolean;
+
+### build/address.d.ts#cidrSet
+export declare function cidrSet(ranges: readonly Cidr[]): CidrSet;
+
+### build/address.d.ts#formatCidr
+export declare function formatCidr(cidr: Cidr): string;
+
+### build/address.d.ts#parseCidr
+export declare function parseCidr(text: string): Result<Cidr, string>;
 
 ### build/index.chunk.d.ts#Catalog
 interface Catalog {
@@ -263,11 +439,58 @@ interface Hypothesis {
   readonly reach?: Reach | undefined;
 }
 
-### build/index.chunk.d.ts#LAYERS
-declare const LAYERS: readonly ["link", "wifi", "ip", "route", "path", "dns", "tcp", "tls", "http"];
+### build/index.chunk.d.ts#LAB_RECORD_FORMAT
+declare const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
 
-### build/index.chunk.d.ts#Layer
-type Layer = (typeof LAYERS)[number];
+### build/index.chunk.d.ts#LabBars
+type LabBars = Readonly<Record<string, number>>;
+
+### build/index.chunk.d.ts#LabCause
+interface LabCause {
+  readonly id: string;
+  readonly probability: number;
+}
+
+### build/index.chunk.d.ts#LabGate
+interface LabGate {
+  readonly pass: boolean;
+  readonly verdicts: readonly LabVerdict[];
+  readonly unbarred: readonly string[];
+}
+
+### build/index.chunk.d.ts#LabRecord
+interface LabRecord {
+  readonly format: typeof LAB_RECORD_FORMAT;
+  readonly case: string;
+  readonly catalog: string;
+  readonly truth: string;
+  readonly predicted: string;
+  readonly rank: number;
+  readonly causes: readonly LabCause[];
+}
+
+### build/index.chunk.d.ts#LabScore
+interface LabScore {
+  readonly catalog: string;
+  readonly n: number;
+  readonly correct: number;
+  readonly accuracy: Proportion;
+  readonly table: Confusion<string>;
+  readonly classes: readonly ClassScore<string>[];
+  readonly brier: number | undefined;
+}
+
+### build/index.chunk.d.ts#LabStatus
+type LabStatus = "pass" | "fail" | "no-read";
+
+### build/index.chunk.d.ts#LabVerdict
+interface LabVerdict {
+  readonly hypothesis: string;
+  readonly status: LabStatus;
+  readonly bar: number;
+  readonly low: number | undefined;
+  readonly support: number;
+}
 
 ### build/index.chunk.d.ts#NONE
 declare const NONE = "none";
@@ -317,32 +540,23 @@ declare function expand(feature: Feature, prediction: Prediction): Result<Distri
 ### build/index.chunk.d.ts#explain
 declare function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus?: string): Contribution[];
 
-### build/index.chunk.d.ts#isLayer
-declare function isLayer(value: unknown): value is Layer;
+### build/index.chunk.d.ts#labGate
+declare function labGate(score: LabScore, bars: LabBars): Result<LabGate, string[]>;
 
-### build/index.chunk.d.ts#layerRank
-declare function layerRank(layer: Layer): number;
+### build/index.chunk.d.ts#labRecordOf
+declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis): Result<LabRecord, string>;
 
 ### build/index.chunk.d.ts#predictive
 declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;
 
-### build/index.d.ts#Availability
-type Availability = {
-  readonly available: true;
-  readonly version?: string | undefined;
-} | {
-  readonly available: false;
-  readonly reason: string;
-};
+### build/index.chunk.d.ts#scoreLab
+declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
 
-### build/index.d.ts#CERT_PROBLEMS
-export declare const CERT_PROBLEMS: readonly ["expired", "not-yet-valid", "name", "untrusted", "revoked", "other"];
-
-### build/index.d.ts#CONNECT_OUTCOMES
-export declare const CONNECT_OUTCOMES: readonly ["connected", "refused", "timeout", "unreachable", "reset", "error"];
-
-### build/index.d.ts#CertProblem
-export type CertProblem = (typeof CERT_PROBLEMS)[number];
+### build/index.d.ts#Bin
+export interface Bin {
+  readonly below?: number | undefined;
+  readonly value: string;
+}
 
 ### build/index.d.ts#ClockOrigin
 interface ClockOrigin {
@@ -355,9 +569,6 @@ interface ConnectOptions {
   readonly dial?: Dial | undefined;
 }
 
-### build/index.d.ts#ConnectOutcome
-export type ConnectOutcome = (typeof CONNECT_OUTCOMES)[number];
-
 ### build/index.d.ts#DEFAULT_MAX_BYTES
 export declare const DEFAULT_MAX_BYTES = 65536;
 
@@ -367,29 +578,14 @@ export declare const DEFAULT_MAX_PORTS_PER_HOST = 8;
 ### build/index.d.ts#DEFAULT_TIMEOUT_MS
 export declare const DEFAULT_TIMEOUT_MS = 5e3;
 
-### build/index.d.ts#DNS_ANSWER
-export declare const DNS_ANSWER: FactKind<DnsAnswer>;
-
-### build/index.d.ts#DNS_OUTCOMES
-export declare const DNS_OUTCOMES: readonly ["ok", "nodata", "nxdomain", "servfail", "refused", "timeout", "unreachable", "error"];
+### build/index.d.ts#DNS_ANSWER_VALUES
+export declare const DNS_ANSWER_VALUES: Readonly<Partial<Record<DnsOutcome, string>>>;
 
 ### build/index.d.ts#DNS_PROBE
 export declare const DNS_PROBE: Probe<DnsInput, DnsRaw>;
 
 ### build/index.d.ts#Dial
 type Dial = (options: TcpNetConnectOpts) => Socket;
-
-### build/index.d.ts#DnsAnswer
-export interface DnsAnswer {
-  readonly name: string;
-  readonly record: RecordType;
-  readonly resolver: string;
-  readonly outcome: DnsOutcome;
-  readonly addresses: readonly string[];
-  readonly ttl?: number | undefined;
-  readonly ms: number;
-  readonly code?: string | undefined;
-}
 
 ### build/index.d.ts#DnsInput
 interface DnsInput {
@@ -399,9 +595,6 @@ interface DnsInput {
   readonly port?: number | undefined;
   readonly timeoutMs?: number | undefined;
 }
-
-### build/index.d.ts#DnsOutcome
-export type DnsOutcome = (typeof DNS_OUTCOMES)[number];
 
 ### build/index.d.ts#DnsRaw
 interface DnsRaw {
@@ -416,37 +609,8 @@ interface DnsRaw {
   readonly code?: string | undefined;
 }
 
-### build/index.d.ts#Fact
-interface Fact<V = unknown> {
-  readonly id: string;
-  readonly kind: string;
-  readonly layer: Layer;
-  readonly subject: Target;
-  readonly time: FactTime;
-  readonly source: FactSource;
-  readonly value: V;
-}
-
-### build/index.d.ts#FactKind
-interface FactKind<V> {
-  readonly kind: string;
-  readonly layer: Layer;
-  readonly summary: string;
-  readonly check: (value: unknown) => value is V;
-}
-
-### build/index.d.ts#FactSource
-interface FactSource {
-  readonly probe: string;
-  readonly version: string;
-  readonly tool?: string | undefined;
-}
-
-### build/index.d.ts#FactTime
-interface FactTime {
-  readonly start: number;
-  readonly end: number;
-}
+### build/index.d.ts#GATEWAY_REPLY_VALUES
+export declare const GATEWAY_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>>;
 
 ### build/index.d.ts#Grant
 type Grant = HostGrant | RangeGrant;
@@ -454,20 +618,11 @@ type Grant = HostGrant | RangeGrant;
 ### build/index.d.ts#GrantBasis
 type GrantBasis = "named" | "owned" | "configured" | "resolved";
 
-### build/index.d.ts#HANDSHAKE_OUTCOMES
-export declare const HANDSHAKE_OUTCOMES: readonly ["ok", "cert-error", "alert", "not-tls", "timeout", "reset", "closed", "error"];
-
-### build/index.d.ts#HTTP_OUTCOMES
-export declare const HTTP_OUTCOMES: readonly ["response", "protocol", "timeout", "reset", "closed", "error"];
-
 ### build/index.d.ts#HTTP_PROBE
 export declare const HTTP_PROBE: Probe<HttpInput, HttpRaw>;
 
-### build/index.d.ts#HTTP_RESPONSE
-export declare const HTTP_RESPONSE: FactKind<HttpResponse>;
-
-### build/index.d.ts#HandshakeOutcome
-export type HandshakeOutcome = (typeof HANDSHAKE_OUTCOMES)[number];
+### build/index.d.ts#HTTP_TTFB_BINS
+export declare const HTTP_TTFB_BINS: readonly Bin[];
 
 ### build/index.d.ts#HostGrant
 interface HostGrant {
@@ -477,9 +632,6 @@ interface HostGrant {
   readonly basis: GrantBasis;
   readonly note?: string | undefined;
 }
-
-### build/index.d.ts#HostKind
-type HostKind = "name" | "ipv4" | "ipv6";
 
 ### build/index.d.ts#HttpInput
 interface HttpInput {
@@ -492,9 +644,6 @@ interface HttpInput {
   readonly timeoutMs?: number | undefined;
   readonly maxBytes?: number | undefined;
 }
-
-### build/index.d.ts#HttpOutcome
-export type HttpOutcome = (typeof HTTP_OUTCOMES)[number];
 
 ### build/index.d.ts#HttpPhase
 interface HttpPhase {
@@ -521,65 +670,26 @@ interface HttpRaw {
   readonly http?: HttpPhase | undefined;
 }
 
-### build/index.d.ts#HttpResponse
-export interface HttpResponse {
-  readonly address: string;
-  readonly port: number;
-  readonly scheme: "http" | "https";
-  readonly method: "GET" | "HEAD";
-  readonly host: string;
-  readonly path: string;
-  readonly outcome: HttpOutcome;
-  readonly status?: number | undefined;
-  readonly version?: string | undefined;
-  readonly fields: Readonly<Record<string, string>>;
-  readonly bytes: number;
-  readonly truncated: boolean;
-  readonly ttfbMs?: number | undefined;
-  readonly ms: number;
-  readonly code?: string | undefined;
-}
+### build/index.d.ts#ICMP_REPLY_VALUES
+export declare const ICMP_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>>;
 
 ### build/index.d.ts#KEPT_FIELDS
 export declare const KEPT_FIELDS: readonly string[];
 
-### build/index.d.ts#NATIVE_KINDS
-export declare const NATIVE_KINDS: readonly FactKind<unknown>[];
+### build/index.d.ts#LOCAL_SUFFIXES
+export declare const LOCAL_SUFFIXES: readonly string[];
 
-### build/index.d.ts#Observation
-interface Observation<V = unknown> {
-  readonly kind: FactKind<V>;
-  readonly subject: Target;
-  readonly value: V;
-  readonly time?: FactTime | undefined;
-}
+### build/index.d.ts#LOSS_MIN_SENT
+export declare const LOSS_MIN_SENT = 20;
+
+### build/index.d.ts#MIN_CONNECT_MS
+export declare const MIN_CONNECT_MS = 1;
+
+### build/index.d.ts#PATH_LOSS_BINS
+export declare const PATH_LOSS_BINS: readonly Bin[];
 
 ### build/index.d.ts#PortLedger
 type PortLedger = ReadonlyMap<string, ReadonlySet<number>>;
-
-### build/index.d.ts#Probe
-interface Probe<I, R> {
-  readonly id: string;
-  readonly version: string;
-  readonly summary: string;
-  readonly layer: Layer;
-  readonly mode: ProbeMode;
-  readonly kinds: readonly FactKind<unknown>[];
-  readonly tool?: string | undefined;
-  peers(input: I): readonly Target[];
-  available(context: ProbeContext): Promise<Availability>;
-  run(input: I, context: ProbeContext): Promise<R>;
-  parse(raw: R, input: I): readonly Observation[];
-}
-
-### build/index.d.ts#ProbeContext
-interface ProbeContext {
-  readonly clock: Clock;
-  readonly signal: AbortSignal;
-}
-
-### build/index.d.ts#ProbeMode
-type ProbeMode = "active" | "passive";
 
 ### build/index.d.ts#ProbeOutcome
 type ProbeOutcome<R> = {
@@ -604,9 +714,6 @@ type ProbeOutcome<R> = {
   readonly reason: string;
 };
 
-### build/index.d.ts#RECORD_TYPES
-export declare const RECORD_TYPES: readonly ["A", "AAAA"];
-
 ### build/index.d.ts#RangeGrant
 interface RangeGrant {
   readonly kind: "range";
@@ -615,8 +722,17 @@ interface RangeGrant {
   readonly note?: string | undefined;
 }
 
-### build/index.d.ts#RecordType
-export type RecordType = (typeof RECORD_TYPES)[number];
+### build/index.d.ts#ReadOptions
+export interface ReadOptions {
+  readonly primary?: ((fact: Fact) => boolean) | undefined;
+  readonly gateway?: string | undefined;
+}
+
+### build/index.d.ts#Reading
+export interface Reading {
+  readonly evidence: readonly Evidence[];
+  readonly skipped: readonly Skipped[];
+}
 
 ### build/index.d.ts#Runner
 interface Runner {
@@ -649,37 +765,32 @@ type ScopeDecision = {
   readonly reason: string;
 };
 
-### build/index.d.ts#TCP_CONNECT
-export declare const TCP_CONNECT: FactKind<TcpConnect>;
+### build/index.d.ts#Skipped
+export interface Skipped {
+  readonly fact: string;
+  readonly reason: string;
+}
+
+### build/index.d.ts#TCP_CONNECT_VALUES
+export declare const TCP_CONNECT_VALUES: Readonly<Partial<Record<ConnectOutcome, string>>>;
 
 ### build/index.d.ts#TCP_PROBE
 export declare const TCP_PROBE: Probe<TcpInput, TcpRaw>;
 
-### build/index.d.ts#TLS_HANDSHAKE
-export declare const TLS_HANDSHAKE: FactKind<TlsHandshake>;
+### build/index.d.ts#TCP_TIME_BINS
+export declare const TCP_TIME_BINS: readonly Bin[];
+
+### build/index.d.ts#TLS_HANDSHAKE_VALUES
+export declare const TLS_HANDSHAKE_VALUES: Readonly<Partial<Record<HandshakeOutcome, string>>>;
 
 ### build/index.d.ts#TLS_PROBE
 export declare const TLS_PROBE: Probe<TlsInput, TlsRaw>;
 
-### build/index.d.ts#TRUSTS
-export declare const TRUSTS: readonly ["public", "private", "none"];
+### build/index.d.ts#TLS_RATIO_BINS
+export declare const TLS_RATIO_BINS: readonly Bin[];
 
-### build/index.d.ts#Target
-interface Target {
-  readonly host: string;
-  readonly kind: HostKind;
-  readonly port?: number | undefined;
-}
-
-### build/index.d.ts#TcpConnect
-export interface TcpConnect {
-  readonly address: string;
-  readonly port: number;
-  readonly family: 4 | 6;
-  readonly outcome: ConnectOutcome;
-  readonly ms: number;
-  readonly code?: string | undefined;
-}
+### build/index.d.ts#TLS_TRUST_VALUES
+export declare const TLS_TRUST_VALUES: Readonly<Record<Trust, string>>;
 
 ### build/index.d.ts#TcpInput
 interface TcpInput {
@@ -702,34 +813,6 @@ interface TcpPhase {
 ### build/index.d.ts#TcpRaw
 interface TcpRaw {
   readonly tcp: TcpPhase;
-}
-
-### build/index.d.ts#TlsCertificate
-export interface TlsCertificate {
-  readonly subject: string;
-  readonly issuer: string;
-  readonly names: readonly string[];
-  readonly validFrom: string;
-  readonly validTo: string;
-  readonly fingerprint256: string;
-  readonly selfSigned: boolean;
-  readonly chain: number;
-  readonly trust: Trust;
-  readonly problem?: CertProblem | undefined;
-}
-
-### build/index.d.ts#TlsHandshake
-export interface TlsHandshake {
-  readonly address: string;
-  readonly port: number;
-  readonly servername?: string | undefined;
-  readonly outcome: HandshakeOutcome;
-  readonly ms: number;
-  readonly protocol?: string | undefined;
-  readonly cipher?: string | undefined;
-  readonly alpn?: string | undefined;
-  readonly code?: string | undefined;
-  readonly certificate?: TlsCertificate | undefined;
 }
 
 ### build/index.d.ts#TlsInput
@@ -757,6 +840,7 @@ interface TlsPhase {
 ### build/index.d.ts#TlsProbeOptions
 interface TlsProbeOptions extends ConnectOptions {
   readonly roots?: readonly string[] | undefined;
+  readonly publicRoots?: readonly string[] | undefined;
 }
 
 ### build/index.d.ts#TlsRaw
@@ -765,14 +849,8 @@ interface TlsRaw {
   readonly tls?: TlsPhase | undefined;
 }
 
-### build/index.d.ts#Trust
-export type Trust = (typeof TRUSTS)[number];
-
-### build/index.d.ts#ValueOf
-type ValueOf<K> = K extends FactKind<infer V> ? V : never;
-
-### build/index.d.ts#canonicalHost
-export declare function canonicalHost(host: string): string;
+### build/index.d.ts#binOf
+export declare function binOf(bins: readonly Bin[], x: number): string;
 
 ### build/index.d.ts#certProblem
 export declare function certProblem(code: string): CertProblem;
@@ -786,20 +864,8 @@ export declare function createRunner(options: RunnerOptions): Runner;
 ### build/index.d.ts#decideScope
 export declare function decideScope(scope: Scope, peer: Target, ledger?: PortLedger): ScopeDecision;
 
-### build/index.d.ts#defineFactKind
-export declare function defineFactKind<V>(spec: FactKind<V>): FactKind<V>;
-
-### build/index.d.ts#defineProbe
-export declare function defineProbe<I, R>(probe: Probe<I, R>): Probe<I, R>;
-
 ### build/index.d.ts#dnsOutcome
 export declare function dnsOutcome(code: string | undefined): DnsOutcome;
-
-### build/index.d.ts#factsOf
-export declare function factsOf<V>(kind: FactKind<V>, facts: readonly Fact[]): Fact<V>[];
-
-### build/index.d.ts#formatTarget
-export declare function formatTarget(t: Target): string;
 
 ### build/index.d.ts#grantProblems
 export declare function grantProblems(grant: Grant): string[];
@@ -807,37 +873,25 @@ export declare function grantProblems(grant: Grant): string[];
 ### build/index.d.ts#handshakeOutcome
 export declare function handshakeOutcome(thrown: unknown, expired: boolean): HandshakeOutcome;
 
-### build/index.d.ts#hostKind
-export declare function hostKind(host: string): HostKind;
-
 ### build/index.d.ts#httpProbe
 export declare function httpProbe(options?: TlsProbeOptions): Probe<HttpInput, HttpRaw>;
 
-### build/index.d.ts#isFactOf
-export declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
+### build/index.d.ts#isLocalName
+export declare function isLocalName(name: string): boolean;
 
 ### build/index.d.ts#namedGrant
 export declare function namedGrant(t: Target, note?: string): Grant;
 
-### build/index.d.ts#observe
-export declare function observe<V>(kind: FactKind<V>, subject: Target, value: V, time?: FactTime): Observation<V>;
-
-### build/index.d.ts#parseTarget
-export declare function parseTarget(text: string): Result<Target, string>;
+### build/index.d.ts#readEvidence
+export declare function readEvidence(facts: readonly Fact[], options?: ReadOptions): Reading;
 
 ### build/index.d.ts#resolvedGrant
 export declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;
-
-### build/index.d.ts#sameTarget
-export declare function sameTarget(a: Target, b: Target): boolean;
 
 ### build/index.d.ts#scopeOf
 export declare function scopeOf(grants: readonly Grant[], options?: {
   readonly maxPortsPerHost?: number;
 }): Result<Scope, string[]>;
-
-### build/index.d.ts#target
-export declare function target(host: string, port?: number): Target;
 
 ### build/index.d.ts#tcpProbe
 export declare function tcpProbe(options?: ConnectOptions): Probe<TcpInput, TcpRaw>;
@@ -847,3 +901,502 @@ export declare function tlsProbe(options?: TlsProbeOptions): Probe<TlsInput, Tls
 
 ### build/index.d.ts#widen
 export declare function widen(scope: Scope, grants: readonly Grant[]): Result<Scope, string[]>;
+
+### build/kinds.chunk.d.ts#Availability
+type Availability = {
+  readonly available: true;
+  readonly version?: string | undefined;
+} | {
+  readonly available: false;
+  readonly reason: string;
+};
+
+### build/kinds.chunk.d.ts#CERT_PROBLEMS
+declare const CERT_PROBLEMS: readonly ["expired", "not-yet-valid", "name", "untrusted", "revoked", "other"];
+
+### build/kinds.chunk.d.ts#CONNECT_OUTCOMES
+declare const CONNECT_OUTCOMES: readonly ["connected", "refused", "timeout", "unreachable", "reset", "error"];
+
+### build/kinds.chunk.d.ts#CertProblem
+type CertProblem = (typeof CERT_PROBLEMS)[number];
+
+### build/kinds.chunk.d.ts#ConnectOutcome
+type ConnectOutcome = (typeof CONNECT_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#DNS_ANSWER
+declare const DNS_ANSWER: FactKind<DnsAnswer>;
+
+### build/kinds.chunk.d.ts#DNS_OUTCOMES
+declare const DNS_OUTCOMES: readonly ["ok", "nodata", "nxdomain", "servfail", "refused", "timeout", "unreachable", "error"];
+
+### build/kinds.chunk.d.ts#DnsAnswer
+interface DnsAnswer {
+  readonly name: string;
+  readonly record: RecordType;
+  readonly resolver: string;
+  readonly outcome: DnsOutcome;
+  readonly addresses: readonly string[];
+  readonly ttl?: number | undefined;
+  readonly ms: number;
+  readonly code?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#DnsOutcome
+type DnsOutcome = (typeof DNS_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#ECHO_OUTCOMES
+declare const ECHO_OUTCOMES: readonly ["reply", "none", "unreachable", "error"];
+
+### build/kinds.chunk.d.ts#EchoOutcome
+type EchoOutcome = (typeof ECHO_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#Fact
+interface Fact<V = unknown> {
+  readonly id: string;
+  readonly kind: string;
+  readonly layer: Layer;
+  readonly subject: Target;
+  readonly time: FactTime;
+  readonly source: FactSource;
+  readonly value: V;
+}
+
+### build/kinds.chunk.d.ts#FactKind
+interface FactKind<V> {
+  readonly kind: string;
+  readonly layer: Layer;
+  readonly summary: string;
+  readonly check: (value: unknown) => value is V;
+}
+
+### build/kinds.chunk.d.ts#FactSource
+interface FactSource {
+  readonly probe: string;
+  readonly version: string;
+  readonly tool?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#FactTime
+interface FactTime {
+  readonly start: number;
+  readonly end: number;
+}
+
+### build/kinds.chunk.d.ts#HANDSHAKE_OUTCOMES
+declare const HANDSHAKE_OUTCOMES: readonly ["ok", "cert-error", "alert", "not-tls", "timeout", "reset", "closed", "error"];
+
+### build/kinds.chunk.d.ts#HTTP_OUTCOMES
+declare const HTTP_OUTCOMES: readonly ["response", "protocol", "timeout", "reset", "closed", "error"];
+
+### build/kinds.chunk.d.ts#HTTP_RESPONSE
+declare const HTTP_RESPONSE: FactKind<HttpResponse>;
+
+### build/kinds.chunk.d.ts#HandshakeOutcome
+type HandshakeOutcome = (typeof HANDSHAKE_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#HostKind
+type HostKind = "name" | "ipv4" | "ipv6";
+
+### build/kinds.chunk.d.ts#HttpOutcome
+type HttpOutcome = (typeof HTTP_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#HttpResponse
+interface HttpResponse {
+  readonly address: string;
+  readonly port: number;
+  readonly scheme: "http" | "https";
+  readonly method: "GET" | "HEAD";
+  readonly host: string;
+  readonly path: string;
+  readonly outcome: HttpOutcome;
+  readonly status?: number | undefined;
+  readonly version?: string | undefined;
+  readonly fields: Readonly<Record<string, string>>;
+  readonly bytes: number;
+  readonly truncated: boolean;
+  readonly ttfbMs?: number | undefined;
+  readonly ms: number;
+  readonly code?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#ICMP_ECHO
+declare const ICMP_ECHO: FactKind<IcmpEcho>;
+
+### build/kinds.chunk.d.ts#IcmpEcho
+interface IcmpEcho {
+  readonly address: string;
+  readonly outcome: EchoOutcome;
+  readonly sent: number;
+  readonly received: number;
+  readonly rttMs: readonly number[];
+  readonly ttl?: number | undefined;
+  readonly from?: string | undefined;
+  readonly detail?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#NATIVE_KINDS
+declare const NATIVE_KINDS: readonly FactKind<unknown>[];
+
+### build/kinds.chunk.d.ts#Observation
+interface Observation<V = unknown> {
+  readonly kind: FactKind<V>;
+  readonly subject: Target;
+  readonly value: V;
+  readonly time?: FactTime | undefined;
+}
+
+### build/kinds.chunk.d.ts#PATH_REPORT
+declare const PATH_REPORT: FactKind<PathReport>;
+
+### build/kinds.chunk.d.ts#PATH_TRACE
+declare const PATH_TRACE: FactKind<PathTrace>;
+
+### build/kinds.chunk.d.ts#PathReport
+interface PathReport {
+  readonly address: string;
+  readonly outcome: TraceOutcome;
+  readonly cycles: number;
+  readonly hops: readonly ReportHop[];
+  readonly detail?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#PathTrace
+interface PathTrace {
+  readonly address: string;
+  readonly outcome: TraceOutcome;
+  readonly maxHops: number;
+  readonly hops: readonly TraceHop[];
+  readonly detail?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#Probe
+interface Probe<I, R> {
+  readonly id: string;
+  readonly version: string;
+  readonly summary: string;
+  readonly layer: Layer;
+  readonly mode: ProbeMode;
+  readonly kinds: readonly FactKind<unknown>[];
+  readonly tool?: string | undefined;
+  peers(input: I): readonly Target[];
+  available(context: ProbeContext): Promise<Availability>;
+  run(input: I, context: ProbeContext): Promise<R>;
+  parse(raw: R, input: I): readonly Observation[];
+}
+
+### build/kinds.chunk.d.ts#ProbeContext
+interface ProbeContext {
+  readonly clock: Clock;
+  readonly signal: AbortSignal;
+}
+
+### build/kinds.chunk.d.ts#ProbeMode
+type ProbeMode = "active" | "passive";
+
+### build/kinds.chunk.d.ts#RECORD_TYPES
+declare const RECORD_TYPES: readonly ["A", "AAAA"];
+
+### build/kinds.chunk.d.ts#RecordType
+type RecordType = (typeof RECORD_TYPES)[number];
+
+### build/kinds.chunk.d.ts#ReportHop
+interface ReportHop {
+  readonly ttl: number;
+  readonly address?: string | undefined;
+  readonly sent: number;
+  readonly received: number;
+  readonly bestMs?: number | undefined;
+  readonly meanMs?: number | undefined;
+  readonly worstMs?: number | undefined;
+}
+
+### build/kinds.chunk.d.ts#TCP_CONNECT
+declare const TCP_CONNECT: FactKind<TcpConnect>;
+
+### build/kinds.chunk.d.ts#TLS_HANDSHAKE
+declare const TLS_HANDSHAKE: FactKind<TlsHandshake>;
+
+### build/kinds.chunk.d.ts#TOOL_KINDS
+declare const TOOL_KINDS: readonly FactKind<unknown>[];
+
+### build/kinds.chunk.d.ts#TRACE_OUTCOMES
+declare const TRACE_OUTCOMES: readonly ["reached", "stopped", "unreachable", "error"];
+
+### build/kinds.chunk.d.ts#TRUSTS
+declare const TRUSTS: readonly ["public", "private", "none"];
+
+### build/kinds.chunk.d.ts#Target
+interface Target {
+  readonly host: string;
+  readonly kind: HostKind;
+  readonly port?: number | undefined;
+}
+
+### build/kinds.chunk.d.ts#TcpConnect
+interface TcpConnect {
+  readonly address: string;
+  readonly port: number;
+  readonly family: 4 | 6;
+  readonly outcome: ConnectOutcome;
+  readonly ms: number;
+  readonly code?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#TlsCertificate
+interface TlsCertificate {
+  readonly subject: string;
+  readonly issuer: string;
+  readonly names: readonly string[];
+  readonly validFrom: string;
+  readonly validTo: string;
+  readonly fingerprint256: string;
+  readonly selfSigned: boolean;
+  readonly chain: number;
+  readonly trust: Trust;
+  readonly problem?: CertProblem | undefined;
+}
+
+### build/kinds.chunk.d.ts#TlsHandshake
+interface TlsHandshake {
+  readonly address: string;
+  readonly port: number;
+  readonly servername?: string | undefined;
+  readonly outcome: HandshakeOutcome;
+  readonly ms: number;
+  readonly protocol?: string | undefined;
+  readonly cipher?: string | undefined;
+  readonly alpn?: string | undefined;
+  readonly code?: string | undefined;
+  readonly certificate?: TlsCertificate | undefined;
+}
+
+### build/kinds.chunk.d.ts#TraceHop
+interface TraceHop {
+  readonly ttl: number;
+  readonly addresses: readonly string[];
+  readonly sent: number;
+  readonly received: number;
+  readonly rttMs: readonly number[];
+  readonly unreachable?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#TraceOutcome
+type TraceOutcome = (typeof TRACE_OUTCOMES)[number];
+
+### build/kinds.chunk.d.ts#Trust
+type Trust = (typeof TRUSTS)[number];
+
+### build/kinds.chunk.d.ts#ValueOf
+type ValueOf<K> = K extends FactKind<infer V> ? V : never;
+
+### build/kinds.chunk.d.ts#canonicalHost
+declare function canonicalHost(host: string): string;
+
+### build/kinds.chunk.d.ts#defineFactKind
+declare function defineFactKind<V>(spec: FactKind<V>): FactKind<V>;
+
+### build/kinds.chunk.d.ts#defineProbe
+declare function defineProbe<I, R>(probe: Probe<I, R>): Probe<I, R>;
+
+### build/kinds.chunk.d.ts#factsOf
+declare function factsOf<V>(kind: FactKind<V>, facts: readonly Fact[]): Fact<V>[];
+
+### build/kinds.chunk.d.ts#formatTarget
+declare function formatTarget(t: Target): string;
+
+### build/kinds.chunk.d.ts#hostKind
+declare function hostKind(host: string): HostKind;
+
+### build/kinds.chunk.d.ts#isFactOf
+declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
+
+### build/kinds.chunk.d.ts#observe
+declare function observe<V>(kind: FactKind<V>, subject: Target, value: V, time?: FactTime): Observation<V>;
+
+### build/kinds.chunk.d.ts#parseTarget
+declare function parseTarget(text: string): Result<Target, string>;
+
+### build/kinds.chunk.d.ts#sameTarget
+declare function sameTarget(a: Target, b: Target): boolean;
+
+### build/kinds.chunk.d.ts#target
+declare function target(host: string, port?: number): Target;
+
+### build/layer.chunk.d.ts#LAYERS
+declare const LAYERS: readonly ["link", "wifi", "ip", "route", "path", "dns", "tcp", "tls", "http"];
+
+### build/layer.chunk.d.ts#Layer
+type Layer = (typeof LAYERS)[number];
+
+### build/layer.chunk.d.ts#isLayer
+declare function isLayer(value: unknown): value is Layer;
+
+### build/layer.chunk.d.ts#layerRank
+declare function layerRank(layer: Layer): number;
+
+### build/tools.d.ts#AVAILABILITY_TIMEOUT_MS
+export declare const AVAILABILITY_TIMEOUT_MS = 5e3;
+
+### build/tools.d.ts#DEFAULT_MTR_CYCLES
+export declare const DEFAULT_MTR_CYCLES = 20;
+
+### build/tools.d.ts#DEFAULT_PING_COUNT
+export declare const DEFAULT_PING_COUNT = 4;
+
+### build/tools.d.ts#DEFAULT_PING_WAIT_MS
+export declare const DEFAULT_PING_WAIT_MS = 1e3;
+
+### build/tools.d.ts#DEFAULT_TRACE_HOPS
+export declare const DEFAULT_TRACE_HOPS = 30;
+
+### build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
+export declare const DEFAULT_TRACE_WAIT_MS = 1e3;
+
+### build/tools.d.ts#MAX_MTR_CYCLES
+export declare const MAX_MTR_CYCLES = 100;
+
+### build/tools.d.ts#MAX_PING_COUNT
+export declare const MAX_PING_COUNT = 100;
+
+### build/tools.d.ts#MAX_TRACE_HOPS
+export declare const MAX_TRACE_HOPS = 64;
+
+### build/tools.d.ts#MTR_GRACE_MS
+export declare const MTR_GRACE_MS = 5e3;
+
+### build/tools.d.ts#MtrInput
+interface MtrInput {
+  readonly address: string;
+  readonly cycles?: number | undefined;
+  readonly maxHops?: number | undefined;
+}
+
+### build/tools.d.ts#PING6_LAST_WAIT_MS
+export declare const PING6_LAST_WAIT_MS = 1e4;
+
+### build/tools.d.ts#PING_INTERVAL_MS
+export declare const PING_INTERVAL_MS = 200;
+
+### build/tools.d.ts#PingInput
+interface PingInput {
+  readonly address: string;
+  readonly count?: number | undefined;
+  readonly waitMs?: number | undefined;
+}
+
+### build/tools.d.ts#TOOL_LICENSES
+export declare const TOOL_LICENSES: readonly ToolLicense[];
+
+### build/tools.d.ts#TOOL_MARGIN_MS
+export declare const TOOL_MARGIN_MS = 3e3;
+
+### build/tools.d.ts#TRACE_QUERIES
+export declare const TRACE_QUERIES = 3;
+
+### build/tools.d.ts#ToolCommand
+interface ToolCommand {
+  readonly command: string;
+  readonly args: readonly string[];
+  readonly timeoutMs: number;
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
+
+### build/tools.d.ts#ToolHost
+interface ToolHost {
+  readonly platform: string;
+  run(command: string, args: readonly string[], options: ToolRunOptions): Promise<ToolOutput>;
+}
+
+### build/tools.d.ts#ToolLicense
+interface ToolLicense {
+  readonly tool: string;
+  readonly license: string;
+  readonly use: ToolUse;
+  readonly probe?: string | undefined;
+}
+
+### build/tools.d.ts#ToolOutput
+interface ToolOutput {
+  readonly exitCode: number;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly timedOut?: boolean | undefined;
+  readonly error?: string | undefined;
+}
+
+### build/tools.d.ts#ToolRaw
+interface ToolRaw extends ToolOutput {
+  readonly platform: string;
+  readonly command: string;
+  readonly args: readonly string[];
+  readonly start: number;
+  readonly end: number;
+}
+
+### build/tools.d.ts#ToolRunOptions
+interface ToolRunOptions {
+  readonly timeoutMs: number;
+  readonly signal: AbortSignal;
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
+
+### build/tools.d.ts#ToolUse
+type ToolUse = "adapter" | "not-bundled";
+
+### build/tools.d.ts#TraceInput
+interface TraceInput {
+  readonly address: string;
+  readonly maxHops?: number | undefined;
+  readonly waitMs?: number | undefined;
+}
+
+### build/tools.d.ts#availabilityOf
+export declare function availabilityOf(tool: string, output: ToolOutput, version?: RegExp): Availability;
+
+### build/tools.d.ts#mtrAvailability
+export declare function mtrAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#mtrCommand
+export declare function mtrCommand(platform: string, input: MtrInput): ToolCommand | undefined;
+
+### build/tools.d.ts#mtrProbe
+export declare function mtrProbe(host: ToolHost): Probe<MtrInput, ToolRaw>;
+
+### build/tools.d.ts#pingAvailability
+export declare function pingAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#pingCommand
+export declare function pingCommand(platform: string, input: PingInput): ToolCommand | undefined;
+
+### build/tools.d.ts#pingProbe
+export declare function pingProbe(host: ToolHost): Probe<PingInput, ToolRaw>;
+
+### build/tools.d.ts#readMtr
+export declare function readMtr(raw: ToolRaw, input: {
+  readonly address: string;
+  readonly cycles?: number | undefined;
+}): PathReport;
+
+### build/tools.d.ts#readPing
+export declare function readPing(raw: ToolRaw, address: string): IcmpEcho;
+
+### build/tools.d.ts#readTraceroute
+export declare function readTraceroute(raw: ToolRaw, input: {
+  readonly address: string;
+  readonly maxHops?: number | undefined;
+}): PathTrace;
+
+### build/tools.d.ts#runTool
+export declare function runTool(host: ToolHost, tool: ToolCommand, context: ProbeContext): Promise<ToolRaw>;
+
+### build/tools.d.ts#toolLicense
+export declare function toolLicense(tool: string): ToolLicense | undefined;
+
+### build/tools.d.ts#tracerouteAvailability
+export declare function tracerouteAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#tracerouteCommand
+export declare function tracerouteCommand(platform: string, input: TraceInput): ToolCommand | undefined;
+
+### build/tools.d.ts#tracerouteProbe
+export declare function tracerouteProbe(host: ToolHost): Probe<TraceInput, ToolRaw>;
