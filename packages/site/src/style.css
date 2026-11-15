@@ -1,3 +1,5 @@
+@import "@mark1russell7/site-pages/demo.css";
+
 :root {
   --page: #fbfbfa;
   --panel: #f0f0ed;
@@ -54,7 +56,7 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem 1rem;
-  max-width: 44rem;
+  max-width: 52rem;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -73,7 +75,7 @@ nav {
 }
 
 main {
-  max-width: 44rem;
+  max-width: 52rem;
   margin: 0 auto;
   padding: 1rem 1rem 3rem;
 }
@@ -124,4 +126,591 @@ button {
   color: var(--ink);
   font: inherit;
   cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--quiet);
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+button.primary {
+  border-color: var(--link);
+  background: var(--link);
+  color: var(--page);
+  font-weight: 600;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.lead code,
+p code,
+li code,
+.sp-verdict code {
+  padding: 0 0.2em;
+  border-radius: 0.25rem;
+  background: var(--panel);
+}
+
+h3 {
+  margin: 1.5rem 0 0.25rem;
+  font-size: 1rem;
+}
+
+.small {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+}
+
+.tag {
+  flex: none;
+  padding: 0 0.4em;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  color: var(--quiet);
+  font: 0.72rem/1.5 system-ui, sans-serif;
+  white-space: nowrap;
+}
+
+.tag.pass {
+  border-color: transparent;
+  background: var(--sp-pass-bg);
+  color: var(--sp-pass);
+}
+
+.tag.fail,
+.tag.no-read {
+  border-color: transparent;
+  background: var(--sp-fail-bg);
+  color: var(--sp-fail);
+}
+
+.tag.next,
+.tag.truth-tag {
+  border-color: var(--link);
+  color: var(--link);
+}
+
+/* The three doors of the page: one link to each demo. */
+.doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doors a {
+  display: block;
+  height: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.doors a:hover {
+  border-color: var(--link);
+}
+
+.doors b {
+  display: block;
+}
+
+.sp-demo > h2 {
+  margin-top: 0;
+}
+
+.summary {
+  margin: 0.75rem 0 0.25rem;
+}
+
+/* A bar of a probability or a part: the custom property --p sets its length. */
+.meter {
+  display: block;
+  height: 0.5rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(to right, var(--link) var(--p), var(--panel) var(--p));
+}
+
+.meter.small {
+  display: inline-block;
+  width: 4rem;
+  vertical-align: middle;
+}
+
+/* 1. The stack of the board: one row for each layer, from the link to HTTP. */
+.stack {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0.5rem 0;
+}
+
+.layer {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--panel);
+}
+
+.layer-name {
+  margin: 0.15rem 0 0;
+  color: var(--quiet);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.layer-features {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.feature-name {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.feature-name code {
+  padding: 0;
+  background: none;
+  color: var(--quiet);
+  font-size: 0.75rem;
+}
+
+.values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.125rem;
+}
+
+.values button {
+  min-height: 1.875rem;
+  padding: 0 0.5rem;
+  border-radius: 0.9rem;
+  font: 0.8rem/1 ui-monospace, Consolas, monospace;
+}
+
+.values .usual[aria-pressed="true"] {
+  border-color: var(--sp-pass);
+  background: var(--sp-pass-bg);
+  color: var(--sp-pass);
+  font-weight: 650;
+}
+
+.values .unusual[aria-pressed="true"] {
+  border-color: var(--sp-fail);
+  background: var(--sp-fail-bg);
+  color: var(--sp-fail);
+  font-weight: 650;
+}
+
+.board-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  color: var(--quiet);
+  font-size: 0.9rem;
+}
+
+/* The causes: a bar of the probability of each cause. */
+.causes {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cause-box {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--page);
+  color: var(--ink);
+  text-align: start;
+  font: inherit;
+}
+
+button.cause-box[aria-pressed="true"] {
+  border-color: var(--link);
+  box-shadow: inset 0 0 0 1px var(--link);
+}
+
+.cause-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
+.cause-head .pct {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.cause-text {
+  color: var(--quiet);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.cause.rest {
+  padding: 0 0.75rem;
+  color: var(--quiet);
+  font-size: 0.85rem;
+}
+
+.obs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+/* The weights of an explanation: a bar to the right for the cause, and to the left against it. */
+.weights {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weight {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 4.5rem;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.wbar {
+  position: relative;
+  height: 0.875rem;
+  background: linear-gradient(var(--line), var(--line)) center / 1px 100% no-repeat;
+}
+
+.wbar > span {
+  position: absolute;
+  top: 0.125rem;
+  bottom: 0.125rem;
+  width: var(--w);
+  border-radius: 0.2rem;
+}
+
+.weight.for .wbar > span {
+  left: 50%;
+  background: var(--sp-fail);
+}
+
+.weight.against .wbar > span {
+  right: 50%;
+  background: var(--sp-pass);
+}
+
+.factor {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.sum {
+  margin: 0.5rem 0 0;
+}
+
+/* 2. The probes of the search. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.probes {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.probe {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+
+.probe.best {
+  border-color: var(--link);
+  box-shadow: inset 0 0 0 1px var(--link);
+}
+
+.probe-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.625rem;
+}
+
+.probe-gain {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.probe-time {
+  color: var(--quiet);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.probe-head button {
+  min-height: 1.875rem;
+}
+
+.probe-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.probe-features code {
+  font-size: 0.75rem;
+}
+
+.probe-features code.seen {
+  color: var(--quiet);
+  text-decoration: line-through;
+}
+
+.steps {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.step {
+  font-size: 0.875rem;
+}
+
+.step-obs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin: 0.125rem 0;
+}
+
+.step-top {
+  display: block;
+  color: var(--quiet);
+}
+
+/* 3. The rows of the lab: the recall interval, the recall and the bar on one track from 0 to 1. */
+.lab-probes {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+
+.lab-probes legend {
+  padding: 0 0.25rem;
+  color: var(--quiet);
+  font-size: 0.9rem;
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: 0.125rem 1rem;
+}
+
+.check {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.check input {
+  flex: none;
+  accent-color: var(--link);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem 0 0.25rem;
+  padding: 0;
+  color: var(--quiet);
+  font-size: 0.8rem;
+  list-style: none;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.key {
+  display: inline-block;
+  width: 1rem;
+  height: 0.625rem;
+  border-radius: 0.2rem;
+}
+
+.key.range {
+  background: var(--sp-hit);
+}
+
+.key.point {
+  width: 0.625rem;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.key.line {
+  width: 2px;
+  height: 0.875rem;
+  border-radius: 0;
+  background: var(--sp-fail);
+}
+
+.recalls {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recall {
+  padding: 0.375rem 0.75rem;
+  border-left: 3px solid var(--line);
+}
+
+.recall.pass {
+  border-left-color: var(--sp-pass);
+}
+
+.recall.fail,
+.recall.no-read {
+  border-left-color: var(--sp-fail);
+}
+
+.recall-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.recall-value {
+  margin-left: auto;
+  color: var(--quiet);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  position: relative;
+  display: block;
+  height: 0.875rem;
+  margin: 0.25rem 0 0;
+  border-radius: 0.25rem;
+  background: var(--panel);
+}
+
+.track > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.track .range {
+  border-radius: 0.25rem;
+  background: var(--sp-hit);
+}
+
+.track .point {
+  top: 0.1875rem;
+  bottom: auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: -0.25rem;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.track .line {
+  width: 2px;
+  margin-left: -1px;
+  background: var(--sp-fail);
+}
+
+.mistake {
+  margin: 0.125rem 0 0;
+  color: var(--quiet);
+  font-size: 0.8rem;
+}
+
+.code {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--panel);
+  font: 0.875rem/1.5 ui-monospace, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.code code {
+  font-size: inherit;
+}
+
+/* On a phone, the name of a layer goes above its features, and a weight goes under its observation. */
+@media (max-width: 30rem) {
+  .layer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .weight {
+    grid-template-columns: minmax(0, 1fr) 4rem;
+  }
+
+  .weight .obs {
+    grid-column: 1 / -1;
+  }
 }

@@ -26,12 +26,88 @@
 <main>
   <h1>netdiag</h1>
   <p class="lead">Find the cause of a network problem at any layer, and get the next step.</p>
+  <p>The demos run the diagnosis model of netdiag in your browser. They send no packets: you give the observations, or a simulated network gives them.</p>
 
-  <h2>Get the code</h2>
+  <ul class="doors" aria-label="The demos">
+    <li><a href="#board-title"><b>Name the cause</b> Pick what you observed, and see the probable causes.</a></li>
+    <li><a href="#search-title"><b>Find a hidden fault</b> Run the best probe until one cause is clear.</a></li>
+    <li><a href="#lab-title"><b>Score the catalog</b> Make each fault many times, and hold each recall with a bar.</a></li>
+  </ul>
+
+  <section class="sp-demo" aria-labelledby="board-title">
+    <h2 id="board-title">1. Name the cause from the observations</h2>
+    <p>Pick a value for each thing that you observed. <code>diagnose</code> gives the probability of each cause of the catalog, and <code>explain</code> tells why.</p>
+    <div id="board-chips" class="sp-examples" aria-label="Examples"></div>
+    <div id="board-host" class="sp-choices" role="radiogroup" aria-label="The host of the observations">
+      <button type="button" role="radio" data-host="target">The target</button>
+      <button type="button" role="radio" data-host="reference">A second host</button>
+    </div>
+    <p id="board-host-note" class="note small"></p>
+    <div id="board-stack" class="stack"></div>
+    <p class="board-foot"><span id="board-count"></span> <button id="board-clear" type="button">Clear</button></p>
+    <div id="board-verdict"></div>
+    <h3>The most probable causes</h3>
+    <p class="note small">Select a cause to see why it has its probability.</p>
+    <ol id="board-causes" class="causes"></ol>
+    <h3 id="why-title">Why</h3>
+    <div id="board-why"></div>
+  </section>
+
+  <section class="sp-demo" aria-labelledby="search-title">
+    <h2 id="search-title">2. Find a hidden fault, one probe at a time</h2>
+    <p>A simulated network has one fault. Each probe draws its facts from the likelihoods of that fault. <code>rankProbes</code> puts first the probe with the largest expected information gain.</p>
+    <div class="sp-pair">
+      <label class="sp-field"><span>The fault of the network</span><select id="search-truth"></select></label>
+      <label class="sp-field"><span>The seed</span><input id="search-seed" type="number" min="1" step="1" value="1"></label>
+    </div>
+    <div class="actions">
+      <button id="search-best" type="button" class="primary">Run the best probe</button>
+      <button id="search-auto" type="button">Run to the end</button>
+      <button id="search-reset" type="button">Start again</button>
+    </div>
+    <div id="search-result" aria-live="polite"></div>
+    <h3>The probes, from the largest gain</h3>
+    <ol id="search-probes" class="probes"></ol>
+    <h3>The most probable causes</h3>
+    <ol id="search-causes" class="causes"></ol>
+    <h3>The probes so far</h3>
+    <ol id="search-steps" class="steps"></ol>
+  </section>
+
+  <section class="sp-demo" aria-labelledby="lab-title">
+    <h2 id="lab-title">3. Score the catalog in a simulated lab</h2>
+    <p>The lab makes each fault many times, and the probes observe it. <code>scoreLab</code> gives the recall of each fault with its Wilson interval. <code>labGate</code> holds the lower end of each interval with a bar.</p>
+    <div class="sp-pair">
+      <label class="sp-field"><span>Runs of each fault: <b><output id="lab-runs-value" for="lab-runs">20</output></b></span><input id="lab-runs" type="range" min="5" max="50" step="5" value="20"></label>
+      <label class="sp-field"><span>The bar: <b><output id="lab-bar-value" for="lab-bar">0.50</output></b></span><input id="lab-bar" type="range" min="0" max="0.95" step="0.05" value="0.5"></label>
+      <label class="sp-field"><span>The seed</span><input id="lab-seed" type="number" min="1" step="1" value="1"></label>
+    </div>
+    <fieldset class="lab-probes">
+      <legend>The probes of each run</legend>
+      <div id="lab-probes" class="checks"></div>
+    </fieldset>
+    <div id="lab-result" aria-live="polite"></div>
+    <ul class="legend" aria-label="The key of the rows">
+      <li><span class="key range"></span> The recall interval</li>
+      <li><span class="key point"></span> The recall</li>
+      <li><span class="key line"></span> The bar</li>
+    </ul>
+    <ol id="lab-rows" class="recalls"></ol>
+    <p class="note">No reader of netdiag gives the link state or the Wi-Fi signal yet, so no probe of the demo observes them. Compare the rows of <code>interface.down</code> and <code>wifi.weak</code>.</p>
+  </section>
+
+  <h2>Install</h2>
   <div class="command">
-    <code id="install">git clone https://github.com/mark1russell7/netdiag.git</code>
+    <code id="install">pnpm add @mark1russell7/netdiag</code>
     <button id="copy" type="button">Copy</button>
   </div>
+<pre class="code"><code>import { STANDARD_CATALOG, diagnose } from "@mark1russell7/netdiag/diagnosis";
+
+const result = diagnose(STANDARD_CATALOG, [
+  { feature: "icmp.reply", value: "none", primary: true },
+  { feature: "tcp.connect", value: "connected", primary: true },
+]);
+// result.causes[0].id is "filter.icmp": a filter blocks ICMP, and the host is up.</code></pre>
   <p class="note"><a href="./releases/">Releases</a> shows each version, and <a href="./status/">Status</a> shows the open work.</p>
 </main>
 
