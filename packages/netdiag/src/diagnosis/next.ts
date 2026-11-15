@@ -35,8 +35,14 @@ export interface RankOptions {
   readonly top?: number | undefined;
 }
 
-/** The largest number of joint values of the features of one candidate. */
-export const MAX_JOINT_VALUES = 4096;
+/**
+ * The largest number of joint values of the features of one candidate.
+ *
+ * - The likelihood table of a candidate has one row of this length for each group of causes. With 22 groups, the
+ *   table has 1.4 million numbers, or 11.5 MB.
+ * - The largest probe of a visit is one HTTPS request. Its 7 features have 5400 joint values in `STANDARD_CATALOG`.
+ */
+export const MAX_JOINT_VALUES = 65536;
 
 /** Two gains that differ by less than this number of bits are equal in the order of `rankProbes`. */
 export const GAIN_RESOLUTION = 1e-9;
@@ -55,6 +61,11 @@ function groupsOf(causes: readonly Cause[], top: number | undefined): readonly (
  * This function gives the likelihood table of the features of a candidate. The table has one row for each group of
  * causes, and one column for each joint value of the features. The model takes the features as independent for a cause.
  * Thus the probability of a joint value is the product of the probabilities of its values.
+ *
+ * - The first feature is the most significant digit of the index of a column, and the last feature is the least
+ *   significant digit.
+ * - A walk over the features computes each product of a prefix one time for each cause. A value with the probability
+ *   0 stops its branch, because each joint value under it has the probability 0.
  */
 function tableOf(catalog: Catalog, groups: readonly (readonly Cause[])[], counted: readonly Observable[]): number[][] {
   const columns = counted.map((item) => {
@@ -64,26 +75,25 @@ function tableOf(catalog: Catalog, groups: readonly (readonly Cause[])[], counte
   });
   const joint = columns.reduce((count, column) => count * column.values.length, 1);
   if (joint > MAX_JOINT_VALUES) throw new RangeError(`The features of a candidate have ${joint} joint values. The limit is ${MAX_JOINT_VALUES}.`);
-  // The probabilities of each value of each feature for each cause.
-  const rowsOf = (cause: Cause): number[][] =>
-    columns.map((column) => column.values.map((value) => catalog.likelihood(cause.id, column.feature, value, column.primary)));
   return groups.map((group) => {
     const mass = group.reduce((sum, cause) => sum + cause.probability, 0);
-    // A group with a probability of 0 adds nothing to the gain. Its row is the mean of the rows of its causes.
-    const weights = group.map((cause) => (mass > 0 ? cause.probability / mass : 1 / group.length));
-    const causeRows = group.map(rowsOf);
     const row = new Array<number>(joint).fill(0);
-    for (let index = 0; index < joint; index++) {
-      group.forEach((_, member) => {
-        let p = weights[member] ?? 0;
-        let rest = index;
-        for (let c = columns.length - 1; c >= 0; c--) {
-          const size = columns[c]?.values.length ?? 1;
-          p *= causeRows[member]?.[c]?.[rest % size] ?? 0;
-          rest = Math.floor(rest / size);
+    for (const cause of group) {
+      // A group with a probability of 0 adds nothing to the gain. Its row is the mean of the rows of its causes.
+      const weight = mass > 0 ? cause.probability / mass : 1 / group.length;
+      // The probabilities of each value of each feature for the cause.
+      const rows = columns.map((column) => column.values.map((value) => catalog.likelihood(cause.id, column.feature, value, column.primary)));
+      const walk = (depth: number, index: number, p: number): void => {
+        const probabilities = rows[depth];
+        if (probabilities === undefined) {
+          row[index] = (row[index] ?? 0) + p;
+          return;
         }
-        row[index] = (row[index] ?? 0) + p;
-      });
+        probabilities.forEach((q, value) => {
+          if (q > 0) walk(depth + 1, index * probabilities.length + value, p * q);
+        });
+      };
+      if (weight > 0) walk(0, 0, weight);
     }
     return row;
   });

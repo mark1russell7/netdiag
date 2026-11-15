@@ -61,6 +61,30 @@ describe("rankProbes", () => {
     );
   });
 
+  it("gives the expected fall of the entropy for 3 and 4 features, with each feature of the candidate as a digit", () => {
+    fc.assert(
+      fc.property(fc.array(evidenceItem, { maxLength: 2 }), fc.uniqueArray(observable, { minLength: 3, maxLength: 4, selector: key }), fc.option(fc.constant(3), { nil: undefined }), (evidence, observes, top) => {
+        const fresh = observes.filter((item) => !evidence.some((e) => key(e) === key(item)));
+        expect(gainOf(evidence, observes, top)).toBeCloseTo(fresh.length === 0 ? 0 : expectedFall(evidence, fresh, top), 9);
+      }),
+      { seed: 20261117, numRuns: 30 },
+    );
+  });
+
+  it("ranks the 7 features of an HTTPS request, with 5400 joint values", () => {
+    const https = ["tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio", "http.status", "http.ttfb"];
+    expect(https.reduce((product, id) => product * (catalog.features.get(id)?.values.length ?? Number.NaN), 1)).toBe(5400);
+    for (const primary of [true, false]) {
+      const observes = https.map((feature) => ({ feature, primary }));
+      const tls = observes.filter((item) => !item.feature.startsWith("http."));
+      for (const top of [3, undefined]) {
+        const gain = gainOf([], observes, top);
+        expect(gain).toBeGreaterThanOrEqual(gainOf([], tls, top) - 1e-12);
+        expect(gain).toBeLessThanOrEqual(entropy(diagnose(catalog, []).causes.map((cause) => cause.probability)) + 1e-12);
+      }
+    }
+  });
+
   it("gives at least the gain of a part of the features, and at most the entropy of the causes", () => {
     fc.assert(
       fc.property(fc.array(evidenceItem, { maxLength: 4 }), fc.uniqueArray(observable, { minLength: 2, maxLength: 3, selector: key }), (evidence, observes) => {

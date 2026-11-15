@@ -70,8 +70,8 @@ function nextProbe(role: VisitRole, probe: NextProbeKind): NextProbe {
 
 /**
  * The candidates of the next step: each probe of the target and of the reference hosts, and the ping of the gateway.
- * The TLS handshake and the HTTP request are two candidates, so that the joint values of each candidate stay below the
- * limit `MAX_JOINT_VALUES` of `rankProbes`.
+ * The TLS handshake and the HTTP request are two candidates, one for each stage. Each stage has its own conditions in
+ * `ready`. One candidate for the whole HTTPS request is the next change of this list.
  */
 export const NEXT_PROBES: readonly NextProbe[] = [
   ...(["target", "reference"] as const).flatMap((role) => (["dns", "ping", "tls", "http"] as const).map((probe) => nextProbe(role, probe))),
