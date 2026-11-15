@@ -10,6 +10,7 @@ ADDRESS_CLASSES: build/address.d.ts#ADDRESS_CLASSES
 AddressClass: build/address.d.ts#AddressClass
 AddressFamily: build/address.d.ts#AddressFamily
 type Availability: build/host.chunk.d.ts#Availability
+type BandwidthEstimate: build/index.d.ts#BandwidthEstimate
 Bin: build/index.d.ts#Bin
 CAPTURE_OUTCOMES: build/host.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/host.chunk.d.ts#CAPTURE_PROTOCOLS
@@ -36,6 +37,7 @@ DNS_ANSWER: build/host.chunk.d.ts#DNS_ANSWER
 DNS_ANSWER_VALUES: build/index.d.ts#DNS_ANSWER_VALUES
 DNS_OUTCOMES: build/host.chunk.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
+type DelayMetrics: build/index.d.ts#DelayMetrics
 type Diagnosis: build/index.chunk.d.ts#Diagnosis
 type Dial: build/index.d.ts#Dial
 type Distribution: build/index.chunk.d.ts#Distribution
@@ -44,6 +46,7 @@ type DnsInput: build/index.d.ts#DnsInput
 DnsOutcome: build/host.chunk.d.ts#DnsOutcome
 type DnsRaw: build/index.d.ts#DnsRaw
 ECHO_OUTCOMES: build/host.chunk.d.ts#ECHO_OUTCOMES
+type EchoMetrics: build/index.d.ts#EchoMetrics
 EchoOutcome: build/host.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk.d.ts#Evidence
 type Expectation: build/index.chunk.d.ts#Expectation
@@ -79,6 +82,7 @@ ICMP_REPLY_VALUES: build/index.d.ts#ICMP_REPLY_VALUES
 IcmpEcho: build/host.chunk.d.ts#IcmpEcho
 type InterfaceAddress: build/index.d.ts#InterfaceAddress
 type InterfaceTable: build/index.d.ts#InterfaceTable
+JITTER_GAIN: build/index.d.ts#JITTER_GAIN
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
 LAB_BAR_STEP: build/index.chunk.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
@@ -104,6 +108,7 @@ LinkInterface: build/host.chunk.d.ts#LinkInterface
 type LinkRaw: build/index.d.ts#LinkRaw
 LinkState: build/host.chunk.d.ts#LinkState
 LinkStateValue: build/host.chunk.d.ts#LinkStateValue
+type LossEstimate: build/index.d.ts#LossEstimate
 MAX_JOINT_VALUES: build/index.chunk.d.ts#MAX_JOINT_VALUES
 MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
 NATIVE_KINDS: build/host.chunk.d.ts#NATIVE_KINDS
@@ -111,12 +116,14 @@ NONE: build/index.chunk.d.ts#NONE
 type Observable: build/index.chunk.d.ts#Observable
 type Observation: build/host.chunk.d.ts#Observation
 PACKET_PROTOCOLS: build/host.chunk.d.ts#PACKET_PROTOCOLS
+PAIR_LEVEL: build/index.d.ts#PAIR_LEVEL
 PARTS: build/index.chunk.d.ts#PARTS
 PATH_CAPTURE: build/host.chunk.d.ts#PATH_CAPTURE
 PATH_LOSS_BINS: build/index.d.ts#PATH_LOSS_BINS
 PATH_REPORT: build/host.chunk.d.ts#PATH_REPORT
 PATH_THROUGHPUT: build/host.chunk.d.ts#PATH_THROUGHPUT
 PATH_TRACE: build/host.chunk.d.ts#PATH_TRACE
+PDV_QUANTILE: build/index.d.ts#PDV_QUANTILE
 PacketProtocol: build/host.chunk.d.ts#PacketProtocol
 type Part: build/index.chunk.d.ts#Part
 PathCapture: build/host.chunk.d.ts#PathCapture
@@ -131,6 +138,9 @@ type ProbeContext: build/host.chunk.d.ts#ProbeContext
 type ProbeMode: build/host.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/index.d.ts#ProbeOutcome
 RECORD_TYPES: build/host.chunk.d.ts#RECORD_TYPES
+RTO_ALPHA: build/index.d.ts#RTO_ALPHA
+RTO_BETA: build/index.d.ts#RTO_BETA
+RTO_K: build/index.d.ts#RTO_K
 type RangeGrant: build/index.d.ts#RangeGrant
 type RankOptions: build/index.chunk.d.ts#RankOptions
 type Reach: build/index.chunk.d.ts#Reach
@@ -138,6 +148,8 @@ ReadOptions: build/index.d.ts#ReadOptions
 Reading: build/index.d.ts#Reading
 RecordType: build/host.chunk.d.ts#RecordType
 ReportHop: build/host.chunk.d.ts#ReportHop
+type RtoEstimate: build/index.d.ts#RtoEstimate
+type RtoOptions: build/index.d.ts#RtoOptions
 type Runner: build/index.d.ts#Runner
 type RunnerOptions: build/index.d.ts#RunnerOptions
 STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
@@ -189,9 +201,11 @@ type VisitOptions: build/index.d.ts#VisitOptions
 type VisitResolver: build/index.d.ts#VisitResolver
 type VisitRole: build/index.d.ts#VisitRole
 type VisitStep: build/index.d.ts#VisitStep
+ackSamples: build/index.d.ts#ackSamples
 addressClass: build/address.d.ts#addressClass
 addressFamily: build/address.d.ts#addressFamily
 addressKind: build/address.d.ts#addressKind
+bandwidthOf: build/index.d.ts#bandwidthOf
 binOf: build/index.d.ts#binOf
 canonicalAddress: build/address.d.ts#canonicalAddress
 canonicalHost: build/host.chunk.d.ts#canonicalHost
@@ -204,9 +218,11 @@ createRunner: build/index.d.ts#createRunner
 decideScope: build/index.d.ts#decideScope
 defineFactKind: build/host.chunk.d.ts#defineFactKind
 defineProbe: build/host.chunk.d.ts#defineProbe
+delayMetrics: build/index.d.ts#delayMetrics
 describeOutcome: build/index.d.ts#describeOutcome
 diagnose: build/index.chunk.d.ts#diagnose
 dnsOutcome: build/index.d.ts#dnsOutcome
+echoMetrics: build/index.d.ts#echoMetrics
 expand: build/index.chunk.d.ts#expand
 explain: build/index.chunk.d.ts#explain
 factsOf: build/host.chunk.d.ts#factsOf
@@ -218,6 +234,7 @@ handshakeOutcome: build/index.d.ts#handshakeOutcome
 hostKind: build/host.chunk.d.ts#hostKind
 httpProbe: build/index.d.ts#httpProbe
 interfaceOf: build/index.d.ts#interfaceOf
+ipdv: build/index.d.ts#ipdv
 isFactOf: build/host.chunk.d.ts#isFactOf
 isLayer: build/layer.chunk.d.ts#isLayer
 isLocalName: build/index.d.ts#isLocalName
@@ -227,14 +244,19 @@ labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
 linkProbe: build/index.d.ts#linkProbe
 linkStateOf: build/index.d.ts#linkStateOf
+lossOf: build/index.d.ts#lossOf
 namedGrant: build/index.d.ts#namedGrant
 observe: build/host.chunk.d.ts#observe
+packetPairs: build/index.d.ts#packetPairs
 parseCidr: build/address.d.ts#parseCidr
 parseTarget: build/host.chunk.d.ts#parseTarget
+pdv: build/index.d.ts#pdv
 predictive: build/index.chunk.d.ts#predictive
 rankProbes: build/index.chunk.d.ts#rankProbes
 readEvidence: build/index.d.ts#readEvidence
 resolvedGrant: build/index.d.ts#resolvedGrant
+rfc3550Jitter: build/index.d.ts#rfc3550Jitter
+rtoOf: build/index.d.ts#rtoOf
 sameTarget: build/host.chunk.d.ts#sameTarget
 scopeOf: build/index.d.ts#scopeOf
 scoreLab: build/index.chunk.d.ts#scoreLab
@@ -1198,6 +1220,15 @@ declare function rankProbes(catalog: Catalog, diagnosis: Diagnosis, candidates: 
 ### build/index.chunk.d.ts#scoreLab
 declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
 
+### build/index.d.ts#BandwidthEstimate
+interface BandwidthEstimate {
+  readonly pairs: number;
+  readonly bitsPerSecond: number;
+  readonly low: number;
+  readonly high: number;
+  readonly coverage: number;
+}
+
 ### build/index.d.ts#Bin
 export interface Bin {
   readonly below?: number | undefined;
@@ -1230,6 +1261,19 @@ export declare const DNS_ANSWER_VALUES: Readonly<Partial<Record<DnsOutcome, stri
 ### build/index.d.ts#DNS_PROBE
 export declare const DNS_PROBE: Probe<DnsInput, DnsRaw>;
 
+### build/index.d.ts#DelayMetrics
+interface DelayMetrics {
+  readonly samples: number;
+  readonly minMs: number;
+  readonly medianMs: number;
+  readonly meanMs: number;
+  readonly maxMs: number;
+  readonly sdMs?: number | undefined;
+  readonly jitterMs?: number | undefined;
+  readonly ipdvMs?: number | undefined;
+  readonly pdvMs: number;
+}
+
 ### build/index.d.ts#Dial
 type Dial = (options: TcpNetConnectOpts) => Socket;
 
@@ -1253,6 +1297,13 @@ interface DnsRaw {
   readonly addresses: readonly string[];
   readonly ttl?: number | undefined;
   readonly code?: string | undefined;
+}
+
+### build/index.d.ts#EchoMetrics
+interface EchoMetrics {
+  readonly address: string;
+  readonly loss?: LossEstimate | undefined;
+  readonly delay?: DelayMetrics | undefined;
 }
 
 ### build/index.d.ts#FEATURE_SOURCES
@@ -1337,6 +1388,9 @@ interface InterfaceAddress {
 ### build/index.d.ts#InterfaceTable
 type InterfaceTable = Readonly<Record<string, readonly InterfaceAddress[] | undefined>>;
 
+### build/index.d.ts#JITTER_GAIN
+export declare const JITTER_GAIN: number;
+
 ### build/index.d.ts#KEPT_FIELDS
 export declare const KEPT_FIELDS: readonly string[];
 
@@ -1368,11 +1422,26 @@ interface LinkRaw {
   readonly end: number;
 }
 
+### build/index.d.ts#LossEstimate
+interface LossEstimate {
+  readonly sent: number;
+  readonly lost: number;
+  readonly ratio: number;
+  readonly low: number;
+  readonly high: number;
+}
+
 ### build/index.d.ts#MIN_CONNECT_MS
 export declare const MIN_CONNECT_MS = 1;
 
+### build/index.d.ts#PAIR_LEVEL
+export declare const PAIR_LEVEL = .95;
+
 ### build/index.d.ts#PATH_LOSS_BINS
 export declare const PATH_LOSS_BINS: readonly Bin[];
+
+### build/index.d.ts#PDV_QUANTILE
+export declare const PDV_QUANTILE = .99;
 
 ### build/index.d.ts#PortLedger
 type PortLedger = ReadonlyMap<string, ReadonlySet<number>>;
@@ -1400,6 +1469,15 @@ type ProbeOutcome<R> = {
   readonly reason: string;
 };
 
+### build/index.d.ts#RTO_ALPHA
+export declare const RTO_ALPHA: number;
+
+### build/index.d.ts#RTO_BETA
+export declare const RTO_BETA: number;
+
+### build/index.d.ts#RTO_K
+export declare const RTO_K = 4;
+
 ### build/index.d.ts#RangeGrant
 interface RangeGrant {
   readonly kind: "range";
@@ -1418,6 +1496,21 @@ export interface ReadOptions {
 export interface Reading {
   readonly evidence: readonly Evidence[];
   readonly skipped: readonly Skipped[];
+}
+
+### build/index.d.ts#RtoEstimate
+interface RtoEstimate {
+  readonly samples: number;
+  readonly srttMs: number;
+  readonly rttvarMs: number;
+  readonly rtoMs: number;
+}
+
+### build/index.d.ts#RtoOptions
+interface RtoOptions {
+  readonly granularityMs?: number | undefined;
+  readonly minMs?: number | undefined;
+  readonly maxMs?: number | undefined;
 }
 
 ### build/index.d.ts#Runner
@@ -1591,6 +1684,12 @@ type VisitStep = {
   readonly problem: string;
 };
 
+### build/index.d.ts#ackSamples
+export declare function ackSamples(capture: PathCapture): number[];
+
+### build/index.d.ts#bandwidthOf
+export declare function bandwidthOf(capture: PathCapture): BandwidthEstimate | undefined;
+
 ### build/index.d.ts#binOf
 export declare function binOf(bins: readonly Bin[], x: number): string;
 
@@ -1606,11 +1705,17 @@ export declare function createRunner(options: RunnerOptions): Runner;
 ### build/index.d.ts#decideScope
 export declare function decideScope(scope: Scope, peer: Target, ledger?: PortLedger): ScopeDecision;
 
+### build/index.d.ts#delayMetrics
+export declare function delayMetrics(delaysMs: readonly number[]): DelayMetrics | undefined;
+
 ### build/index.d.ts#describeOutcome
 export declare function describeOutcome(outcome: ProbeOutcome<unknown>): string;
 
 ### build/index.d.ts#dnsOutcome
 export declare function dnsOutcome(code: string | undefined): DnsOutcome;
+
+### build/index.d.ts#echoMetrics
+export declare function echoMetrics(echo: IcmpEcho): EchoMetrics;
 
 ### build/index.d.ts#featuresOf
 export declare function featuresOf(kinds: readonly string[], options?: FeaturesOptions): string[];
@@ -1627,6 +1732,9 @@ export declare function httpProbe(options?: TlsProbeOptions): Probe<HttpInput, H
 ### build/index.d.ts#interfaceOf
 export declare function interfaceOf(interfaces: readonly LinkInterface[], gateway: string): string | undefined;
 
+### build/index.d.ts#ipdv
+export declare function ipdv(delaysMs: readonly number[]): number[];
+
 ### build/index.d.ts#isLocalName
 export declare function isLocalName(name: string): boolean;
 
@@ -1636,14 +1744,29 @@ export declare function linkProbe(read?: () => InterfaceTable): Probe<LinkInput,
 ### build/index.d.ts#linkStateOf
 export declare function linkStateOf(interfaces: readonly LinkInterface[], gateway?: string): LinkState;
 
+### build/index.d.ts#lossOf
+export declare function lossOf(sent: number, received: number): LossEstimate | undefined;
+
 ### build/index.d.ts#namedGrant
 export declare function namedGrant(t: Target, note?: string): Grant;
+
+### build/index.d.ts#packetPairs
+export declare function packetPairs(capture: PathCapture): number[];
+
+### build/index.d.ts#pdv
+export declare function pdv(delaysMs: readonly number[]): number[];
 
 ### build/index.d.ts#readEvidence
 export declare function readEvidence(facts: readonly Fact[], options?: ReadOptions): Reading;
 
 ### build/index.d.ts#resolvedGrant
 export declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;
+
+### build/index.d.ts#rfc3550Jitter
+export declare function rfc3550Jitter(delaysMs: readonly number[]): number | undefined;
+
+### build/index.d.ts#rtoOf
+export declare function rtoOf(samplesMs: readonly number[], options?: RtoOptions): RtoEstimate | undefined;
 
 ### build/index.d.ts#scopeOf
 export declare function scopeOf(grants: readonly Grant[], options?: {

@@ -220,6 +220,32 @@ if (outcome.status === "done") {
 }
 ```
 
+## Metrics
+
+The estimators read the values of the facts. Each time is in milliseconds. The statistics come from [`@mark1russell7/rigor-statistics`](https://github.com/mark1russell7/rigor).
+
+| Function | It gives |
+| --- | --- |
+| `rfc3550Jitter(delays)` | The interarrival jitter of RFC 3550: `J += (abs(D) - J) / 16`. `D` is the change of the delay between two packets in sequence. |
+| `ipdv(delays)`, `pdv(delays)` | The IP packet delay variation of RFC 3393 for each pair in sequence, and the PDV of RFC 5481: each delay less the smallest delay. |
+| `delayMetrics(delays)` | The smallest, median, mean and largest delay, the standard deviation, the jitter, the median absolute IPDV and the quantile 0.99 of the PDV. |
+| `lossOf(sent, received)` | The share of the lost packets of RFC 7680, with its Wilson interval at 95 %. |
+| `echoMetrics(echo)` | The loss and the delay summary of an `icmp.echo` fact. The loss of a round trip is an upper bound of the one-way loss of each direction. |
+| `ackSamples(capture)` | The RTT samples of a `path.capture` fact: the ACKs of the remote host. By the rule of Karn, an ACK of a retransmitted segment gives no sample. |
+| `rtoOf(samples, options)` | The RTO of RFC 6298: `SRTT + max(G, 4 * RTTVAR)`, from 1 second to 60 seconds by default. |
+| `packetPairs(capture)`, `bandwidthOf(capture)` | The capacity of the narrowest link, from the gap between two full segments of a burst at the receiver. `bandwidthOf` gives the median of the pairs. |
+
+```ts
+import { ackSamples, echoMetrics, rtoOf } from "@mark1russell7/netdiag";
+
+// An echo fact with 20 requests and 19 replies gives a loss of 0.05 and the jitter of its round-trip times.
+const { loss, delay } = echoMetrics(echo);
+// The RTO from the ACKs of a capture of one flow.
+const rto = rtoOf(ackSamples(capture), { minMs: 200 });
+```
+
+The MTU of a path needs a probe with "do not fragment". It is the next step of ND-6.
+
 ## The lab score
 
 A lab makes one fault on purpose. Then netdiag must name it. The entry `@mark1russell7/netdiag/diagnosis` has the score of these runs.
