@@ -1,5 +1,5 @@
 import { featuresOf } from "@mark1russell7/netdiag";
-import { MAX_JOINT_VALUES, NONE, UNKNOWN } from "@mark1russell7/netdiag/diagnosis";
+import { GAIN_RESOLUTION, MAX_JOINT_VALUES, NONE, UNKNOWN } from "@mark1russell7/netdiag/diagnosis";
 import { describe, expect, it } from "vitest";
 import {
   CATALOG,
@@ -104,7 +104,7 @@ describe("the probes", () => {
       expect(new Set(runs).size, truth).toBe(runs.length);
       const top = state.diagnosis.causes[0];
       // A search ends before FOUND only when no probe of the demo adds information.
-      if ((top?.probability ?? 0) < FOUND) expect(state.ranked[0]?.gain ?? 0, truth).toBeLessThanOrEqual(1e-9);
+      if ((top?.probability ?? 0) < FOUND) expect(state.ranked[0]?.gain ?? 0, truth).toBeLessThanOrEqual(GAIN_RESOLUTION);
       if (top?.id === truth) first++;
     }
     expect(first).toBeGreaterThan(TRUTHS.length / 2);

@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 import {
+  GAIN_RESOLUTION,
   LAYERS,
   NONE,
   STANDARD_CATALOG,
@@ -30,7 +31,7 @@ import {
 } from "@mark1russell7/netdiag/diagnosis";
 import { random } from "@mark1russell7/rigor-generators";
 
-/** The catalog of the demos: the standard catalog of netdiag, with 15 features and 20 faults. */
+/** The catalog of the demos: the standard catalog of netdiag. */
 export const CATALOG = STANDARD_CATALOG;
 
 /** A short name of each feature for the board. The catalog gives the full summary. */
@@ -192,8 +193,9 @@ const target = (...features: string[]): Probe["observes"] => features.map((featu
 const reference = (...features: string[]): Probe["observes"] => features.map((feature) => ({ feature, primary: false }));
 
 /**
- * The probes of the search and of the lab. Each probe is a probe of netdiag. The HTTP request uses `http`, so it gives
- * no TLS facts.
+ * The probes of the search and of the lab. Each probe is a probe of netdiag. The HTTPS request gives the facts of the
+ * TCP connect, the TLS handshake and the HTTP answer, so it observes 7 features. The TLS handshake costs less, and it
+ * observes 5 of them.
  */
 export const PROBES: readonly Probe[] = [
   { id: "dns", label: "Look up the name", kinds: ["dns.answer"], cost: 1, observes: target("dns.answer", "dns.address") },
@@ -205,23 +207,22 @@ export const PROBES: readonly Probe[] = [
     cost: 2,
     observes: target("tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio"),
   },
-  { id: "http", label: "Send an HTTP request", kinds: ["tcp.connect", "http.response"], cost: 2, observes: target("tcp.connect", "tcp.time", "http.status", "http.ttfb") },
+  {
+    id: "https",
+    label: "Send an HTTPS request",
+    kinds: ["tcp.connect", "tls.handshake", "http.response"],
+    cost: 3,
+    observes: target("tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio", "http.status", "http.ttfb"),
+  },
   { id: "ping-gateway", label: "Ping the gateway 20 times", kinds: ["icmp.echo"], gateway: true, cost: 20, observes: target("gateway.reply", "path.loss") },
   { id: "ping-target", label: "Ping the target 20 times", kinds: ["icmp.echo"], gateway: false, cost: 20, observes: target("icmp.reply", "path.loss") },
   { id: "mtr", label: "Measure the path with mtr", kinds: ["path.report"], cost: 20, observes: target("path.loss") },
   {
-    id: "tls-reference",
-    label: "A TLS handshake with a second host",
-    kinds: ["tcp.connect", "tls.handshake"],
-    cost: 2,
-    observes: reference("tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio"),
-  },
-  {
-    id: "http-reference",
-    label: "An HTTP request to a second host",
-    kinds: ["tcp.connect", "http.response"],
-    cost: 2,
-    observes: reference("tcp.connect", "tcp.time", "http.status", "http.ttfb"),
+    id: "https-reference",
+    label: "An HTTPS request to a second host",
+    kinds: ["tcp.connect", "tls.handshake", "http.response"],
+    cost: 3,
+    observes: reference("tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio", "http.status", "http.ttfb"),
   },
 ];
 
@@ -307,7 +308,7 @@ export function search(truth: string, seed: string, runs: readonly string[]): Se
 
 /** This function tells if a search is at its end: one cause has `FOUND` or more, or no probe gives information. */
 export function searchDone(state: Search): boolean {
-  return (state.diagnosis.causes[0]?.probability ?? 0) >= FOUND || (state.ranked[0]?.gain ?? 0) <= 1e-9;
+  return (state.diagnosis.causes[0]?.probability ?? 0) >= FOUND || (state.ranked[0]?.gain ?? 0) <= GAIN_RESOLUTION;
 }
 
 /** This function starts the best probe until the search is at its end, with at most one run of each probe. */
@@ -315,7 +316,7 @@ export function autoSearch(truth: string, seed: string, runs: readonly string[])
   const next = [...runs];
   for (let state = search(truth, seed, next); !searchDone(state) && next.length < PROBES.length; state = search(truth, seed, next)) {
     const best = state.ranked[0];
-    if (best === undefined || best.gain <= 1e-9) break;
+    if (best === undefined || best.gain <= GAIN_RESOLUTION) break;
     next.push(best.candidate.id);
   }
   return next;

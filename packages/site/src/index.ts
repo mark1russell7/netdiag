@@ -5,7 +5,7 @@
  */
 import { byId, copyText, h, setupTheme } from "@mark1russell7/site-pages/chrome";
 import { examples, verdict } from "@mark1russell7/site-pages/demo";
-import { NONE, UNKNOWN, type Diagnosis, type Evidence } from "@mark1russell7/netdiag/diagnosis";
+import { GAIN_RESOLUTION, NONE, UNKNOWN, type Diagnosis, type Evidence } from "@mark1russell7/netdiag/diagnosis";
 import {
   CATALOG,
   FEATURE_NAMES,
@@ -315,11 +315,11 @@ function showSearch(): void {
   byId<HTMLButtonElement>("search-auto").disabled = done;
   byId<HTMLButtonElement>("search-reset").disabled = runs.length === 0;
 
-  const most = Math.max(1e-9, ...state.ranked.map((choice) => choice.gain));
+  const most = Math.max(GAIN_RESOLUTION, ...state.ranked.map((choice) => choice.gain));
   byId("search-probes").replaceChildren(
     ...state.ranked.map((choice, index) => {
       const counted = new Set(choice.counted.map((item) => `${item.feature}/${String(item.primary)}`));
-      const best = index === 0 && choice.gain > 1e-9 && !done;
+      const best = index === 0 && choice.gain > GAIN_RESOLUTION && !done;
       const run = h("button", { type: "button", class: best ? "primary" : "" }, "Run");
       run.disabled = choice.counted.length === 0;
       run.setAttribute("aria-label", `Run: ${PROBES.find((each) => each.id === choice.candidate.id)?.label ?? choice.candidate.id}`);
@@ -380,7 +380,7 @@ function showSearch(): void {
 byId("search-best").addEventListener("click", () => {
   const state = search(truthOf(), seedText(), runs);
   const best = state.ranked[0];
-  if (best !== undefined && best.gain > 1e-9) runs = [...runs, best.candidate.id];
+  if (best !== undefined && best.gain > GAIN_RESOLUTION) runs = [...runs, best.candidate.id];
   showSearch();
 });
 byId("search-auto").addEventListener("click", () => {

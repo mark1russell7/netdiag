@@ -77,6 +77,7 @@
   <section class="sp-demo" aria-labelledby="lab-title">
     <h2 id="lab-title">3. Score the catalog in a simulated lab</h2>
     <p>The lab makes each fault many times, and the probes observe it. <code>scoreLab</code> gives the recall of each fault with its Wilson interval. <code>labGate</code> holds the lower end of each interval with a bar.</p>
+    <p>The lab draws each observation from the likelihoods of the catalog. Thus a recall here tests the model on its own assumptions, not on real networks. The real bars come from the kernel lab, with faults on real networks.</p>
     <div class="sp-pair">
       <label class="sp-field"><span>Runs of each fault: <b><output id="lab-runs-value" for="lab-runs">20</output></b></span><input id="lab-runs" type="range" min="5" max="50" step="5" value="20"></label>
       <label class="sp-field"><span>The bar: <b><output id="lab-bar-value" for="lab-bar">0.50</output></b></span><input id="lab-bar" type="range" min="0" max="0.95" step="0.05" value="0.5"></label>
