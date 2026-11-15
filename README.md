@@ -2,7 +2,7 @@
 
 netdiag finds the cause of a network problem at each layer of the stack, and gives the next step.
 
-**State: planned.** This repository has the plan and the site. It has no code yet. The plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**State: early.** The package [`@mark1russell7/netdiag`](packages/netdiag) has the model of facts, the contract of a probe and the scope rule (ND-1). It has no probes yet. The plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## What it does
 

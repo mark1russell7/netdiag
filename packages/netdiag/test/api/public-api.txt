@@ -1,0 +1,299 @@
+# The public API of @mark1russell7/netdiag
+#
+# The names of each entry of the exports field, and the declaration of each name, without comments
+# and private members. The command `api-report check` compares this file with the built .d.ts files.
+# To accept a change of the API, start the build, then `api-report update`, and review the diff.
+
+## . (build/index.d.ts): names
+
+type Availability: build/index.d.ts#Availability
+type ClockOrigin: build/index.d.ts#ClockOrigin
+DEFAULT_MAX_PORTS_PER_HOST: build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+type Fact: build/index.d.ts#Fact
+type FactKind: build/index.d.ts#FactKind
+type FactSource: build/index.d.ts#FactSource
+type FactTime: build/index.d.ts#FactTime
+type Grant: build/index.d.ts#Grant
+type GrantBasis: build/index.d.ts#GrantBasis
+type HostGrant: build/index.d.ts#HostGrant
+type HostKind: build/index.d.ts#HostKind
+LAYERS: build/index.d.ts#LAYERS
+type Layer: build/index.d.ts#Layer
+type Observation: build/index.d.ts#Observation
+type PortLedger: build/index.d.ts#PortLedger
+type Probe: build/index.d.ts#Probe
+type ProbeContext: build/index.d.ts#ProbeContext
+type ProbeMode: build/index.d.ts#ProbeMode
+type ProbeOutcome: build/index.d.ts#ProbeOutcome
+type RangeGrant: build/index.d.ts#RangeGrant
+type Runner: build/index.d.ts#Runner
+type RunnerOptions: build/index.d.ts#RunnerOptions
+type Scope: build/index.d.ts#Scope
+type ScopeDecision: build/index.d.ts#ScopeDecision
+type Target: build/index.d.ts#Target
+type ValueOf: build/index.d.ts#ValueOf
+canonicalHost: build/index.d.ts#canonicalHost
+createRunner: build/index.d.ts#createRunner
+decideScope: build/index.d.ts#decideScope
+defineFactKind: build/index.d.ts#defineFactKind
+defineProbe: build/index.d.ts#defineProbe
+factsOf: build/index.d.ts#factsOf
+formatTarget: build/index.d.ts#formatTarget
+grantProblems: build/index.d.ts#grantProblems
+hostKind: build/index.d.ts#hostKind
+isFactOf: build/index.d.ts#isFactOf
+isLayer: build/index.d.ts#isLayer
+layerRank: build/index.d.ts#layerRank
+namedGrant: build/index.d.ts#namedGrant
+observe: build/index.d.ts#observe
+parseTarget: build/index.d.ts#parseTarget
+resolvedGrant: build/index.d.ts#resolvedGrant
+sameTarget: build/index.d.ts#sameTarget
+scopeOf: build/index.d.ts#scopeOf
+target: build/index.d.ts#target
+widen: build/index.d.ts#widen
+
+## Declarations
+
+### build/index.d.ts#Availability
+type Availability = {
+  readonly available: true;
+  readonly version?: string | undefined;
+} | {
+  readonly available: false;
+  readonly reason: string;
+};
+
+### build/index.d.ts#ClockOrigin
+interface ClockOrigin {
+  readonly wall: string;
+  readonly monotonic: number;
+}
+
+### build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+export declare const DEFAULT_MAX_PORTS_PER_HOST = 8;
+
+### build/index.d.ts#Fact
+interface Fact<V = unknown> {
+  readonly id: string;
+  readonly kind: string;
+  readonly layer: Layer;
+  readonly subject: Target;
+  readonly time: FactTime;
+  readonly source: FactSource;
+  readonly value: V;
+}
+
+### build/index.d.ts#FactKind
+interface FactKind<V> {
+  readonly kind: string;
+  readonly layer: Layer;
+  readonly summary: string;
+  readonly check: (value: unknown) => value is V;
+}
+
+### build/index.d.ts#FactSource
+interface FactSource {
+  readonly probe: string;
+  readonly version: string;
+  readonly tool?: string | undefined;
+}
+
+### build/index.d.ts#FactTime
+interface FactTime {
+  readonly start: number;
+  readonly end: number;
+}
+
+### build/index.d.ts#Grant
+type Grant = HostGrant | RangeGrant;
+
+### build/index.d.ts#GrantBasis
+type GrantBasis = "named" | "owned" | "configured" | "resolved";
+
+### build/index.d.ts#HostGrant
+interface HostGrant {
+  readonly kind: "host";
+  readonly host: string;
+  readonly subdomains?: boolean | undefined;
+  readonly basis: GrantBasis;
+  readonly note?: string | undefined;
+}
+
+### build/index.d.ts#HostKind
+type HostKind = "name" | "ipv4" | "ipv6";
+
+### build/index.d.ts#LAYERS
+export declare const LAYERS: readonly ["link", "wifi", "ip", "route", "path", "dns", "tcp", "tls", "http"];
+
+### build/index.d.ts#Layer
+type Layer = (typeof LAYERS)[number];
+
+### build/index.d.ts#Observation
+interface Observation<V = unknown> {
+  readonly kind: FactKind<V>;
+  readonly subject: Target;
+  readonly value: V;
+  readonly time?: FactTime | undefined;
+}
+
+### build/index.d.ts#PortLedger
+type PortLedger = ReadonlyMap<string, ReadonlySet<number>>;
+
+### build/index.d.ts#Probe
+interface Probe<I, R> {
+  readonly id: string;
+  readonly version: string;
+  readonly summary: string;
+  readonly layer: Layer;
+  readonly mode: ProbeMode;
+  readonly kinds: readonly FactKind<unknown>[];
+  readonly tool?: string | undefined;
+  peers(input: I): readonly Target[];
+  available(context: ProbeContext): Promise<Availability>;
+  run(input: I, context: ProbeContext): Promise<R>;
+  parse(raw: R, input: I): readonly Observation[];
+}
+
+### build/index.d.ts#ProbeContext
+interface ProbeContext {
+  readonly clock: Clock;
+  readonly signal: AbortSignal;
+}
+
+### build/index.d.ts#ProbeMode
+type ProbeMode = "active" | "passive";
+
+### build/index.d.ts#ProbeOutcome
+type ProbeOutcome<R> = {
+  readonly status: "done";
+  readonly time: FactTime;
+  readonly raw: R;
+  readonly facts: readonly Fact[];
+} | {
+  readonly status: "refused";
+  readonly peer: Target;
+  readonly reason: string;
+} | {
+  readonly status: "unavailable";
+  readonly reason: string;
+} | {
+  readonly status: "failed";
+  readonly stage: "probe" | "run" | "parse";
+  readonly error: string;
+  readonly raw?: R | undefined;
+} | {
+  readonly status: "aborted";
+  readonly reason: string;
+};
+
+### build/index.d.ts#RangeGrant
+interface RangeGrant {
+  readonly kind: "range";
+  readonly cidr: string;
+  readonly basis: GrantBasis;
+  readonly note?: string | undefined;
+}
+
+### build/index.d.ts#Runner
+interface Runner {
+  readonly origin: ClockOrigin;
+  scope(): Scope;
+  facts(): readonly Fact[];
+  grant(grants: readonly Grant[]): void;
+  run<I, R>(probe: Probe<I, R>, input: I, signal?: AbortSignal): Promise<ProbeOutcome<R>>;
+}
+
+### build/index.d.ts#RunnerOptions
+interface RunnerOptions {
+  readonly scope: Scope;
+  readonly clock: Clock;
+  readonly wall?: string | undefined;
+}
+
+### build/index.d.ts#Scope
+interface Scope {
+  readonly grants: readonly Grant[];
+  readonly maxPortsPerHost: number;
+}
+
+### build/index.d.ts#ScopeDecision
+type ScopeDecision = {
+  readonly allowed: true;
+  readonly grant: Grant;
+} | {
+  readonly allowed: false;
+  readonly reason: string;
+};
+
+### build/index.d.ts#Target
+interface Target {
+  readonly host: string;
+  readonly kind: HostKind;
+  readonly port?: number | undefined;
+}
+
+### build/index.d.ts#ValueOf
+type ValueOf<K> = K extends FactKind<infer V> ? V : never;
+
+### build/index.d.ts#canonicalHost
+export declare function canonicalHost(host: string): string;
+
+### build/index.d.ts#createRunner
+export declare function createRunner(options: RunnerOptions): Runner;
+
+### build/index.d.ts#decideScope
+export declare function decideScope(scope: Scope, peer: Target, ledger?: PortLedger): ScopeDecision;
+
+### build/index.d.ts#defineFactKind
+export declare function defineFactKind<V>(spec: FactKind<V>): FactKind<V>;
+
+### build/index.d.ts#defineProbe
+export declare function defineProbe<I, R>(probe: Probe<I, R>): Probe<I, R>;
+
+### build/index.d.ts#factsOf
+export declare function factsOf<V>(kind: FactKind<V>, facts: readonly Fact[]): Fact<V>[];
+
+### build/index.d.ts#formatTarget
+export declare function formatTarget(t: Target): string;
+
+### build/index.d.ts#grantProblems
+export declare function grantProblems(grant: Grant): string[];
+
+### build/index.d.ts#hostKind
+export declare function hostKind(host: string): HostKind;
+
+### build/index.d.ts#isFactOf
+export declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
+
+### build/index.d.ts#isLayer
+export declare function isLayer(value: unknown): value is Layer;
+
+### build/index.d.ts#layerRank
+export declare function layerRank(layer: Layer): number;
+
+### build/index.d.ts#namedGrant
+export declare function namedGrant(t: Target, note?: string): Grant;
+
+### build/index.d.ts#observe
+export declare function observe<V>(kind: FactKind<V>, subject: Target, value: V, time?: FactTime): Observation<V>;
+
+### build/index.d.ts#parseTarget
+export declare function parseTarget(text: string): Result<Target, string>;
+
+### build/index.d.ts#resolvedGrant
+export declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;
+
+### build/index.d.ts#sameTarget
+export declare function sameTarget(a: Target, b: Target): boolean;
+
+### build/index.d.ts#scopeOf
+export declare function scopeOf(grants: readonly Grant[], options?: {
+  readonly maxPortsPerHost?: number;
+}): Result<Scope, string[]>;
+
+### build/index.d.ts#target
+export declare function target(host: string, port?: number): Target;
+
+### build/index.d.ts#widen
+export declare function widen(scope: Scope, grants: readonly Grant[]): Result<Scope, string[]>;
