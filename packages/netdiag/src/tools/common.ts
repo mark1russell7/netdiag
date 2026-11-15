@@ -6,10 +6,10 @@ import { addressFamily, canonicalAddress, type AddressFamily } from "../address/
 export const ENGLISH: Readonly<Record<string, string>> = { LC_ALL: "C" };
 
 /** The end of a line of output, on each operating system. */
-export const LINES = /\r?\n/;
+export const LINES: RegExp = /\r?\n/;
 
 /** The messages of a local send that tell that the address is unreachable, on Linux and macOS. */
-export const LOCAL_UNREACHABLE = /\b(Network is unreachable|No route to host|Host is down|Network is down)\b/i;
+export const LOCAL_UNREACHABLE: RegExp = /\b(Network is unreachable|No route to host|Host is down|Network is down)\b/i;
 
 /** The IP address of a probe of an outside tool: its canonical form and its family. */
 export interface ToolAddress {
