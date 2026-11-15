@@ -65,9 +65,11 @@ export async function kernelTrust(ca: Authority): Promise<KernelTrust> {
 /** The addresses of a kernel world. */
 export interface KernelAddresses extends KernelPeers {
   readonly resolver: string;
+  /** The address of the router `gw` on the network of the client: the default gateway of the client. */
+  readonly gateway: string;
 }
 
-/** This function gives the plan of the agent in a world. The scope has the three lab hosts only. */
+/** This function gives the plan of the agent in a world. The scope has the three lab hosts and the gateway only. */
 export function kernelPlan(addresses: KernelAddresses): AgentPlan {
   return {
     target: KERNEL_TARGET_NAME,
@@ -75,7 +77,8 @@ export function kernelPlan(addresses: KernelAddresses): AgentPlan {
     references: [KERNEL_REFERENCE_NAME],
     resolver: addresses.resolver,
     resolverPort: 53,
-    grants: [addresses.target, addresses.reference, addresses.resolver].map((address) => `${address}/32`),
+    gateway: addresses.gateway,
+    grants: [addresses.target, addresses.reference, addresses.resolver, addresses.gateway].map((address) => `${address}/32`),
     pingCount: KERNEL_PING_COUNT,
     mtrCycles: 0,
     root: KERNEL_ROOT_PATH,
@@ -95,7 +98,7 @@ export function kernelTarget(script: string, pems: Pems): Target {
   };
 }
 
-/** A started kernel world: the lab of the harness, the reference host and the resolver. */
+/** A started kernel world: the lab of the harness, the reference host, the resolver and their addresses. */
 export interface KernelWorld {
   readonly lab: Lab;
   readonly reference: Sibling;
@@ -113,7 +116,9 @@ export async function openKernelWorld(trust: KernelTrust, image: BuildImage = la
     const reference = await lab.sibling(tag, ["node", "packages/lab/src/kernel/https.ts", ...httpsArgs({ port: KERNEL_PORT, ...trust.reference })], HTTPS_READY);
     const zone = kernelZone({ target: lab.targetIp, reference: reference.ip });
     const resolver = await lab.sibling(tag, ["node", "packages/lab/src/kernel/resolver.ts", zoneArg(zone)], RESOLVER_READY);
-    return { lab, reference, resolver, addresses: { target: lab.targetIp, reference: reference.ip, resolver: resolver.ip } };
+    const gateway = lab.topology?.hops[KERNEL_HOP]?.address?.client;
+    if (gateway === undefined) throw new Error(`The harness gave no address of the router ${KERNEL_HOP} on the network of the client.`);
+    return { lab, reference, resolver, addresses: { target: lab.targetIp, reference: reference.ip, resolver: resolver.ip, gateway } };
   } catch (thrown) {
     await lab.close();
     throw thrown;
@@ -137,7 +142,7 @@ export async function visitKernel(world: KernelWorld, labCase: KernelCase, trust
     } finally {
       await probe.stop();
     }
-    return visitOf(probe.events, ended);
+    return visitOf(probe.events, ended, world.addresses.gateway);
   } finally {
     await applySteps(world.lab, plan.lift);
   }

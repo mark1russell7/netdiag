@@ -262,8 +262,55 @@ export const HTTP_RESPONSE: FactKind<HttpResponse> = defineFactKind<HttpResponse
     optional(value["code"], isText),
 });
 
+/**
+ * The states of the link of this computer.
+ *
+ * - `up`: an interface that is up has the gateway in its network. With no gateway, an interface other than loopback is up.
+ * - `down`: no interface that is up has the gateway in its network. With no gateway, only loopback is up.
+ */
+export const LINK_STATES = ["up", "down"] as const;
+export type LinkStateValue = (typeof LINK_STATES)[number];
+
+/** An interface that is up, with its addresses as CIDR ranges, for example `192.168.1.20/24`. */
+export interface LinkInterface {
+  readonly name: string;
+  readonly addresses: readonly string[];
+}
+
+/** The state of the link of this computer, to its gateway when the probe knows the gateway. */
+export interface LinkState {
+  readonly state: LinkStateValue;
+  /** The interfaces that are up and are not loopback. */
+  readonly interfaces: readonly LinkInterface[];
+  /** The gateway of the state. */
+  readonly gateway?: string | undefined;
+  /** The interface that has the gateway in its network. Only the state `up` with a gateway has it. */
+  readonly via?: string | undefined;
+}
+
+function isLinkInterface(value: unknown): value is LinkInterface {
+  return isRecord(value) && isText(value["name"]) && isTextList(value["addresses"]);
+}
+
+/** The fact kind `link.state`. */
+export const LINK_STATE: FactKind<LinkState> = defineFactKind<LinkState>({
+  kind: "link.state",
+  layer: "link",
+  summary: "The state of the link of this computer: an interface that is up, and the interface of the network of the gateway.",
+  check: (value): value is LinkState =>
+    isRecord(value) &&
+    isOneOf(LINK_STATES, value["state"]) &&
+    Array.isArray(value["interfaces"]) &&
+    value["interfaces"].every(isLinkInterface) &&
+    optional(value["gateway"], isText) &&
+    optional(value["via"], isText) &&
+    (value["gateway"] === undefined
+      ? value["via"] === undefined && (value["state"] === "up") === value["interfaces"].length > 0
+      : (value["state"] === "up") === (value["via"] !== undefined)),
+});
+
 /** The fact kinds of the native probes. */
-export const NATIVE_KINDS: readonly FactKind<unknown>[] = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE];
+export const NATIVE_KINDS: readonly FactKind<unknown>[] = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, LINK_STATE];
 
 /**
  * The outcomes of the ICMP echo requests to one address.
