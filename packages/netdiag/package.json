@@ -32,6 +32,7 @@
     ".": "./src/index.ts",
     "./address": "./src/address/index.ts",
     "./diagnosis": "./src/diagnosis/index.ts",
+    "./tools": "./src/tools/index.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -58,6 +59,10 @@
       "./diagnosis": {
         "types": "./build/diagnosis.d.ts",
         "default": "./build/diagnosis.js"
+      },
+      "./tools": {
+        "types": "./build/tools.d.ts",
+        "default": "./build/tools.js"
       },
       "./package.json": "./package.json"
     }
