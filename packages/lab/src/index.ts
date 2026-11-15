@@ -21,5 +21,20 @@ export {
   type Sign,
 } from "./cases.ts";
 export { HOLD_WINDOW_MS, LEGACY_CIPHER, labTrust, startWorld, zoneOf, type Endpoint, type LabTrust, type World } from "./world.ts";
-export { DNS_TIMEOUT_MS, HTTP_TIMEOUT_MS, missingSigns, roundOrder, runCase, runLab, type CaseRun, type RunOptions } from "./run.ts";
-export { labReport, reportMarkdown, type LabReport } from "./report.ts";
+export {
+  DNS_TIMEOUT_MS,
+  HTTP_TIMEOUT_MS,
+  missingSigns,
+  readVisit,
+  roundOrder,
+  runCase,
+  runLab,
+  runRounds,
+  visitLoopback,
+  type CaseBase,
+  type CaseRun,
+  type LabRound,
+  type RunOptions,
+  type Visit,
+} from "./run.ts";
+export { labReport, reportMarkdown, type LabReport, type LaterClass, type ReportOptions } from "./report.ts";

@@ -30,9 +30,23 @@ export function labReport(catalog: Catalog, runs: readonly CaseRun[], rounds: nu
 
 const percent = (x: number | undefined): string => (x === undefined ? "–" : `${(100 * x).toFixed(0)}%`);
 
+/** A class of the catalog that a lab cannot make yet, and the change that it waits for. */
+export interface LaterClass {
+  readonly hypothesis: string;
+  readonly reason: string;
+}
+
+/** The options of the Markdown report of a lab. */
+export interface ReportOptions {
+  /** The heading of the report. The default is `The loopback lab`. */
+  readonly title?: string | undefined;
+  /** The classes that the lab cannot make yet. The report shows them with no bar. */
+  readonly later?: readonly LaterClass[] | undefined;
+}
+
 /** This function gives the report as Markdown, for the summary of a CI run. */
-export function reportMarkdown(report: LabReport, gate?: LabGate): string {
-  const lines = ["## The loopback lab", ""];
+export function reportMarkdown(report: LabReport, gate?: LabGate, options: ReportOptions = {}): string {
+  const lines = [`## ${options.title ?? "The loopback lab"}`, ""];
   const reads = report.records.length;
   lines.push(`${report.cases} cases, ${report.rounds} rounds: ${reads} reads and ${report.noReads.length} runs with no read.`, "");
   const score = report.score;
@@ -59,6 +73,12 @@ export function reportMarkdown(report: LabReport, gate?: LabGate): string {
   if (gate !== undefined) {
     lines.push(`### The gate: ${gate.pass ? "pass" : "fail"}`, "", "| Hypothesis | Bar | Lower bound | Cases | Status |", "| --- | ---: | ---: | ---: | --- |");
     for (const v of gate.verdicts) lines.push(`| \`${v.hypothesis}\` | ${percent(v.bar)} | ${percent(v.low)} | ${v.support} | ${v.status} |`);
+    lines.push("");
+  }
+  const later = options.later ?? [];
+  if (later.length > 0) {
+    lines.push("### Later: the classes with no case and no bar", "");
+    for (const each of later) lines.push(`- \`${each.hypothesis}\`: ${each.reason}`);
     lines.push("");
   }
   return lines.join("\n");
