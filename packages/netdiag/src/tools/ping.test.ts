@@ -2,7 +2,7 @@ import { fakeClock, type FakeClock } from "@mark1russell7/algebra/clock";
 import { fakeToolHost, type FakeRule, type FakeToolHost } from "@netdiag/fixtures";
 import { describe, expect, it } from "vitest";
 import { ICMP_ECHO, createRunner, scopeOf, type Fact, type IcmpEcho, type Runner } from "../index.ts";
-import { TOOL_LICENSES, mtrProbe, pingCommand, pingProbe, readPing, toolLicense, tracerouteProbe, type ToolOutput, type ToolRaw, type ToolRunOptions } from "./index.ts";
+import { TOOL_LICENSES, captureProbe, iperf3Probe, mtrProbe, pingCommand, pingProbe, readPing, toolLicense, tracerouteProbe, type ToolOutput, type ToolRaw, type ToolRunOptions } from "./index.ts";
 
 // The samples of Windows come from ping.exe of Windows 11. The samples of Linux (iputils) and macOS follow the formats
 // of these tools, with documentation addresses.
@@ -292,9 +292,13 @@ describe("the licenses of the tools", () => {
     const tools = TOOL_LICENSES.map((row) => row.tool);
     expect(new Set(tools).size).toBe(tools.length);
     const host = fakeHost("linux", fakeClock(), []);
-    for (const probe of [pingProbe(host), tracerouteProbe(host), mtrProbe(host)]) {
+    const probes = [pingProbe(host), tracerouteProbe(host), mtrProbe(host), iperf3Probe(host), captureProbe(host)];
+    for (const probe of probes) {
       expect(toolLicense(probe.tool ?? "")).toMatchObject({ use: "adapter", probe: probe.id });
     }
     for (const row of TOOL_LICENSES) if (row.use === "not-bundled") expect(row.probe).toBeUndefined();
+    // Each row of an adapter names a probe of this list. No adapter is only a plan.
+    const ids = probes.map((probe) => probe.id);
+    for (const row of TOOL_LICENSES) if (row.use === "adapter") expect(ids).toContain(row.probe);
   });
 });

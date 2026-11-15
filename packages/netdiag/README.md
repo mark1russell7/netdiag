@@ -2,7 +2,7 @@
 
 This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1, ND-2, ND-4, and the lab score and the loopback lab of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The kernel lab and the bars of the gate come next.
+**State: ND-1, ND-2, ND-4, the adapters of ND-3, and the lab score and the loopback lab of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The kernel lab and the bars of the gate come next.
 
 ## Facts
 
@@ -110,6 +110,8 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 | `pingProbe(host)` | `icmp.ping` | `ping` | `icmp.echo`: the echo replies, their round-trip times, and the messages of an unreachable address. |
 | `tracerouteProbe(host)` | `path.traceroute` | `traceroute`, `tracert` on Windows | `path.trace`: the routers that answered each TTL, their round-trip times, and the messages of an unreachable address. |
 | `mtrProbe(host)` | `path.mtr` | `mtr` (Linux and macOS) | `path.report`: the loss and the round-trip times of each hop over many cycles. |
+| `iperf3Probe(host)` | `path.iperf3` | `iperf3` (3.1 or later) | `path.throughput`: the rates of the sender and the receiver, the TCP retransmits, the UDP jitter and loss, and each interval. |
+| `captureProbe(host)` | `path.capture` | `tshark` | `path.capture`: the packets of one flow, with the time, the addresses, the ports and the TCP fields of each packet. |
 
 - A host starts each tool. Its `run(command, args, options)` starts a program with a list of arguments and no shell.
 - The function `runCommand` of `@procedures/shell` is a host with no change. A test gives a fake host.
@@ -117,6 +119,11 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 - On Linux, the adapter reads the `ping` of iputils. On macOS, it uses `ping6` for an IPv6 address.
 - On Linux, the trace adapter reads the Modern traceroute (the package `traceroute`). On macOS, it uses `traceroute6` for an IPv6 address.
 - The `mtr` adapter reads the JSON report of `mtr --json` (version 0.92 or later). The default of 20 cycles takes approximately 20 seconds.
+- The `iperf3` adapter reads the JSON report of `iperf3 -J`. The user operates the server. A UDP test always has a target rate, 1 Mbit/s by default.
+- The capture adapter builds the capture filter from typed fields: an address, a port and a protocol. It does not accept free text.
+- A capture needs the privilege to capture on the interface. The adapter does not use promiscuous mode or name lookups.
+- The scope rule applies to the server of `iperf3` and to the address of a capture, as to the other adapters.
+- The estimators of ND-6 read the facts `path.throughput` and `path.capture`. This step has no readers for them.
 - Output that netdiag cannot read gives the outcome `error` with the reason. It does not give a reply that did not occur.
 - The table `TOOL_LICENSES` holds the license of each tool as data. A tool with a restrictive license has no adapter.
 
@@ -146,7 +153,21 @@ The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It impor
 | --- | --- |
 | `diagnose(catalog, evidence)` | The probability of each hypothesis, from the most probable. The model is naive Bayes with logarithms. |
 | `explain(catalog, evidence, id)` | The weight of each observation for a cause: the `log10` of its likelihood ratio against `none`. |
-| `predictive(catalog, diagnosis, feature, primary)` | The probability of each value of a feature before a probe observes it. The choice of the next probe (ND-5) uses it. |
+| `predictive(catalog, diagnosis, feature, primary)` | The probability of each value of a feature before a probe observes it. |
+| `rankProbes(catalog, diagnosis, candidates, options)` | The candidate probes from the largest expected information gain over the causes, in bits. The first candidate is the next probe. |
+
+### The next probe
+
+`rankProbes` gives the expected information gain of each candidate: the mutual information of the causes and the features of the candidate.
+
+- A candidate names the features that its facts give. `featuresOf(probe.kinds, { gateway })` of the readers gives them.
+- The model takes the features as independent for a cause. Thus the probability of a joint value is the product of the probabilities of its values.
+- A feature that the evidence has, with the same role, adds nothing. A second observation of a feature is not independent of the first observation.
+- With the option `top`, the gain tells apart only the most probable causes. The other causes count as one group.
+- When two gains are equal, the lower `cost` comes first.
+- The entropy and the gain come from `@mark1russell7/rigor-statistics`.
+
+After a DNS timeout, the ping of the gateway comes first. Its reply tells a down resolver from a down gateway or interface.
 
 Evidence with `primary: false` comes from a reference host, for example a second public server. A fault with the reach `target` does not change the reference host. A fault with the reach `shared` changes both hosts. Thus a slow TLS handshake on both hosts points to a TLS proxy. A slow handshake on the target only points to a slow server.
 
@@ -184,6 +205,7 @@ const result = diagnose(STANDARD_CATALOG, [
 - A fact `path.trace` gives no evidence yet. The catalog has no feature for the hops of a path. The lab runs (ND-7) fit one.
 - The option `primary` tells which facts are about the target. The other facts are about a reference host.
 - The option `gateway` gives the IP address of the default gateway.
+- `FEATURE_SOURCES` gives the fact kinds that each feature needs. `featuresOf(kinds, { gateway })` gives the features that the facts of some kinds can give. A test holds the table against the readers.
 
 ```ts
 import { STANDARD_CATALOG, TCP_PROBE, diagnose, readEvidence } from "@mark1russell7/netdiag";
