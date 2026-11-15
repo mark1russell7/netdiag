@@ -30,6 +30,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./address": "./src/address/index.ts",
     "./diagnosis": "./src/diagnosis/index.ts",
     "./package.json": "./package.json"
   },
@@ -49,6 +50,10 @@
       ".": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
+      },
+      "./address": {
+        "types": "./build/address.d.ts",
+        "default": "./build/address.js"
       },
       "./diagnosis": {
         "types": "./build/diagnosis.d.ts",

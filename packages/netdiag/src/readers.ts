@@ -1,4 +1,4 @@
-import { BlockList, isIP } from "node:net";
+import { addressKind } from "./address/index.ts";
 import type { Evidence } from "./diagnosis/model.ts";
 import type { Fact, FactKind } from "./fact.ts";
 import {
@@ -107,44 +107,6 @@ export function isLocalName(name: string): boolean {
   const lower = name.toLowerCase().replace(/\.$/, "");
   if (!lower.includes(".")) return true;
   return LOCAL_SUFFIXES.some((suffix) => lower === suffix || lower.endsWith(`.${suffix}`));
-}
-
-let privateRanges: BlockList | undefined;
-
-function ranges(): BlockList {
-  if (privateRanges !== undefined) return privateRanges;
-  const list = new BlockList();
-  const v4: [string, number][] = [
-    ["10.0.0.0", 8],
-    ["172.16.0.0", 12],
-    ["192.168.0.0", 16],
-    ["100.64.0.0", 10],
-    ["127.0.0.0", 8],
-    ["169.254.0.0", 16],
-    ["0.0.0.0", 8],
-  ];
-  const v6: [string, number][] = [
-    ["fc00::", 7],
-    ["fe80::", 10],
-    ["::1", 128],
-    ["::", 128],
-  ];
-  for (const [net, prefix] of v4) list.addSubnet(net, prefix, "ipv4");
-  for (const [net, prefix] of v6) list.addSubnet(net, prefix, "ipv6");
-  privateRanges = list;
-  return list;
-}
-
-/**
- * This function tells if an address is routable on the internet. The `private` addresses are in RFC 1918, RFC 6598 or
- * RFC 4193, or they are loopback, link-local or unspecified addresses.
- */
-export function addressKind(address: string): "public" | "private" | undefined {
-  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address)?.[1];
-  const host = mapped ?? address;
-  const family = isIP(host);
-  if (family === 0) return undefined;
-  return ranges().check(host, family === 4 ? "ipv4" : "ipv6") ? "private" : "public";
 }
 
 interface Slot {

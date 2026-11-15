@@ -6,6 +6,9 @@
 
 ## . (build/index.d.ts): names
 
+ADDRESS_CLASSES: build/address.d.ts#ADDRESS_CLASSES
+AddressClass: build/address.d.ts#AddressClass
+AddressFamily: build/address.d.ts#AddressFamily
 type Availability: build/index.d.ts#Availability
 Bin: build/index.d.ts#Bin
 CERT_PROBLEMS: build/index.d.ts#CERT_PROBLEMS
@@ -14,6 +17,8 @@ type Catalog: build/index.chunk.d.ts#Catalog
 type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
 type Cause: build/index.chunk.d.ts#Cause
 CertProblem: build/index.d.ts#CertProblem
+Cidr: build/address.d.ts#Cidr
+CidrSet: build/address.d.ts#CidrSet
 type ClockOrigin: build/index.d.ts#ClockOrigin
 type ConnectOptions: build/index.d.ts#ConnectOptions
 ConnectOutcome: build/index.d.ts#ConnectOutcome
@@ -122,10 +127,15 @@ type TlsRaw: build/index.d.ts#TlsRaw
 Trust: build/index.d.ts#Trust
 UNKNOWN: build/index.chunk.d.ts#UNKNOWN
 type ValueOf: build/index.d.ts#ValueOf
-addressKind: build/index.d.ts#addressKind
+addressClass: build/address.d.ts#addressClass
+addressFamily: build/address.d.ts#addressFamily
+addressKind: build/address.d.ts#addressKind
 binOf: build/index.d.ts#binOf
+canonicalAddress: build/address.d.ts#canonicalAddress
 canonicalHost: build/index.d.ts#canonicalHost
 certProblem: build/index.d.ts#certProblem
+cidrContains: build/address.d.ts#cidrContains
+cidrSet: build/address.d.ts#cidrSet
 compileCatalog: build/index.chunk.d.ts#compileCatalog
 connectOutcome: build/index.d.ts#connectOutcome
 createRunner: build/index.d.ts#createRunner
@@ -137,6 +147,7 @@ dnsOutcome: build/index.d.ts#dnsOutcome
 expand: build/index.chunk.d.ts#expand
 explain: build/index.chunk.d.ts#explain
 factsOf: build/index.d.ts#factsOf
+formatCidr: build/address.d.ts#formatCidr
 formatTarget: build/index.d.ts#formatTarget
 grantProblems: build/index.d.ts#grantProblems
 handshakeOutcome: build/index.d.ts#handshakeOutcome
@@ -150,6 +161,7 @@ labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/index.chunk.d.ts#layerRank
 namedGrant: build/index.d.ts#namedGrant
 observe: build/index.d.ts#observe
+parseCidr: build/address.d.ts#parseCidr
 parseTarget: build/index.d.ts#parseTarget
 predictive: build/index.chunk.d.ts#predictive
 readEvidence: build/index.d.ts#readEvidence
@@ -161,6 +173,22 @@ target: build/index.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
 widen: build/index.d.ts#widen
+
+## ./address (build/address.d.ts): names
+
+ADDRESS_CLASSES: build/address.d.ts#ADDRESS_CLASSES
+AddressClass: build/address.d.ts#AddressClass
+AddressFamily: build/address.d.ts#AddressFamily
+Cidr: build/address.d.ts#Cidr
+CidrSet: build/address.d.ts#CidrSet
+addressClass: build/address.d.ts#addressClass
+addressFamily: build/address.d.ts#addressFamily
+addressKind: build/address.d.ts#addressKind
+canonicalAddress: build/address.d.ts#canonicalAddress
+cidrContains: build/address.d.ts#cidrContains
+cidrSet: build/address.d.ts#cidrSet
+formatCidr: build/address.d.ts#formatCidr
+parseCidr: build/address.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
 
@@ -210,6 +238,55 @@ predictive: build/index.chunk.d.ts#predictive
 scoreLab: build/index.chunk.d.ts#scoreLab
 
 ## Declarations
+
+### build/address.d.ts#ADDRESS_CLASSES
+export declare const ADDRESS_CLASSES: readonly {
+  readonly cidr: string;
+  readonly class: Exclude<AddressClass, "public">;
+}[];
+
+### build/address.d.ts#AddressClass
+export type AddressClass = "unspecified" | "loopback" | "private" | "shared" | "link-local" | "unique-local" | "documentation" | "benchmarking" | "multicast" | "reserved" | "public";
+
+### build/address.d.ts#AddressFamily
+export type AddressFamily = "ipv4" | "ipv6";
+
+### build/address.d.ts#Cidr
+export interface Cidr {
+  readonly address: string;
+  readonly prefix: number;
+  readonly family: AddressFamily;
+}
+
+### build/address.d.ts#CidrSet
+export interface CidrSet {
+  readonly ranges: readonly Cidr[];
+  has(address: string): boolean;
+}
+
+### build/address.d.ts#addressClass
+export declare function addressClass(address: string): AddressClass | undefined;
+
+### build/address.d.ts#addressFamily
+export declare function addressFamily(address: string): AddressFamily | undefined;
+
+### build/address.d.ts#addressKind
+export declare function addressKind(address: string): "public" | "private" | undefined;
+
+### build/address.d.ts#canonicalAddress
+export declare function canonicalAddress(address: string): string;
+
+### build/address.d.ts#cidrContains
+export declare function cidrContains(cidr: Cidr, address: string): boolean;
+
+### build/address.d.ts#cidrSet
+export declare function cidrSet(ranges: readonly Cidr[]): CidrSet;
+
+### build/address.d.ts#formatCidr
+export declare function formatCidr(cidr: Cidr): string;
+
+### build/address.d.ts#parseCidr
+export declare function parseCidr(text: string): Result<Cidr, string>;
 
 ### build/index.chunk.d.ts#Catalog
 interface Catalog {
@@ -908,6 +985,7 @@ interface TlsPhase {
 ### build/index.d.ts#TlsProbeOptions
 interface TlsProbeOptions extends ConnectOptions {
   readonly roots?: readonly string[] | undefined;
+  readonly publicRoots?: readonly string[] | undefined;
 }
 
 ### build/index.d.ts#TlsRaw
@@ -921,9 +999,6 @@ export type Trust = (typeof TRUSTS)[number];
 
 ### build/index.d.ts#ValueOf
 type ValueOf<K> = K extends FactKind<infer V> ? V : never;
-
-### build/index.d.ts#addressKind
-export declare function addressKind(address: string): "public" | "private" | undefined;
 
 ### build/index.d.ts#binOf
 export declare function binOf(bins: readonly Bin[], x: number): string;

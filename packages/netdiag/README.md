@@ -43,6 +43,31 @@ An active probe sends packets only to a peer that the user owns or names. The ru
 
 The scope also limits the number of ports of each host. The default limit is 8. Thus netdiag does no port scan.
 
+## IP addresses
+
+The entry `@mark1russell7/netdiag/address` has plain functions for IP addresses and networks. It uses only the module `node:net`.
+
+| Function | What it gives |
+| --- | --- |
+| `addressFamily(address)` | `ipv4`, `ipv6`, or `undefined` for a text that is not an address. |
+| `addressClass(address)` | The class of the address, from the special-purpose ranges of RFC 6890. |
+| `addressKind(address)` | `private` for an address that the internet does not route to, else `public`. |
+| `parseCidr(text)` | A CIDR range, or the problem of the text. |
+| `cidrSet(ranges)` | A set of ranges. Its `has(address)` tells if an address is in a range of the set. |
+
+- The classes are `unspecified`, `loopback`, `private`, `shared`, `link-local`, `unique-local`, `documentation`, `benchmarking`, `multicast`, `reserved` and `public`.
+- The table `ADDRESS_CLASSES` holds the ranges of the classes as data.
+- An IPv4 address in IPv6 form, for example `::ffff:192.0.2.1`, is its IPv4 address.
+- An address for documentation is `public`. Thus a lab can use `203.0.113.0/24` for hosts on the internet.
+
+```ts
+import { addressClass, cidrSet, parseCidr } from "@mark1russell7/netdiag/address";
+
+addressClass("100.64.0.1"); // "shared": the carrier-grade NAT range
+const lab = parseCidr("203.0.113.0/24");
+if (lab.tag === "ok") cidrSet([lab.value]).has("::ffff:203.0.113.7"); // true
+```
+
 ## Native probes
 
 The native probes use only the `node:` modules. They need no outside tool.

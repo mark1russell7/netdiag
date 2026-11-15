@@ -19,7 +19,6 @@ import {
   TLS_RATIO_BINS,
   TLS_TRUST_VALUES,
   TRUSTS,
-  addressKind,
   binOf,
   diagnose,
   isLocalName,
@@ -133,13 +132,9 @@ describe("the tables of the readers", () => {
     expect(() => binOf([{ below: 1, value: "a" }], 2)).toThrow(RangeError);
   });
 
-  it("tell a local name and a private address", () => {
+  it("tell a local name", () => {
     expect(["router", "nas.local", "printer.lan", "a.home.arpa", "x.test", "LOCALHOST", "srv.corp."].map(isLocalName)).toEqual([true, true, true, true, true, true, true]);
     expect(["example.com", "example.co.uk", "lan.example.com"].map(isLocalName)).toEqual([false, false, false]);
-    expect(["10.1.2.3", "172.31.0.1", "192.168.1.1", "100.64.0.1", "127.0.0.1", "169.254.1.1", "0.0.0.0"].map(addressKind)).toEqual(Array(7).fill("private"));
-    expect(["fd00::1", "fe80::1", "::1", "::", "::ffff:192.168.1.1"].map(addressKind)).toEqual(Array(5).fill("private"));
-    expect(["93.184.216.34", "172.32.0.1", "2606:4700::1111", "::ffff:8.8.8.8"].map(addressKind)).toEqual(Array(4).fill("public"));
-    expect(addressKind("example.com")).toBeUndefined();
   });
 });
 
