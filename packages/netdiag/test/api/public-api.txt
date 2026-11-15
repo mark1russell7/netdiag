@@ -58,8 +58,16 @@ type HttpRaw: build/index.d.ts#HttpRaw
 HttpResponse: build/index.d.ts#HttpResponse
 type Hypothesis: build/index.chunk.d.ts#Hypothesis
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
+LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/index.chunk.d.ts#LAYERS
 LOCAL_SUFFIXES: build/index.d.ts#LOCAL_SUFFIXES
+type LabBars: build/index.chunk.d.ts#LabBars
+type LabCause: build/index.chunk.d.ts#LabCause
+type LabGate: build/index.chunk.d.ts#LabGate
+type LabRecord: build/index.chunk.d.ts#LabRecord
+type LabScore: build/index.chunk.d.ts#LabScore
+type LabStatus: build/index.chunk.d.ts#LabStatus
+type LabVerdict: build/index.chunk.d.ts#LabVerdict
 type Layer: build/index.chunk.d.ts#Layer
 MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
 NATIVE_KINDS: build/index.d.ts#NATIVE_KINDS
@@ -137,6 +145,8 @@ httpProbe: build/index.d.ts#httpProbe
 isFactOf: build/index.d.ts#isFactOf
 isLayer: build/index.chunk.d.ts#isLayer
 isLocalName: build/index.d.ts#isLocalName
+labGate: build/index.chunk.d.ts#labGate
+labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/index.chunk.d.ts#layerRank
 namedGrant: build/index.d.ts#namedGrant
 observe: build/index.d.ts#observe
@@ -146,6 +156,7 @@ readEvidence: build/index.d.ts#readEvidence
 resolvedGrant: build/index.d.ts#resolvedGrant
 sameTarget: build/index.d.ts#sameTarget
 scopeOf: build/index.d.ts#scopeOf
+scoreLab: build/index.chunk.d.ts#scoreLab
 target: build/index.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
@@ -165,7 +176,15 @@ FLOOR: build/index.chunk.d.ts#FLOOR
 type Fault: build/index.chunk.d.ts#Fault
 type Feature: build/index.chunk.d.ts#Feature
 type Hypothesis: build/index.chunk.d.ts#Hypothesis
+LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/index.chunk.d.ts#LAYERS
+type LabBars: build/index.chunk.d.ts#LabBars
+type LabCause: build/index.chunk.d.ts#LabCause
+type LabGate: build/index.chunk.d.ts#LabGate
+type LabRecord: build/index.chunk.d.ts#LabRecord
+type LabScore: build/index.chunk.d.ts#LabScore
+type LabStatus: build/index.chunk.d.ts#LabStatus
+type LabVerdict: build/index.chunk.d.ts#LabVerdict
 type Layer: build/index.chunk.d.ts#Layer
 NONE: build/index.chunk.d.ts#NONE
 PARTS: build/index.chunk.d.ts#PARTS
@@ -184,8 +203,11 @@ diagnose: build/index.chunk.d.ts#diagnose
 expand: build/index.chunk.d.ts#expand
 explain: build/index.chunk.d.ts#explain
 isLayer: build/index.chunk.d.ts#isLayer
+labGate: build/index.chunk.d.ts#labGate
+labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/index.chunk.d.ts#layerRank
 predictive: build/index.chunk.d.ts#predictive
+scoreLab: build/index.chunk.d.ts#scoreLab
 
 ## Declarations
 
@@ -280,8 +302,61 @@ interface Hypothesis {
   readonly reach?: Reach | undefined;
 }
 
+### build/index.chunk.d.ts#LAB_RECORD_FORMAT
+declare const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
+
 ### build/index.chunk.d.ts#LAYERS
 declare const LAYERS: readonly ["link", "wifi", "ip", "route", "path", "dns", "tcp", "tls", "http"];
+
+### build/index.chunk.d.ts#LabBars
+type LabBars = Readonly<Record<string, number>>;
+
+### build/index.chunk.d.ts#LabCause
+interface LabCause {
+  readonly id: string;
+  readonly probability: number;
+}
+
+### build/index.chunk.d.ts#LabGate
+interface LabGate {
+  readonly pass: boolean;
+  readonly verdicts: readonly LabVerdict[];
+  readonly unbarred: readonly string[];
+}
+
+### build/index.chunk.d.ts#LabRecord
+interface LabRecord {
+  readonly format: typeof LAB_RECORD_FORMAT;
+  readonly case: string;
+  readonly catalog: string;
+  readonly truth: string;
+  readonly predicted: string;
+  readonly rank: number;
+  readonly causes: readonly LabCause[];
+}
+
+### build/index.chunk.d.ts#LabScore
+interface LabScore {
+  readonly catalog: string;
+  readonly n: number;
+  readonly correct: number;
+  readonly accuracy: Proportion;
+  readonly table: Confusion<string>;
+  readonly classes: readonly ClassScore<string>[];
+  readonly brier: number | undefined;
+}
+
+### build/index.chunk.d.ts#LabStatus
+type LabStatus = "pass" | "fail" | "no-read";
+
+### build/index.chunk.d.ts#LabVerdict
+interface LabVerdict {
+  readonly hypothesis: string;
+  readonly status: LabStatus;
+  readonly bar: number;
+  readonly low: number | undefined;
+  readonly support: number;
+}
 
 ### build/index.chunk.d.ts#Layer
 type Layer = (typeof LAYERS)[number];
@@ -337,11 +412,20 @@ declare function explain(catalog: Catalog, evidence: readonly Evidence[], hypoth
 ### build/index.chunk.d.ts#isLayer
 declare function isLayer(value: unknown): value is Layer;
 
+### build/index.chunk.d.ts#labGate
+declare function labGate(score: LabScore, bars: LabBars): Result<LabGate, string[]>;
+
+### build/index.chunk.d.ts#labRecordOf
+declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis): Result<LabRecord, string>;
+
 ### build/index.chunk.d.ts#layerRank
 declare function layerRank(layer: Layer): number;
 
 ### build/index.chunk.d.ts#predictive
 declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;
+
+### build/index.chunk.d.ts#scoreLab
+declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
 
 ### build/index.d.ts#Availability
 type Availability = {
