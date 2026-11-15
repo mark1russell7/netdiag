@@ -72,8 +72,8 @@ export function missingSigns(signs: readonly Sign[], evidence: readonly Evidence
 }
 
 /**
- * This function starts the probes of one name: a DNS query to the lab resolver, then an HTTPS request to the first
- * address of the answer. It gives the facts, and a problem for each probe that did not end.
+ * This function starts the probes of one name. The DNS probe asks the lab resolver. The HTTP probe then connects to
+ * the first address of the answer. The function gives the facts, and a problem for each probe that did not end.
  */
 async function visit(world: World, options: RunOptions, runner: ReturnType<typeof createRunner>, name: string, port: number): Promise<{ facts: Fact[]; problems: string[] }> {
   const facts: Fact[] = [];
@@ -136,7 +136,7 @@ export function roundOrder<T>(cases: readonly T[], round: number): T[] {
   return [...cases.slice(start), ...cases.slice(0, start)];
 }
 
-/** This function runs each case once in each round. It gives the runs in the order that they ran. */
+/** This function starts each case once in each round. It gives the results in the order of their start. */
 export async function runLab(cases: readonly LabCase[], rounds: number, options: RunOptions, onRun?: (run: CaseRun) => void): Promise<CaseRun[]> {
   if (!Number.isInteger(rounds) || rounds < 1) throw new RangeError(`The number of rounds ${rounds} is not a positive integer.`);
   const runs: CaseRun[] = [];

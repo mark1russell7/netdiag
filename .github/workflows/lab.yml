@@ -1,0 +1,68 @@
+# The loopback lab of netdiag (ND-7, step 2). Each case makes one network fault with real servers on lab addresses.
+# The lab diagnoses each case and scores the diagnosis against the true fault.
+#
+# The lab addresses are on the interface lo: 203.0.113.0/24 (a documentation range) stands for hosts on the internet,
+# and 192.168.250.80 is the captive portal. netem adds 10 ms to each packet on lo, so the times have the ratios of
+# a real path. The job fails when a case gives no read. Step 4 adds the bars of the gate.
+name: Lab
+
+on:
+  push:
+    branches: [main]
+  # No path filter: a summary job of a pull request runs on each pull request.
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: The number of rounds. Each round runs each case once.
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lab:
+    name: Loopback lab
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ROUNDS: ${{ inputs.rounds || '5' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Add the lab addresses and the delay of the path
+        run: |
+          for address in 203.0.113.10 203.0.113.20 203.0.113.53 192.168.250.80; do
+            sudo ip addr add "$address/32" dev lo
+          done
+          sudo tc qdisc add dev lo root netem delay 10ms
+          ip -brief addr show dev lo
+          tc qdisc show dev lo
+      - name: Run the lab
+        run: node packages/lab/src/main.ts --hosts ci --rounds "$ROUNDS" --out lab-out
+      - name: Remove the delay of the path
+        if: always()
+        run: sudo tc qdisc del dev lo root || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: lab-${{ github.sha }}
+          path: lab-out/
+          if-no-files-found: error
+          retention-days: 30

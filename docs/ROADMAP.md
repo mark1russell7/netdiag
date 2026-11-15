@@ -53,7 +53,7 @@ The score is the hit rate of each fault class, from a confusion matrix. A gate i
 ND-7 has four steps:
 
 1. **The score.** A lab record has the true hypothesis and the diagnosis. `scoreLab` gives the confusion table, the recall of each hypothesis with its Wilson interval, and the Brier score. `labGate` holds the lower end of each recall. The table and the intervals come from `@mark1russell7/rigor-statistics`.
-2. **The loopback lab.** Servers on `127.0.0.1` and `@mark1russell7/rigor-proxy` make the faults of DNS, TCP, TLS and HTTP. This lab needs no root and no Docker. It runs in CI only, because its times are part of the evidence.
+2. **The loopback lab.** The package `@netdiag/lab` starts real servers on lab addresses of `lo`: a resolver, the target, a reference host and a captive portal. `@mark1russell7/rigor-proxy` holds the first reply of a TLS proxy. Its 13 cases make the 11 classes of the loopback row. The workflow `lab.yml` runs 5 rounds in CI, because the times are part of the evidence. A case that does not show the signs of its fault gives no read.
 3. **The kernel lab.** The cells of `@mark1russell7/harness` drop, reset and delay packets, and make a small MTU. They make the faults of the path and of IPv6.
 4. **The bars.** The bar of each class is the worst of 5 or more CI runs, minus their spread.
 

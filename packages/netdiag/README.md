@@ -2,7 +2,7 @@
 
 This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1, ND-2, ND-4 and the lab score of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The labs and the accuracy gate in CI come next.
+**State: ND-1, ND-2, ND-4, and the lab score and the loopback lab of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The kernel lab and the bars of the gate come next.
 
 ## Facts
 
@@ -59,6 +59,8 @@ The native probes use only the `node:` modules. They need no outside tool.
 - A time limit or a stop of the signal closes the socket. The probe then gives the outcome `timeout`, or the runner gives `aborted`.
 - The TLS probe does not refuse a certificate that is not valid. It records the problem, for example `expired`, `name` or `untrusted`.
 - The trust tells the root of the chain. `public` is a root of Node.js. `private` is a different root, for example the root of a proxy that examines TLS.
+- The option `roots` adds roots that the user trusts, for example the root of a company. Their trust is `private`.
+- The option `publicRoots` adds roots with the trust `public`. A lab gives its own root here, so its servers stand for servers on the internet.
 - The HTTP probe follows no redirect. It reads the body up to 64 KiB.
 - For `https`, the HTTP probe sends its request only when the certificate passes its check. Thus an interceptor does not get the path.
 
