@@ -229,11 +229,16 @@ A lab makes one fault on purpose. Then netdiag must name it. The entry `@mark1ru
 | `labRecordOf(catalog, case, truth, diagnosis)` | The record of one run: the true hypothesis, the predicted cause, the rank of the truth and the probability of each cause. |
 | `scoreLab(catalog, records)` | The confusion table, the recall of each hypothesis with its Wilson interval, the accuracy and the mean Brier score. |
 | `labGate(score, bars)` | A verdict for each hypothesis with a bar: `pass`, `fail` or `no-read`. |
+| `labBars(scores, options)` | The bars of the gate from the scores of 5 or more runs of one lab. |
 
 - The recall of a hypothesis is the part of its runs where the diagnosis names it.
 - A hypothesis passes when the lower end of its recall interval is its bar or more.
 - A hypothesis with no runs gets `no-read`, and the gate does not pass.
 - A hypothesis with no bar goes in `unbarred`, for example a fault that no lab can make.
+- The bar of a hypothesis is the least lower end of its recall over the runs, minus the spread of these lower ends.
+- The spread is `noiseFloor` of `@mark1russell7/rigor-statistics`: 2 standard deviations, or `k` with the option `k`.
+- `labBars` rounds each bar down to `LAB_BAR_STEP` (0.001). A bar is 0 or more.
+- A hypothesis with a read in only some runs is an error. A hypothesis with no read in each run gets no bar.
 
 ```ts
 import { STANDARD_CATALOG, diagnose, labGate, labRecordOf, scoreLab } from "@mark1russell7/netdiag/diagnosis";

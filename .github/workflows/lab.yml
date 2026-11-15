@@ -3,7 +3,8 @@
 #
 # The lab addresses are on the interface lo: 203.0.113.0/24 (a documentation range) stands for hosts on the internet,
 # and 192.168.250.80 is the captive portal. netem adds 10 ms to each packet on lo, so the times have the ratios of
-# a real path. The job fails when a case gives no read. Step 4 adds the bars of the gate.
+# a real path. The job fails when a case gives no read. A dispatch with 5 runs or more and `bars` true computes the
+# bars of the gate (step 4).
 name: Lab
 
 on:
@@ -17,6 +18,15 @@ on:
         description: The number of rounds. Each round runs each case once.
         required: false
         default: "5"
+      runs:
+        description: The runs, as a JSON list of numbers, for example [1,2,3,4,5]. Each run is one job on its own runner.
+        required: false
+        default: "[1]"
+      bars:
+        description: Compute the bars of the gate from the scores of the runs. This needs 5 runs or more.
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -32,6 +42,11 @@ defaults:
 jobs:
   lab:
     name: Loopback lab
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        run: ${{ fromJSON(inputs.runs || '[1]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -62,7 +77,38 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: lab-${{ github.sha }}
+          name: lab-${{ github.sha }}-${{ matrix.run }}
           path: lab-out/
           if-no-files-found: error
           retention-days: 30
+
+  # The bars of the gate (ND-7, step 4): the least lower end of the recall of each hypothesis over the runs, minus the
+  # spread of these lower ends. A dispatch with runs [1,2,3,4,5] and bars true gives them. A pull request commits them.
+  bars:
+    name: Bars of the gate
+    needs: lab
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.bars }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: lab-${{ github.sha }}-*
+          path: runs
+      - name: Compute the bars
+        run: node packages/lab/src/bars-main.ts --out bars-out/loopback.json runs/* | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lab-bars-${{ github.sha }}
+          path: bars-out/
+          if-no-files-found: error
+          retention-days: 90

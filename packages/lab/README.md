@@ -80,3 +80,22 @@ node packages/lab/src/kernel/main.ts --rounds 5 --out lab-kernel-out
 ```
 
 The outputs, the option `--bars` and the exit codes are the same as the outputs of the loopback lab.
+
+## The bars of the gate
+
+The bar of each hypothesis comes from 5 or more runs of one lab in CI. Each run is one job on its own runner.
+
+1. Start the workflow `lab.yml` or `lab-kernel.yml` with the input `runs` set to `[1,2,3,4,5]` and the input `bars` set to `true`.
+2. The matrix of the job `lab` starts one job for each run. Each job uploads its outputs as `<lab>-<commit>-<run>`.
+3. The job `bars` reads the file `score.json` of each run. `labBars` of netdiag gives the bars.
+4. The job writes the table of the bars in the summary of the run, and uploads the file of the bars.
+
+The command of the job `bars`:
+
+```sh
+node packages/lab/src/bars-main.ts --out bars-out/kernel.json runs/*
+```
+
+- Each argument is the folder of one run, or its file `score.json`.
+- A run with a case with no read gives no bars. The exit code is then 2.
+- The options `--k` and `--minimum` set the number of standard deviations (2) and the fewest runs (5).
