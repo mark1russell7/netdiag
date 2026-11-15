@@ -3,8 +3,11 @@
 export {
   AVAILABILITY_TIMEOUT_MS,
   availabilityOf,
+  commandHost,
   runTool,
   TOOL_MARGIN_MS,
+  type CommandRunner,
+  type CommandRunOptions,
   type ToolCommand,
   type ToolHost,
   type ToolOutput,
