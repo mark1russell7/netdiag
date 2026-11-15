@@ -284,7 +284,8 @@ function hostField(input: HttpInput, port: number): string {
 
 /**
  * This function makes the HTTP probe. It sends one request, follows no redirect, and reads the body up to a limit. It
- * gives the facts of each phase: TCP, TLS for `https`, and HTTP.
+ * gives the facts of each phase: TCP, TLS for `https`, and HTTP. For `https`, it sends the request only when the
+ * certificate passes its check.
  */
 export function httpProbe(options: TlsProbeOptions = {}): Probe<HttpInput, HttpRaw> {
   const dial = dialOf(options);
@@ -319,7 +320,9 @@ export function httpProbe(options: TlsProbeOptions = {}): Probe<HttpInput, HttpR
         if (input.scheme === "https") {
           const handshake = await handshakePhase(socket, { address: input.address, servername: input.host, alpn: ["http/1.1"] }, store(), w, context.clock);
           secured = handshake.phase;
-          if (handshake.secure === undefined) {
+          // A request on a session with a certificate that is not valid can send the path to an interceptor.
+          if (handshake.secure === undefined || secured.outcome !== "ok") {
+            handshake.secure?.destroy();
             context.signal.throwIfAborted();
             return { scheme: input.scheme, tcp, tls: secured };
           }

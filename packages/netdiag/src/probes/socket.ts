@@ -343,6 +343,9 @@ export function handshakePhase(
       ...(servername === undefined ? {} : { servername }),
       ...(input.alpn === undefined ? {} : { ALPNProtocols: [...input.alpn] }),
       secureContext: store.context,
+      // The probe examines a certificate that is not valid, so the handshake does not stop at it. The probe then writes
+      // no data. The HTTP probe sends its request only when the check of the certificate passed.
+      // codeql[js/disabling-certificate-validation]
       rejectUnauthorized: false,
     });
     secure.on("error", ignore);

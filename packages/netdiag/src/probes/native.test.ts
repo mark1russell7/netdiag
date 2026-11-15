@@ -408,11 +408,18 @@ describe("the HTTP probe", () => {
     expect(host).toBe(`localhost:${port}`);
   });
 
-  it("sends the request when the certificate is not valid, and keeps the problem", async () => {
-    const port = await serve(createHttpsServer(leaf, (_req, res) => res.end("ok")));
-    const result = await runnerWith(realClock).run(httpProbe(), { address: LOCAL, port, scheme: "https", host: "localhost" });
+  it("sends no request when the certificate is not valid, and keeps the problem", async () => {
+    let asked = false;
+    const port = await serve(
+      createHttpsServer(leaf, (_req, res) => {
+        asked = true;
+        res.end("ok");
+      }),
+    );
+    const result = await runnerWith(realClock).run(httpProbe(), { address: LOCAL, port, scheme: "https", host: "localhost", path: "/secret-token" });
+    expect(kindsOf(result)).toEqual(["tcp.connect", "tls.handshake"]);
     expect(factOf<TlsHandshake>(result, TLS_HANDSHAKE)).toMatchObject({ outcome: "cert-error", certificate: { problem: "untrusted" } });
-    expect(factOf<HttpResponse>(result, HTTP_RESPONSE)).toMatchObject({ status: 200 });
+    expect(asked).toBe(false);
   });
 
   it("gives the status of an error", async () => {

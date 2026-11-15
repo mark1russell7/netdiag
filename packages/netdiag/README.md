@@ -60,6 +60,7 @@ The native probes use only the `node:` modules. They need no outside tool.
 - The TLS probe does not refuse a certificate that is not valid. It records the problem, for example `expired`, `name` or `untrusted`.
 - The trust tells the root of the chain. `public` is a root of Node.js. `private` is a different root, for example the root of a proxy that examines TLS.
 - The HTTP probe follows no redirect. It reads the body up to 64 KiB.
+- For `https`, the HTTP probe sends its request only when the certificate passes its check. Thus an interceptor does not get the path.
 
 ```ts
 import { realClock } from "@mark1russell7/algebra/clock";
