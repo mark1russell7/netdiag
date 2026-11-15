@@ -1,5 +1,5 @@
 import type { FaultOptions, FaultPlace, HopPlace, Lab, NetworkFault } from "@mark1russell7/harness";
-import type { Sign } from "../cases.ts";
+import type { Sign, SignGroup } from "../cases.ts";
 import type { LaterClass } from "../report.ts";
 import type { CaseBase } from "../run.ts";
 import type { KernelZone } from "./resolver.ts";
@@ -69,6 +69,7 @@ export function kernelZone(peers: KernelPeers): KernelZone {
 }
 
 const sign = (feature: string, value: string, primary = true): Sign => ({ feature, primary, value });
+const anyOf = (...signs: Sign[]): SignGroup => ({ anyOf: signs });
 
 /** The cases of the kernel lab: a control and seven faults. Each case is in each round. */
 export const KERNEL_CASES: readonly KernelCase[] = [
@@ -117,9 +118,11 @@ export const KERNEL_CASES: readonly KernelCase[] = [
   {
     id: "filter.reset",
     truth: "filter.reset",
-    summary: "The target lets each SYN pass, and resets each later segment from the client. The connect succeeds, and the TLS handshake fails.",
+    summary: "The target lets each SYN pass, and resets each later segment from the client. The connect or the TLS handshake gets a reset.",
     fault: { kind: "network", fault: "rst", at: "target", options: { handshake: "pass" } },
-    signs: [sign("tcp.connect", "connected"), sign("tls.handshake", "reset"), sign("icmp.reply", "reply")],
+    // The last ACK of the handshake also gets the reset. On a short path, the reset comes before Node.js reads the
+    // end of the connect, and the connect fails with ECONNRESET. Thus the group takes each form of the fault.
+    signs: [anyOf(sign("tcp.connect", "reset"), sign("tls.handshake", "reset")), sign("icmp.reply", "reply")],
   },
   {
     id: "gateway.down",

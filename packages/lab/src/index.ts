@@ -18,7 +18,10 @@ export {
   type HostSpec,
   type LabCase,
   type LabHosts,
+  signsOf,
+  type CaseSign,
   type Sign,
+  type SignGroup,
 } from "./cases.ts";
 export { HOLD_WINDOW_MS, LEGACY_CIPHER, labTrust, startWorld, zoneOf, type Endpoint, type LabTrust, type World } from "./world.ts";
 export {

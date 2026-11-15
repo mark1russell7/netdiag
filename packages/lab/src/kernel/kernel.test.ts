@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { realClock } from "@mark1russell7/algebra/clock";
 import { STANDARD_CATALOG, type Fact } from "@mark1russell7/netdiag";
+import { signsOf } from "../cases.ts";
 import type { ToolRunOptions } from "@mark1russell7/netdiag/tools";
 import { authority, fakeToolHost, startDnsServer, type Authority } from "@netdiag/fixtures";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -25,7 +26,7 @@ describe("the kernel cases", () => {
     for (const labCase of KERNEL_CASES) {
       expect(ids.has(labCase.truth), labCase.id).toBe(true);
       expect(labCase.signs.length, labCase.id).toBeGreaterThan(0);
-      for (const sign of labCase.signs) expect(STANDARD_CATALOG.features.get(sign.feature)?.values, `${labCase.id} ${sign.feature}`).toContain(sign.value);
+      for (const sign of labCase.signs.flatMap(signsOf)) expect(STANDARD_CATALOG.features.get(sign.feature)?.values, `${labCase.id} ${sign.feature}`).toContain(sign.value);
     }
   });
 
