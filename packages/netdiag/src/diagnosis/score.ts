@@ -1,5 +1,5 @@
 import { err, ok, type Result } from "@mark1russell7/optional";
-import { type ClassScore, type Confusion, type Proportion, brier, classScores, confusion, wilson } from "@mark1russell7/rigor-statistics";
+import { type ClassScore, type Confusion, type Proportion, brier, classScores, confusion, noiseFloor, wilson } from "@mark1russell7/rigor-statistics";
 import type { Catalog, Diagnosis } from "./model.ts";
 
 /** The format of a lab record. */
@@ -157,4 +157,55 @@ export function labGate(score: LabScore, bars: LabBars): Result<LabGate, string[
     verdicts.push({ hypothesis: scores.label, status, bar, low, support: scores.support });
   }
   return ok({ pass: verdicts.length > 0 && verdicts.every((verdict) => verdict.status === "pass"), verdicts, unbarred });
+}
+
+/** The options of `labBars`. */
+export interface LabBarsOptions {
+  /** The number of standard deviations in the spread of the lower ends. The default is 2. */
+  readonly k?: number | undefined;
+  /** The fewest runs that give bars. The default is 5. */
+  readonly minimum?: number | undefined;
+}
+
+/** The step of a bar. `labBars` rounds each bar down to a whole number of steps. */
+export const LAB_BAR_STEP = 0.001;
+
+/**
+ * This function gives the bars of the gate from the scores of the runs of one lab.
+ *
+ * - The bar of a hypothesis is the least lower end of its recall interval over the runs, minus the spread of these
+ *   lower ends. The spread is `noiseFloor` of `rigor-statistics`: `k` standard deviations.
+ * - The bar is 0 or more, rounded down to `LAB_BAR_STEP`.
+ * - A hypothesis with no read in each run gets no bar. A hypothesis with a read in only some runs is an error.
+ * - Fewer runs than `minimum`, and scores of different catalogs, are errors.
+ */
+export function labBars(scores: readonly LabScore[], options: LabBarsOptions = {}): Result<LabBars, string[]> {
+  const k = options.k ?? 2;
+  const minimum = options.minimum ?? 5;
+  const problems: string[] = [];
+  if (scores.length < minimum) problems.push(`The bars need ${minimum} runs or more. There are ${scores.length}.`);
+  const catalogs = new Set(scores.map((score) => score.catalog));
+  if (catalogs.size > 1) problems.push(`The runs have scores of ${catalogs.size} catalogs: ${[...catalogs].join(", ")}.`);
+  if (problems.length > 0) return err(problems);
+  const lows = new Map<string, (number | undefined)[]>();
+  for (const score of scores) {
+    for (const each of score.classes) {
+      const list = lows.get(each.label) ?? [];
+      list.push(each.support === 0 ? undefined : each.recallInterval.low);
+      lows.set(each.label, list);
+    }
+  }
+  const steps = Math.round(1 / LAB_BAR_STEP);
+  const bars: Record<string, number> = {};
+  for (const [hypothesis, list] of lows) {
+    const read = list.filter((low): low is number => low !== undefined);
+    if (read.length === 0) continue;
+    if (read.length < scores.length) {
+      problems.push(`The hypothesis "${hypothesis}" has a read in ${read.length} of ${scores.length} runs.`);
+      continue;
+    }
+    const bar = Math.min(...read) - noiseFloor(read, { k, minimum });
+    bars[hypothesis] = Math.max(0, Math.floor(bar * steps + 1e-9) / steps);
+  }
+  return problems.length > 0 ? err(problems) : ok(bars);
 }

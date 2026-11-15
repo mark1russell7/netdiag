@@ -80,6 +80,7 @@ IcmpEcho: build/host.chunk.d.ts#IcmpEcho
 type InterfaceAddress: build/index.d.ts#InterfaceAddress
 type InterfaceTable: build/index.d.ts#InterfaceTable
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
+LAB_BAR_STEP: build/index.chunk.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
 LINK_PROBE: build/index.d.ts#LINK_PROBE
@@ -90,6 +91,7 @@ LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
 LOCAL_SUFFIXES: build/index.d.ts#LOCAL_SUFFIXES
 LOSS_MIN_SENT: build/index.d.ts#LOSS_MIN_SENT
 type LabBars: build/index.chunk.d.ts#LabBars
+type LabBarsOptions: build/index.chunk.d.ts#LabBarsOptions
 type LabCause: build/index.chunk.d.ts#LabCause
 type LabGate: build/index.chunk.d.ts#LabGate
 type LabRecord: build/index.chunk.d.ts#LabRecord
@@ -219,6 +221,7 @@ interfaceOf: build/index.d.ts#interfaceOf
 isFactOf: build/host.chunk.d.ts#isFactOf
 isLayer: build/layer.chunk.d.ts#isLayer
 isLocalName: build/index.d.ts#isLocalName
+labBars: build/index.chunk.d.ts#labBars
 labGate: build/index.chunk.d.ts#labGate
 labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
@@ -274,9 +277,11 @@ type Fault: build/index.chunk.d.ts#Fault
 type Feature: build/index.chunk.d.ts#Feature
 GAIN_RESOLUTION: build/index.chunk.d.ts#GAIN_RESOLUTION
 type Hypothesis: build/index.chunk.d.ts#Hypothesis
+LAB_BAR_STEP: build/index.chunk.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
 type LabBars: build/index.chunk.d.ts#LabBars
+type LabBarsOptions: build/index.chunk.d.ts#LabBarsOptions
 type LabCause: build/index.chunk.d.ts#LabCause
 type LabGate: build/index.chunk.d.ts#LabGate
 type LabRecord: build/index.chunk.d.ts#LabRecord
@@ -305,6 +310,7 @@ diagnose: build/index.chunk.d.ts#diagnose
 expand: build/index.chunk.d.ts#expand
 explain: build/index.chunk.d.ts#explain
 isLayer: build/layer.chunk.d.ts#isLayer
+labBars: build/index.chunk.d.ts#labBars
 labGate: build/index.chunk.d.ts#labGate
 labRecordOf: build/index.chunk.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
@@ -1043,11 +1049,20 @@ interface Hypothesis {
   readonly reach?: Reach | undefined;
 }
 
+### build/index.chunk.d.ts#LAB_BAR_STEP
+declare const LAB_BAR_STEP = .001;
+
 ### build/index.chunk.d.ts#LAB_RECORD_FORMAT
 declare const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
 
 ### build/index.chunk.d.ts#LabBars
 type LabBars = Readonly<Record<string, number>>;
+
+### build/index.chunk.d.ts#LabBarsOptions
+interface LabBarsOptions {
+  readonly k?: number | undefined;
+  readonly minimum?: number | undefined;
+}
 
 ### build/index.chunk.d.ts#LabCause
 interface LabCause {
@@ -1164,6 +1179,9 @@ declare function expand(feature: Feature, prediction: Prediction): Result<Distri
 
 ### build/index.chunk.d.ts#explain
 declare function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus?: string): Contribution[];
+
+### build/index.chunk.d.ts#labBars
+declare function labBars(scores: readonly LabScore[], options?: LabBarsOptions): Result<LabBars, string[]>;
 
 ### build/index.chunk.d.ts#labGate
 declare function labGate(score: LabScore, bars: LabBars): Result<LabGate, string[]>;

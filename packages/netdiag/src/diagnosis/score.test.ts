@@ -1,7 +1,7 @@
 import { wilson } from "@mark1russell7/rigor-statistics";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { LAB_RECORD_FORMAT, STANDARD_CATALOG, diagnose, labGate, labRecordOf, scoreLab, type LabRecord, type LabScore } from "./index.ts";
+import { LAB_RECORD_FORMAT, STANDARD_CATALOG, diagnose, labBars, labGate, labRecordOf, scoreLab, type LabRecord, type LabScore } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
 const ids = catalog.hypotheses.map((hypothesis) => hypothesis.id);
@@ -119,5 +119,58 @@ describe("labGate", () => {
   it("refuses a bar of a hypothesis that is not in the catalog, and a bar outside 0 to 1", () => {
     const result = labGate(scored(RECORDS), { "dns.slow": 0.5, none: 1.5 });
     expect(result.tag === "err" && result.error).toHaveLength(2);
+  });
+});
+
+/** The records of one run: `hits` of `support` right for each hypothesis. A miss names `none`, or `port.closed` for `none`. */
+function run(counts: Readonly<Record<string, readonly [hits: number, support: number]>>): LabScore {
+  return scored(
+    Object.entries(counts).flatMap(([truth, [hits, support]]) =>
+      Array.from({ length: support }, (_, i) => record(truth, i < hits ? truth : truth === "none" ? "port.closed" : "none", `${truth}/${i}`)),
+    ),
+  );
+}
+
+/** The bar from the lower ends of the runs, with the sample standard deviation from its formula. */
+function expectedBar(lows: readonly number[], k = 2): number {
+  const mean = lows.reduce((a, b) => a + b, 0) / lows.length;
+  const sd = Math.sqrt(lows.reduce((sum, x) => sum + (x - mean) ** 2, 0) / (lows.length - 1));
+  return Math.max(0, Math.floor((Math.min(...lows) - k * sd) * 1000 + 1e-9) / 1000);
+}
+
+describe("labBars", () => {
+  it("gives the least lower end of the runs when the runs agree, and no bar to a hypothesis with no read", () => {
+    const runs = Array.from({ length: 5 }, () => run({ none: [2, 2], "port.closed": [3, 4] }));
+    const result = labBars(runs);
+    expect(result).toEqual({ tag: "ok", value: { none: expectedBar(Array(5).fill(wilson(2, 2).low)), "port.closed": expectedBar(Array(5).fill(wilson(3, 4).low)) } });
+    expect(result.tag === "ok" && result.value["none"]).toBeCloseTo(Math.floor(wilson(2, 2).low * 1000) / 1000, 12);
+  });
+
+  it("takes the spread of the lower ends from the least lower end, and stops at 0", () => {
+    const counts = [5, 5, 5, 4, 5].map((hits) => ({ "port.closed": [hits, 5] as const, none: [hits - 3, 5] as const }));
+    const result = labBars(counts.map(run));
+    expect(result).toEqual({
+      tag: "ok",
+      value: {
+        "port.closed": expectedBar(counts.map((c) => wilson(c["port.closed"][0], 5).low)),
+        none: expectedBar(counts.map((c) => wilson(c.none[0], 5).low)),
+      },
+    });
+    expect(result.tag === "ok" && result.value["none"]).toBe(0);
+    expect(result.tag === "ok" && result.value["port.closed"]).toBeLessThan(wilson(4, 5).low);
+  });
+
+  it("takes the number of standard deviations and the fewest runs as options", () => {
+    const runs = [5, 4, 5].map((hits) => run({ "port.closed": [hits, 5] }));
+    expect(labBars(runs, { k: 0, minimum: 3 })).toEqual({ tag: "ok", value: { "port.closed": Math.floor(wilson(4, 5).low * 1000) / 1000 } });
+    expect(labBars(runs, { minimum: 3 })).toEqual({ tag: "ok", value: { "port.closed": expectedBar([5, 4, 5].map((hits) => wilson(hits, 5).low)) } });
+  });
+
+  it("refuses too few runs, the scores of two catalogs, and a hypothesis with a read in only some runs", () => {
+    const one = run({ none: [2, 2] });
+    expect(labBars([one, one, one, one])).toMatchObject({ tag: "err", error: [expect.stringContaining("5 runs")] });
+    expect(labBars([one, one, one, one, { ...one, catalog: "other@1" }])).toMatchObject({ tag: "err", error: [expect.stringContaining("2 catalogs")] });
+    const some = [one, one, one, one, run({ none: [2, 2], "port.closed": [1, 1] })];
+    expect(labBars(some)).toMatchObject({ tag: "err", error: [expect.stringContaining('"port.closed" has a read in 1 of 5 runs')] });
   });
 });
