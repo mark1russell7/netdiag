@@ -22,8 +22,8 @@ export interface ToolLicense {
  */
 export const TOOL_LICENSES: readonly ToolLicense[] = [
   { tool: "ping", license: "The license of the operating system", use: "adapter", probe: "icmp.ping" },
-  { tool: "traceroute", license: "GPL on Linux", use: "adapter" },
-  { tool: "mtr", license: "GPL", use: "adapter" },
+  { tool: "traceroute", license: "GPL on Linux", use: "adapter", probe: "path.traceroute" },
+  { tool: "mtr", license: "GPL", use: "adapter", probe: "path.mtr" },
   { tool: "tshark", license: "GPL", use: "adapter" },
   { tool: "iperf3", license: "BSD", use: "adapter" },
   { tool: "nmap", license: "NPSL", use: "not-bundled" },

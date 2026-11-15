@@ -181,7 +181,7 @@ const SEND_FAILURE = /^(?:socket|bind|connect|sendmsg|sendto|send): \S/;
 function readUnix(stdout: string, stderr: string): TraceLines {
   const builders: HopBuilder[] = [];
   for (const line of stdout.split(LINES)) {
-    const numbered = /^\s*(\d+)\s+(.*)$/.exec(line);
+    const numbered = /^\s*(\d+)\s(.*)$/.exec(line);
     // macOS writes another address of the same TTL on a line with no number.
     const continued = numbered === null && /^\s+\S/.test(line) ? builders.at(-1) : undefined;
     if (numbered === null && continued === undefined) continue;
@@ -212,24 +212,29 @@ function readUnix(stdout: string, stderr: string): TraceLines {
   return { hops: builders.map((b) => b.hop()), header, complete: true, unread: builders.find((b) => b.unread)?.ttl, failure, local };
 }
 
+/** The text between the address of a router and its message in the output of `tracert`. */
+const REPORTS = " reports: ";
+
 function readWindows(stdout: string): TraceLines {
   const builders: HopBuilder[] = [];
   let failure: string | undefined;
   for (const line of stdout.split(LINES)) {
-    const numbered = /^\s*(\d+)\s+(.*?)\s*$/.exec(line);
+    const numbered = /^\s*(\d+)\s(.*)$/.exec(line);
     if (numbered === null) continue;
     const builder = new HopBuilder(Number(numbered[1]));
     builders.push(builder);
     // "  2     *        *     192.168.1.191  reports: Destination host unreachable."
-    const [times = "", report] = (numbered[2] ?? "").split(/\s+reports:\s+/);
-    const tokens = times.split(/\s+/).filter((token) => token.length > 0);
+    const rest = (numbered[2] ?? "").trim();
+    const at = rest.indexOf(REPORTS);
+    const tokens = (at < 0 ? rest : rest.slice(0, at)).split(/\s+/).filter((token) => token.length > 0);
+    // tracert writes the address after the times of the hop.
+    const address = tokens.map(addressOf).find((found) => found !== undefined);
+    if (address !== undefined) builder.address(address);
     for (let i = 0; i < tokens.length; i += 1) {
       const token = tokens[i] ?? "";
-      const address = addressOf(token);
       // "<1 ms" counts as 1 ms, as in the output of ping.
       const time = /^<?(\d+)$/.exec(token);
       if (token === "*") builder.lost();
-      else if (address !== undefined) builder.address(address);
       else if (time !== null && tokens[i + 1] === "ms") {
         builder.answer(Math.max(1, Number(time[1])));
         i += 1;
@@ -238,9 +243,12 @@ function readWindows(stdout: string): TraceLines {
         break;
       }
     }
-    if (report !== undefined) {
+    if (at >= 0) {
       builder.answer(undefined);
-      builder.unreachable = report.replace(/\.$/, "");
+      builder.unreachable = rest
+        .slice(at + REPORTS.length)
+        .trim()
+        .replace(/\.$/, "");
     }
   }
   return {
@@ -267,7 +275,8 @@ export function readTraceroute(raw: ToolRaw, input: { readonly address: string; 
   const lines = raw.platform === "win32" ? readWindows(raw.stdout) : readUnix(raw.stdout, raw.stderr);
   const { hops, header, complete, unread, failure, local } = lines;
   if (unread !== undefined) return result("error", hops.filter((hop) => hop.ttl < unread), `netdiag cannot read the hop ${unread} of traceroute.`);
-  if (!header && hops.length === 0 && local === undefined) {
+  // Output in another language has numbered lines too, but no English header.
+  if (!header && local === undefined) {
     return result("error", [], failure ?? firstLine(raw.stderr) ?? "netdiag cannot read the output of traceroute. netdiag reads only English output.");
   }
   if (raw.timedOut === true || !complete) return result("error", hops, "The time limit stopped traceroute before its end.");
