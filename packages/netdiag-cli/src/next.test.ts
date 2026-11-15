@@ -66,6 +66,8 @@ describe("the next steps", () => {
     for (const step of found) {
       expect(step.observes).not.toContainEqual({ feature: "dns.answer", primary: true });
       expect(step.observes).not.toContainEqual({ feature: "dns.answer", primary: false });
+      // An answer nxdomain gives no address, so a new check cannot give the feature dns.address of the target.
+      expect(step.observes).not.toContainEqual({ feature: "dns.address", primary: true });
     }
     // The name gave no address, so no probe of the target follows the DNS query.
     expect(found.filter((step) => step.id.startsWith("target."))).toEqual([]);
