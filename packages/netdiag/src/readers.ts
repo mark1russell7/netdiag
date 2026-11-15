@@ -1,0 +1,318 @@
+import { BlockList, isIP } from "node:net";
+import type { Evidence } from "./diagnosis/model.ts";
+import type { Fact, FactKind } from "./fact.ts";
+import {
+  DNS_ANSWER,
+  HTTP_RESPONSE,
+  TCP_CONNECT,
+  TLS_HANDSHAKE,
+  type ConnectOutcome,
+  type DnsAnswer,
+  type DnsOutcome,
+  type HandshakeOutcome,
+  type HttpResponse,
+  type TcpConnect,
+  type TlsHandshake,
+  type Trust,
+} from "./kinds.ts";
+
+// The readers change facts into evidence for the model. Each value that they give is a value of a feature of the
+// standard catalog, and a test holds it.
+
+/** A fact that gave no evidence, with the reason in plain words. */
+export interface Skipped {
+  readonly fact: string;
+  readonly reason: string;
+}
+
+/** The evidence of a list of facts, and the facts that gave no evidence. */
+export interface Reading {
+  readonly evidence: readonly Evidence[];
+  readonly skipped: readonly Skipped[];
+}
+
+/** The options of `readEvidence`. */
+export interface ReadOptions {
+  /** This function tells if a fact is about the target (`true`) or about a reference host (`false`). The default is `true`. */
+  readonly primary?: ((fact: Fact) => boolean) | undefined;
+}
+
+/** A bin of a time or a ratio. A number below `below` gets `value`. The last bin has no limit. */
+export interface Bin {
+  readonly below?: number | undefined;
+  readonly value: string;
+}
+
+/** The bins of the feature `tcp.time`, in milliseconds. A connect of 900 ms or more sent its SYN again. */
+export const TCP_TIME_BINS: readonly Bin[] = [{ below: 150, value: "short" }, { below: 900, value: "long" }, { value: "retry" }];
+
+/** The bins of the feature `tls.ratio`: the time of the TLS handshake divided by the time of the TCP connect. */
+export const TLS_RATIO_BINS: readonly Bin[] = [{ below: 3, value: "low" }, { below: 8, value: "mid" }, { value: "high" }];
+
+/** The bins of the feature `http.ttfb`: the time to the first byte divided by the time of the TCP connect. */
+export const HTTP_TTFB_BINS: readonly Bin[] = [{ below: 4, value: "low" }, { below: 20, value: "mid" }, { value: "high" }];
+
+/**
+ * The smallest time of a TCP connect in a ratio, in milliseconds. On a local link, a ratio with a smaller time measures
+ * only the cost of the cryptography.
+ */
+export const MIN_CONNECT_MS = 1;
+
+/** The value of the feature `dns.answer` for each outcome of a DNS query. `nodata` tells that the name exists. */
+export const DNS_ANSWER_VALUES: Readonly<Partial<Record<DnsOutcome, string>>> = {
+  ok: "ok",
+  nodata: "ok",
+  nxdomain: "nxdomain",
+  servfail: "servfail",
+  refused: "refused",
+  timeout: "timeout",
+  unreachable: "unreachable",
+};
+
+/** The value of the feature `tcp.connect` for each outcome of a TCP connect. */
+export const TCP_CONNECT_VALUES: Readonly<Partial<Record<ConnectOutcome, string>>> = {
+  connected: "connected",
+  refused: "refused",
+  timeout: "timeout",
+  unreachable: "unreachable",
+  reset: "reset",
+};
+
+/**
+ * The value of the feature `tls.handshake` for each outcome of a TLS handshake. The catalog has no value for `not-tls`
+ * and `closed` yet. The lab runs (ND-7) tell which faults cause them.
+ */
+export const TLS_HANDSHAKE_VALUES: Readonly<Partial<Record<HandshakeOutcome, string>>> = {
+  ok: "ok",
+  "cert-error": "cert-error",
+  alert: "alert",
+  timeout: "timeout",
+  reset: "reset",
+};
+
+/** The value of the feature `tls.trust` for each trust. A chain that ends at no root of the store has no public root. */
+export const TLS_TRUST_VALUES: Readonly<Record<Trust, string>> = { public: "public", private: "private", none: "private" };
+
+/** The suffixes of the names of local networks and of the special-use names (RFC 6761, RFC 6762 and RFC 8375). */
+export const LOCAL_SUFFIXES: readonly string[] = ["local", "localhost", "test", "invalid", "example", "home.arpa", "internal", "lan", "home", "corp", "intranet", "private"];
+
+/** This function gives the value of the first bin that holds `x`. */
+export function binOf(bins: readonly Bin[], x: number): string {
+  for (const bin of bins) if (bin.below === undefined || x < bin.below) return bin.value;
+  throw new RangeError("The last bin has a limit.");
+}
+
+/** This function tells if a name is a local name: a name with one label, or a name with a local suffix. */
+export function isLocalName(name: string): boolean {
+  const lower = name.toLowerCase().replace(/\.$/, "");
+  if (!lower.includes(".")) return true;
+  return LOCAL_SUFFIXES.some((suffix) => lower === suffix || lower.endsWith(`.${suffix}`));
+}
+
+let privateRanges: BlockList | undefined;
+
+function ranges(): BlockList {
+  if (privateRanges !== undefined) return privateRanges;
+  const list = new BlockList();
+  const v4: [string, number][] = [
+    ["10.0.0.0", 8],
+    ["172.16.0.0", 12],
+    ["192.168.0.0", 16],
+    ["100.64.0.0", 10],
+    ["127.0.0.0", 8],
+    ["169.254.0.0", 16],
+    ["0.0.0.0", 8],
+  ];
+  const v6: [string, number][] = [
+    ["fc00::", 7],
+    ["fe80::", 10],
+    ["::1", 128],
+    ["::", 128],
+  ];
+  for (const [net, prefix] of v4) list.addSubnet(net, prefix, "ipv4");
+  for (const [net, prefix] of v6) list.addSubnet(net, prefix, "ipv6");
+  privateRanges = list;
+  return list;
+}
+
+/**
+ * This function tells if an address is routable on the internet. The `private` addresses are in RFC 1918, RFC 6598 or
+ * RFC 4193, or they are loopback, link-local or unspecified addresses.
+ */
+export function addressKind(address: string): "public" | "private" | undefined {
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address)?.[1];
+  const host = mapped ?? address;
+  const family = isIP(host);
+  if (family === 0) return undefined;
+  return ranges().check(host, family === 4 ? "ipv4" : "ipv6") ? "private" : "public";
+}
+
+interface Slot {
+  readonly feature: string;
+  readonly primary: boolean;
+  value: string;
+  readonly facts: string[];
+}
+
+interface Facts {
+  readonly dns: Fact<DnsAnswer>[];
+  readonly tcp: Fact<TcpConnect>[];
+  readonly tls: Fact<TlsHandshake>[];
+  readonly http: Fact<HttpResponse>[];
+}
+
+const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
+  ["dns", DNS_ANSWER],
+  ["tcp", TCP_CONNECT],
+  ["tls", TLS_HANDSHAKE],
+  ["http", HTTP_RESPONSE],
+];
+
+/**
+ * This function changes facts into evidence for the model.
+ *
+ * - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
+ * - For `dns.answer`, one answer `ok` of a name and a resolver decides. For `dns.address`, one private address decides.
+ * - The order of the facts is the order of the runner. A ratio uses the last TCP connect before the handshake or the request.
+ */
+export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {
+  const primaryOf = options.primary ?? (() => true);
+  const slots = new Map<string, Slot>();
+  const skipped: Skipped[] = [];
+  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [] };
+
+  for (const fact of facts) {
+    const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
+    if (entry === undefined) skipped.push({ fact: fact.id, reason: `netdiag has no reader for the kind ${fact.kind}.` });
+    else if (!entry[1].check(fact.value)) skipped.push({ fact: fact.id, reason: `The value does not pass the check of the kind ${fact.kind}.` });
+    else (sorted[entry[0]] as Fact[]).push(fact);
+  }
+
+  /** This function puts a value in the slot of a feature and a group. A `sticky` value stays when a later fact disagrees. */
+  const note = (feature: string, group: string, fact: Fact, value: string, sticky?: string): void => {
+    const primary = primaryOf(fact);
+    const key = `${feature}\u0000${primary ? 1 : 0}\u0000${group}`;
+    const slot = slots.get(key);
+    if (slot === undefined) slots.set(key, { feature, primary, value, facts: [fact.id] });
+    else {
+      if (slot.value !== sticky) slot.value = value;
+      slot.facts.push(fact.id);
+    }
+  };
+  const skip = (fact: Fact, feature: string, outcome: string): void => {
+    skipped.push({ fact: fact.id, reason: `The outcome "${outcome}" of ${fact.kind} has no value of the feature ${feature}.` });
+  };
+
+  for (const fact of sorted.dns) {
+    const answer = fact.value;
+    const group = `${answer.name.toLowerCase()}\u0000${answer.resolver}`;
+    const value = DNS_ANSWER_VALUES[answer.outcome];
+    if (value === undefined) {
+      skip(fact, "dns.answer", answer.outcome);
+      continue;
+    }
+    note("dns.answer", group, fact, value, "ok");
+    if (answer.addresses.length > 0 && !isLocalName(answer.name)) {
+      const kinds = answer.addresses.map(addressKind);
+      note("dns.address", group, fact, kinds.includes("private") ? "private" : "public", "private");
+    }
+  }
+
+  readFamily(sorted, primaryOf, note);
+
+  const subject = (value: { readonly address: string; readonly port: number }): string => `${value.address}\u0000${value.port}`;
+  for (const fact of sorted.tcp) {
+    const connect = fact.value;
+    const value = TCP_CONNECT_VALUES[connect.outcome];
+    if (value === undefined) {
+      skip(fact, "tcp.connect", connect.outcome);
+      continue;
+    }
+    note("tcp.connect", subject(connect), fact, value);
+    if (connect.outcome === "connected") note("tcp.time", subject(connect), fact, binOf(TCP_TIME_BINS, connect.ms));
+  }
+
+  const connectBefore = (fact: Fact, value: { readonly address: string; readonly port: number }): Fact<TcpConnect> | undefined => {
+    let best: Fact<TcpConnect> | undefined;
+    for (const tcp of sorted.tcp) {
+      const same = tcp.value.address === value.address && tcp.value.port === value.port && primaryOf(tcp) === primaryOf(fact);
+      if (!same || tcp.value.outcome !== "connected" || tcp.time.end > fact.time.start) continue;
+      if (best === undefined || tcp.time.end >= best.time.end) best = tcp;
+    }
+    return best;
+  };
+  const ratio = (ms: number, tcp: Fact<TcpConnect>): number => ms / Math.max(tcp.value.ms, MIN_CONNECT_MS);
+
+  for (const fact of sorted.tls) {
+    const handshake = fact.value;
+    const group = `${subject(handshake)}\u0000${handshake.servername ?? ""}`;
+    const value = TLS_HANDSHAKE_VALUES[handshake.outcome];
+    if (value === undefined) {
+      skip(fact, "tls.handshake", handshake.outcome);
+      continue;
+    }
+    note("tls.handshake", group, fact, value);
+    if (handshake.certificate !== undefined) note("tls.trust", group, fact, TLS_TRUST_VALUES[handshake.certificate.trust]);
+    const tcp = handshake.outcome === "ok" || handshake.outcome === "cert-error" ? connectBefore(fact, handshake) : undefined;
+    if (tcp !== undefined) note("tls.ratio", group, fact, binOf(TLS_RATIO_BINS, ratio(handshake.ms, tcp)));
+  }
+
+  for (const fact of sorted.http) {
+    const response = fact.value;
+    const group = [subject(response), response.scheme, response.host, response.method, response.path].join("\u0000");
+    const status = statusValue(response);
+    if (status === undefined) {
+      skip(fact, "http.status", response.outcome === "response" ? `response ${response.status ?? ""}`.trim() : response.outcome);
+      continue;
+    }
+    note("http.status", group, fact, status);
+    const tcp = response.ttfbMs === undefined ? undefined : connectBefore(fact, response);
+    if (tcp !== undefined && response.ttfbMs !== undefined) note("http.ttfb", group, fact, binOf(HTTP_TTFB_BINS, ratio(response.ttfbMs, tcp)));
+  }
+
+  const evidence = [...slots.values()].map(({ feature, value, primary, facts: ids }) => ({ feature, value, primary, facts: ids }));
+  return { evidence, skipped };
+}
+
+function statusValue(response: HttpResponse): string | undefined {
+  if (response.outcome === "error") return undefined;
+  if (response.outcome !== "response") return "none";
+  const status = response.status ?? 0;
+  if (status >= 200 && status < 400) return "ok";
+  if (status >= 400 && status < 500) return "client-error";
+  if (status >= 500 && status < 600) return "server-error";
+  return undefined;
+}
+
+/**
+ * This function gives the feature `ip.family` for a name with IPv4 and IPv6 addresses. It needs a TCP connect to an
+ * address of each family.
+ */
+function readFamily(sorted: Facts, primaryOf: (fact: Fact) => boolean, note: (feature: string, group: string, fact: Fact, value: string) => void): void {
+  const names = new Map<string, { v4: Set<string>; v6: Set<string>; facts: Fact[]; primary: boolean }>();
+  for (const fact of sorted.dns) {
+    if (fact.value.outcome !== "ok") continue;
+    const key = `${primaryOf(fact) ? 1 : 0}\u0000${fact.value.name.toLowerCase()}`;
+    const entry = names.get(key) ?? { v4: new Set<string>(), v6: new Set<string>(), facts: [], primary: primaryOf(fact) };
+    for (const address of fact.value.addresses) (fact.value.record === "A" ? entry.v4 : entry.v6).add(address);
+    entry.facts.push(fact);
+    names.set(key, entry);
+  }
+  for (const [key, entry] of names) {
+    if (entry.v4.size === 0 || entry.v6.size === 0) continue;
+    const tried = sorted.tcp.filter((tcp) => primaryOf(tcp) === entry.primary && (entry.v4.has(tcp.value.address) || entry.v6.has(tcp.value.address)));
+    const works = (family: Set<string>): boolean | undefined => {
+      const connects = tried.filter((tcp) => family.has(tcp.value.address));
+      return connects.length === 0 ? undefined : connects.some((tcp) => tcp.value.outcome === "connected");
+    };
+    const v4 = works(entry.v4);
+    const v6 = works(entry.v6);
+    if (v4 === undefined || v6 === undefined || (!v4 && !v6)) continue;
+    const value = v4 && v6 ? "both" : v4 ? "ipv4-only" : "ipv6-only";
+    const evidenceFacts = [...entry.facts, ...tried];
+    const [first, ...rest] = evidenceFacts;
+    if (first === undefined) continue;
+    note("ip.family", key, first, value);
+    for (const fact of rest) note("ip.family", key, fact, value);
+  }
+}

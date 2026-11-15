@@ -135,6 +135,7 @@ export interface TlsCertificate {
   readonly selfSigned: boolean;
   /** The number of certificates from the certificate of the server to the root, with both. */
   readonly chain: number;
+  /** The root that the chain ends at. A failed check of the certificate does not change it. */
   readonly trust: Trust;
   readonly problem?: CertProblem | undefined;
 }

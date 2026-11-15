@@ -7,6 +7,7 @@
 ## . (build/index.d.ts): names
 
 type Availability: build/index.d.ts#Availability
+Bin: build/index.d.ts#Bin
 CERT_PROBLEMS: build/index.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/index.d.ts#CONNECT_OUTCOMES
 type Catalog: build/index.chunk.d.ts#Catalog
@@ -21,6 +22,7 @@ DEFAULT_MAX_BYTES: build/index.d.ts#DEFAULT_MAX_BYTES
 DEFAULT_MAX_PORTS_PER_HOST: build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
 DEFAULT_TIMEOUT_MS: build/index.d.ts#DEFAULT_TIMEOUT_MS
 DNS_ANSWER: build/index.d.ts#DNS_ANSWER
+DNS_ANSWER_VALUES: build/index.d.ts#DNS_ANSWER_VALUES
 DNS_OUTCOMES: build/index.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
 type Diagnosis: build/index.chunk.d.ts#Diagnosis
@@ -45,6 +47,7 @@ HANDSHAKE_OUTCOMES: build/index.d.ts#HANDSHAKE_OUTCOMES
 HTTP_OUTCOMES: build/index.d.ts#HTTP_OUTCOMES
 HTTP_PROBE: build/index.d.ts#HTTP_PROBE
 HTTP_RESPONSE: build/index.d.ts#HTTP_RESPONSE
+HTTP_TTFB_BINS: build/index.d.ts#HTTP_TTFB_BINS
 HandshakeOutcome: build/index.d.ts#HandshakeOutcome
 type HostGrant: build/index.d.ts#HostGrant
 type HostKind: build/index.d.ts#HostKind
@@ -56,7 +59,9 @@ HttpResponse: build/index.d.ts#HttpResponse
 type Hypothesis: build/index.chunk.d.ts#Hypothesis
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
 LAYERS: build/index.chunk.d.ts#LAYERS
+LOCAL_SUFFIXES: build/index.d.ts#LOCAL_SUFFIXES
 type Layer: build/index.chunk.d.ts#Layer
+MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
 NATIVE_KINDS: build/index.d.ts#NATIVE_KINDS
 NONE: build/index.chunk.d.ts#NONE
 type Observation: build/index.d.ts#Observation
@@ -71,6 +76,8 @@ type ProbeOutcome: build/index.d.ts#ProbeOutcome
 RECORD_TYPES: build/index.d.ts#RECORD_TYPES
 type RangeGrant: build/index.d.ts#RangeGrant
 type Reach: build/index.chunk.d.ts#Reach
+ReadOptions: build/index.d.ts#ReadOptions
+Reading: build/index.d.ts#Reading
 RecordType: build/index.d.ts#RecordType
 type Runner: build/index.d.ts#Runner
 type RunnerOptions: build/index.d.ts#RunnerOptions
@@ -81,11 +88,17 @@ STANDARD_FEATURES: build/index.chunk.d.ts#STANDARD_FEATURES
 STRENGTHS: build/index.chunk.d.ts#STRENGTHS
 type Scope: build/index.d.ts#Scope
 type ScopeDecision: build/index.d.ts#ScopeDecision
+Skipped: build/index.d.ts#Skipped
 type Strength: build/index.chunk.d.ts#Strength
 TCP_CONNECT: build/index.d.ts#TCP_CONNECT
+TCP_CONNECT_VALUES: build/index.d.ts#TCP_CONNECT_VALUES
 TCP_PROBE: build/index.d.ts#TCP_PROBE
+TCP_TIME_BINS: build/index.d.ts#TCP_TIME_BINS
 TLS_HANDSHAKE: build/index.d.ts#TLS_HANDSHAKE
+TLS_HANDSHAKE_VALUES: build/index.d.ts#TLS_HANDSHAKE_VALUES
 TLS_PROBE: build/index.d.ts#TLS_PROBE
+TLS_RATIO_BINS: build/index.d.ts#TLS_RATIO_BINS
+TLS_TRUST_VALUES: build/index.d.ts#TLS_TRUST_VALUES
 TRUSTS: build/index.d.ts#TRUSTS
 type Target: build/index.d.ts#Target
 TcpConnect: build/index.d.ts#TcpConnect
@@ -101,6 +114,8 @@ type TlsRaw: build/index.d.ts#TlsRaw
 Trust: build/index.d.ts#Trust
 UNKNOWN: build/index.chunk.d.ts#UNKNOWN
 type ValueOf: build/index.d.ts#ValueOf
+addressKind: build/index.d.ts#addressKind
+binOf: build/index.d.ts#binOf
 canonicalHost: build/index.d.ts#canonicalHost
 certProblem: build/index.d.ts#certProblem
 compileCatalog: build/index.chunk.d.ts#compileCatalog
@@ -121,11 +136,13 @@ hostKind: build/index.d.ts#hostKind
 httpProbe: build/index.d.ts#httpProbe
 isFactOf: build/index.d.ts#isFactOf
 isLayer: build/index.chunk.d.ts#isLayer
+isLocalName: build/index.d.ts#isLocalName
 layerRank: build/index.chunk.d.ts#layerRank
 namedGrant: build/index.d.ts#namedGrant
 observe: build/index.d.ts#observe
 parseTarget: build/index.d.ts#parseTarget
 predictive: build/index.chunk.d.ts#predictive
+readEvidence: build/index.d.ts#readEvidence
 resolvedGrant: build/index.d.ts#resolvedGrant
 sameTarget: build/index.d.ts#sameTarget
 scopeOf: build/index.d.ts#scopeOf
@@ -335,6 +352,12 @@ type Availability = {
   readonly reason: string;
 };
 
+### build/index.d.ts#Bin
+export interface Bin {
+  readonly below?: number | undefined;
+  readonly value: string;
+}
+
 ### build/index.d.ts#CERT_PROBLEMS
 export declare const CERT_PROBLEMS: readonly ["expired", "not-yet-valid", "name", "untrusted", "revoked", "other"];
 
@@ -369,6 +392,9 @@ export declare const DEFAULT_TIMEOUT_MS = 5e3;
 
 ### build/index.d.ts#DNS_ANSWER
 export declare const DNS_ANSWER: FactKind<DnsAnswer>;
+
+### build/index.d.ts#DNS_ANSWER_VALUES
+export declare const DNS_ANSWER_VALUES: Readonly<Partial<Record<DnsOutcome, string>>>;
 
 ### build/index.d.ts#DNS_OUTCOMES
 export declare const DNS_OUTCOMES: readonly ["ok", "nodata", "nxdomain", "servfail", "refused", "timeout", "unreachable", "error"];
@@ -466,6 +492,9 @@ export declare const HTTP_PROBE: Probe<HttpInput, HttpRaw>;
 ### build/index.d.ts#HTTP_RESPONSE
 export declare const HTTP_RESPONSE: FactKind<HttpResponse>;
 
+### build/index.d.ts#HTTP_TTFB_BINS
+export declare const HTTP_TTFB_BINS: readonly Bin[];
+
 ### build/index.d.ts#HandshakeOutcome
 export type HandshakeOutcome = (typeof HANDSHAKE_OUTCOMES)[number];
 
@@ -543,6 +572,12 @@ export interface HttpResponse {
 ### build/index.d.ts#KEPT_FIELDS
 export declare const KEPT_FIELDS: readonly string[];
 
+### build/index.d.ts#LOCAL_SUFFIXES
+export declare const LOCAL_SUFFIXES: readonly string[];
+
+### build/index.d.ts#MIN_CONNECT_MS
+export declare const MIN_CONNECT_MS = 1;
+
 ### build/index.d.ts#NATIVE_KINDS
 export declare const NATIVE_KINDS: readonly FactKind<unknown>[];
 
@@ -615,6 +650,17 @@ interface RangeGrant {
   readonly note?: string | undefined;
 }
 
+### build/index.d.ts#ReadOptions
+export interface ReadOptions {
+  readonly primary?: ((fact: Fact) => boolean) | undefined;
+}
+
+### build/index.d.ts#Reading
+export interface Reading {
+  readonly evidence: readonly Evidence[];
+  readonly skipped: readonly Skipped[];
+}
+
 ### build/index.d.ts#RecordType
 export type RecordType = (typeof RECORD_TYPES)[number];
 
@@ -649,17 +695,38 @@ type ScopeDecision = {
   readonly reason: string;
 };
 
+### build/index.d.ts#Skipped
+export interface Skipped {
+  readonly fact: string;
+  readonly reason: string;
+}
+
 ### build/index.d.ts#TCP_CONNECT
 export declare const TCP_CONNECT: FactKind<TcpConnect>;
+
+### build/index.d.ts#TCP_CONNECT_VALUES
+export declare const TCP_CONNECT_VALUES: Readonly<Partial<Record<ConnectOutcome, string>>>;
 
 ### build/index.d.ts#TCP_PROBE
 export declare const TCP_PROBE: Probe<TcpInput, TcpRaw>;
 
+### build/index.d.ts#TCP_TIME_BINS
+export declare const TCP_TIME_BINS: readonly Bin[];
+
 ### build/index.d.ts#TLS_HANDSHAKE
 export declare const TLS_HANDSHAKE: FactKind<TlsHandshake>;
 
+### build/index.d.ts#TLS_HANDSHAKE_VALUES
+export declare const TLS_HANDSHAKE_VALUES: Readonly<Partial<Record<HandshakeOutcome, string>>>;
+
 ### build/index.d.ts#TLS_PROBE
 export declare const TLS_PROBE: Probe<TlsInput, TlsRaw>;
+
+### build/index.d.ts#TLS_RATIO_BINS
+export declare const TLS_RATIO_BINS: readonly Bin[];
+
+### build/index.d.ts#TLS_TRUST_VALUES
+export declare const TLS_TRUST_VALUES: Readonly<Record<Trust, string>>;
 
 ### build/index.d.ts#TRUSTS
 export declare const TRUSTS: readonly ["public", "private", "none"];
@@ -771,6 +838,12 @@ export type Trust = (typeof TRUSTS)[number];
 ### build/index.d.ts#ValueOf
 type ValueOf<K> = K extends FactKind<infer V> ? V : never;
 
+### build/index.d.ts#addressKind
+export declare function addressKind(address: string): "public" | "private" | undefined;
+
+### build/index.d.ts#binOf
+export declare function binOf(bins: readonly Bin[], x: number): string;
+
 ### build/index.d.ts#canonicalHost
 export declare function canonicalHost(host: string): string;
 
@@ -816,6 +889,9 @@ export declare function httpProbe(options?: TlsProbeOptions): Probe<HttpInput, H
 ### build/index.d.ts#isFactOf
 export declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
 
+### build/index.d.ts#isLocalName
+export declare function isLocalName(name: string): boolean;
+
 ### build/index.d.ts#namedGrant
 export declare function namedGrant(t: Target, note?: string): Grant;
 
@@ -824,6 +900,9 @@ export declare function observe<V>(kind: FactKind<V>, subject: Target, value: V,
 
 ### build/index.d.ts#parseTarget
 export declare function parseTarget(text: string): Result<Target, string>;
+
+### build/index.d.ts#readEvidence
+export declare function readEvidence(facts: readonly Fact[], options?: ReadOptions): Reading;
 
 ### build/index.d.ts#resolvedGrant
 export declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;

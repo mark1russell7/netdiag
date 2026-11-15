@@ -2,7 +2,7 @@
 
 This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1, ND-2 and the model of ND-4 of the [roadmap](../../docs/ROADMAP.md).** The readers that change facts into evidence for the model come next.
+**State: ND-1, ND-2 and ND-4 of the [roadmap](../../docs/ROADMAP.md).** The lab ground truth and the accuracy gate (ND-7) come next.
 
 ## Facts
 
@@ -102,6 +102,36 @@ const result = diagnose(STANDARD_CATALOG, [
   { feature: "tcp.connect", value: "connected", primary: true },
 ]);
 // result.causes[0].id is "filter.icmp": a filter blocks ICMP, and the host is up.
+```
+
+## Readers
+
+`readEvidence(facts, options)` changes the facts of the native probes into evidence for the model. Each value that it gives is a value of a feature of `STANDARD_CATALOG`.
+
+| Feature | The source of the value |
+| --- | --- |
+| `dns.answer` | The outcome of each DNS query. One answer `ok` for a name and a resolver decides. `nodata` gives `ok`, because the name exists. |
+| `dns.address` | The addresses of a public name. One private address decides. A local name, for example `nas.local`, gives no value. |
+| `ip.family` | The TCP connects to the IPv4 and the IPv6 addresses of one name. |
+| `tcp.connect`, `tcp.time` | The outcome and the time of each TCP connect. A time of 900 ms or more tells that the SYN went again. |
+| `tls.handshake`, `tls.trust` | The outcome of the handshake and the root of the certificate chain. A chain with no root of the store gives `private`. |
+| `tls.ratio` | The time of the handshake divided by the time of the last TCP connect to the same address and port. |
+| `http.status`, `http.ttfb` | The class of the status, and the time to the first byte divided by the time of the TCP connect. |
+
+- The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
+- A fact that gives no evidence goes in `skipped`, with the reason. For example, the catalog has no value for the TLS outcome `not-tls` yet.
+- The option `primary` tells which facts are about the target. The other facts are about a reference host.
+
+```ts
+import { STANDARD_CATALOG, TCP_PROBE, diagnose, readEvidence } from "@mark1russell7/netdiag";
+
+// The runner comes from the example of the native probes.
+const outcome = await runner.run(TCP_PROBE, { address: "192.168.1.1", port: 443 });
+if (outcome.status === "done") {
+  const { evidence, skipped } = readEvidence(outcome.facts);
+  const result = diagnose(STANDARD_CATALOG, evidence);
+  // A connect with the outcome refused gives result.causes[0].id "port.closed".
+}
 ```
 
 ## Example

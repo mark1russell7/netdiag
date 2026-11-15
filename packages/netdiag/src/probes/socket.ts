@@ -216,10 +216,12 @@ export function tcpObservation(phase: TcpPhase): Observation {
   return observe(TCP_CONNECT, target(phase.address, phase.port), { ...rest, ms: end - start }, { start, end });
 }
 
-/** The trust of the certificates of a TLS probe. */
+/** The trust of the certificates of a TLS probe: the context, and the SHA-256 fingerprints of its roots. */
 export interface TrustStore {
   readonly context: tls.SecureContext;
   readonly publicRoots: ReadonlySet<string>;
+  /** The roots of the computer and of the user that are not public roots. */
+  readonly privateRoots: ReadonlySet<string>;
 }
 
 function systemRoots(): readonly string[] {
@@ -237,12 +239,22 @@ function systemRoots(): readonly string[] {
 /**
  * This function makes the store of trust of a TLS probe. It has the public roots of Node.js, the roots of the computer
  * and the roots that the user gives. A chain that ends at a public root has the trust `public`. A chain that ends at a
- * different root has the trust `private`, for example the root of a proxy that examines TLS.
+ * different root of the store has the trust `private`, for example the root of a proxy that examines TLS.
  */
 export function trustStore(extraRoots: readonly string[] = []): TrustStore {
-  const publicRoots = new Set(tls.rootCertificates.map((pem) => new X509Certificate(pem).fingerprint256));
-  const context = tls.createSecureContext({ ca: [...tls.rootCertificates, ...systemRoots(), ...extraRoots] });
-  return { context, publicRoots };
+  const local = [...systemRoots(), ...extraRoots];
+  const publicRoots = new Set(tls.rootCertificates.flatMap(fingerprintOf));
+  const privateRoots = new Set(local.flatMap(fingerprintOf).filter((fingerprint) => !publicRoots.has(fingerprint)));
+  const context = tls.createSecureContext({ ca: [...tls.rootCertificates, ...local] });
+  return { context, publicRoots, privateRoots };
+}
+
+function fingerprintOf(pem: string): string[] {
+  try {
+    return [new X509Certificate(pem).fingerprint256];
+  } catch {
+    return [];
+  }
 }
 
 function text(value: string | string[] | undefined): string {
@@ -287,6 +299,9 @@ function certificateOf(socket: tls.TLSSocket, store: TrustStore): TlsCertificate
     chain += 1;
   }
   const authorized = socket.authorized;
+  // The trust names the root of the chain, also when the check of the certificate fails. Thus an expired certificate of
+  // a public authority keeps the trust `public`, and the certificate of a captive portal gets `none`.
+  const trust = store.publicRoots.has(top.fingerprint256) ? "public" : store.privateRoots.has(top.fingerprint256) || authorized ? "private" : "none";
   const reason: unknown = socket.authorizationError;
   return {
     subject: text(leaf.subject.CN) || text(leaf.subject.O),
@@ -297,7 +312,7 @@ function certificateOf(socket: tls.TLSSocket, store: TrustStore): TlsCertificate
     fingerprint256: leaf.fingerprint256,
     selfSigned: isSelfSigned(leaf.raw),
     chain,
-    trust: !authorized ? "none" : store.publicRoots.has(top.fingerprint256) ? "public" : "private",
+    trust,
     ...(authorized ? {} : { problem: certProblem(reason instanceof Error ? (codeOf(reason) ?? reason.message) : String(reason)) }),
   };
 }

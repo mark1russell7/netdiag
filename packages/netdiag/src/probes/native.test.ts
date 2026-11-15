@@ -301,16 +301,17 @@ describe("the TLS probe", () => {
     expect(factOf<TlsHandshake>(result, TLS_HANDSHAKE)).toMatchObject({ outcome: "ok", certificate: { trust: "private" } });
   });
 
-  it.each<[string, () => Pems, readonly string[], string, string]>([
-    ["an unknown root", () => leaf, [], "localhost", "untrusted"],
-    ["a different name", () => leaf, ["ca"], "other.test", "name"],
-    ["an expired certificate", () => expired, ["ca"], "localhost", "expired"],
-    ["a self-signed certificate", () => selfSigned, [], "localhost", "untrusted"],
-  ])("gives cert-error for %s", async (_name, pems, roots, servername, problem) => {
+  // The trust names the root of the chain, also for a certificate that is not valid.
+  it.each<[string, () => Pems, readonly string[], string, string, string]>([
+    ["an unknown root", () => leaf, [], "localhost", "untrusted", "none"],
+    ["a different name", () => leaf, ["ca"], "other.test", "name", "private"],
+    ["an expired certificate", () => expired, ["ca"], "localhost", "expired", "private"],
+    ["a self-signed certificate", () => selfSigned, [], "localhost", "untrusted", "none"],
+  ])("gives cert-error for %s", async (_name, pems, roots, servername, problem, trust) => {
     const port = await tlsServer(pems());
     const probe = tlsProbe({ roots: roots.map(() => ca.cert) });
     const handshake = factOf<TlsHandshake>(await runnerWith(realClock).run(probe, { address: LOCAL, port, servername }), TLS_HANDSHAKE);
-    expect(handshake).toMatchObject({ outcome: "cert-error", certificate: { trust: "none", problem } });
+    expect(handshake).toMatchObject({ outcome: "cert-error", certificate: { trust, problem } });
   });
 
   it("names the self-signed certificate", async () => {

@@ -1,0 +1,287 @@
+import fc from "fast-check";
+import { describe, expect, it } from "vitest";
+import {
+  CONNECT_OUTCOMES,
+  DNS_ANSWER,
+  DNS_ANSWER_VALUES,
+  DNS_OUTCOMES,
+  HANDSHAKE_OUTCOMES,
+  HTTP_OUTCOMES,
+  HTTP_RESPONSE,
+  HTTP_TTFB_BINS,
+  STANDARD_CATALOG,
+  STANDARD_FEATURES,
+  TCP_CONNECT,
+  TCP_CONNECT_VALUES,
+  TCP_TIME_BINS,
+  TLS_HANDSHAKE,
+  TLS_HANDSHAKE_VALUES,
+  TLS_RATIO_BINS,
+  TLS_TRUST_VALUES,
+  TRUSTS,
+  addressKind,
+  binOf,
+  diagnose,
+  isLocalName,
+  readEvidence,
+  target,
+  type Bin,
+  type DnsAnswer,
+  type Evidence,
+  type Fact,
+  type FactKind,
+  type HttpResponse,
+  type TcpConnect,
+  type TlsHandshake,
+  type Trust,
+} from "./index.ts";
+
+type Entry = readonly [FactKind<unknown>, unknown, number?];
+
+/** This function makes facts in the order of a runner. Each fact starts at the end of the fact before it. */
+function factsOf(entries: readonly Entry[]): Fact[] {
+  let time = 0;
+  return entries.map(([kind, value, ms], index) => {
+    const start = time;
+    time += ms ?? 1;
+    return { id: `f${index}`, kind: kind.kind, layer: kind.layer, subject: target("192.0.2.1"), time: { start, end: time }, source: { probe: "test", version: "1" }, value };
+  });
+}
+
+const RESOLVER = "192.0.2.53:53";
+
+function dns(name: string, record: "A" | "AAAA", outcome: DnsAnswer["outcome"], addresses: string[] = []): Entry {
+  const value: DnsAnswer = { name, record, resolver: RESOLVER, outcome, addresses, ms: 5 };
+  return [DNS_ANSWER, value, 5];
+}
+
+function tcp(address: string, port: number, outcome: TcpConnect["outcome"], ms = 10): Entry {
+  const value: TcpConnect = { address, port, family: address.includes(":") ? 6 : 4, outcome, ms };
+  return [TCP_CONNECT, value, ms];
+}
+
+function certificate(trust: Trust): NonNullable<TlsHandshake["certificate"]> {
+  return {
+    subject: "example.com",
+    issuer: "Test root",
+    names: ["example.com"],
+    validFrom: "2026-01-01T00:00:00.000Z",
+    validTo: "2027-01-01T00:00:00.000Z",
+    fingerprint256: "AA:BB",
+    selfSigned: false,
+    chain: 2,
+    trust,
+  };
+}
+
+function tls(address: string, outcome: TlsHandshake["outcome"], ms: number, trust?: Trust): Entry {
+  const value: TlsHandshake = { address, port: 443, outcome, ms, ...(trust === undefined ? {} : { certificate: certificate(trust) }) };
+  return [TLS_HANDSHAKE, value, ms];
+}
+
+function http(address: string, outcome: HttpResponse["outcome"], status?: number, ttfbMs?: number): Entry {
+  const value: HttpResponse = {
+    address,
+    port: 443,
+    scheme: "https",
+    method: "GET",
+    host: "example.com",
+    path: "/",
+    outcome,
+    ...(status === undefined ? {} : { status }),
+    fields: {},
+    bytes: 0,
+    truncated: false,
+    ...(ttfbMs === undefined ? {} : { ttfbMs }),
+    ms: (ttfbMs ?? 0) + 1,
+  };
+  return [HTTP_RESPONSE, value, value.ms];
+}
+
+function valuesOf(evidence: readonly Evidence[], feature: string): string[] {
+  return evidence.filter((item) => item.feature === feature).map((item) => item.value);
+}
+
+function featureValues(id: string): readonly string[] {
+  const feature = STANDARD_FEATURES.find((f) => f.id === id);
+  if (feature === undefined) throw new Error(`The catalog has no feature ${id}.`);
+  return feature.values;
+}
+
+describe("the tables of the readers", () => {
+  it.each<[string, Readonly<Record<string, string | undefined>>]>([
+    ["dns.answer", DNS_ANSWER_VALUES],
+    ["tcp.connect", TCP_CONNECT_VALUES],
+    ["tls.handshake", TLS_HANDSHAKE_VALUES],
+    ["tls.trust", TLS_TRUST_VALUES],
+  ])("give only values of the feature %s", (id, table) => {
+    for (const value of Object.values(table)) if (value !== undefined) expect(featureValues(id)).toContain(value);
+  });
+
+  it.each<[string, readonly Bin[]]>([
+    ["tcp.time", TCP_TIME_BINS],
+    ["tls.ratio", TLS_RATIO_BINS],
+    ["http.ttfb", HTTP_TTFB_BINS],
+  ])("give each value of the feature %s from a bin", (id, bins) => {
+    expect(bins.map((bin) => bin.value)).toEqual(featureValues(id));
+    expect(bins.at(-1)?.below).toBeUndefined();
+  });
+
+  it("put a number at a limit in the next bin", () => {
+    expect([149.9, 150, 899, 900, 5000].map((ms) => binOf(TCP_TIME_BINS, ms))).toEqual(["short", "long", "long", "retry", "retry"]);
+    expect([2.9, 3, 7.9, 8].map((r) => binOf(TLS_RATIO_BINS, r))).toEqual(["low", "mid", "mid", "high"]);
+    expect(() => binOf([{ below: 1, value: "a" }], 2)).toThrow(RangeError);
+  });
+
+  it("tell a local name and a private address", () => {
+    expect(["router", "nas.local", "printer.lan", "a.home.arpa", "x.test", "LOCALHOST", "srv.corp."].map(isLocalName)).toEqual([true, true, true, true, true, true, true]);
+    expect(["example.com", "example.co.uk", "lan.example.com"].map(isLocalName)).toEqual([false, false, false]);
+    expect(["10.1.2.3", "172.31.0.1", "192.168.1.1", "100.64.0.1", "127.0.0.1", "169.254.1.1", "0.0.0.0"].map(addressKind)).toEqual(Array(7).fill("private"));
+    expect(["fd00::1", "fe80::1", "::1", "::", "::ffff:192.168.1.1"].map(addressKind)).toEqual(Array(5).fill("private"));
+    expect(["93.184.216.34", "172.32.0.1", "2606:4700::1111", "::ffff:8.8.8.8"].map(addressKind)).toEqual(Array(4).fill("public"));
+    expect(addressKind("example.com")).toBeUndefined();
+  });
+});
+
+describe("readEvidence", () => {
+  it("gives one dns.answer for a name and a resolver, and one answer ok decides", () => {
+    const { evidence } = readEvidence(factsOf([dns("example.com", "AAAA", "timeout"), dns("example.com", "A", "ok", ["93.184.216.34"]), dns("example.com", "AAAA", "timeout")]));
+    expect(evidence.filter((e) => e.feature === "dns.answer")).toEqual([{ feature: "dns.answer", value: "ok", primary: true, facts: ["f0", "f1", "f2"] }]);
+    expect(valuesOf(readEvidence(factsOf([dns("example.com", "AAAA", "nodata")])).evidence, "dns.answer")).toEqual(["ok"]);
+    expect(valuesOf(readEvidence(factsOf([dns("example.com", "A", "unreachable")])).evidence, "dns.answer")).toEqual(["unreachable"]);
+  });
+
+  it("gives dns.address for a public name only, and one private address decides", () => {
+    const facts = factsOf([dns("example.com", "A", "ok", ["93.184.216.34"]), dns("example.com", "AAAA", "ok", ["fd00::5"]), dns("router.lan", "A", "ok", ["192.168.1.1"])]);
+    expect(readEvidence(facts).evidence.filter((e) => e.feature === "dns.address")).toEqual([{ feature: "dns.address", value: "private", primary: true, facts: ["f0", "f1"] }]);
+  });
+
+  it("gives ip.family from the TCP connects to the addresses of each family", () => {
+    const answers = [dns("example.com", "A", "ok", ["93.184.216.34"]), dns("example.com", "AAAA", "ok", ["2606:2800::1"])];
+    const family = (...connects: Entry[]): string[] => valuesOf(readEvidence(factsOf([...answers, ...connects])).evidence, "ip.family");
+    expect(family(tcp("93.184.216.34", 443, "connected"), tcp("2606:2800::1", 443, "timeout"))).toEqual(["ipv4-only"]);
+    expect(family(tcp("93.184.216.34", 443, "connected"), tcp("2606:2800::1", 443, "connected"))).toEqual(["both"]);
+    expect(family(tcp("93.184.216.34", 443, "refused"), tcp("2606:2800::1", 443, "connected"))).toEqual(["ipv6-only"]);
+    expect(family(tcp("93.184.216.34", 443, "connected"))).toEqual([]);
+    expect(family(tcp("93.184.216.34", 443, "timeout"), tcp("2606:2800::1", 443, "timeout"))).toEqual([]);
+  });
+
+  it("gives tcp.connect from the last fact, and tcp.time only for a connection", () => {
+    const { evidence } = readEvidence(factsOf([tcp("192.0.2.1", 443, "timeout", 3000), tcp("192.0.2.1", 443, "connected", 40), tcp("192.0.2.1", 80, "refused", 1)]));
+    expect(evidence.map(({ feature, value }) => `${feature}=${value}`)).toEqual(["tcp.connect=connected", "tcp.time=short", "tcp.connect=refused"]);
+  });
+
+  it("gives tls.ratio from the last TCP connect before the handshake", () => {
+    const facts = factsOf([tcp("192.0.2.1", 443, "connected", 50), tcp("192.0.2.1", 443, "connected", 10), tls("192.0.2.1", "ok", 100, "public")]);
+    const { evidence } = readEvidence(facts);
+    expect(evidence.filter((e) => e.feature.startsWith("tls.")).map(({ feature, value }) => `${feature}=${value}`)).toEqual(["tls.handshake=ok", "tls.trust=public", "tls.ratio=high"]);
+    expect(valuesOf(readEvidence(factsOf([tls("192.0.2.1", "ok", 100, "public")])).evidence, "tls.ratio")).toEqual([]);
+  });
+
+  it("counts a TCP time below 1 ms as 1 ms in a ratio", () => {
+    expect(valuesOf(readEvidence(factsOf([tcp("127.0.0.1", 443, "connected", 0.01), tls("127.0.0.1", "ok", 2, "private")])).evidence, "tls.ratio")).toEqual(["low"]);
+  });
+
+  it("gives tls.trust private for a chain with no root of the store", () => {
+    expect(valuesOf(readEvidence(factsOf([tls("192.0.2.1", "cert-error", 30, "none")])).evidence, "tls.trust")).toEqual(["private"]);
+  });
+
+  it("gives http.status and http.ttfb", () => {
+    const status = (entry: Entry): string[] => valuesOf(readEvidence(factsOf([entry])).evidence, "http.status");
+    expect([http("192.0.2.1", "response", 204), http("192.0.2.1", "response", 302), http("192.0.2.1", "response", 404), http("192.0.2.1", "response", 503)].map(status)).toEqual([
+      ["ok"],
+      ["ok"],
+      ["client-error"],
+      ["server-error"],
+    ]);
+    expect([http("192.0.2.1", "timeout"), http("192.0.2.1", "reset"), http("192.0.2.1", "protocol")].map(status)).toEqual([["none"], ["none"], ["none"]]);
+    const { evidence } = readEvidence(factsOf([tcp("192.0.2.1", 443, "connected", 10), http("192.0.2.1", "response", 200, 250)]));
+    expect(valuesOf(evidence, "http.ttfb")).toEqual(["high"]);
+  });
+
+  it("marks the facts of a reference host", () => {
+    const facts = factsOf([tcp("192.0.2.1", 443, "connected"), tcp("198.51.100.1", 443, "connected")]);
+    const { evidence } = readEvidence(facts, { primary: (fact) => (fact.value as TcpConnect).address === "192.0.2.1" });
+    expect(evidence.filter((e) => e.feature === "tcp.connect").map((e) => e.primary)).toEqual([true, false]);
+  });
+
+  it("gives the reason for each fact that gives no evidence", () => {
+    const facts = factsOf([
+      [{ kind: "wifi.scan", layer: "wifi", summary: "", check: (_value: unknown): _value is unknown => true }, {}],
+      [TCP_CONNECT, { address: "192.0.2.1", port: 0, family: 4, outcome: "connected", ms: 1 }],
+      tcp("192.0.2.1", 443, "error"),
+      dns("example.com", "A", "error"),
+      tls("192.0.2.1", "not-tls", 3),
+      tls("192.0.2.1", "closed", 3),
+      http("192.0.2.1", "error"),
+      http("192.0.2.1", "response", 101),
+    ]);
+    const { evidence, skipped } = readEvidence(facts);
+    expect(evidence).toEqual([]);
+    expect(skipped.map((s) => s.fact)).toEqual(["f0", "f1", "f3", "f2", "f4", "f5", "f6", "f7"]);
+    expect(skipped[0]?.reason).toBe("netdiag has no reader for the kind wifi.scan.");
+    expect(skipped[1]?.reason).toBe("The value does not pass the check of the kind tcp.connect.");
+    expect(skipped.find((s) => s.fact === "f4")?.reason).toBe('The outcome "not-tls" of tls.handshake has no value of the feature tls.handshake.');
+    expect(skipped.find((s) => s.fact === "f7")?.reason).toBe('The outcome "response 101" of http.response has no value of the feature http.status.');
+  });
+});
+
+describe("the readers and the model", () => {
+  const top = (entries: readonly Entry[], primary?: (fact: Fact) => boolean): string | undefined =>
+    diagnose(STANDARD_CATALOG, readEvidence(factsOf(entries), { primary }).evidence).causes[0]?.id;
+
+  it("names the cause of each typical case", () => {
+    expect(top([dns("example.com", "A", "unreachable")])).toBe("resolver.down");
+    expect(top([dns("example.com", "A", "nxdomain")])).toBe("name.missing");
+    expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "refused", 20)])).toBe("port.closed");
+    expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "connected", 20), tls("93.184.216.34", "cert-error", 40, "public")])).toBe("tls.cert-invalid");
+    expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "connected", 20), tls("93.184.216.34", "ok", 40, "public"), http("93.184.216.34", "response", 503, 30)])).toBe(
+      "server.error",
+    );
+  });
+
+  it("names a captive portal: a private address and a certificate with no root of the store", () => {
+    expect(top([dns("example.com", "A", "ok", ["10.0.0.5"]), tcp("10.0.0.5", 443, "connected", 5), tls("10.0.0.5", "cert-error", 12, "none")])).toBe("captive.portal");
+  });
+
+  it("names a TLS proxy from the target and a reference host", () => {
+    const entries = [tcp("93.184.216.34", 443, "connected", 5), tls("93.184.216.34", "ok", 80, "private"), tcp("198.51.100.7", 443, "connected", 6), tls("198.51.100.7", "ok", 90, "private")];
+    expect(top(entries, (fact) => (fact.value as { address: string }).address === "93.184.216.34")).toBe("tls.proxy");
+  });
+});
+
+describe("a property of the readers", () => {
+  const address = fc.constantFrom("93.184.216.34", "10.0.0.1", "2606:2800::1", "fd00::1");
+  const ms = fc.double({ min: 0, max: 5000, noNaN: true });
+  const dnsEntry = fc
+    .record({ name: fc.constantFrom("example.com", "router.lan"), record: fc.constantFrom("A" as const, "AAAA" as const), outcome: fc.constantFrom(...DNS_OUTCOMES), ms })
+    .map(({ name, record, outcome, ms: time }): Entry => {
+      const addresses = outcome !== "ok" ? [] : record === "A" ? ["93.184.216.34", "10.0.0.1"] : ["2606:2800::1"];
+      return [DNS_ANSWER, { name, record, resolver: RESOLVER, outcome, addresses, ms: time }, 1];
+    });
+  const tcpEntry = fc.record({ address, port: fc.constantFrom(80, 443), outcome: fc.constantFrom(...CONNECT_OUTCOMES), ms }).map(
+    (v): Entry => [TCP_CONNECT, { ...v, family: v.address.includes(":") ? 6 : 4 }, Math.max(v.ms, 0.001)],
+  );
+  const tlsEntry = fc.record({ address, outcome: fc.constantFrom(...HANDSHAKE_OUTCOMES), ms, trust: fc.option(fc.constantFrom(...TRUSTS), { nil: undefined }) }).map(
+    ({ trust, ...v }): Entry => [TLS_HANDSHAKE, { ...v, port: 443, ...(trust === undefined ? {} : { certificate: certificate(trust) }) }, 1],
+  );
+  const httpEntry = fc
+    .record({ address, outcome: fc.constantFrom(...HTTP_OUTCOMES), status: fc.constantFrom(101, 200, 302, 404, 503), ttfb: fc.option(ms, { nil: undefined }) })
+    .map(({ address: a, outcome, status, ttfb }) => http(a, outcome, outcome === "response" ? status : undefined, outcome === "response" ? ttfb : undefined));
+
+  it("gives only evidence that the model uses, and accounts for each fact", () => {
+    fc.assert(
+      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry), { maxLength: 24 }), fc.boolean(), (entries, split) => {
+        const facts = factsOf(entries);
+        for (const fact of facts) expect([DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE].find((k) => k.kind === fact.kind)?.check(fact.value)).toBe(true);
+        const reading = readEvidence(facts, split ? { primary: (fact) => Number(fact.id.slice(1)) % 2 === 0 } : {});
+        expect(diagnose(STANDARD_CATALOG, reading.evidence).ignored).toEqual([]);
+        const seen = new Set([...reading.evidence.flatMap((e) => e.facts ?? []), ...reading.skipped.map((s) => s.fact)]);
+        expect([...seen].sort()).toEqual(facts.map((f) => f.id).sort());
+        const keys = reading.evidence.map((e) => `${e.feature}|${String(e.primary)}|${(e.facts ?? []).join(",")}`);
+        expect(new Set(keys).size).toBe(keys.length);
+      }),
+      { seed: 20261115, numRuns: 300 },
+    );
+  });
+});
