@@ -283,7 +283,7 @@ export interface Search {
 
 const keyOf = (item: { readonly feature: string; readonly primary: boolean }): string => `${item.feature}/${item.primary ? "target" : "reference"}`;
 
-/** This function replays a search: it runs the probes of `runs` in order, in the world of `truth` and `seed`. */
+/** This function replays a search: it starts the probes of `runs` in order, in the world of `truth` and `seed`. */
 export function search(truth: string, seed: string, runs: readonly string[]): Search {
   const evidence: Evidence[] = [];
   const seen = new Set<string>();
@@ -310,7 +310,7 @@ export function searchDone(state: Search): boolean {
   return (state.diagnosis.causes[0]?.probability ?? 0) >= FOUND || (state.ranked[0]?.gain ?? 0) <= 1e-9;
 }
 
-/** This function runs the best probe until the search is at its end, with at most one run of each probe. */
+/** This function starts the best probe until the search is at its end, with at most one run of each probe. */
 export function autoSearch(truth: string, seed: string, runs: readonly string[]): string[] {
   const next = [...runs];
   for (let state = search(truth, seed, next); !searchDone(state) && next.length < PROBES.length; state = search(truth, seed, next)) {

@@ -35,7 +35,7 @@ copy.addEventListener("click", () => {
   void copyText(copy, byId("install").textContent ?? "");
 });
 
-/** This function calls `fn` once, `ms` milliseconds after the last call. */
+/** This function starts `fn` one time, `ms` milliseconds after the last request. */
 function later(fn: () => void, ms: number): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return () => {
