@@ -23,10 +23,7 @@ import type { CheckPlan } from "./plan.ts";
 // the facts of the probe give, and that the evidence does not have yet. `rankProbes` orders the candidates by the
 // information that they can give about the most probable causes.
 
-/**
- * A probe of a visit: the DNS query, the ICMP echo requests, the TLS handshake, the HTTP request with the scheme `http`,
- * or the HTTPS request.
- */
+/** A probe of a visit: the DNS query, the ICMP echo requests, the TLS handshake, the HTTP request or the HTTPS request. */
 export type NextProbeKind = "dns" | "ping" | "tls" | "http" | "https";
 
 /** A probe that the next step can start, for one role of the visit. */
