@@ -30,3 +30,4 @@ export {
   type ScopeDecision,
 } from "./scope.ts";
 export { createRunner, type ClockOrigin, type ProbeOutcome, type Runner, type RunnerOptions } from "./run.ts";
+export * from "./diagnosis/index.ts";

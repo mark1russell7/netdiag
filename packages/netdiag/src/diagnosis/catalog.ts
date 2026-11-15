@@ -1,0 +1,357 @@
+import { compileCatalog, type Catalog, type CatalogSpec, type Feature, type Fault } from "./model.ts";
+
+/**
+ * The features of the standard catalog.
+ *
+ * The readers of the facts give these features. The distribution `healthy` of each feature is a rule of practice. The
+ * lab runs (ND-7) then fit it.
+ */
+export const STANDARD_FEATURES: readonly Feature[] = [
+  {
+    id: "link.state",
+    layer: "link",
+    summary: "The state of the link of the network interface.",
+    values: ["up", "down"],
+    healthy: { up: 0.999, down: 0.001 },
+  },
+  {
+    id: "wifi.signal",
+    layer: "wifi",
+    summary: "The strength of the Wi-Fi signal: strong above -60 dBm, weak below -75 dBm.",
+    values: ["strong", "fair", "weak"],
+    healthy: { strong: 0.7, fair: 0.25, weak: 0.05 },
+  },
+  {
+    id: "gateway.reply",
+    layer: "route",
+    summary: "The gateway answers an ICMP echo request.",
+    values: ["reply", "none"],
+    healthy: { reply: 0.97, none: 0.03 },
+  },
+  {
+    id: "path.loss",
+    layer: "path",
+    summary: "The packet loss on the path: none, some (up to 5 %) or high (more than 5 %).",
+    values: ["none", "some", "high"],
+    healthy: { none: 0.9, some: 0.08, high: 0.02 },
+  },
+  {
+    id: "dns.answer",
+    layer: "dns",
+    summary: "The result of the DNS lookup of the name of the target.",
+    values: ["ok", "nxdomain", "servfail", "refused", "timeout"],
+    healthy: { ok: 0.97, nxdomain: 0.01, servfail: 0.005, refused: 0.005, timeout: 0.01 },
+  },
+  {
+    id: "dns.address",
+    layer: "dns",
+    summary: "The kind of the addresses of a public name: public, or private (RFC 1918, RFC 4193 or loopback).",
+    values: ["public", "private"],
+    healthy: { public: 0.95, private: 0.05 },
+  },
+  {
+    id: "ip.family",
+    layer: "ip",
+    summary: "The address families that connect, for a host with IPv4 and IPv6 addresses.",
+    values: ["both", "ipv4-only", "ipv6-only"],
+    healthy: { both: 0.9, "ipv4-only": 0.08, "ipv6-only": 0.02 },
+  },
+  {
+    id: "icmp.reply",
+    layer: "ip",
+    summary: "The host answers an ICMP echo request, does not answer, or a router tells that it is unreachable.",
+    values: ["reply", "none", "unreachable"],
+    healthy: { reply: 0.85, none: 0.14, unreachable: 0.01 },
+  },
+  {
+    id: "tcp.connect",
+    layer: "tcp",
+    summary: "The outcome of a TCP connect to the port of the target.",
+    values: ["connected", "refused", "timeout", "unreachable", "reset"],
+    healthy: { connected: 0.97, refused: 0.01, timeout: 0.01, unreachable: 0.005, reset: 0.005 },
+  },
+  {
+    id: "tcp.time",
+    layer: "tcp",
+    summary: "The time of the TCP connect: short (below 150 ms), long, or retry (900 ms or more, a SYN sent again).",
+    values: ["short", "long", "retry"],
+    healthy: { short: 0.8, long: 0.18, retry: 0.02 },
+  },
+  {
+    id: "tls.handshake",
+    layer: "tls",
+    summary: "The outcome of the TLS handshake.",
+    values: ["ok", "cert-error", "alert", "timeout", "reset"],
+    healthy: { ok: 0.97, "cert-error": 0.01, alert: 0.01, timeout: 0.005, reset: 0.005 },
+  },
+  {
+    id: "tls.ratio",
+    layer: "tls",
+    summary: "The time of the TLS handshake divided by the time of the TCP connect: low (below 3), mid, or high (above 8).",
+    values: ["low", "mid", "high"],
+    healthy: { low: 0.75, mid: 0.2, high: 0.05 },
+  },
+  {
+    id: "tls.trust",
+    layer: "tls",
+    summary: "The issuer of the certificate: a public root of trust, or a private root.",
+    values: ["public", "private"],
+    healthy: { public: 0.97, private: 0.03 },
+  },
+  {
+    id: "http.status",
+    layer: "http",
+    summary: "The class of the HTTP status: ok (2xx and 3xx), client-error (4xx), server-error (5xx), or none.",
+    values: ["ok", "client-error", "server-error", "none"],
+    healthy: { ok: 0.95, "client-error": 0.03, "server-error": 0.01, none: 0.01 },
+  },
+  {
+    id: "http.ttfb",
+    layer: "http",
+    summary: "The time to the first byte divided by the time of the TCP connect: low (below 4), mid, or high (above 20).",
+    values: ["low", "mid", "high"],
+    healthy: { low: 0.6, mid: 0.3, high: 0.1 },
+  },
+];
+
+/**
+ * The faults of the standard catalog. Each prediction is a rule of practice. The lab runs (ND-7) then fit the
+ * distributions, and the priors.
+ */
+export const STANDARD_FAULTS: readonly Fault[] = [
+  {
+    id: "interface.down",
+    part: "interface",
+    reach: "shared",
+    summary: "The network interface has no link.",
+    step: "Connect the cable or the Wi-Fi network, and make sure that the interface is on.",
+    predicts: {
+      "link.state": { expect: "down", strength: "sure" },
+      "gateway.reply": { expect: "none", strength: "sure" },
+      "dns.answer": { expect: "timeout", strength: "strong" },
+      "icmp.reply": { expect: ["none", "unreachable"], strength: "sure" },
+      "tcp.connect": { expect: ["unreachable", "timeout"], strength: "sure" },
+    },
+  },
+  {
+    id: "wifi.weak",
+    part: "wifi",
+    reach: "shared",
+    summary: "The Wi-Fi signal is weak, so the link loses packets.",
+    step: "Move nearer to the access point, or use a cable.",
+    predicts: {
+      "wifi.signal": { expect: "weak", strength: "strong" },
+      "path.loss": { expect: ["some", "high"], strength: "usual" },
+      "tcp.time": { expect: ["long", "retry"], strength: "usual" },
+    },
+  },
+  {
+    id: "gateway.down",
+    part: "gateway",
+    reach: "shared",
+    summary: "The gateway does not forward packets.",
+    step: "Restart the router, or examine the link from the router to the provider.",
+    predicts: {
+      "gateway.reply": { expect: "none", strength: "strong" },
+      "dns.answer": { expect: "timeout", strength: "strong" },
+      "icmp.reply": { expect: ["none", "unreachable"], strength: "strong" },
+      "tcp.connect": { expect: ["timeout", "unreachable"], strength: "strong" },
+    },
+  },
+  {
+    id: "captive.portal",
+    part: "gateway",
+    reach: "shared",
+    summary: "A captive portal holds the traffic until you sign in.",
+    step: "Open a web page in a browser, and accept the terms of the network.",
+    predicts: {
+      "dns.address": { expect: "private", strength: "usual" },
+      "tls.handshake": { expect: "cert-error", strength: "strong" },
+      "tls.trust": { expect: "private", strength: "usual" },
+    },
+  },
+  {
+    id: "resolver.down",
+    part: "resolver",
+    reach: "shared",
+    summary: "The DNS resolver does not answer.",
+    step: "Use a different DNS resolver, or examine the resolver of the router.",
+    predicts: {
+      "dns.answer": { expect: "timeout", strength: "strong" },
+    },
+  },
+  {
+    id: "resolver.failing",
+    part: "resolver",
+    reach: "shared",
+    summary: "The DNS resolver answers with an error for each name.",
+    step: "Use a different DNS resolver, and examine the DNSSEC settings of the resolver.",
+    predicts: {
+      "dns.answer": { expect: ["servfail", "refused"], strength: "strong" },
+    },
+  },
+  {
+    id: "name.missing",
+    part: "service",
+    reach: "target",
+    summary: "The name does not exist in DNS.",
+    step: "Examine the spelling of the name, and the records of its DNS zone.",
+    predicts: {
+      "dns.answer": { expect: "nxdomain", strength: "strong" },
+    },
+  },
+  {
+    id: "port.closed",
+    part: "service",
+    reach: "target",
+    summary: "No program listens on the port.",
+    step: "Start the service, or use the correct port.",
+    predicts: {
+      "tcp.connect": { expect: "refused", strength: "strong" },
+    },
+  },
+  {
+    id: "host.down",
+    part: "service",
+    reach: "target",
+    summary: "The host is down.",
+    step: "Start the host, or examine its network link.",
+    predicts: {
+      "tcp.connect": { expect: ["timeout", "unreachable"], strength: "strong" },
+      "icmp.reply": { expect: ["none", "unreachable"], strength: "strong" },
+    },
+  },
+  {
+    id: "filter.drop",
+    part: "path",
+    reach: "target",
+    summary: "A filter drops the packets to the port.",
+    step: "Examine the firewall rules of the host and of each network on the path.",
+    predicts: {
+      "tcp.connect": { expect: "timeout", strength: "strong" },
+      "icmp.reply": { reply: 0.5, none: 0.45, unreachable: 0.05 },
+    },
+  },
+  {
+    id: "filter.icmp",
+    part: "path",
+    reach: "target",
+    summary: "A filter blocks ICMP. The host is up.",
+    step: "No step is necessary for the service. Use TCP to examine the host.",
+    predicts: {
+      "icmp.reply": { expect: "none", strength: "strong" },
+    },
+  },
+  {
+    id: "filter.reset",
+    part: "path",
+    reach: "target",
+    summary: "A device on the path resets the connections.",
+    step: "Examine the firewalls and the filters of content on the path, and try a different network.",
+    predicts: {
+      "tcp.connect": { connected: 0.5, refused: 0.02, timeout: 0.02, unreachable: 0.02, reset: 0.44 },
+      "tls.handshake": { expect: "reset", strength: "strong" },
+    },
+  },
+  {
+    id: "path.loss",
+    part: "path",
+    reach: "target",
+    summary: "A network on the path loses packets.",
+    step: "Find the first hop with loss, and tell the provider of that network.",
+    predicts: {
+      "path.loss": { expect: ["some", "high"], strength: "strong" },
+      "tcp.time": { expect: ["long", "retry"], strength: "usual" },
+      "http.ttfb": { expect: ["mid", "high"], strength: "weak" },
+    },
+  },
+  {
+    id: "path.mtu",
+    part: "path",
+    reach: "shared",
+    summary: "Large packets do not pass, and no ICMP message tells the size (an MTU black hole).",
+    step: "Lower the MTU of the interface or of the VPN, or enable MSS clamping on the router.",
+    predicts: {
+      "tls.handshake": { expect: "timeout", strength: "strong" },
+      "http.status": { expect: "none", strength: "usual" },
+    },
+  },
+  {
+    id: "ipv6.broken",
+    part: "path",
+    reach: "shared",
+    summary: "IPv6 does not work, and IPv4 works.",
+    step: "Examine the IPv6 settings of the router, or turn off IPv6 until the provider repairs it.",
+    predicts: {
+      "ip.family": { expect: "ipv4-only", strength: "strong" },
+      "tcp.time": { expect: ["long", "retry"], strength: "weak" },
+    },
+  },
+  {
+    id: "tls.proxy",
+    part: "path",
+    reach: "shared",
+    summary: "A proxy examines the TLS traffic.",
+    step: "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
+    predicts: {
+      "tls.ratio": { expect: ["mid", "high"], strength: "usual" },
+      "tls.trust": { expect: "private", strength: "usual" },
+      "tcp.time": { expect: "short", strength: "strong" },
+    },
+  },
+  {
+    id: "tls.cert-invalid",
+    part: "service",
+    reach: "target",
+    summary: "The certificate of the server is not valid: it expired, or it is for a different name.",
+    step: "Renew the certificate of the server, or correct its names.",
+    predicts: {
+      "tls.handshake": { expect: "cert-error", strength: "strong" },
+    },
+  },
+  {
+    id: "tls.mismatch",
+    part: "service",
+    reach: "target",
+    summary: "The client and the server have no TLS version or cipher in common.",
+    step: "Enable TLS 1.2 or TLS 1.3 with modern ciphers on the server.",
+    predicts: {
+      "tls.handshake": { expect: "alert", strength: "strong" },
+    },
+  },
+  {
+    id: "server.slow",
+    part: "service",
+    reach: "target",
+    summary: "The server is slow.",
+    step: "Examine the load and the logs of the server.",
+    predicts: {
+      "http.ttfb": { expect: "high", strength: "strong" },
+      "tls.ratio": { expect: ["mid", "high"], strength: "weak" },
+    },
+  },
+  {
+    id: "server.error",
+    part: "service",
+    reach: "target",
+    summary: "The server answers with an error.",
+    step: "Examine the logs of the server and of its upstream services.",
+    predicts: {
+      "http.status": { expect: "server-error", strength: "strong" },
+    },
+  },
+];
+
+/** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
+export const STANDARD_CATALOG_SPEC: CatalogSpec = {
+  version: "1",
+  features: STANDARD_FEATURES,
+  faults: STANDARD_FAULTS,
+};
+
+/** The standard catalog, compiled. */
+export const STANDARD_CATALOG: Catalog = (() => {
+  const compiled = compileCatalog(STANDARD_CATALOG_SPEC);
+  if (compiled.tag === "err") throw new Error(`The standard catalog has problems: ${compiled.error.join(" ")}`);
+  return compiled.value;
+})();

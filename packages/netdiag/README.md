@@ -1,8 +1,8 @@
 # @mark1russell7/netdiag
 
-This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule.
+This package has the core model of netdiag. It has the typed facts at each layer of the stack, the contract of a probe and the scope rule. It also has the catalog of faults and the probability model.
 
-**State: ND-1 of the [roadmap](../../docs/ROADMAP.md).** The native probes (ND-2) and the probability model (ND-4) come next.
+**State: ND-1 and the model of ND-4 of the [roadmap](../../docs/ROADMAP.md).** The native probes (ND-2) come next. Then the readers change their facts into evidence for the model.
 
 ## Facts
 
@@ -42,6 +42,36 @@ An active probe sends packets only to a peer that the user owns or names. The ru
 | `resolved` | A DNS answer for a granted name gave this address. |
 
 The scope also limits the number of ports of each host. The default limit is 8. Thus netdiag does no port scan.
+
+## Diagnosis
+
+The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It imports no `node:` module, so a browser can also use it.
+
+- A feature is a discrete observation. For example, `tcp.connect` has the values `connected`, `refused`, `timeout`, `unreachable` and `reset`.
+- Each feature has a healthy distribution: the probability of each value when there is no fault.
+- A fault names a part of the network and the feature values that it predicts. The other features keep their healthy distributions.
+- The hypotheses are `none` (no fault), each fault of the catalog, and `unknown` (a cause that the catalog does not have).
+- The hypothesis `unknown` gives the same probability to each value. Thus it wins when no fault of the catalog explains the observations.
+
+| Function | What it gives |
+| --- | --- |
+| `diagnose(catalog, evidence)` | The probability of each hypothesis, from the most probable. The model is naive Bayes with logarithms. |
+| `explain(catalog, evidence, id)` | The weight of each observation for a cause: the `log10` of its likelihood ratio against `none`. |
+| `predictive(catalog, diagnosis, feature, primary)` | The probability of each value of a feature before a probe observes it. The choice of the next probe (ND-5) uses it. |
+
+Evidence with `primary: false` comes from a reference host, for example a second public server. A fault with the reach `target` does not change the reference host. A fault with the reach `shared` changes both hosts. Thus a slow TLS handshake on both hosts points to a TLS proxy. A slow handshake on the target only points to a slow server.
+
+The standard catalog `STANDARD_CATALOG` has 15 features and 20 faults. The rules of practice give its first likelihoods, and each hypothesis has the same prior. The lab runs (ND-7) then fit these numbers.
+
+```ts
+import { STANDARD_CATALOG, diagnose } from "@mark1russell7/netdiag/diagnosis";
+
+const result = diagnose(STANDARD_CATALOG, [
+  { feature: "icmp.reply", value: "none", primary: true },
+  { feature: "tcp.connect", value: "connected", primary: true },
+]);
+// result.causes[0].id is "filter.icmp": a filter blocks ICMP, and the host is up.
+```
 
 ## Example
 

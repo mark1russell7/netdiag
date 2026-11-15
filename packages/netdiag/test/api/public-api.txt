@@ -7,53 +7,272 @@
 ## . (build/index.d.ts): names
 
 type Availability: build/index.d.ts#Availability
+type Catalog: build/index.chunk.d.ts#Catalog
+type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
+type Cause: build/index.chunk.d.ts#Cause
 type ClockOrigin: build/index.d.ts#ClockOrigin
+type Contribution: build/index.chunk.d.ts#Contribution
 DEFAULT_MAX_PORTS_PER_HOST: build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+type Diagnosis: build/index.chunk.d.ts#Diagnosis
+type Distribution: build/index.chunk.d.ts#Distribution
+type Evidence: build/index.chunk.d.ts#Evidence
+type Expectation: build/index.chunk.d.ts#Expectation
+FLOOR: build/index.chunk.d.ts#FLOOR
 type Fact: build/index.d.ts#Fact
 type FactKind: build/index.d.ts#FactKind
 type FactSource: build/index.d.ts#FactSource
 type FactTime: build/index.d.ts#FactTime
+type Fault: build/index.chunk.d.ts#Fault
+type Feature: build/index.chunk.d.ts#Feature
 type Grant: build/index.d.ts#Grant
 type GrantBasis: build/index.d.ts#GrantBasis
 type HostGrant: build/index.d.ts#HostGrant
 type HostKind: build/index.d.ts#HostKind
-LAYERS: build/index.d.ts#LAYERS
-type Layer: build/index.d.ts#Layer
+type Hypothesis: build/index.chunk.d.ts#Hypothesis
+LAYERS: build/index.chunk.d.ts#LAYERS
+type Layer: build/index.chunk.d.ts#Layer
+NONE: build/index.chunk.d.ts#NONE
 type Observation: build/index.d.ts#Observation
+PARTS: build/index.chunk.d.ts#PARTS
+type Part: build/index.chunk.d.ts#Part
 type PortLedger: build/index.d.ts#PortLedger
+type Prediction: build/index.chunk.d.ts#Prediction
 type Probe: build/index.d.ts#Probe
 type ProbeContext: build/index.d.ts#ProbeContext
 type ProbeMode: build/index.d.ts#ProbeMode
 type ProbeOutcome: build/index.d.ts#ProbeOutcome
 type RangeGrant: build/index.d.ts#RangeGrant
+type Reach: build/index.chunk.d.ts#Reach
 type Runner: build/index.d.ts#Runner
 type RunnerOptions: build/index.d.ts#RunnerOptions
+STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
+STANDARD_CATALOG_SPEC: build/index.chunk.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_FAULTS: build/index.chunk.d.ts#STANDARD_FAULTS
+STANDARD_FEATURES: build/index.chunk.d.ts#STANDARD_FEATURES
+STRENGTHS: build/index.chunk.d.ts#STRENGTHS
 type Scope: build/index.d.ts#Scope
 type ScopeDecision: build/index.d.ts#ScopeDecision
+type Strength: build/index.chunk.d.ts#Strength
 type Target: build/index.d.ts#Target
+UNKNOWN: build/index.chunk.d.ts#UNKNOWN
 type ValueOf: build/index.d.ts#ValueOf
 canonicalHost: build/index.d.ts#canonicalHost
+compileCatalog: build/index.chunk.d.ts#compileCatalog
 createRunner: build/index.d.ts#createRunner
 decideScope: build/index.d.ts#decideScope
 defineFactKind: build/index.d.ts#defineFactKind
 defineProbe: build/index.d.ts#defineProbe
+diagnose: build/index.chunk.d.ts#diagnose
+expand: build/index.chunk.d.ts#expand
+explain: build/index.chunk.d.ts#explain
 factsOf: build/index.d.ts#factsOf
 formatTarget: build/index.d.ts#formatTarget
 grantProblems: build/index.d.ts#grantProblems
 hostKind: build/index.d.ts#hostKind
 isFactOf: build/index.d.ts#isFactOf
-isLayer: build/index.d.ts#isLayer
-layerRank: build/index.d.ts#layerRank
+isLayer: build/index.chunk.d.ts#isLayer
+layerRank: build/index.chunk.d.ts#layerRank
 namedGrant: build/index.d.ts#namedGrant
 observe: build/index.d.ts#observe
 parseTarget: build/index.d.ts#parseTarget
+predictive: build/index.chunk.d.ts#predictive
 resolvedGrant: build/index.d.ts#resolvedGrant
 sameTarget: build/index.d.ts#sameTarget
 scopeOf: build/index.d.ts#scopeOf
 target: build/index.d.ts#target
 widen: build/index.d.ts#widen
 
+## ./diagnosis (build/diagnosis.d.ts): names
+
+type Catalog: build/index.chunk.d.ts#Catalog
+type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
+type Cause: build/index.chunk.d.ts#Cause
+type Contribution: build/index.chunk.d.ts#Contribution
+type Diagnosis: build/index.chunk.d.ts#Diagnosis
+type Distribution: build/index.chunk.d.ts#Distribution
+type Evidence: build/index.chunk.d.ts#Evidence
+type Expectation: build/index.chunk.d.ts#Expectation
+FLOOR: build/index.chunk.d.ts#FLOOR
+type Fault: build/index.chunk.d.ts#Fault
+type Feature: build/index.chunk.d.ts#Feature
+type Hypothesis: build/index.chunk.d.ts#Hypothesis
+LAYERS: build/index.chunk.d.ts#LAYERS
+type Layer: build/index.chunk.d.ts#Layer
+NONE: build/index.chunk.d.ts#NONE
+PARTS: build/index.chunk.d.ts#PARTS
+type Part: build/index.chunk.d.ts#Part
+type Prediction: build/index.chunk.d.ts#Prediction
+type Reach: build/index.chunk.d.ts#Reach
+STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
+STANDARD_CATALOG_SPEC: build/index.chunk.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_FAULTS: build/index.chunk.d.ts#STANDARD_FAULTS
+STANDARD_FEATURES: build/index.chunk.d.ts#STANDARD_FEATURES
+STRENGTHS: build/index.chunk.d.ts#STRENGTHS
+type Strength: build/index.chunk.d.ts#Strength
+UNKNOWN: build/index.chunk.d.ts#UNKNOWN
+compileCatalog: build/index.chunk.d.ts#compileCatalog
+diagnose: build/index.chunk.d.ts#diagnose
+expand: build/index.chunk.d.ts#expand
+explain: build/index.chunk.d.ts#explain
+isLayer: build/index.chunk.d.ts#isLayer
+layerRank: build/index.chunk.d.ts#layerRank
+predictive: build/index.chunk.d.ts#predictive
+
 ## Declarations
+
+### build/index.chunk.d.ts#Catalog
+interface Catalog {
+  readonly version: string;
+  readonly features: ReadonlyMap<string, Feature>;
+  readonly hypotheses: readonly Hypothesis[];
+  likelihood(hypothesis: string, feature: string, value: string, primary: boolean): number;
+  prior(hypothesis: string): number;
+}
+
+### build/index.chunk.d.ts#CatalogSpec
+interface CatalogSpec {
+  readonly version: string;
+  readonly features: readonly Feature[];
+  readonly faults: readonly Fault[];
+  readonly priors?: {
+    readonly none?: number | undefined;
+    readonly unknown?: number | undefined;
+  } | undefined;
+}
+
+### build/index.chunk.d.ts#Cause
+interface Cause extends Hypothesis {
+  readonly probability: number;
+}
+
+### build/index.chunk.d.ts#Contribution
+interface Contribution {
+  readonly evidence: Evidence;
+  readonly weight: number;
+}
+
+### build/index.chunk.d.ts#Diagnosis
+interface Diagnosis {
+  readonly causes: readonly Cause[];
+  readonly used: readonly Evidence[];
+  readonly ignored: readonly {
+    readonly evidence: Evidence;
+    readonly reason: string;
+  }[];
+}
+
+### build/index.chunk.d.ts#Distribution
+type Distribution = Readonly<Record<string, number>>;
+
+### build/index.chunk.d.ts#Evidence
+interface Evidence {
+  readonly feature: string;
+  readonly value: string;
+  readonly primary: boolean;
+  readonly facts?: readonly string[] | undefined;
+}
+
+### build/index.chunk.d.ts#Expectation
+interface Expectation {
+  readonly expect: string | readonly string[];
+  readonly strength: Strength;
+}
+
+### build/index.chunk.d.ts#FLOOR
+declare const FLOOR = .001;
+
+### build/index.chunk.d.ts#Fault
+interface Fault {
+  readonly id: string;
+  readonly part: Part;
+  readonly reach: Reach;
+  readonly summary: string;
+  readonly step: string;
+  readonly prior?: number | undefined;
+  readonly predicts: Readonly<Record<string, Prediction>>;
+}
+
+### build/index.chunk.d.ts#Feature
+interface Feature {
+  readonly id: string;
+  readonly layer: Layer;
+  readonly summary: string;
+  readonly values: readonly string[];
+  readonly healthy: Distribution;
+}
+
+### build/index.chunk.d.ts#Hypothesis
+interface Hypothesis {
+  readonly id: string;
+  readonly kind: "none" | "fault" | "unknown";
+  readonly summary: string;
+  readonly step: string;
+  readonly part?: Part | undefined;
+  readonly reach?: Reach | undefined;
+}
+
+### build/index.chunk.d.ts#LAYERS
+declare const LAYERS: readonly ["link", "wifi", "ip", "route", "path", "dns", "tcp", "tls", "http"];
+
+### build/index.chunk.d.ts#Layer
+type Layer = (typeof LAYERS)[number];
+
+### build/index.chunk.d.ts#NONE
+declare const NONE = "none";
+
+### build/index.chunk.d.ts#PARTS
+declare const PARTS: readonly ["interface", "wifi", "gateway", "resolver", "path", "service"];
+
+### build/index.chunk.d.ts#Part
+type Part = (typeof PARTS)[number];
+
+### build/index.chunk.d.ts#Prediction
+type Prediction = Distribution | Expectation;
+
+### build/index.chunk.d.ts#Reach
+type Reach = "shared" | "target";
+
+### build/index.chunk.d.ts#STANDARD_CATALOG
+declare const STANDARD_CATALOG: Catalog;
+
+### build/index.chunk.d.ts#STANDARD_CATALOG_SPEC
+declare const STANDARD_CATALOG_SPEC: CatalogSpec;
+
+### build/index.chunk.d.ts#STANDARD_FAULTS
+declare const STANDARD_FAULTS: readonly Fault[];
+
+### build/index.chunk.d.ts#STANDARD_FEATURES
+declare const STANDARD_FEATURES: readonly Feature[];
+
+### build/index.chunk.d.ts#STRENGTHS
+declare const STRENGTHS: Readonly<Record<Strength, number>>;
+
+### build/index.chunk.d.ts#Strength
+type Strength = "sure" | "strong" | "usual" | "weak";
+
+### build/index.chunk.d.ts#UNKNOWN
+declare const UNKNOWN = "unknown";
+
+### build/index.chunk.d.ts#compileCatalog
+declare function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]>;
+
+### build/index.chunk.d.ts#diagnose
+declare function diagnose(catalog: Catalog, evidence: readonly Evidence[]): Diagnosis;
+
+### build/index.chunk.d.ts#expand
+declare function expand(feature: Feature, prediction: Prediction): Result<Distribution, string[]>;
+
+### build/index.chunk.d.ts#explain
+declare function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus?: string): Contribution[];
+
+### build/index.chunk.d.ts#isLayer
+declare function isLayer(value: unknown): value is Layer;
+
+### build/index.chunk.d.ts#layerRank
+declare function layerRank(layer: Layer): number;
+
+### build/index.chunk.d.ts#predictive
+declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;
 
 ### build/index.d.ts#Availability
 type Availability = {
@@ -122,12 +341,6 @@ interface HostGrant {
 
 ### build/index.d.ts#HostKind
 type HostKind = "name" | "ipv4" | "ipv6";
-
-### build/index.d.ts#LAYERS
-export declare const LAYERS: readonly ["link", "wifi", "ip", "route", "path", "dns", "tcp", "tls", "http"];
-
-### build/index.d.ts#Layer
-type Layer = (typeof LAYERS)[number];
 
 ### build/index.d.ts#Observation
 interface Observation<V = unknown> {
@@ -265,12 +478,6 @@ export declare function hostKind(host: string): HostKind;
 
 ### build/index.d.ts#isFactOf
 export declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
-
-### build/index.d.ts#isLayer
-export declare function isLayer(value: unknown): value is Layer;
-
-### build/index.d.ts#layerRank
-export declare function layerRank(layer: Layer): number;
 
 ### build/index.d.ts#namedGrant
 export declare function namedGrant(t: Target, note?: string): Grant;

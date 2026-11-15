@@ -30,6 +30,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./diagnosis": "./src/diagnosis/index.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -48,6 +49,10 @@
       ".": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
+      },
+      "./diagnosis": {
+        "types": "./build/diagnosis.d.ts",
+        "default": "./build/diagnosis.js"
       },
       "./package.json": "./package.json"
     }
@@ -68,6 +73,7 @@
     "@vitest/coverage-v8": "^5.0.3",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3",
-    "tsdown": "^0.23.7"
+    "tsdown": "^0.23.7",
+    "fast-check": "^4.10.2"
   }
 }
