@@ -18,6 +18,10 @@ function isPort(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 65535;
 }
 
+function isCount(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
 function isOneOf<T extends string>(values: readonly T[], value: unknown): value is T {
   return typeof value === "string" && (values as readonly string[]).includes(value);
 }
@@ -260,3 +264,56 @@ export const HTTP_RESPONSE: FactKind<HttpResponse> = defineFactKind<HttpResponse
 
 /** The fact kinds of the native probes. */
 export const NATIVE_KINDS: readonly FactKind<unknown>[] = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE];
+
+/**
+ * The outcomes of the ICMP echo requests to one address.
+ *
+ * - `reply`: one or more echo replies came back.
+ * - `none`: no reply came back in the time limit.
+ * - `unreachable`: no echo reply came back, and a router or this computer told that the address is unreachable.
+ * - `error`: the tool did not start, or netdiag cannot read its output.
+ */
+export const ECHO_OUTCOMES = ["reply", "none", "unreachable", "error"] as const;
+export type EchoOutcome = (typeof ECHO_OUTCOMES)[number];
+
+/** The result of the ICMP echo requests to one address. */
+export interface IcmpEcho {
+  readonly address: string;
+  readonly outcome: EchoOutcome;
+  /** The number of echo requests that the tool sent. */
+  readonly sent: number;
+  /** The number of echo replies. A message of an unreachable address is not a reply. */
+  readonly received: number;
+  /** The round-trip time of each reply, in milliseconds. */
+  readonly rttMs: readonly number[];
+  /** The TTL (IPv4) or the hop limit (IPv6) of the first reply. */
+  readonly ttl?: number | undefined;
+  /** The router that told that the address is unreachable. */
+  readonly from?: string | undefined;
+  /** The text of the tool for the outcomes `unreachable` and `error`. */
+  readonly detail?: string | undefined;
+}
+
+/** The fact kind `icmp.echo`. */
+export const ICMP_ECHO: FactKind<IcmpEcho> = defineFactKind<IcmpEcho>({
+  kind: "icmp.echo",
+  layer: "ip",
+  summary: "The replies to the ICMP echo requests to one address, their round-trip times and the messages of an unreachable address.",
+  check: (value): value is IcmpEcho =>
+    isRecord(value) &&
+    isText(value["address"]) &&
+    isOneOf(ECHO_OUTCOMES, value["outcome"]) &&
+    isCount(value["sent"]) &&
+    isCount(value["received"]) &&
+    value["received"] <= value["sent"] &&
+    Array.isArray(value["rttMs"]) &&
+    value["rttMs"].every(isDuration) &&
+    value["rttMs"].length <= value["received"] &&
+    (value["outcome"] === "reply") === value["received"] > 0 &&
+    optional(value["ttl"], isCount) &&
+    optional(value["from"], isText) &&
+    optional(value["detail"], isText),
+});
+
+/** The fact kinds of the adapters of outside tools (`@mark1russell7/netdiag/tools`). */
+export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO];

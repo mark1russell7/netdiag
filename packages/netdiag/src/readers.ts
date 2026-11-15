@@ -1,16 +1,19 @@
-import { addressKind } from "./address/index.ts";
+import { addressKind, canonicalAddress } from "./address/index.ts";
 import type { Evidence } from "./diagnosis/model.ts";
 import type { Fact, FactKind } from "./fact.ts";
 import {
   DNS_ANSWER,
   HTTP_RESPONSE,
+  ICMP_ECHO,
   TCP_CONNECT,
   TLS_HANDSHAKE,
   type ConnectOutcome,
   type DnsAnswer,
   type DnsOutcome,
+  type EchoOutcome,
   type HandshakeOutcome,
   type HttpResponse,
+  type IcmpEcho,
   type TcpConnect,
   type TlsHandshake,
   type Trust,
@@ -35,6 +38,11 @@ export interface Reading {
 export interface ReadOptions {
   /** This function tells if a fact is about the target (`true`) or about a reference host (`false`). The default is `true`. */
   readonly primary?: ((fact: Fact) => boolean) | undefined;
+  /**
+   * The IP address of the default gateway. The ICMP echo facts of this address give the feature `gateway.reply`. The
+   * ICMP echo facts of the other addresses give the feature `icmp.reply`.
+   */
+  readonly gateway?: string | undefined;
 }
 
 /** A bin of a time or a ratio. A number below `below` gets `value`. The last bin has no limit. */
@@ -93,6 +101,27 @@ export const TLS_HANDSHAKE_VALUES: Readonly<Partial<Record<HandshakeOutcome, str
 /** The value of the feature `tls.trust` for each trust. A chain that ends at no root of the store has no public root. */
 export const TLS_TRUST_VALUES: Readonly<Record<Trust, string>> = { public: "public", private: "private", none: "private" };
 
+/** The value of the feature `icmp.reply` for each outcome of the ICMP echo requests to an address. */
+export const ICMP_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>> = { reply: "reply", none: "none", unreachable: "unreachable" };
+
+/**
+ * The value of the feature `gateway.reply` for each outcome of the ICMP echo requests to the gateway. When this computer
+ * tells that the gateway is unreachable, the gateway gives no reply.
+ */
+export const GATEWAY_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>> = { reply: "reply", none: "none", unreachable: "none" };
+
+/**
+ * The bins of the feature `path.loss`, on the share of the echo requests with a reply. A share of 1 has no loss. A share
+ * of 0.95 or more has a loss of up to 5 %.
+ */
+export const PATH_LOSS_BINS: readonly Bin[] = [{ below: 0.95, value: "high" }, { below: 1, value: "some" }, { value: "none" }];
+
+/**
+ * The smallest number of echo requests that gives the feature `path.loss`. With 20 requests, one lost request is a loss
+ * of 5 %. With no reply, the feature `icmp.reply` tells the result, not `path.loss`.
+ */
+export const LOSS_MIN_SENT = 20;
+
 /** The suffixes of the names of local networks and of the special-use names (RFC 6761, RFC 6762 and RFC 8375). */
 export const LOCAL_SUFFIXES: readonly string[] = ["local", "localhost", "test", "invalid", "example", "home.arpa", "internal", "lan", "home", "corp", "intranet", "private"];
 
@@ -121,6 +150,7 @@ interface Facts {
   readonly tcp: Fact<TcpConnect>[];
   readonly tls: Fact<TlsHandshake>[];
   readonly http: Fact<HttpResponse>[];
+  readonly icmp: Fact<IcmpEcho>[];
 }
 
 const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
@@ -128,6 +158,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["tcp", TCP_CONNECT],
   ["tls", TLS_HANDSHAKE],
   ["http", HTTP_RESPONSE],
+  ["icmp", ICMP_ECHO],
 ];
 
 /**
@@ -136,12 +167,14 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
  * - For `dns.answer`, one answer `ok` of a name and a resolver decides. For `dns.address`, one private address decides.
  * - The order of the facts is the order of the runner. A ratio uses the last TCP connect before the handshake or the request.
+ * - An ICMP echo fact gives `gateway.reply` for the gateway, and `icmp.reply` for each other address. With replies to
+ *   `LOSS_MIN_SENT` requests or more, it also gives `path.loss`.
  */
 export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {
   const primaryOf = options.primary ?? (() => true);
   const slots = new Map<string, Slot>();
   const skipped: Skipped[] = [];
-  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [] };
+  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [] };
 
   for (const fact of facts) {
     const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
@@ -230,6 +263,21 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     note("http.status", group, fact, status);
     const tcp = response.ttfbMs === undefined ? undefined : connectBefore(fact, response);
     if (tcp !== undefined && response.ttfbMs !== undefined) note("http.ttfb", group, fact, binOf(HTTP_TTFB_BINS, ratio(response.ttfbMs, tcp)));
+  }
+
+  const gateway = options.gateway === undefined ? undefined : canonicalAddress(options.gateway);
+  for (const fact of sorted.icmp) {
+    const echo = fact.value;
+    const address = canonicalAddress(echo.address);
+    const isGateway = address === gateway;
+    const feature = isGateway ? "gateway.reply" : "icmp.reply";
+    const value = (isGateway ? GATEWAY_REPLY_VALUES : ICMP_REPLY_VALUES)[echo.outcome];
+    if (value === undefined) {
+      skip(fact, feature, echo.outcome);
+      continue;
+    }
+    note(feature, address, fact, value);
+    if (echo.received > 0 && echo.sent >= LOSS_MIN_SENT) note("path.loss", address, fact, binOf(PATH_LOSS_BINS, echo.received / echo.sent));
   }
 
   const evidence = [...slots.values()].map(({ feature, value, primary, facts: ids }) => ({ feature, value, primary, facts: ids }));
