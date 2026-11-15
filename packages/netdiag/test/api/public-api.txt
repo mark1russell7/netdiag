@@ -908,6 +908,7 @@ interface TlsPhase {
 ### build/index.d.ts#TlsProbeOptions
 interface TlsProbeOptions extends ConnectOptions {
   readonly roots?: readonly string[] | undefined;
+  readonly publicRoots?: readonly string[] | undefined;
 }
 
 ### build/index.d.ts#TlsRaw
