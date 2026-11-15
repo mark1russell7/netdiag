@@ -79,6 +79,17 @@ The table of licenses is data: `TOOL_LICENSES` in the entry `@mark1russell7/netd
 | `masscan` | AGPL | Not bundled |
 | Speedtest CLI | Ookla EULA | Not bundled |
 
+### The command-line tool
+
+The package `@mark1russell7/netdiag-cli` has the program `netdiag` (ND-8). The core package has no dependency of the command line. The command `netdiag check <target>` has these steps:
+
+1. `planCheck` reads the options and makes the grants of the scope.
+2. `visitTarget` probes the target, each reference host and the gateway. The outside tools start through `runCommand` of `@procedures/shell`.
+3. `readEvidence` and `diagnose` give the probability of each cause. A fact of the target gives primary evidence.
+4. `rankProbes` gives the next step. Each candidate is one probe of one role, with the features that the evidence does not have.
+
+The scope grants only the target, each reference host, the DNS resolver, the gateway and each range of `--grant`. The visit adds each address that the resolver gives for a granted name. The [README of the package](../packages/netdiag-cli/README.md) tells the options and the output.
+
 ## Items
 
 The first path is ND-1, then ND-2 and ND-4, then ND-7. Priority P0 comes first. The size is S, M or L.
@@ -89,12 +100,12 @@ The status words are `active`, `waiting`, `blocked`, `later`, `done` and `droppe
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | ND-1 | The fact and probe model | done | P0 | M | core | - | The types of a fact: the layer, the time, the source and the value. The contract of a probe: available, run and parse. Each probe tells if it is active. The core starts an active probe only against a target that the user owns or names. |
 | ND-2 | Native probes: DNS, TCP, TLS and HTTP | done | P0 | L | probes | ND-1 | DNS lookups, TCP connects, the time of the TLS handshake and the time of each HTTP phase, in TypeScript on the `node:` modules. They need no outside tool. Tests run each probe against local servers. |
-| ND-3 | Adapters of outside tools, with the license table as data | done | P1 | M | probes | ND-1 | Optional adapters for `ping`, `traceroute`, `mtr`, `tshark` and `iperf3`, in the entry `@mark1russell7/netdiag/tools`. A host parameter starts each command with an argument list and no shell. The CLI (ND-8) gives `runCommand` of `@procedures/shell`. The license of each tool is a row of data. The `ping` adapter and its readers are the first step. The second step is the adapters of `traceroute` (`tracert` on Windows) and `mtr`, with the fact kinds `path.trace` and `path.report`. The third step is the adapters of `iperf3` and `tshark`, with the fact kinds `path.throughput` and `path.capture`. |
+| ND-3 | Adapters of outside tools, with the license table as data | done | P1 | M | probes | ND-1 | Optional adapters for `ping`, `traceroute`, `mtr`, `tshark` and `iperf3`, in the entry `@mark1russell7/netdiag/tools`. A host parameter starts each command with an argument list and no shell. The function `commandHost` makes a host from `runCommand` of `@procedures/shell`, and the CLI (ND-8) gives it. The license of each tool is a row of data. The `ping` adapter and its readers are the first step. The second step is the adapters of `traceroute` (`tracert` on Windows) and `mtr`, with the fact kinds `path.trace` and `path.report`. The third step is the adapters of `iperf3` and `tshark`, with the fact kinds `path.throughput` and `path.capture`. |
 | ND-4 | The fault catalog and the probability model | done | P0 | L | diagnosis | ND-1 | A model of the parts and a catalog of faults as data. Each fault tells what it predicts at each layer. The readers change the facts of the probes into evidence. The model gives the probability of each cause. The rules of practice are the first likelihoods. |
 | ND-5 | The choice of the next probe | done | P1 | M | diagnosis | ND-4 | The tool picks the probe with the largest expected information gain over the top causes. `rankProbes` and `featuresOf` shipped in 0.1.2. The command-line tool (ND-8) shows the next step. |
 | ND-6 | The metric estimators | later | P2 | M | metrics | ND-1, ND-3 | Jitter, delay variation, loss, the retransmission timeout, packet-pair bandwidth and the MTU, as "The metrics" tells. The estimators read the facts `path.capture` and `path.throughput` of ND-3. The statistics come from `@mark1russell7/rigor-statistics`. |
 | ND-7 | Lab ground truth and the accuracy gate | active | P0 | L | ground truth | ND-2, ND-4 | The labs of `mark1russell7/systems` inject each fault class, and netdiag must name it. A confusion matrix gives the hit rate of each class, and a gate in CI holds each rate. The runs need Docker, so only CI starts them. |
-| ND-8 | The command-line tool | later | P1 | M | cli | ND-2, ND-5 | One command takes a target and gives the probable causes, their probabilities and the next step. The arguments and the help come from `@procedures/cli-kit`. The probes come from `visitTarget` of netdiag (ND-7, step 3), and the next step from `rankProbes` (ND-5). |
+| ND-8 | The command-line tool | done | P1 | M | cli | ND-2, ND-5 | The program `netdiag` is in the package `@mark1russell7/netdiag-cli` 0.1.0. The command `netdiag check <target>` gives the probable causes, their probabilities and the next step. The arguments and the help come from `@procedures/cli-kit`. The probes come from `visitTarget` of netdiag (ND-7, step 3), and the next step from `rankProbes` (ND-5). |
 | ND-9 | Views on the site | later | P2 | M | site | ND-8 | A flow of the probes, one ring for each layer and a timeline of the facts. The views read the records of the command-line tool. |
 | ND-10 | Wi-Fi facts for each operating system | later | P2 | M | probes | ND-1, ND-3 | The signal, the noise, the channel, the rate and the roams of the Wi-Fi link, as typed facts. Each operating system has its own adapter. |
 | ND-11 | The path through the providers | later | P2 | M | probes | ND-3 | The AS number of each hop of a route. Thus a fault gets the name of the provider network where it starts. The lookups in the public registries go through `polite-crawler`. |
