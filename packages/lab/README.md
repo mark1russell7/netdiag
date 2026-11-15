@@ -21,6 +21,8 @@ The labs of netdiag: the loopback lab and the kernel lab. Each case makes one ne
 
 Each case has signs: the values of the evidence that its fault causes. A result with no sign did not make the fault. It gives no read, not a record. The command then ends with the exit code 2.
 
+A group of signs (`anyOf`) is for a fault with more than one form. The evidence shows the group when it shows one sign of the group.
+
 ### How to start it
 
 In CI, the workflow `lab.yml` adds the addresses and the delay. Then it starts 5 rounds:
@@ -64,7 +66,7 @@ Each round starts one world. Each case adds its fault to the world, starts the a
 | `path.loss` | `netem` drops 20% of the packets of the target. |
 | `path.mtu` | The router drops each TCP packet above 1200 bytes toward the two servers. |
 | `host.down` | The router answers each packet to the target with an ICMP host unreachable. |
-| `filter.reset` | The target lets each SYN pass, and resets each later segment from the client. |
+| `filter.reset` | The target lets each SYN pass, and resets each later segment from the client. The connect or the TLS handshake gets the reset. |
 | `gateway.down` | The router drops each packet, and the link of the client stays up. |
 
 The gate lists `ipv6.broken` with no bar, because the networks of the harness have no IPv6. `KERNEL_LATER` in `src/kernel/cases.ts` gives the reason.

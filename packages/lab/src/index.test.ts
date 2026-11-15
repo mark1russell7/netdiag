@@ -12,6 +12,7 @@ import {
   reportMarkdown,
   roundOrder,
   runLab,
+  signsOf,
   zoneOf,
   type CaseRun,
   type LabTrust,
@@ -24,7 +25,7 @@ describe("the cases", () => {
     for (const labCase of LOOPBACK_CASES) {
       expect(ids.has(labCase.truth), labCase.id).toBe(true);
       expect(labCase.signs.length, labCase.id).toBeGreaterThan(0);
-      for (const sign of labCase.signs) expect(STANDARD_CATALOG.features.get(sign.feature)?.values, `${labCase.id} ${sign.feature}`).toContain(sign.value);
+      for (const sign of labCase.signs.flatMap(signsOf)) expect(STANDARD_CATALOG.features.get(sign.feature)?.values, `${labCase.id} ${sign.feature}`).toContain(sign.value);
     }
   });
 
@@ -65,6 +66,19 @@ describe("roundOrder and missingSigns", () => {
     ];
     const evidence = [{ feature: "tcp.connect", primary: true, value: "refused", facts: ["f1"] }];
     expect(missingSigns(signs, evidence)).toEqual([signs[1]]);
+  });
+
+  it("shows a group of signs when the evidence shows one sign of the group", () => {
+    const reset = { anyOf: [{ feature: "tcp.connect", primary: true, value: "reset" }, { feature: "tls.handshake", primary: true, value: "reset" }] };
+    const atConnect = [{ feature: "tcp.connect", primary: true, value: "reset", facts: ["f1"] }];
+    const atHandshake = [
+      { feature: "tcp.connect", primary: true, value: "connected", facts: ["f1"] },
+      { feature: "tls.handshake", primary: true, value: "reset", facts: ["f2"] },
+    ];
+    expect(missingSigns([reset], atConnect)).toEqual([]);
+    expect(missingSigns([reset], atHandshake)).toEqual([]);
+    expect(missingSigns([reset], [{ feature: "tcp.connect", primary: false, value: "reset", facts: ["f1"] }])).toEqual([reset]);
+    expect(missingSigns([{ anyOf: [] }], atConnect)).toEqual([{ anyOf: [] }]);
   });
 });
 

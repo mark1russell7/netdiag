@@ -20,7 +20,7 @@ import {
   type ProbeOutcome,
   type ReadOptions,
 } from "@mark1russell7/netdiag";
-import { REFERENCE_NAME, TARGET_NAME, type LabCase, type LabHosts, type Sign } from "./cases.ts";
+import { REFERENCE_NAME, TARGET_NAME, signsOf, type CaseSign, type LabCase, type LabHosts, type Sign } from "./cases.ts";
 import { startWorld, type LabTrust, type World } from "./world.ts";
 
 /** The time limit of a DNS query of the lab, in milliseconds. */
@@ -44,7 +44,7 @@ export type CaseRun =
 export interface CaseBase {
   readonly id: string;
   readonly truth: string;
-  readonly signs: readonly Sign[];
+  readonly signs: readonly CaseSign[];
 }
 
 /**
@@ -79,13 +79,20 @@ function labelOf(evidence: Evidence): string {
   return `${evidence.feature}=${evidence.value}@${evidence.primary ? "target" : "reference"}`;
 }
 
-function signLabel(sign: Sign): string {
-  return `${sign.feature}=${sign.value}@${sign.primary ? "target" : "reference"}`;
+function signLabel(sign: CaseSign): string {
+  return signsOf(sign)
+    .map((one) => `${one.feature}=${one.value}@${one.primary ? "target" : "reference"}`)
+    .join(" or ");
 }
 
-/** This function gives the signs of a case that the evidence does not show. */
-export function missingSigns(signs: readonly Sign[], evidence: readonly Evidence[]): Sign[] {
-  return signs.filter((sign) => !evidence.some((item) => item.feature === sign.feature && item.primary === sign.primary && item.value === sign.value));
+/** This function tells if the evidence shows one sign. */
+function shows(evidence: readonly Evidence[], sign: Sign): boolean {
+  return evidence.some((item) => item.feature === sign.feature && item.primary === sign.primary && item.value === sign.value);
+}
+
+/** This function gives the signs of a case that the evidence does not show. A group with no shown sign is not shown. */
+export function missingSigns(signs: readonly CaseSign[], evidence: readonly Evidence[]): CaseSign[] {
+  return signs.filter((sign) => !signsOf(sign).some((one) => shows(evidence, one)));
 }
 
 /**
