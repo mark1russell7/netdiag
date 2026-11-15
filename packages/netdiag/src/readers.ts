@@ -1,10 +1,12 @@
 import { addressKind, canonicalAddress } from "./address/index.ts";
 import type { Evidence } from "./diagnosis/model.ts";
-import type { Fact, FactKind } from "./fact.ts";
+import { isFactOf, type Fact, type FactKind } from "./fact.ts";
 import {
   DNS_ANSWER,
   HTTP_RESPONSE,
   ICMP_ECHO,
+  PATH_REPORT,
+  PATH_TRACE,
   TCP_CONNECT,
   TLS_HANDSHAKE,
   type ConnectOutcome,
@@ -14,6 +16,8 @@ import {
   type HandshakeOutcome,
   type HttpResponse,
   type IcmpEcho,
+  type PathReport,
+  type PathTrace,
   type TcpConnect,
   type TlsHandshake,
   type Trust,
@@ -151,6 +155,8 @@ interface Facts {
   readonly tls: Fact<TlsHandshake>[];
   readonly http: Fact<HttpResponse>[];
   readonly icmp: Fact<IcmpEcho>[];
+  readonly report: Fact<PathReport>[];
+  readonly trace: Fact<PathTrace>[];
 }
 
 const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
@@ -159,6 +165,8 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["tls", TLS_HANDSHAKE],
   ["http", HTTP_RESPONSE],
   ["icmp", ICMP_ECHO],
+  ["report", PATH_REPORT],
+  ["trace", PATH_TRACE],
 ];
 
 /**
@@ -167,14 +175,16 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
  * - For `dns.answer`, one answer `ok` of a name and a resolver decides. For `dns.address`, one private address decides.
  * - The order of the facts is the order of the runner. A ratio uses the last TCP connect before the handshake or the request.
- * - An ICMP echo fact gives `gateway.reply` for the gateway, and `icmp.reply` for each other address. With replies to
- *   `LOSS_MIN_SENT` requests or more, it also gives `path.loss`.
+ * - An ICMP echo fact gives `gateway.reply` for the gateway, and `icmp.reply` for each other address.
+ * - An ICMP echo fact with replies to `LOSS_MIN_SENT` requests or more gives `path.loss`. A report of `mtr` gives it from
+ *   the last hop, when the address answered there.
+ * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
  */
 export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {
   const primaryOf = options.primary ?? (() => true);
   const slots = new Map<string, Slot>();
   const skipped: Skipped[] = [];
-  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [] };
+  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [] };
 
   for (const fact of facts) {
     const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
@@ -277,11 +287,40 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
       continue;
     }
     note(feature, address, fact, value);
-    if (echo.received > 0 && echo.sent >= LOSS_MIN_SENT) note("path.loss", address, fact, binOf(PATH_LOSS_BINS, echo.received / echo.sent));
+  }
+
+  // The feature path.loss comes from ping and from mtr. The facts of both kinds go in the order of the runner.
+  const lossFacts = new Set<Fact>([...sorted.icmp, ...sorted.report]);
+  for (const fact of facts) {
+    if (!lossFacts.has(fact)) continue;
+    const loss = lossOf(fact);
+    if (typeof loss === "string") skipped.push({ fact: fact.id, reason: loss });
+    else if (loss !== undefined) note("path.loss", loss.address, fact, binOf(PATH_LOSS_BINS, loss.share));
+  }
+
+  for (const fact of sorted.trace) {
+    skipped.push({ fact: fact.id, reason: "The catalog has no feature for the hops of a path. The lab runs fit such a feature later." });
   }
 
   const evidence = [...slots.values()].map(({ feature, value, primary, facts: ids }) => ({ feature, value, primary, facts: ids }));
   return { evidence, skipped };
+}
+
+/**
+ * This function gives the share of the probes with an answer, for the feature `path.loss`. It gives a reason when a report
+ * of `mtr` gives no evidence, and `undefined` when an echo fact gives no share.
+ */
+function lossOf(fact: Fact): { readonly address: string; readonly share: number } | string | undefined {
+  if (isFactOf(ICMP_ECHO, fact)) {
+    const echo = fact.value;
+    return echo.received > 0 && echo.sent >= LOSS_MIN_SENT ? { address: canonicalAddress(echo.address), share: echo.received / echo.sent } : undefined;
+  }
+  if (!isFactOf(PATH_REPORT, fact)) return undefined;
+  const report = fact.value;
+  const last = report.hops.at(-1);
+  if (report.outcome !== "reached" || last === undefined) return `The outcome "${report.outcome}" of ${fact.kind} has no value of the feature path.loss.`;
+  if (last.sent < LOSS_MIN_SENT) return `The last hop of the report has ${last.sent} probes. The feature path.loss needs ${LOSS_MIN_SENT} probes or more.`;
+  return { address: canonicalAddress(report.address), share: last.received / last.sent };
 }
 
 function statusValue(response: HttpResponse): string | undefined {

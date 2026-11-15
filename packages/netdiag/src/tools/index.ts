@@ -24,3 +24,15 @@ export {
   readPing,
   type PingInput,
 } from "./ping.ts";
+export {
+  DEFAULT_TRACE_HOPS,
+  DEFAULT_TRACE_WAIT_MS,
+  MAX_TRACE_HOPS,
+  TRACE_QUERIES,
+  readTraceroute,
+  tracerouteAvailability,
+  tracerouteCommand,
+  tracerouteProbe,
+  type TraceInput,
+} from "./traceroute.ts";
+export { DEFAULT_MTR_CYCLES, MAX_MTR_CYCLES, MTR_GRACE_MS, mtrAvailability, mtrCommand, mtrProbe, readMtr, type MtrInput } from "./mtr.ts";

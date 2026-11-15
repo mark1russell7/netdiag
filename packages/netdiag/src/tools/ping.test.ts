@@ -1,7 +1,8 @@
 import { fakeClock, type FakeClock } from "@mark1russell7/algebra/clock";
+import { fakeToolHost, type FakeRule, type FakeToolHost } from "@netdiag/fixtures";
 import { describe, expect, it } from "vitest";
 import { ICMP_ECHO, createRunner, scopeOf, type Fact, type IcmpEcho, type Runner } from "../index.ts";
-import { TOOL_LICENSES, pingCommand, pingProbe, readPing, toolLicense, type ToolHost, type ToolOutput, type ToolRaw, type ToolRunOptions } from "./index.ts";
+import { TOOL_LICENSES, mtrProbe, pingCommand, pingProbe, readPing, toolLicense, tracerouteProbe, type ToolOutput, type ToolRaw, type ToolRunOptions } from "./index.ts";
 
 // The samples of Windows come from ping.exe of Windows 11. The samples of Linux (iputils) and macOS follow the formats
 // of these tools, with documentation addresses.
@@ -223,24 +224,11 @@ describe("readPing", () => {
   });
 });
 
-interface Call {
-  readonly command: string;
-  readonly args: readonly string[];
-  readonly options: ToolRunOptions;
-}
-
-/** A fake host: it records each command, moves the clock, and gives the output of the first rule that matches. */
-function fakeHost(platform: string, clock: FakeClock, rules: readonly [(args: readonly string[]) => boolean, ToolOutput][]): ToolHost & { readonly calls: Call[] } {
-  const calls: Call[] = [];
-  return {
-    platform,
-    calls,
-    async run(command, args, options) {
-      calls.push({ command, args, options });
-      await clock.advance(25);
-      return rules.find(([match]) => match(args))?.[1] ?? { exitCode: 1, stdout: "", stderr: "", error: "no rule" };
-    },
-  };
+/** A fake host that moves the clock by 25 ms for each command. */
+function fakeHost(platform: string, clock: FakeClock, rules: readonly FakeRule[]): FakeToolHost<ToolRunOptions> {
+  return fakeToolHost<ToolRunOptions>(platform, rules, async () => {
+    await clock.advance(25);
+  });
 }
 
 function runnerOf(clock: FakeClock): Runner {
@@ -249,7 +237,7 @@ function runnerOf(clock: FakeClock): Runner {
   return createRunner({ scope: scope.value, clock });
 }
 
-const VERSION: [(args: readonly string[]) => boolean, ToolOutput] = [(args) => args[0] === "-V", { exitCode: 0, stdout: "ping from iputils 20240117\n", stderr: "" }];
+const VERSION: FakeRule =[(args) => args[0] === "-V", { exitCode: 0, stdout: "ping from iputils 20240117\n", stderr: "" }];
 
 describe("the probe icmp.ping", () => {
   it("gives one fact icmp.echo with the times of the clock and the tool in its source", async () => {
@@ -303,8 +291,10 @@ describe("the licenses of the tools", () => {
   it("have one row for each tool, and a row with the use adapter for the probe of each adapter", () => {
     const tools = TOOL_LICENSES.map((row) => row.tool);
     expect(new Set(tools).size).toBe(tools.length);
-    const probe = pingProbe(fakeHost("linux", fakeClock(), []));
-    expect(toolLicense(probe.tool ?? "")).toMatchObject({ use: "adapter", probe: probe.id });
+    const host = fakeHost("linux", fakeClock(), []);
+    for (const probe of [pingProbe(host), tracerouteProbe(host), mtrProbe(host)]) {
+      expect(toolLicense(probe.tool ?? "")).toMatchObject({ use: "adapter", probe: probe.id });
+    }
     for (const row of TOOL_LICENSES) if (row.use === "not-bundled") expect(row.probe).toBeUndefined();
   });
 });

@@ -87,7 +87,11 @@ NONE: build/index.chunk.d.ts#NONE
 type Observation: build/kinds.chunk.d.ts#Observation
 PARTS: build/index.chunk.d.ts#PARTS
 PATH_LOSS_BINS: build/index.d.ts#PATH_LOSS_BINS
+PATH_REPORT: build/kinds.chunk.d.ts#PATH_REPORT
+PATH_TRACE: build/kinds.chunk.d.ts#PATH_TRACE
 type Part: build/index.chunk.d.ts#Part
+PathReport: build/kinds.chunk.d.ts#PathReport
+PathTrace: build/kinds.chunk.d.ts#PathTrace
 type PortLedger: build/index.d.ts#PortLedger
 type Prediction: build/index.chunk.d.ts#Prediction
 type Probe: build/kinds.chunk.d.ts#Probe
@@ -100,6 +104,7 @@ type Reach: build/index.chunk.d.ts#Reach
 ReadOptions: build/index.d.ts#ReadOptions
 Reading: build/index.d.ts#Reading
 RecordType: build/kinds.chunk.d.ts#RecordType
+ReportHop: build/kinds.chunk.d.ts#ReportHop
 type Runner: build/index.d.ts#Runner
 type RunnerOptions: build/index.d.ts#RunnerOptions
 STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
@@ -121,6 +126,7 @@ TLS_PROBE: build/index.d.ts#TLS_PROBE
 TLS_RATIO_BINS: build/index.d.ts#TLS_RATIO_BINS
 TLS_TRUST_VALUES: build/index.d.ts#TLS_TRUST_VALUES
 TOOL_KINDS: build/kinds.chunk.d.ts#TOOL_KINDS
+TRACE_OUTCOMES: build/kinds.chunk.d.ts#TRACE_OUTCOMES
 TRUSTS: build/kinds.chunk.d.ts#TRUSTS
 type Target: build/kinds.chunk.d.ts#Target
 TcpConnect: build/kinds.chunk.d.ts#TcpConnect
@@ -133,6 +139,8 @@ type TlsInput: build/index.d.ts#TlsInput
 type TlsPhase: build/index.d.ts#TlsPhase
 type TlsProbeOptions: build/index.d.ts#TlsProbeOptions
 type TlsRaw: build/index.d.ts#TlsRaw
+TraceHop: build/kinds.chunk.d.ts#TraceHop
+TraceOutcome: build/kinds.chunk.d.ts#TraceOutcome
 Trust: build/kinds.chunk.d.ts#Trust
 UNKNOWN: build/index.chunk.d.ts#UNKNOWN
 type ValueOf: build/kinds.chunk.d.ts#ValueOf
@@ -249,14 +257,22 @@ scoreLab: build/index.chunk.d.ts#scoreLab
 ## ./tools (build/tools.d.ts): names
 
 AVAILABILITY_TIMEOUT_MS: build/tools.d.ts#AVAILABILITY_TIMEOUT_MS
+DEFAULT_MTR_CYCLES: build/tools.d.ts#DEFAULT_MTR_CYCLES
 DEFAULT_PING_COUNT: build/tools.d.ts#DEFAULT_PING_COUNT
 DEFAULT_PING_WAIT_MS: build/tools.d.ts#DEFAULT_PING_WAIT_MS
+DEFAULT_TRACE_HOPS: build/tools.d.ts#DEFAULT_TRACE_HOPS
+DEFAULT_TRACE_WAIT_MS: build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
+MAX_MTR_CYCLES: build/tools.d.ts#MAX_MTR_CYCLES
 MAX_PING_COUNT: build/tools.d.ts#MAX_PING_COUNT
+MAX_TRACE_HOPS: build/tools.d.ts#MAX_TRACE_HOPS
+MTR_GRACE_MS: build/tools.d.ts#MTR_GRACE_MS
+type MtrInput: build/tools.d.ts#MtrInput
 PING6_LAST_WAIT_MS: build/tools.d.ts#PING6_LAST_WAIT_MS
 PING_INTERVAL_MS: build/tools.d.ts#PING_INTERVAL_MS
 type PingInput: build/tools.d.ts#PingInput
 TOOL_LICENSES: build/tools.d.ts#TOOL_LICENSES
 TOOL_MARGIN_MS: build/tools.d.ts#TOOL_MARGIN_MS
+TRACE_QUERIES: build/tools.d.ts#TRACE_QUERIES
 type ToolCommand: build/tools.d.ts#ToolCommand
 type ToolHost: build/tools.d.ts#ToolHost
 type ToolLicense: build/tools.d.ts#ToolLicense
@@ -264,13 +280,22 @@ type ToolOutput: build/tools.d.ts#ToolOutput
 type ToolRaw: build/tools.d.ts#ToolRaw
 type ToolRunOptions: build/tools.d.ts#ToolRunOptions
 type ToolUse: build/tools.d.ts#ToolUse
+type TraceInput: build/tools.d.ts#TraceInput
 availabilityOf: build/tools.d.ts#availabilityOf
+mtrAvailability: build/tools.d.ts#mtrAvailability
+mtrCommand: build/tools.d.ts#mtrCommand
+mtrProbe: build/tools.d.ts#mtrProbe
 pingAvailability: build/tools.d.ts#pingAvailability
 pingCommand: build/tools.d.ts#pingCommand
 pingProbe: build/tools.d.ts#pingProbe
+readMtr: build/tools.d.ts#readMtr
 readPing: build/tools.d.ts#readPing
+readTraceroute: build/tools.d.ts#readTraceroute
 runTool: build/tools.d.ts#runTool
 toolLicense: build/tools.d.ts#toolLicense
+tracerouteAvailability: build/tools.d.ts#tracerouteAvailability
+tracerouteCommand: build/tools.d.ts#tracerouteCommand
+tracerouteProbe: build/tools.d.ts#tracerouteProbe
 
 ## Declarations
 
@@ -1020,6 +1045,30 @@ interface Observation<V = unknown> {
   readonly time?: FactTime | undefined;
 }
 
+### build/kinds.chunk.d.ts#PATH_REPORT
+declare const PATH_REPORT: FactKind<PathReport>;
+
+### build/kinds.chunk.d.ts#PATH_TRACE
+declare const PATH_TRACE: FactKind<PathTrace>;
+
+### build/kinds.chunk.d.ts#PathReport
+interface PathReport {
+  readonly address: string;
+  readonly outcome: TraceOutcome;
+  readonly cycles: number;
+  readonly hops: readonly ReportHop[];
+  readonly detail?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#PathTrace
+interface PathTrace {
+  readonly address: string;
+  readonly outcome: TraceOutcome;
+  readonly maxHops: number;
+  readonly hops: readonly TraceHop[];
+  readonly detail?: string | undefined;
+}
+
 ### build/kinds.chunk.d.ts#Probe
 interface Probe<I, R> {
   readonly id: string;
@@ -1050,6 +1099,17 @@ declare const RECORD_TYPES: readonly ["A", "AAAA"];
 ### build/kinds.chunk.d.ts#RecordType
 type RecordType = (typeof RECORD_TYPES)[number];
 
+### build/kinds.chunk.d.ts#ReportHop
+interface ReportHop {
+  readonly ttl: number;
+  readonly address?: string | undefined;
+  readonly sent: number;
+  readonly received: number;
+  readonly bestMs?: number | undefined;
+  readonly meanMs?: number | undefined;
+  readonly worstMs?: number | undefined;
+}
+
 ### build/kinds.chunk.d.ts#TCP_CONNECT
 declare const TCP_CONNECT: FactKind<TcpConnect>;
 
@@ -1058,6 +1118,9 @@ declare const TLS_HANDSHAKE: FactKind<TlsHandshake>;
 
 ### build/kinds.chunk.d.ts#TOOL_KINDS
 declare const TOOL_KINDS: readonly FactKind<unknown>[];
+
+### build/kinds.chunk.d.ts#TRACE_OUTCOMES
+declare const TRACE_OUTCOMES: readonly ["reached", "stopped", "unreachable", "error"];
 
 ### build/kinds.chunk.d.ts#TRUSTS
 declare const TRUSTS: readonly ["public", "private", "none"];
@@ -1106,6 +1169,19 @@ interface TlsHandshake {
   readonly code?: string | undefined;
   readonly certificate?: TlsCertificate | undefined;
 }
+
+### build/kinds.chunk.d.ts#TraceHop
+interface TraceHop {
+  readonly ttl: number;
+  readonly addresses: readonly string[];
+  readonly sent: number;
+  readonly received: number;
+  readonly rttMs: readonly number[];
+  readonly unreachable?: string | undefined;
+}
+
+### build/kinds.chunk.d.ts#TraceOutcome
+type TraceOutcome = (typeof TRACE_OUTCOMES)[number];
 
 ### build/kinds.chunk.d.ts#Trust
 type Trust = (typeof TRUSTS)[number];
@@ -1161,14 +1237,39 @@ declare function layerRank(layer: Layer): number;
 ### build/tools.d.ts#AVAILABILITY_TIMEOUT_MS
 export declare const AVAILABILITY_TIMEOUT_MS = 5e3;
 
+### build/tools.d.ts#DEFAULT_MTR_CYCLES
+export declare const DEFAULT_MTR_CYCLES = 20;
+
 ### build/tools.d.ts#DEFAULT_PING_COUNT
 export declare const DEFAULT_PING_COUNT = 4;
 
 ### build/tools.d.ts#DEFAULT_PING_WAIT_MS
 export declare const DEFAULT_PING_WAIT_MS = 1e3;
 
+### build/tools.d.ts#DEFAULT_TRACE_HOPS
+export declare const DEFAULT_TRACE_HOPS = 30;
+
+### build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
+export declare const DEFAULT_TRACE_WAIT_MS = 1e3;
+
+### build/tools.d.ts#MAX_MTR_CYCLES
+export declare const MAX_MTR_CYCLES = 100;
+
 ### build/tools.d.ts#MAX_PING_COUNT
 export declare const MAX_PING_COUNT = 100;
+
+### build/tools.d.ts#MAX_TRACE_HOPS
+export declare const MAX_TRACE_HOPS = 64;
+
+### build/tools.d.ts#MTR_GRACE_MS
+export declare const MTR_GRACE_MS = 5e3;
+
+### build/tools.d.ts#MtrInput
+interface MtrInput {
+  readonly address: string;
+  readonly cycles?: number | undefined;
+  readonly maxHops?: number | undefined;
+}
 
 ### build/tools.d.ts#PING6_LAST_WAIT_MS
 export declare const PING6_LAST_WAIT_MS = 1e4;
@@ -1188,6 +1289,9 @@ export declare const TOOL_LICENSES: readonly ToolLicense[];
 
 ### build/tools.d.ts#TOOL_MARGIN_MS
 export declare const TOOL_MARGIN_MS = 3e3;
+
+### build/tools.d.ts#TRACE_QUERIES
+export declare const TRACE_QUERIES = 3;
 
 ### build/tools.d.ts#ToolCommand
 interface ToolCommand {
@@ -1239,8 +1343,24 @@ interface ToolRunOptions {
 ### build/tools.d.ts#ToolUse
 type ToolUse = "adapter" | "not-bundled";
 
+### build/tools.d.ts#TraceInput
+interface TraceInput {
+  readonly address: string;
+  readonly maxHops?: number | undefined;
+  readonly waitMs?: number | undefined;
+}
+
 ### build/tools.d.ts#availabilityOf
 export declare function availabilityOf(tool: string, output: ToolOutput, version?: RegExp): Availability;
+
+### build/tools.d.ts#mtrAvailability
+export declare function mtrAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#mtrCommand
+export declare function mtrCommand(platform: string, input: MtrInput): ToolCommand | undefined;
+
+### build/tools.d.ts#mtrProbe
+export declare function mtrProbe(host: ToolHost): Probe<MtrInput, ToolRaw>;
 
 ### build/tools.d.ts#pingAvailability
 export declare function pingAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
@@ -1251,11 +1371,32 @@ export declare function pingCommand(platform: string, input: PingInput): ToolCom
 ### build/tools.d.ts#pingProbe
 export declare function pingProbe(host: ToolHost): Probe<PingInput, ToolRaw>;
 
+### build/tools.d.ts#readMtr
+export declare function readMtr(raw: ToolRaw, input: {
+  readonly address: string;
+  readonly cycles?: number | undefined;
+}): PathReport;
+
 ### build/tools.d.ts#readPing
 export declare function readPing(raw: ToolRaw, address: string): IcmpEcho;
+
+### build/tools.d.ts#readTraceroute
+export declare function readTraceroute(raw: ToolRaw, input: {
+  readonly address: string;
+  readonly maxHops?: number | undefined;
+}): PathTrace;
 
 ### build/tools.d.ts#runTool
 export declare function runTool(host: ToolHost, tool: ToolCommand, context: ProbeContext): Promise<ToolRaw>;
 
 ### build/tools.d.ts#toolLicense
 export declare function toolLicense(tool: string): ToolLicense | undefined;
+
+### build/tools.d.ts#tracerouteAvailability
+export declare function tracerouteAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#tracerouteCommand
+export declare function tracerouteCommand(platform: string, input: TraceInput): ToolCommand | undefined;
+
+### build/tools.d.ts#tracerouteProbe
+export declare function tracerouteProbe(host: ToolHost): Probe<TraceInput, ToolRaw>;
