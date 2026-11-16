@@ -47,7 +47,7 @@ describe("faultPlan and applySteps", () => {
   it("turns the offload off before the MTU drop, faces the two servers, and reverses each step", () => {
     const mtu = KERNEL_CASES.find((c) => c.id === "path.mtu")!;
     const plan = faultPlan(mtu.fault, PEERS);
-    const options = { above: 1200, peers: [PEERS.target, PEERS.reference] };
+    const options = { above: 1200, protocol: "all", peers: [PEERS.target, PEERS.reference] };
     expect(plan.apply).toEqual([
       { op: "offload", on: false, at: TOWARD_TARGET },
       { op: "offload", on: false, at: "target" },

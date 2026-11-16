@@ -25,7 +25,7 @@ export const TOWARD_TARGET: HopPlace = { hop: KERNEL_HOP, toward: "target" };
  *   drops each packet from the client and to it.
  * - `netem`: `tc netem` with the spec on the egress of the target.
  * - `sysctl`: the sysctls of the namespace of the target, and the values that put them back.
- * - `mtu`: the router drops each packet from the target and the reference host above `above` bytes.
+ * - `mtu`: the router drops each packet from the target and the reference host above `above` bytes, of each protocol.
  */
 export type KernelFault =
   | { readonly kind: "network"; readonly fault: Exclude<NetworkFault, "mtu">; readonly at: FaultPlace; readonly options?: FaultOptions | undefined }
@@ -104,9 +104,15 @@ export const KERNEL_CASES: readonly KernelCase[] = [
   {
     id: "path.mtu",
     truth: "path.mtu",
-    summary: "The router drops each packet above 1200 bytes from the target and the reference host. Small packets pass.",
+    summary: "The router drops each packet above 1200 bytes from the target and the reference host, with no ICMP message. Small packets pass.",
     fault: { kind: "mtu", at: TOWARD_TARGET, above: 1200 },
-    signs: [sign("tcp.connect", "connected"), sign("tls.handshake", "timeout"), sign("tls.handshake", "timeout", false)],
+    signs: [
+      sign("tcp.connect", "connected"),
+      sign("tls.handshake", "timeout"),
+      sign("tls.handshake", "timeout", false),
+      sign("path.mtu", "silent"),
+      sign("path.mtu", "silent", false),
+    ],
   },
   {
     id: "host.down",
@@ -156,8 +162,9 @@ export function faultPlan(fault: KernelFault | null, peers: KernelPeers): FaultP
     case "sysctl":
       return { apply: [{ op: "sysctl", values: fault.values }], lift: [{ op: "sysctl", values: fault.undo }, forget] };
     case "mtu": {
-      // With TSO, GSO and GRO off, the length match acts on segments, not on super-packets of up to 64 KB.
-      const options: FaultOptions = { above: fault.above, peers: [peers.target, peers.reference] };
+      // With TSO, GSO and GRO off, the length match acts on segments, not on super-packets of up to 64 KB. The drop
+      // acts on each protocol, as a real black hole does. Thus the MTU search with ping also sees it.
+      const options: FaultOptions = { above: fault.above, protocol: "all", peers: [peers.target, peers.reference] };
       return {
         apply: [{ op: "offload", on: false, at: fault.at }, { op: "offload", on: false, at: "target" }, { op: "fault", kind: "mtu", at: fault.at, options }],
         lift: [{ op: "lift", kind: "mtu", at: fault.at, options }, { op: "offload", on: true, at: fault.at }, { op: "offload", on: true, at: "target" }, forget],
