@@ -19,6 +19,7 @@ import {
   type LabRecord,
   type ProbeOutcome,
   type ReadOptions,
+  type VisitStep,
 } from "@mark1russell7/netdiag";
 import { REFERENCE_NAME, TARGET_NAME, signsOf, type CaseSign, type LabCase, type LabHosts, type Sign } from "./cases.ts";
 import { startWorld, type LabTrust, type World } from "./world.ts";
@@ -51,10 +52,17 @@ export interface CaseBase {
  * The result of the visit of one case.
  *
  * - `visited`: the facts of the probes, the options that read them, and a problem for each probe that did not end.
+ *   A visit of `visitTarget` also keeps its `steps`, with the role and the host of each step.
  * - `no-visit`: the world of the case did not start. The reason tells why.
  */
 export type Visit =
-  | { readonly status: "visited"; readonly facts: readonly Fact[]; readonly read: ReadOptions; readonly problems: readonly string[] }
+  | {
+      readonly status: "visited";
+      readonly facts: readonly Fact[];
+      readonly read: ReadOptions;
+      readonly problems: readonly string[];
+      readonly steps?: readonly VisitStep[] | undefined;
+    }
   | { readonly status: "no-visit"; readonly reason: string };
 
 /** The visits of one round of a lab. A lab can keep one world for each round, and change only the fault of each case. */

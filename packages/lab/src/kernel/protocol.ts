@@ -1,4 +1,4 @@
-import { LAYERS, type Fact, type Grant, type VisitInput, type VisitStep } from "@mark1russell7/netdiag";
+import { LAYERS, lookupGrants, type Fact, type Grant, type VisitInput, type VisitStep } from "@mark1russell7/netdiag";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import type { Visit } from "../run.ts";
@@ -20,6 +20,11 @@ export interface AgentPlan {
   readonly grants: readonly string[];
   readonly pingCount: number;
   readonly mtrCycles: number;
+  /**
+   * `true` looks up the owner and the origin AS of each hop of `mtr`, as `--owners` of `netdiag check` does. The agent
+   * refuses each lookup that leaves the lab. The scope grants the hosts of the lookups by name.
+   */
+  readonly owners: boolean;
   /** The path of the PEM file of the lab root in the client container. */
   readonly root: string;
   readonly dnsTimeoutMs: number;
@@ -51,6 +56,7 @@ export function agentArgs(plan: AgentPlan): string[] {
     String(plan.pingCount),
     "--mtr",
     String(plan.mtrCycles),
+    ...(plan.owners ? ["--owners"] : []),
     "--root",
     plan.root,
     "--dns-timeout",
@@ -86,6 +92,7 @@ export function parseAgentArgs(args: readonly string[]): AgentPlan {
       grant: { type: "string", multiple: true },
       ping: { type: "string" },
       mtr: { type: "string" },
+      owners: { type: "boolean" },
       root: { type: "string" },
       "dns-timeout": { type: "string" },
       "http-timeout": { type: "string" },
@@ -103,15 +110,26 @@ export function parseAgentArgs(args: readonly string[]): AgentPlan {
     grants,
     pingCount: count(values.ping, "--ping"),
     mtrCycles: count(values.mtr, "--mtr"),
+    owners: values.owners === true,
     root: required(values.root, "--root"),
     dnsTimeoutMs: count(values["dns-timeout"], "--dns-timeout"),
     httpTimeoutMs: count(values["http-timeout"], "--http-timeout"),
   };
 }
 
-/** This function gives the input of the visit of a plan. Each grant is a range that the lab owns. */
+/**
+ * The reason in the note of each grant of the lookups. `lookupGrants` of netdiag gives the grants, and `planCheck` of
+ * the CLI gives the same hosts for `--owners`. Without them, the scope refuses the probes of the lookups.
+ */
+export const LOOKUP_REASON = "the lookups of the kernel lab";
+
+/**
+ * This function gives the input of the visit of a plan. Each range of the plan is a range that the lab owns. A plan
+ * with `owners` also grants the hosts of `lookupGrants(LOOKUP_REASON)`.
+ */
 export function visitInputOf(plan: AgentPlan): VisitInput {
-  const grants: Grant[] = plan.grants.map((cidr) => ({ kind: "range", cidr, basis: "owned", note: "a host of the kernel lab" }));
+  const ranges: Grant[] = plan.grants.map((cidr) => ({ kind: "range", cidr, basis: "owned", note: "a host of the kernel lab" }));
+  const grants = plan.owners ? [...ranges, ...lookupGrants(LOOKUP_REASON)] : ranges;
   return {
     target: { host: plan.target, port: plan.port },
     references: plan.references.map((host) => ({ host, port: plan.port })),
@@ -133,6 +151,7 @@ const ROLE = z.enum(["target", "reference", "gateway", "local"]);
 const FACT_LINE = z.object({
   ev: z.literal("fact"),
   role: ROLE,
+  host: z.string(),
   fact: z.object({
     id: z.string(),
     kind: z.string(),
@@ -144,7 +163,7 @@ const FACT_LINE = z.object({
   }),
 });
 
-const PROBLEM_LINE = z.object({ ev: z.literal("problem"), problem: z.string() });
+const PROBLEM_LINE = z.object({ ev: z.literal("problem"), role: ROLE, host: z.string(), problem: z.string() });
 const FAIL_LINE = z.object({ ev: z.literal("fail"), why: z.string() });
 
 /**
@@ -155,6 +174,7 @@ const FAIL_LINE = z.object({ ev: z.literal("fail"), why: z.string() });
  * - A line `fail` gives no visit. A missing line `done` and a line that is not valid give a problem.
  * - `ended` is the reason that the wait for the last line stopped, when it did not get one.
  * - `gateway` is the address of the gateway of the plan.
+ * - `steps` keeps each fact and each problem with its role and its host. `reportOf` of the CLI reads them.
  *
  * The readers check each value of a fact against its kind.
  */
@@ -162,6 +182,7 @@ export function visitOf(lines: readonly { readonly ev: string }[], ended?: strin
   const facts: Fact[] = [];
   const primary = new Set<string>();
   const problems: string[] = [];
+  const steps: VisitStep[] = [];
   let done = false;
   for (const line of lines) {
     switch (line.ev) {
@@ -173,12 +194,18 @@ export function visitOf(lines: readonly { readonly ev: string }[], ended?: strin
         }
         const fact: Fact = parsed.data.fact;
         facts.push(fact);
+        steps.push({ kind: "fact", role: parsed.data.role, host: parsed.data.host, fact });
         if (parsed.data.role === "target") primary.add(fact.id);
         break;
       }
       case "problem": {
         const parsed = PROBLEM_LINE.safeParse(line);
-        problems.push(parsed.success ? parsed.data.problem : "The agent wrote a problem line that is not valid.");
+        if (!parsed.success) {
+          problems.push("The agent wrote a problem line that is not valid.");
+          break;
+        }
+        problems.push(parsed.data.problem);
+        steps.push({ kind: "problem", role: parsed.data.role, host: parsed.data.host, problem: parsed.data.problem });
         break;
       }
       case "fail": {
@@ -193,5 +220,5 @@ export function visitOf(lines: readonly { readonly ev: string }[], ended?: strin
     }
   }
   if (!done) problems.push(`The agent did not end: ${ended ?? "it wrote no line done."}`);
-  return { status: "visited", facts, read: { primary: (fact) => primary.has(fact.id), gateway }, problems };
+  return { status: "visited", facts, read: { primary: (fact) => primary.has(fact.id), gateway }, problems, steps };
 }

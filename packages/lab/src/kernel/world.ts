@@ -85,6 +85,7 @@ export function kernelPlan(addresses: KernelAddresses): AgentPlan {
     grants: [addresses.target, addresses.reference, addresses.resolver, addresses.gateway].map((address) => `${address}/32`),
     pingCount: KERNEL_PING_COUNT,
     mtrCycles: 0,
+    owners: false,
     root: KERNEL_ROOT_PATH,
     dnsTimeoutMs: DNS_TIMEOUT_MS,
     httpTimeoutMs: HTTP_TIMEOUT_MS,
@@ -94,9 +95,12 @@ export function kernelPlan(addresses: KernelAddresses): AgentPlan {
 /**
  * This function gives the plan of the agent for a where case. The target is its address, so a lost DNS answer does not
  * stop the visit. The plan has no reference host and no ping. It has `WHERE_CYCLES` cycles of `mtr`.
+ *
+ * The plan looks up the owner and the origin AS of each hop, as `netdiag check --owners` does. Each hop of the lab
+ * has a private address, so each lookup gives the outcome `special`.
  */
 export function wherePlan(addresses: KernelAddresses): AgentPlan {
-  return { ...kernelPlan(addresses), target: addresses.target, references: [], pingCount: 0, mtrCycles: WHERE_CYCLES };
+  return { ...kernelPlan(addresses), target: addresses.target, references: [], pingCount: 0, mtrCycles: WHERE_CYCLES, owners: true };
 }
 
 /** The HTTPS host of the target on the stock Node image, with its script as a file. */

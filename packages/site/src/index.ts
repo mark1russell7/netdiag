@@ -7,7 +7,7 @@ import { byId, copyText, h, setupTheme } from "@mark1russell7/site-pages/chrome"
 import { examples, verdict } from "@mark1russell7/site-pages/demo";
 import { GAIN_RESOLUTION, NONE, UNKNOWN, type Diagnosis, type Evidence } from "@mark1russell7/netdiag/diagnosis";
 import { readCheckReport, type CheckReport } from "@mark1russell7/netdiag-cli/report";
-import { readSamples } from "@netdiag/lab/samples";
+import { readSamples, type CheckSample } from "@netdiag/lab/samples";
 import {
   CATALOG,
   FEATURE_NAMES,
@@ -29,8 +29,9 @@ import {
   search,
   searchDone,
 } from "./model.ts";
-import { flowOf, ringsOf, timelineOf, type FlowItem, type RingId } from "./report-views.ts";
+import { flowOf, pathsOf, ringsOf, timelineOf, type FlowItem, type PathHop, type PathView, type RingId } from "./report-views.ts";
 import samplesJson from "./samples.json";
+import whereSamplesJson from "./where-samples.json";
 
 setupTheme(byId<HTMLButtonElement>("theme"), "theme");
 
@@ -496,14 +497,32 @@ const RING_NAMES: Readonly<Record<RingId, string>> = {
 };
 
 /** The ids of the views of a report. A file that is not a report empties them. */
-const REPORT_VIEWS = ["report-head", "report-rings", "report-flow", "report-causes", "report-next", "report-timeline"] as const;
+const REPORT_VIEWS = ["report-head", "report-rings", "report-path", "report-flow", "report-causes", "report-next", "report-timeline"] as const;
 
 const reportSample = byId<HTMLSelectElement>("report-sample");
 const reportFile = byId<HTMLInputElement>("report-file");
 const reportText = byId<HTMLTextAreaElement>("report-text");
-const sampleFile = readSamples(samplesJson);
-const samples = sampleFile.tag === "ok" ? sampleFile.value.samples : [];
-if (sampleFile.tag === "err") console.error("The samples of the lab have problems:", sampleFile.error);
+/** The files of the samples: the cases of the loopback lab, and the where cases of the kernel lab. */
+const SAMPLE_FILES = [
+  { key: "loopback", label: "The loopback lab", json: samplesJson },
+  { key: "where", label: "The kernel lab: where the loss starts", json: whereSamplesJson },
+] as const;
+
+/** A sample of a file of the lab. The key has the key of the file and the id of the case, because two files can have one id. */
+interface LabSample {
+  readonly key: string;
+  readonly file: string;
+  readonly sample: CheckSample;
+}
+
+const samples: readonly LabSample[] = SAMPLE_FILES.flatMap((file) => {
+  const read = readSamples(file.json);
+  if (read.tag === "err") {
+    console.error(`The samples of ${file.label} have problems:`, read.error);
+    return [];
+  }
+  return read.value.samples.map((sample) => ({ key: `${file.key}/${sample.id}`, file: file.key, sample }));
+});
 
 /** This function shows the problems of a file that is not a report, and removes the views of the last report. */
 function showReportProblems(what: string, problems: readonly string[]): void {
@@ -569,6 +588,43 @@ function showRings(report: CheckReport): void {
       ),
     ),
   );
+}
+
+/** The tag of a hop in the part where the loss starts, and of the hop before the part. */
+const PLACE_TAGS: Readonly<Record<PathHop["place"], string>> = { start: "the loss can start", bound: "clearly lower loss", clear: "" };
+
+/** This function shows a hop of a path: its TTL, its address, its loss and its network. */
+function pathHop(hop: PathHop): HTMLElement {
+  return h(
+    "li",
+    { class: `hop ${hop.place}` },
+    h("span", { class: "hop-ttl" }, String(hop.ttl)),
+    h("code", { class: "hop-address" }, hop.address ?? "*"),
+    h("span", { class: "hop-loss" }, h("span", { class: "meter", style: `--p: ${width(hop.loss ?? 0)}` }), h("span", { class: "pct" }, hop.lossText)),
+    h("span", { class: "hop-network" }, hop.network),
+    hop.place === "clear" ? null : h("span", { class: `tag ${hop.place === "start" ? "unusual" : "usual"}` }, PLACE_TAGS[hop.place]),
+  );
+}
+
+/** This function shows one report of mtr: the sentence of the start, the hops, and the networks where the loss can start. */
+function pathView(view: PathView): HTMLElement {
+  const hops = view.hops.length;
+  return h(
+    "div",
+    { class: "path" },
+    h("p", { class: "path-summary" }, h("b", {}, view.summary)),
+    h("p", { class: "note small" }, `From ${view.subject}: ${String(hops)} hop${hops === 1 ? "" : "s"}, ${String(view.cycles)} cycles of mtr.`, ...view.notes.map((note) => ` ${note}`)),
+    h("ol", { class: "hops", "aria-label": `The hops to ${view.address}` }, ...view.hops.map(pathHop)),
+    view.networks.length === 0
+      ? null
+      : h("ul", { class: "start-networks", "aria-label": "The networks where the loss can start" }, ...view.networks.map((network) => h("li", {}, h("b", {}, network.name), `: ${network.hops}`))),
+  );
+}
+
+/** This function shows the path of each report of mtr. A report with no report of mtr shows one short line. */
+function showPaths(report: CheckReport): void {
+  const views = pathsOf(report);
+  byId("report-path").replaceChildren(...(views.length === 0 ? [h("p", { class: "sp-empty" }, "No path: the check did not trace the path with mtr.")] : views.map(pathView)));
 }
 
 /** This function shows the observations of each layer. */
@@ -640,6 +696,7 @@ function showReport(report: CheckReport, source: string, truth?: string): void {
   byId("report-problems").replaceChildren();
   showReportHead(report, source, truth);
   showRings(report);
+  showPaths(report);
   showFlow(report);
   showCauses(byId("report-causes"), { causes: report.causes, used: report.evidence, ignored: report.ignored }, { count: 5, truth });
   showNext(report);
@@ -671,13 +728,21 @@ async function readReportFile(file: File): Promise<void> {
 
 /** This function shows the selected sample of the lab, or the first sample. */
 function showSample(): void {
-  const sample = samples.find((each) => each.id === reportSample.value) ?? samples[0];
-  if (sample === undefined) return;
-  reportSample.value = sample.id;
-  showReport(sample.report, `The lab case ${sample.id}`, sample.truth);
+  const chosen = samples.find((each) => each.key === reportSample.value) ?? samples[0];
+  if (chosen === undefined) return;
+  reportSample.value = chosen.key;
+  showReport(chosen.sample.report, `The lab case ${chosen.sample.id}`, chosen.sample.truth);
 }
 
-reportSample.replaceChildren(...samples.map((sample) => h("option", { value: sample.id }, `${sample.id}: ${sample.summary}`)));
+reportSample.replaceChildren(
+  ...SAMPLE_FILES.map((file) =>
+    h(
+      "optgroup",
+      { label: file.label },
+      ...samples.filter((each) => each.file === file.key).map((each) => h("option", { value: each.key }, `${each.sample.id}: ${each.sample.summary}`)),
+    ),
+  ),
+);
 reportSample.addEventListener("input", showSample);
 reportFile.addEventListener("change", () => {
   const file = reportFile.files?.[0];

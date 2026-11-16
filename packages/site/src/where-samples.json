@@ -1,0 +1,2156 @@
+{
+  "format": "netdiag-samples/1",
+  "commit": "107a06a82082393e7916b342e82f28e0d3a1176f",
+  "samples": [
+    {
+      "id": "loss.last-link",
+      "truth": "path.loss",
+      "summary": "The target loses 30% of the packets that it sends. The router loses none, so the loss starts after the router.",
+      "report": {
+        "format": "netdiag-check/1",
+        "target": "172.19.0.2:443",
+        "scheme": "https",
+        "path": "/",
+        "grants": [
+          {
+            "kind": "range",
+            "cidr": "172.19.0.2/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.19.0.4/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.19.0.5/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.18.0.2/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "data.iana.org",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.arin.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.db.ripe.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.apnic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.lacnic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.afrinic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "origin.asn.cymru.com",
+            "basis": "named",
+            "note": "a DNS zone of Team Cymru for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "origin6.asn.cymru.com",
+            "basis": "named",
+            "note": "a DNS zone of Team Cymru for the lookups of the kernel lab"
+          }
+        ],
+        "causes": [
+          {
+            "id": "path.loss",
+            "kind": "fault",
+            "summary": "A network on the path loses packets.",
+            "step": "Find the first hop with loss, and tell the provider of that network.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.403270793883514
+          },
+          {
+            "id": "wifi.weak",
+            "kind": "fault",
+            "summary": "The Wi-Fi signal is weak, so the link loses packets.",
+            "step": "Move nearer to the access point, or use a cable.",
+            "part": "wifi",
+            "reach": "shared",
+            "probability": 0.33605899490292823
+          },
+          {
+            "id": "unknown",
+            "kind": "unknown",
+            "summary": "The catalog does not have the cause.",
+            "step": "Collect more facts, and report the facts as a new fault of the catalog.",
+            "probability": 0.12555066124714792
+          },
+          {
+            "id": "tls.cert-invalid",
+            "kind": "fault",
+            "summary": "The certificate of the server is not valid: it expired, or it is for a different name.",
+            "step": "Renew the certificate of the server, or correct its names.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.08603110269514971
+          },
+          {
+            "id": "captive.portal",
+            "kind": "fault",
+            "summary": "A captive portal holds the traffic until you sign in.",
+            "step": "Open a web page in a browser, and accept the terms of the network.",
+            "part": "gateway",
+            "reach": "shared",
+            "probability": 0.022172964612151954
+          },
+          {
+            "id": "ipv6.broken",
+            "kind": "fault",
+            "summary": "IPv6 does not work, and IPv4 works.",
+            "step": "Examine the IPv6 settings of the router, or turn off IPv6 until the provider repairs it.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.014338517115858242
+          },
+          {
+            "id": "path.mtu",
+            "kind": "fault",
+            "summary": "Large packets do not pass, and no ICMP message tells the size (an MTU black hole).",
+            "step": "Lower the MTU of the interface or of the VPN, or enable MSS clamping on the router.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.002389752852643041
+          },
+          {
+            "id": "tls.mismatch",
+            "kind": "fault",
+            "summary": "The client and the server have no TLS version or cipher in common.",
+            "step": "Enable TLS 1.2 or TLS 1.3 with modern ciphers on the server.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.002389752852643041
+          },
+          {
+            "id": "filter.reset",
+            "kind": "fault",
+            "summary": "A device on the path resets the connections.",
+            "step": "Examine the firewalls and the filters of content on the path, and try a different network.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.0012318313673417743
+          },
+          {
+            "id": "none",
+            "kind": "none",
+            "summary": "The network has no fault.",
+            "step": "No step is necessary.",
+            "probability": 0.0009559011410572172
+          },
+          {
+            "id": "resolver.down",
+            "kind": "fault",
+            "summary": "The DNS resolver does not answer.",
+            "step": "Use a different DNS resolver, or examine the resolver of the router.",
+            "part": "resolver",
+            "reach": "shared",
+            "probability": 0.0009559011410572172
+          },
+          {
+            "id": "resolver.failing",
+            "kind": "fault",
+            "summary": "The DNS resolver answers with an error for each name.",
+            "step": "Use a different DNS resolver, and examine the DNSSEC settings of the resolver.",
+            "part": "resolver",
+            "reach": "shared",
+            "probability": 0.0009559011410572172
+          },
+          {
+            "id": "name.missing",
+            "kind": "fault",
+            "summary": "The name does not exist in DNS.",
+            "step": "Examine the spelling of the name, and the records of its DNS zone.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.0009559011410572172
+          },
+          {
+            "id": "filter.icmp",
+            "kind": "fault",
+            "summary": "A filter blocks ICMP. The host is up.",
+            "step": "No step is necessary for the service. Use TCP to examine the host.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.0009559011410572172
+          },
+          {
+            "id": "server.error",
+            "kind": "fault",
+            "summary": "The server answers with an error.",
+            "step": "Examine the logs of the server and of its upstream services.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.0009559011410572172
+          },
+          {
+            "id": "server.slow",
+            "kind": "fault",
+            "summary": "The server is slow.",
+            "step": "Examine the load and the logs of the server.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.0005098139418971853
+          },
+          {
+            "id": "tls.proxy",
+            "kind": "fault",
+            "summary": "A proxy examines the TLS traffic.",
+            "step": "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.00020530522789029615
+          },
+          {
+            "id": "gateway.down",
+            "kind": "fault",
+            "summary": "The gateway does not forward packets.",
+            "step": "Restart the router, or examine the link from the router to the provider.",
+            "part": "gateway",
+            "reach": "shared",
+            "probability": 0.00003284883646244733
+          },
+          {
+            "id": "host.down",
+            "kind": "fault",
+            "summary": "The host is down.",
+            "step": "Start the host, or examine its network link.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.00003284883646244733
+          },
+          {
+            "id": "port.closed",
+            "kind": "fault",
+            "summary": "No program listens on the port.",
+            "step": "Start the service, or use the correct port.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.00002463662734683552
+          },
+          {
+            "id": "filter.drop",
+            "kind": "fault",
+            "summary": "A filter drops the packets to the port.",
+            "step": "Examine the firewall rules of the host and of each network on the path.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.00002463662734683552
+          },
+          {
+            "id": "interface.down",
+            "kind": "fault",
+            "summary": "The network interface has no link.",
+            "step": "Connect the cable or the Wi-Fi network, and make sure that the interface is on.",
+            "part": "interface",
+            "reach": "shared",
+            "probability": 1.3152687272251261e-7
+          }
+        ],
+        "next": {
+          "id": "reference.https",
+          "step": "Add a host that works for you with --reference <host>, for example a large web site.",
+          "gain": 0.7548764010771281,
+          "observes": [
+            {
+              "feature": "tcp.connect",
+              "primary": false
+            },
+            {
+              "feature": "tcp.time",
+              "primary": false
+            },
+            {
+              "feature": "tls.handshake",
+              "primary": false
+            },
+            {
+              "feature": "tls.trust",
+              "primary": false
+            },
+            {
+              "feature": "tls.ratio",
+              "primary": false
+            },
+            {
+              "feature": "http.status",
+              "primary": false
+            },
+            {
+              "feature": "http.ttfb",
+              "primary": false
+            }
+          ]
+        },
+        "choices": [
+          {
+            "id": "reference.https",
+            "step": "Add a host that works for you with --reference <host>, for example a large web site.",
+            "gain": 0.7548764010771281,
+            "observes": [
+              {
+                "feature": "tcp.connect",
+                "primary": false
+              },
+              {
+                "feature": "tcp.time",
+                "primary": false
+              },
+              {
+                "feature": "tls.handshake",
+                "primary": false
+              },
+              {
+                "feature": "tls.trust",
+                "primary": false
+              },
+              {
+                "feature": "tls.ratio",
+                "primary": false
+              },
+              {
+                "feature": "http.status",
+                "primary": false
+              },
+              {
+                "feature": "http.ttfb",
+                "primary": false
+              }
+            ]
+          },
+          {
+            "id": "gateway.ping",
+            "step": "Run the check again with --ping-count 20.",
+            "gain": 0.46482713041337753,
+            "observes": [
+              {
+                "feature": "gateway.reply",
+                "primary": false
+              },
+              {
+                "feature": "path.loss",
+                "primary": false
+              }
+            ]
+          },
+          {
+            "id": "target.mtu",
+            "step": "Run the check again with --mtu.",
+            "gain": 0.1377497121308061,
+            "observes": [
+              {
+                "feature": "path.mtu",
+                "primary": true
+              }
+            ]
+          }
+        ],
+        "problems": [],
+        "evidence": [
+          {
+            "feature": "tcp.connect",
+            "value": "connected",
+            "primary": true,
+            "facts": [
+              "f7"
+            ]
+          },
+          {
+            "feature": "tcp.time",
+            "value": "retry",
+            "primary": true,
+            "facts": [
+              "f7"
+            ]
+          },
+          {
+            "feature": "tls.handshake",
+            "value": "cert-error",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "tls.trust",
+            "value": "public",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "tls.ratio",
+            "value": "low",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "path.loss",
+            "value": "high",
+            "primary": true,
+            "facts": [
+              "f2"
+            ]
+          },
+          {
+            "feature": "link.state",
+            "value": "up",
+            "primary": false,
+            "facts": [
+              "f1"
+            ]
+          }
+        ],
+        "ignored": [],
+        "skipped": [
+          {
+            "fact": "f3",
+            "reason": "netdiag has no reader for the kind path.owner."
+          },
+          {
+            "fact": "f4",
+            "reason": "netdiag has no reader for the kind path.owner."
+          },
+          {
+            "fact": "f5",
+            "reason": "netdiag has no reader for the kind path.origin."
+          },
+          {
+            "fact": "f6",
+            "reason": "netdiag has no reader for the kind path.origin."
+          }
+        ],
+        "facts": [
+          {
+            "role": "local",
+            "host": "172.18.0.2",
+            "fact": {
+              "id": "f1",
+              "kind": "link.state",
+              "layer": "link",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 249.997056,
+                "end": 250.292698
+              },
+              "source": {
+                "probe": "link.state",
+                "version": "1"
+              },
+              "value": {
+                "state": "up",
+                "interfaces": [
+                  {
+                    "name": "eth0",
+                    "addresses": [
+                      "172.18.0.3/16"
+                    ]
+                  }
+                ],
+                "gateway": "172.18.0.2",
+                "via": "eth0"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f2",
+              "kind": "path.report",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 259.635883,
+                "end": 65194.495605
+              },
+              "source": {
+                "probe": "path.mtr",
+                "version": "1",
+                "tool": "mtr"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "reached",
+                "cycles": 60,
+                "hops": [
+                  {
+                    "ttl": 1,
+                    "address": "172.18.0.2",
+                    "sent": 60,
+                    "received": 60,
+                    "bestMs": 0.03,
+                    "meanMs": 0.033,
+                    "worstMs": 0.095
+                  },
+                  {
+                    "ttl": 2,
+                    "address": "172.19.0.2",
+                    "sent": 60,
+                    "received": 42,
+                    "bestMs": 0.036,
+                    "meanMs": 0.041,
+                    "worstMs": 0.125
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f3",
+              "kind": "path.owner",
+              "layer": "path",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65195.81978,
+                "end": 65196.620859
+              },
+              "source": {
+                "probe": "rdap.owner",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.18.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f4",
+              "kind": "path.owner",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65195.81978,
+                "end": 65196.620859
+              },
+              "source": {
+                "probe": "rdap.owner",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f5",
+              "kind": "path.origin",
+              "layer": "path",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65197.348069,
+                "end": 65197.575598
+              },
+              "source": {
+                "probe": "dns.origin",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.18.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f6",
+              "kind": "path.origin",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65197.348069,
+                "end": 65197.575598
+              },
+              "source": {
+                "probe": "dns.origin",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f7",
+              "kind": "tcp.connect",
+              "layer": "tcp",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4",
+                "port": 443
+              },
+              "time": {
+                "start": 65198.848436,
+                "end": 66222.195338
+              },
+              "source": {
+                "probe": "http.request",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "port": 443,
+                "family": 4,
+                "outcome": "connected",
+                "ms": 1023.3469020000048
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f8",
+              "kind": "tls.handshake",
+              "layer": "tls",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4",
+                "port": 443
+              },
+              "time": {
+                "start": 66237.097987,
+                "end": 66447.821825
+              },
+              "source": {
+                "probe": "http.request",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "port": 443,
+                "outcome": "cert-error",
+                "protocol": "TLSv1.3",
+                "cipher": "TLS_AES_256_GCM_SHA384",
+                "alpn": "http/1.1",
+                "certificate": {
+                  "subject": "www.shop.test",
+                  "issuer": "netdiag kernel lab root",
+                  "names": [
+                    "www.shop.test"
+                  ],
+                  "validFrom": "2026-11-16T20:15:50.000Z",
+                  "validTo": "2026-11-17T20:16:50.000Z",
+                  "fingerprint256": "9A:7F:94:4B:7B:B7:D9:EC:9D:80:80:89:CC:CD:6A:D6:47:AD:34:EB:DA:18:98:3D:AC:68:E4:F5:7D:2F:D5:54",
+                  "selfSigned": false,
+                  "chain": 2,
+                  "trust": "public",
+                  "problem": "name"
+                },
+                "ms": 210.72383800000534
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "loss.first-link",
+      "truth": "path.loss",
+      "summary": "The router loses 30% of the packets that it sends to the client, and its answers to mtr. Thus the loss starts on the first link.",
+      "report": {
+        "format": "netdiag-check/1",
+        "target": "172.19.0.2:443",
+        "scheme": "https",
+        "path": "/",
+        "grants": [
+          {
+            "kind": "range",
+            "cidr": "172.19.0.2/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.19.0.4/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.19.0.5/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.18.0.2/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "data.iana.org",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.arin.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.db.ripe.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.apnic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.lacnic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.afrinic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "origin.asn.cymru.com",
+            "basis": "named",
+            "note": "a DNS zone of Team Cymru for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "origin6.asn.cymru.com",
+            "basis": "named",
+            "note": "a DNS zone of Team Cymru for the lookups of the kernel lab"
+          }
+        ],
+        "causes": [
+          {
+            "id": "tls.cert-invalid",
+            "kind": "fault",
+            "summary": "The certificate of the server is not valid: it expired, or it is for a different name.",
+            "step": "Renew the certificate of the server, or correct its names.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.5868827500757208
+          },
+          {
+            "id": "captive.portal",
+            "kind": "fault",
+            "summary": "A captive portal holds the traffic until you sign in.",
+            "step": "Open a web page in a browser, and accept the terms of the network.",
+            "part": "gateway",
+            "reach": "shared",
+            "probability": 0.15125844074116518
+          },
+          {
+            "id": "unknown",
+            "kind": "unknown",
+            "summary": "The catalog does not have the cause.",
+            "step": "Collect more facts, and report the facts as a new fault of the catalog.",
+            "probability": 0.08029456248767401
+          },
+          {
+            "id": "path.loss",
+            "kind": "fault",
+            "summary": "A network on the path loses packets.",
+            "step": "Find the first hop with loss, and tell the provider of that network.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.045850214849665706
+          },
+          {
+            "id": "wifi.weak",
+            "kind": "fault",
+            "summary": "The Wi-Fi signal is weak, so the link loses packets.",
+            "step": "Move nearer to the access point, or use a cable.",
+            "part": "wifi",
+            "reach": "shared",
+            "probability": 0.038208512374721414
+          },
+          {
+            "id": "path.mtu",
+            "kind": "fault",
+            "summary": "Large packets do not pass, and no ICMP message tells the size (an MTU black hole).",
+            "step": "Lower the MTU of the interface or of the VPN, or enable MSS clamping on the router.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.01630229861321445
+          },
+          {
+            "id": "tls.mismatch",
+            "kind": "fault",
+            "summary": "The client and the server have no TLS version or cipher in common.",
+            "step": "Enable TLS 1.2 or TLS 1.3 with modern ciphers on the server.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.01630229861321445
+          },
+          {
+            "id": "server.slow",
+            "kind": "fault",
+            "summary": "The server is slow.",
+            "step": "Examine the load and the logs of the server.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.009781379167928672
+          },
+          {
+            "id": "filter.reset",
+            "kind": "fault",
+            "summary": "A device on the path resets the connections.",
+            "step": "Examine the firewalls and the filters of content on the path, and try a different network.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.008403246707842505
+          },
+          {
+            "id": "none",
+            "kind": "none",
+            "summary": "The network has no fault.",
+            "step": "No step is necessary.",
+            "probability": 0.006520919445285786
+          },
+          {
+            "id": "resolver.down",
+            "kind": "fault",
+            "summary": "The DNS resolver does not answer.",
+            "step": "Use a different DNS resolver, or examine the resolver of the router.",
+            "part": "resolver",
+            "reach": "shared",
+            "probability": 0.006520919445285786
+          },
+          {
+            "id": "resolver.failing",
+            "kind": "fault",
+            "summary": "The DNS resolver answers with an error for each name.",
+            "step": "Use a different DNS resolver, and examine the DNSSEC settings of the resolver.",
+            "part": "resolver",
+            "reach": "shared",
+            "probability": 0.006520919445285786
+          },
+          {
+            "id": "name.missing",
+            "kind": "fault",
+            "summary": "The name does not exist in DNS.",
+            "step": "Examine the spelling of the name, and the records of its DNS zone.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.006520919445285786
+          },
+          {
+            "id": "filter.icmp",
+            "kind": "fault",
+            "summary": "A filter blocks ICMP. The host is up.",
+            "step": "No step is necessary for the service. Use TCP to examine the host.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.006520919445285786
+          },
+          {
+            "id": "server.error",
+            "kind": "fault",
+            "summary": "The server answers with an error.",
+            "step": "Examine the logs of the server and of its upstream services.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.006520919445285786
+          },
+          {
+            "id": "tls.proxy",
+            "kind": "fault",
+            "summary": "A proxy examines the TLS traffic.",
+            "step": "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.0035451197048710545
+          },
+          {
+            "id": "ipv6.broken",
+            "kind": "fault",
+            "summary": "IPv6 does not work, and IPv4 works.",
+            "step": "Examine the IPv6 settings of the router, or turn off IPv6 until the provider repairs it.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.0032604597226428985
+          },
+          {
+            "id": "gateway.down",
+            "kind": "fault",
+            "summary": "The gateway does not forward packets.",
+            "step": "Restart the router, or examine the link from the router to the provider.",
+            "part": "gateway",
+            "reach": "shared",
+            "probability": 0.00022408657887580097
+          },
+          {
+            "id": "host.down",
+            "kind": "fault",
+            "summary": "The host is down.",
+            "step": "Start the host, or examine its network link.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.00022408657887580097
+          },
+          {
+            "id": "port.closed",
+            "kind": "fault",
+            "summary": "No program listens on the port.",
+            "step": "Start the service, or use the correct port.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.0001680649341568509
+          },
+          {
+            "id": "filter.drop",
+            "kind": "fault",
+            "summary": "A filter drops the packets to the port.",
+            "step": "Examine the firewall rules of the host and of each network on the path.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.0001680649341568509
+          },
+          {
+            "id": "interface.down",
+            "kind": "fault",
+            "summary": "The network interface has no link.",
+            "step": "Connect the cable or the Wi-Fi network, and make sure that the interface is on.",
+            "part": "interface",
+            "reach": "shared",
+            "probability": 8.972435590622684e-7
+          }
+        ],
+        "next": {
+          "id": "reference.https",
+          "step": "Add a host that works for you with --reference <host>, for example a large web site.",
+          "gain": 0.9181998447679719,
+          "observes": [
+            {
+              "feature": "tcp.connect",
+              "primary": false
+            },
+            {
+              "feature": "tcp.time",
+              "primary": false
+            },
+            {
+              "feature": "tls.handshake",
+              "primary": false
+            },
+            {
+              "feature": "tls.trust",
+              "primary": false
+            },
+            {
+              "feature": "tls.ratio",
+              "primary": false
+            },
+            {
+              "feature": "http.status",
+              "primary": false
+            },
+            {
+              "feature": "http.ttfb",
+              "primary": false
+            }
+          ]
+        },
+        "choices": [
+          {
+            "id": "reference.https",
+            "step": "Add a host that works for you with --reference <host>, for example a large web site.",
+            "gain": 0.9181998447679719,
+            "observes": [
+              {
+                "feature": "tcp.connect",
+                "primary": false
+              },
+              {
+                "feature": "tcp.time",
+                "primary": false
+              },
+              {
+                "feature": "tls.handshake",
+                "primary": false
+              },
+              {
+                "feature": "tls.trust",
+                "primary": false
+              },
+              {
+                "feature": "tls.ratio",
+                "primary": false
+              },
+              {
+                "feature": "http.status",
+                "primary": false
+              },
+              {
+                "feature": "http.ttfb",
+                "primary": false
+              }
+            ]
+          },
+          {
+            "id": "gateway.ping",
+            "step": "Run the check again with --ping-count 20.",
+            "gain": 0.17902723159243286,
+            "observes": [
+              {
+                "feature": "gateway.reply",
+                "primary": false
+              },
+              {
+                "feature": "path.loss",
+                "primary": false
+              }
+            ]
+          },
+          {
+            "id": "target.mtu",
+            "step": "Run the check again with --mtu.",
+            "gain": 0.10137547663270739,
+            "observes": [
+              {
+                "feature": "path.mtu",
+                "primary": true
+              }
+            ]
+          }
+        ],
+        "problems": [],
+        "evidence": [
+          {
+            "feature": "tcp.connect",
+            "value": "connected",
+            "primary": true,
+            "facts": [
+              "f7"
+            ]
+          },
+          {
+            "feature": "tcp.time",
+            "value": "short",
+            "primary": true,
+            "facts": [
+              "f7"
+            ]
+          },
+          {
+            "feature": "tls.handshake",
+            "value": "cert-error",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "tls.trust",
+            "value": "public",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "tls.ratio",
+            "value": "mid",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "path.loss",
+            "value": "high",
+            "primary": true,
+            "facts": [
+              "f2"
+            ]
+          },
+          {
+            "feature": "link.state",
+            "value": "up",
+            "primary": false,
+            "facts": [
+              "f1"
+            ]
+          }
+        ],
+        "ignored": [],
+        "skipped": [
+          {
+            "fact": "f3",
+            "reason": "netdiag has no reader for the kind path.owner."
+          },
+          {
+            "fact": "f4",
+            "reason": "netdiag has no reader for the kind path.owner."
+          },
+          {
+            "fact": "f5",
+            "reason": "netdiag has no reader for the kind path.origin."
+          },
+          {
+            "fact": "f6",
+            "reason": "netdiag has no reader for the kind path.origin."
+          }
+        ],
+        "facts": [
+          {
+            "role": "local",
+            "host": "172.18.0.2",
+            "fact": {
+              "id": "f1",
+              "kind": "link.state",
+              "layer": "link",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 253.480693,
+                "end": 253.81653
+              },
+              "source": {
+                "probe": "link.state",
+                "version": "1"
+              },
+              "value": {
+                "state": "up",
+                "interfaces": [
+                  {
+                    "name": "eth0",
+                    "addresses": [
+                      "172.18.0.3/16"
+                    ]
+                  }
+                ],
+                "gateway": "172.18.0.2",
+                "via": "eth0"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f2",
+              "kind": "path.report",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 262.518454,
+                "end": 65377.286535
+              },
+              "source": {
+                "probe": "path.mtr",
+                "version": "1",
+                "tool": "mtr"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "reached",
+                "cycles": 60,
+                "hops": [
+                  {
+                    "ttl": 1,
+                    "address": "172.18.0.2",
+                    "sent": 60,
+                    "received": 36,
+                    "bestMs": 0.032,
+                    "meanMs": 0.034,
+                    "worstMs": 0.06
+                  },
+                  {
+                    "ttl": 2,
+                    "address": "172.19.0.2",
+                    "sent": 60,
+                    "received": 36,
+                    "bestMs": 0.037,
+                    "meanMs": 0.038,
+                    "worstMs": 0.069
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f3",
+              "kind": "path.owner",
+              "layer": "path",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65378.577586,
+                "end": 65379.466657
+              },
+              "source": {
+                "probe": "rdap.owner",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.18.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f4",
+              "kind": "path.owner",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65378.577586,
+                "end": 65379.466657
+              },
+              "source": {
+                "probe": "rdap.owner",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f5",
+              "kind": "path.origin",
+              "layer": "path",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65380.289043,
+                "end": 65380.528911
+              },
+              "source": {
+                "probe": "dns.origin",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.18.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f6",
+              "kind": "path.origin",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65380.289043,
+                "end": 65380.528911
+              },
+              "source": {
+                "probe": "dns.origin",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f7",
+              "kind": "tcp.connect",
+              "layer": "tcp",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4",
+                "port": 443
+              },
+              "time": {
+                "start": 65381.782231,
+                "end": 65383.044569
+              },
+              "source": {
+                "probe": "http.request",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "port": 443,
+                "family": 4,
+                "outcome": "connected",
+                "ms": 1.2623380000004545
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f8",
+              "kind": "tls.handshake",
+              "layer": "tls",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4",
+                "port": 443
+              },
+              "time": {
+                "start": 65397.865408,
+                "end": 65401.958391
+              },
+              "source": {
+                "probe": "http.request",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "port": 443,
+                "outcome": "cert-error",
+                "protocol": "TLSv1.3",
+                "cipher": "TLS_AES_256_GCM_SHA384",
+                "alpn": "http/1.1",
+                "certificate": {
+                  "subject": "www.shop.test",
+                  "issuer": "netdiag kernel lab root",
+                  "names": [
+                    "www.shop.test"
+                  ],
+                  "validFrom": "2026-11-16T20:15:50.000Z",
+                  "validTo": "2026-11-17T20:16:50.000Z",
+                  "fingerprint256": "9A:7F:94:4B:7B:B7:D9:EC:9D:80:80:89:CC:CD:6A:D6:47:AD:34:EB:DA:18:98:3D:AC:68:E4:F5:7D:2F:D5:54",
+                  "selfSigned": false,
+                  "chain": 2,
+                  "trust": "public",
+                  "problem": "name"
+                },
+                "ms": 4.0929830000022775
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "none",
+      "truth": "none",
+      "summary": "The path has no fault. Thus no loss starts on it.",
+      "report": {
+        "format": "netdiag-check/1",
+        "target": "172.19.0.2:443",
+        "scheme": "https",
+        "path": "/",
+        "grants": [
+          {
+            "kind": "range",
+            "cidr": "172.19.0.2/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.19.0.4/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.19.0.5/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "range",
+            "cidr": "172.18.0.2/32",
+            "basis": "owned",
+            "note": "a host of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "data.iana.org",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.arin.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.db.ripe.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.apnic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.lacnic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "rdap.afrinic.net",
+            "basis": "named",
+            "note": "a registry of RDAP for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "origin.asn.cymru.com",
+            "basis": "named",
+            "note": "a DNS zone of Team Cymru for the lookups of the kernel lab"
+          },
+          {
+            "kind": "host",
+            "host": "origin6.asn.cymru.com",
+            "basis": "named",
+            "note": "a DNS zone of Team Cymru for the lookups of the kernel lab"
+          }
+        ],
+        "causes": [
+          {
+            "id": "tls.cert-invalid",
+            "kind": "fault",
+            "summary": "The certificate of the server is not valid: it expired, or it is for a different name.",
+            "step": "Renew the certificate of the server, or correct its names.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.7001506702580915
+          },
+          {
+            "id": "captive.portal",
+            "kind": "fault",
+            "summary": "A captive portal holds the traffic until you sign in.",
+            "step": "Open a web page in a browser, and accept the terms of the network.",
+            "part": "gateway",
+            "reach": "shared",
+            "probability": 0.18045120367476575
+          },
+          {
+            "id": "path.mtu",
+            "kind": "fault",
+            "summary": "Large packets do not pass, and no ICMP message tells the size (an MTU black hole).",
+            "step": "Lower the MTU of the interface or of the VPN, or enable MSS clamping on the router.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.019448629729391397
+          },
+          {
+            "id": "tls.mismatch",
+            "kind": "fault",
+            "summary": "The client and the server have no TLS version or cipher in common.",
+            "step": "Enable TLS 1.2 or TLS 1.3 with modern ciphers on the server.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.019448629729391397
+          },
+          {
+            "id": "server.slow",
+            "kind": "fault",
+            "summary": "The server is slow.",
+            "step": "Examine the load and the logs of the server.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.011669177837634841
+          },
+          {
+            "id": "filter.reset",
+            "kind": "fault",
+            "summary": "A device on the path resets the connections.",
+            "step": "Examine the firewalls and the filters of content on the path, and try a different network.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.01002506687082031
+          },
+          {
+            "id": "none",
+            "kind": "none",
+            "summary": "The network has no fault.",
+            "step": "No step is necessary.",
+            "probability": 0.007779451891756567
+          },
+          {
+            "id": "resolver.down",
+            "kind": "fault",
+            "summary": "The DNS resolver does not answer.",
+            "step": "Use a different DNS resolver, or examine the resolver of the router.",
+            "part": "resolver",
+            "reach": "shared",
+            "probability": 0.007779451891756567
+          },
+          {
+            "id": "resolver.failing",
+            "kind": "fault",
+            "summary": "The DNS resolver answers with an error for each name.",
+            "step": "Use a different DNS resolver, and examine the DNSSEC settings of the resolver.",
+            "part": "resolver",
+            "reach": "shared",
+            "probability": 0.007779451891756567
+          },
+          {
+            "id": "name.missing",
+            "kind": "fault",
+            "summary": "The name does not exist in DNS.",
+            "step": "Examine the spelling of the name, and the records of its DNS zone.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.007779451891756567
+          },
+          {
+            "id": "filter.icmp",
+            "kind": "fault",
+            "summary": "A filter blocks ICMP. The host is up.",
+            "step": "No step is necessary for the service. Use TCP to examine the host.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.007779451891756567
+          },
+          {
+            "id": "server.error",
+            "kind": "fault",
+            "summary": "The server answers with an error.",
+            "step": "Examine the logs of the server and of its upstream services.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.007779451891756567
+          },
+          {
+            "id": "tls.proxy",
+            "kind": "fault",
+            "summary": "A proxy examines the TLS traffic.",
+            "step": "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.004229325086127317
+          },
+          {
+            "id": "ipv6.broken",
+            "kind": "fault",
+            "summary": "IPv6 does not work, and IPv4 works.",
+            "step": "Examine the IPv6 settings of the router, or turn off IPv6 until the provider repairs it.",
+            "part": "path",
+            "reach": "shared",
+            "probability": 0.0038897259458782894
+          },
+          {
+            "id": "unknown",
+            "kind": "unknown",
+            "summary": "The catalog does not have the cause.",
+            "step": "Collect more facts, and report the facts as a new fault of the catalog.",
+            "probability": 0.0021286966978051685
+          },
+          {
+            "id": "wifi.weak",
+            "kind": "fault",
+            "summary": "The Wi-Fi signal is weak, so the link loses packets.",
+            "step": "Move nearer to the access point, or use a cable.",
+            "part": "wifi",
+            "reach": "shared",
+            "probability": 0.000675299643381647
+          },
+          {
+            "id": "path.loss",
+            "kind": "fault",
+            "summary": "A network on the path loses packets.",
+            "step": "Find the first hop with loss, and tell the provider of that network.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.0002701198573526586
+          },
+          {
+            "id": "gateway.down",
+            "kind": "fault",
+            "summary": "The gateway does not forward packets.",
+            "step": "Restart the router, or examine the link from the router to the provider.",
+            "part": "gateway",
+            "reach": "shared",
+            "probability": 0.0002673351165552084
+          },
+          {
+            "id": "host.down",
+            "kind": "fault",
+            "summary": "The host is down.",
+            "step": "Start the host, or examine its network link.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.0002673351165552084
+          },
+          {
+            "id": "port.closed",
+            "kind": "fault",
+            "summary": "No program listens on the port.",
+            "step": "Start the service, or use the correct port.",
+            "part": "service",
+            "reach": "target",
+            "probability": 0.0002005013374164067
+          },
+          {
+            "id": "filter.drop",
+            "kind": "fault",
+            "summary": "A filter drops the packets to the port.",
+            "step": "Examine the firewall rules of the host and of each network on the path.",
+            "part": "path",
+            "reach": "target",
+            "probability": 0.0002005013374164067
+          },
+          {
+            "id": "interface.down",
+            "kind": "fault",
+            "summary": "The network interface has no link.",
+            "step": "Connect the cable or the Wi-Fi network, and make sure that the interface is on.",
+            "part": "interface",
+            "reach": "shared",
+            "probability": 0.0000010704108770979353
+          }
+        ],
+        "next": {
+          "id": "reference.https",
+          "step": "Add a host that works for you with --reference <host>, for example a large web site.",
+          "gain": 0.7297609008129947,
+          "observes": [
+            {
+              "feature": "tcp.connect",
+              "primary": false
+            },
+            {
+              "feature": "tcp.time",
+              "primary": false
+            },
+            {
+              "feature": "tls.handshake",
+              "primary": false
+            },
+            {
+              "feature": "tls.trust",
+              "primary": false
+            },
+            {
+              "feature": "tls.ratio",
+              "primary": false
+            },
+            {
+              "feature": "http.status",
+              "primary": false
+            },
+            {
+              "feature": "http.ttfb",
+              "primary": false
+            }
+          ]
+        },
+        "choices": [
+          {
+            "id": "reference.https",
+            "step": "Add a host that works for you with --reference <host>, for example a large web site.",
+            "gain": 0.7297609008129947,
+            "observes": [
+              {
+                "feature": "tcp.connect",
+                "primary": false
+              },
+              {
+                "feature": "tcp.time",
+                "primary": false
+              },
+              {
+                "feature": "tls.handshake",
+                "primary": false
+              },
+              {
+                "feature": "tls.trust",
+                "primary": false
+              },
+              {
+                "feature": "tls.ratio",
+                "primary": false
+              },
+              {
+                "feature": "http.status",
+                "primary": false
+              },
+              {
+                "feature": "http.ttfb",
+                "primary": false
+              }
+            ]
+          },
+          {
+            "id": "target.mtu",
+            "step": "Run the check again with --mtu.",
+            "gain": 0.09264817508623098,
+            "observes": [
+              {
+                "feature": "path.mtu",
+                "primary": true
+              }
+            ]
+          },
+          {
+            "id": "target.ping",
+            "step": "Run the check again with --ping-count 20.",
+            "gain": 0.002908412606159903,
+            "observes": [
+              {
+                "feature": "icmp.reply",
+                "primary": true
+              }
+            ]
+          }
+        ],
+        "problems": [],
+        "evidence": [
+          {
+            "feature": "tcp.connect",
+            "value": "connected",
+            "primary": true,
+            "facts": [
+              "f7"
+            ]
+          },
+          {
+            "feature": "tcp.time",
+            "value": "short",
+            "primary": true,
+            "facts": [
+              "f7"
+            ]
+          },
+          {
+            "feature": "tls.handshake",
+            "value": "cert-error",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "tls.trust",
+            "value": "public",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "tls.ratio",
+            "value": "mid",
+            "primary": true,
+            "facts": [
+              "f8"
+            ]
+          },
+          {
+            "feature": "path.loss",
+            "value": "none",
+            "primary": true,
+            "facts": [
+              "f2"
+            ]
+          },
+          {
+            "feature": "link.state",
+            "value": "up",
+            "primary": false,
+            "facts": [
+              "f1"
+            ]
+          }
+        ],
+        "ignored": [],
+        "skipped": [
+          {
+            "fact": "f3",
+            "reason": "netdiag has no reader for the kind path.owner."
+          },
+          {
+            "fact": "f4",
+            "reason": "netdiag has no reader for the kind path.owner."
+          },
+          {
+            "fact": "f5",
+            "reason": "netdiag has no reader for the kind path.origin."
+          },
+          {
+            "fact": "f6",
+            "reason": "netdiag has no reader for the kind path.origin."
+          }
+        ],
+        "facts": [
+          {
+            "role": "local",
+            "host": "172.18.0.2",
+            "fact": {
+              "id": "f1",
+              "kind": "link.state",
+              "layer": "link",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 256.990523,
+                "end": 257.292988
+              },
+              "source": {
+                "probe": "link.state",
+                "version": "1"
+              },
+              "value": {
+                "state": "up",
+                "interfaces": [
+                  {
+                    "name": "eth0",
+                    "addresses": [
+                      "172.18.0.3/16"
+                    ]
+                  }
+                ],
+                "gateway": "172.18.0.2",
+                "via": "eth0"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f2",
+              "kind": "path.report",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 266.509751,
+                "end": 65142.590242
+              },
+              "source": {
+                "probe": "path.mtr",
+                "version": "1",
+                "tool": "mtr"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "reached",
+                "cycles": 60,
+                "hops": [
+                  {
+                    "ttl": 1,
+                    "address": "172.18.0.2",
+                    "sent": 60,
+                    "received": 60,
+                    "bestMs": 0.03,
+                    "meanMs": 0.03,
+                    "worstMs": 0.059
+                  },
+                  {
+                    "ttl": 2,
+                    "address": "172.19.0.2",
+                    "sent": 60,
+                    "received": 60,
+                    "bestMs": 0.036,
+                    "meanMs": 0.038,
+                    "worstMs": 0.087
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f3",
+              "kind": "path.owner",
+              "layer": "path",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65143.86911,
+                "end": 65144.664406
+              },
+              "source": {
+                "probe": "rdap.owner",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.18.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f4",
+              "kind": "path.owner",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65143.86911,
+                "end": 65144.664406
+              },
+              "source": {
+                "probe": "rdap.owner",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f5",
+              "kind": "path.origin",
+              "layer": "path",
+              "subject": {
+                "host": "172.18.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65145.413124,
+                "end": 65145.662499
+              },
+              "source": {
+                "probe": "dns.origin",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.18.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f6",
+              "kind": "path.origin",
+              "layer": "path",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4"
+              },
+              "time": {
+                "start": 65145.413124,
+                "end": 65145.662499
+              },
+              "source": {
+                "probe": "dns.origin",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "outcome": "special",
+                "class": "private"
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f7",
+              "kind": "tcp.connect",
+              "layer": "tcp",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4",
+                "port": 443
+              },
+              "time": {
+                "start": 65146.886315,
+                "end": 65148.11531
+              },
+              "source": {
+                "probe": "http.request",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "port": 443,
+                "family": 4,
+                "outcome": "connected",
+                "ms": 1.228994999997667
+              }
+            }
+          },
+          {
+            "role": "target",
+            "host": "172.19.0.2",
+            "fact": {
+              "id": "f8",
+              "kind": "tls.handshake",
+              "layer": "tls",
+              "subject": {
+                "host": "172.19.0.2",
+                "kind": "ipv4",
+                "port": 443
+              },
+              "time": {
+                "start": 65162.642568,
+                "end": 65166.728228
+              },
+              "source": {
+                "probe": "http.request",
+                "version": "1"
+              },
+              "value": {
+                "address": "172.19.0.2",
+                "port": 443,
+                "outcome": "cert-error",
+                "protocol": "TLSv1.3",
+                "cipher": "TLS_AES_256_GCM_SHA384",
+                "alpn": "http/1.1",
+                "certificate": {
+                  "subject": "www.shop.test",
+                  "issuer": "netdiag kernel lab root",
+                  "names": [
+                    "www.shop.test"
+                  ],
+                  "validFrom": "2026-11-16T20:15:50.000Z",
+                  "validTo": "2026-11-17T20:16:50.000Z",
+                  "fingerprint256": "9A:7F:94:4B:7B:B7:D9:EC:9D:80:80:89:CC:CD:6A:D6:47:AD:34:EB:DA:18:98:3D:AC:68:E4:F5:7D:2F:D5:54",
+                  "selfSigned": false,
+                  "chain": 2,
+                  "trust": "public",
+                  "problem": "name"
+                },
+                "ms": 4.085659999997006
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

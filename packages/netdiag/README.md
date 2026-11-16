@@ -195,6 +195,8 @@ The probe `originProbe(resolve)` gives the fact `path.origin` for each address o
 
 `LOOKUP_KINDS` has the fact kinds `path.owner` and `path.origin`. The core has the readers of the DNS of Team Cymru: `originQuery` and `readOrigin`.
 
+`lookupGrants(reason)` gives the grants by name of each peer of the two probes, except the resolver. A check adds them only when the user asks for the lookups.
+
 ## Diagnosis
 
 The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It imports no `node:` module, so a browser can also use it.

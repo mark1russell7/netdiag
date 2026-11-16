@@ -1,8 +1,12 @@
-import { PATH_REPORT, factsOf, lossStart, type LabGate, type LabRecalls, type PathReport } from "@mark1russell7/netdiag";
+import { PATH_REPORT, factsOf, lossStart, target, type LabGate, type LabRecalls, type PathReport } from "@mark1russell7/netdiag";
+import type { CheckPlan } from "@mark1russell7/netdiag-cli";
+import { reportOf } from "@mark1russell7/netdiag-cli/report";
 import { wilson, type Proportion } from "@mark1russell7/rigor-statistics";
 import { gateLines, percent } from "../report.ts";
 import type { Visit } from "../run.ts";
+import type { CheckSample } from "../samples.ts";
 import { TOWARD_CLIENT, type KernelFault } from "./cases.ts";
+import { visitInputOf, type AgentPlan } from "./protocol.ts";
 
 // The where cases of the kernel lab (ND-15). Each case puts a loss on one link of the path, or no loss. The agent
 // starts `mtr` to the target. `lossStart` of netdiag gives the part of the path where the loss starts, and the lab
@@ -33,6 +37,8 @@ export interface WherePart {
 export interface WhereCase {
   readonly id: string;
   readonly summary: string;
+  /** The id of the hypothesis of the catalog that is true in the world of the case. The sample of the case gives it. */
+  readonly truth: string;
   readonly fault: KernelFault | null;
   readonly expect: WherePart | null;
 }
@@ -42,18 +48,21 @@ export const WHERE_CASES: readonly WhereCase[] = [
   {
     id: "loss.last-link",
     summary: "The target loses 30% of the packets that it sends. The router loses none, so the loss starts after the router.",
+    truth: "path.loss",
     fault: { kind: "netem", at: "target", spec: WHERE_LOSS },
     expect: { after: "gateway", hops: ["target"] },
   },
   {
     id: "loss.first-link",
     summary: "The router loses 30% of the packets that it sends to the client, and its answers to mtr. Thus the loss starts on the first link.",
+    truth: "path.loss",
     fault: { kind: "netem", at: TOWARD_CLIENT, spec: WHERE_LOSS },
     expect: { after: null, hops: ["gateway", "target"] },
   },
   {
     id: "none",
     summary: "The path has no fault. Thus no loss starts on it.",
+    truth: "none",
     fault: null,
     expect: null,
   },
@@ -125,6 +134,32 @@ export function readWhere(labCase: WhereCase, round: number, visit: Visit): Wher
     hit: samePart(answer, labCase.expect),
     hops: report.hops.map((hop) => ({ ttl: hop.ttl, hop: hop.address === undefined ? null : name(hop.address), sent: hop.sent, received: hop.received })),
   };
+}
+
+/**
+ * This function gives the plan of `netdiag check` for the visit of an agent plan: HTTPS, the path `/` and the MTU search
+ * `auto`. The input of the visit is `visitInputOf` of the plan. Thus the grants of the report are the grants of the agent.
+ */
+export function checkPlanOf(plan: AgentPlan): CheckPlan {
+  return {
+    target: target(plan.target, plan.port),
+    scheme: "https",
+    path: "/",
+    pingCount: plan.pingCount,
+    mtrCycles: plan.mtrCycles,
+    owners: plan.owners,
+    mtu: "auto",
+    visit: visitInputOf(plan),
+  };
+}
+
+/**
+ * This function gives the sample report of a where run for the site. The report is `reportOf` of the CLI for the steps
+ * of the visit. A run with no read and a visit with no steps give no sample.
+ */
+export function whereSample(labCase: WhereCase, run: WhereRun, plan: AgentPlan, visit: Visit): CheckSample | undefined {
+  if (run.status !== "read" || visit.status !== "visited" || visit.steps === undefined) return undefined;
+  return { id: labCase.id, truth: labCase.truth, summary: labCase.summary, report: reportOf(checkPlanOf(plan), visit.steps) };
 }
 
 /** A where run with a read. */

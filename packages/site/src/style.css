@@ -786,6 +786,94 @@ button.cause-box[aria-pressed="true"] {
   overflow-wrap: anywhere;
 }
 
+/* The path: one row for each hop, in the order of the TTL. The rows where the loss can start have the color of a fault. */
+.path {
+  margin: 0.5rem 0 1rem;
+}
+
+.path-summary {
+  margin: 0.25rem 0;
+}
+
+.hops {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hop {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 8.5rem) 5.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-left: 3px solid var(--line);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: var(--panel);
+  font-size: 0.85rem;
+}
+
+.hop.start {
+  border-left-color: var(--sp-fail);
+  background: var(--sp-fail-bg);
+}
+
+.hop.bound {
+  border-left-color: var(--sp-pass);
+}
+
+.hop-ttl {
+  color: var(--quiet);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.hop-address {
+  overflow-wrap: anywhere;
+}
+
+.hop-loss {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.hop-loss .meter {
+  background: linear-gradient(to right, var(--sp-fail) var(--p), var(--line) var(--p));
+}
+
+.hop-loss .pct {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.hop-network {
+  min-width: 0;
+  color: var(--quiet);
+  overflow-wrap: anywhere;
+}
+
+.start-networks {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 30rem) {
+  .hop {
+    grid-template-columns: 1.75rem minmax(0, 1fr) 5.5rem;
+  }
+
+  .hop-network,
+  .hop .tag {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+}
+
 /* The flow: one row for each layer, with the observations of the target and of the other hosts. */
 .flow {
   display: grid;
