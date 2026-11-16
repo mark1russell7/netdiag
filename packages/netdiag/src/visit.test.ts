@@ -21,7 +21,7 @@ import {
   type VisitOptions,
   type VisitStep,
 } from "./index.ts";
-import type { InterfaceTable } from "./probes/link.ts";
+import { LINK_SUBJECT, type InterfaceTable } from "./probes/link.ts";
 import type { ToolRunOptions } from "./tools/index.ts";
 
 // The visit operates on the loopback addresses: a DNS server of the fixtures on 127.0.0.1, an HTTPS server on
@@ -196,7 +196,8 @@ describe("the MTU search of a visit", () => {
     const tools = pingHost([SERVER]);
     const steps = await visit({ target: { host: SERVER, port }, grants }, { tools, pingCount: 0, httpTimeoutMs: 300 });
     expect(problems(steps)).toEqual([]);
-    expect(shape(steps)).toEqual([`local link.state ${SERVER}`, `target tcp.connect ${SERVER}`, `target tls.handshake ${SERVER}`, `target path.mtu ${SERVER}`]);
+    // The input has no gateway, so the link fact has the subject of this computer.
+    expect(shape(steps)).toEqual([`local link.state ${LINK_SUBJECT}`, `target tcp.connect ${SERVER}`, `target tls.handshake ${SERVER}`, `target path.mtu ${SERVER}`]);
     // Each try of the fake host gets replies, so the search ends with one try at the ceiling.
     expect(mtuCalls(tools.calls)).toEqual([SERVER]);
     const mtu = steps.flatMap((step) => (step.kind === "fact" && isFactOf(PATH_MTU, step.fact) ? [step.fact.value] : []));

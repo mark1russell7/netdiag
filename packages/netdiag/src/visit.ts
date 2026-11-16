@@ -112,7 +112,7 @@ export function describeOutcome(outcome: ProbeOutcome<unknown>): string {
 }
 
 /**
- * This function tells if the facts of an HTTP request have the sign of a path that drops large packets: a TCP connect
+ * This function tells if the facts of an HTTP request show a path that drops large packets. The sign is a TCP connect
  * that connected, then a TLS handshake or an HTTP response that timed out.
  */
 export function largePacketsLost(facts: readonly Fact[]): boolean {
