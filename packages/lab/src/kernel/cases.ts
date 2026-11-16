@@ -17,19 +17,21 @@ export const KERNEL_PORT = 443;
 export const KERNEL_HOP = "gw";
 /** The place of the router on the side of the target. */
 export const TOWARD_TARGET: HopPlace = { hop: KERNEL_HOP, toward: "target" };
+/** The place of the router on the side of the client. */
+export const TOWARD_CLIENT: HopPlace = { hop: KERNEL_HOP, toward: "client" };
 
 /**
  * A fault of a kernel case, as data.
  *
  * - `network`: a rule of the injector of the harness at a place, with its options. For example `blackhole` at the target
  *   drops each packet from the client and to it.
- * - `netem`: `tc netem` with the spec on the egress of the target.
+ * - `netem`: `tc netem` with the spec on the egress of the target, or on the egress of the router toward one side.
  * - `sysctl`: the sysctls of the namespace of the target, and the values that put them back.
  * - `mtu`: the router drops each packet from the target and the reference host above `above` bytes, of each protocol.
  */
 export type KernelFault =
   | { readonly kind: "network"; readonly fault: Exclude<NetworkFault, "mtu">; readonly at: FaultPlace; readonly options?: FaultOptions | undefined }
-  | { readonly kind: "netem"; readonly at: "target"; readonly spec: string }
+  | { readonly kind: "netem"; readonly at: "target" | HopPlace; readonly spec: string }
   | { readonly kind: "sysctl"; readonly values: Readonly<Record<string, string>>; readonly undo: Readonly<Record<string, string>> }
   | { readonly kind: "mtu"; readonly at: HopPlace; readonly above: number };
 

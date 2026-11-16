@@ -31,6 +31,7 @@
     "@mark1russell7/quantity": "^0.4.0",
     "@mark1russell7/rigor-chaos": "^0.2.2",
     "@mark1russell7/rigor-proxy": "^0.2.1",
+    "@mark1russell7/rigor-statistics": "^0.2.3",
     "@mark1russell7/text": "^0.0.6",
     "@netdiag/fixtures": "workspace:*",
     "@procedures/shell": "^0.57.0",
