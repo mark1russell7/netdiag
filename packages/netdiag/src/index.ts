@@ -33,6 +33,7 @@ export { createRunner, type ClockOrigin, type ProbeOutcome, type Runner, type Ru
 export * from "./address/index.ts";
 export * from "./diagnosis/index.ts";
 export * from "./kinds.ts";
+export * from "./metrics/index.ts";
 export {
   LINK_PROBE,
   LINK_SUBJECT,
