@@ -1,14 +1,12 @@
 import {
-  CYMRU_ZONES,
   DEFAULT_MTR_CYCLES,
   DEFAULT_PING_COUNT,
   MAX_MTR_CYCLES,
   MAX_PING_COUNT,
-  RDAP_BOOTSTRAP,
-  RDAP_REGISTRIES,
   canonicalHost,
   grantProblems,
   hostKind,
+  lookupGrants,
   namedGrant,
   parseTarget,
   type Grant,
@@ -182,10 +180,7 @@ export function planCheck(options: CheckOptions, system: PlanSystem): Result<Che
     }
   }
 
-  if (owners) {
-    for (const host of [new URL(RDAP_BOOTSTRAP.ipv4).hostname, ...RDAP_REGISTRIES]) grants.push({ kind: "host", host, basis: "named", note: "a registry of RDAP for --owners" });
-    for (const host of Object.values(CYMRU_ZONES)) grants.push({ kind: "host", host, basis: "named", note: "a DNS zone of Team Cymru for --owners" });
-  }
+  if (owners) grants.push(...lookupGrants("--owners"));
 
   for (const cidr of options.grant ?? []) grants.push({ kind: "range", cidr: cidr.trim(), basis: "owned", note: "a range of --grant" });
 

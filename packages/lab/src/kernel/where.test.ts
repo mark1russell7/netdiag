@@ -1,4 +1,4 @@
-import { PATH_ORIGIN, PATH_OWNER, labBars, labGate, lossOrigins, type Fact, type PathReport, type ReportHop, type VisitStep } from "@mark1russell7/netdiag";
+import { PATH_ORIGIN, PATH_OWNER, labBars, labGate, lookupGrants, lossOrigins, type Fact, type PathReport, type ReportHop, type VisitStep } from "@mark1russell7/netdiag";
 import { readCheckReport } from "@mark1russell7/netdiag-cli/report";
 import { wilson } from "@mark1russell7/rigor-statistics";
 import { describe, expect, it } from "vitest";
@@ -6,7 +6,7 @@ import { runScore } from "../bars.ts";
 import { visitRounds, type LabRound, type Visit } from "../run.ts";
 import { SAMPLES_FORMAT, readSamples } from "../samples.ts";
 import { KERNEL_PORT, TOWARD_CLIENT, faultPlan } from "./cases.ts";
-import { lookupGrants, visitInputOf } from "./protocol.ts";
+import { LOOKUP_REASON, visitInputOf } from "./protocol.ts";
 import {
   WHERE_CASES,
   WHERE_CATALOG,
@@ -263,7 +263,7 @@ describe("the samples of the where cases", () => {
     const check = checkPlanOf(plan);
     expect(check).toMatchObject({ target: { host: TARGET, kind: "ipv4", port: KERNEL_PORT }, scheme: "https", path: "/", pingCount: 0, mtrCycles: 60, owners: true, mtu: "auto" });
     expect(check.visit).toEqual(visitInputOf(plan));
-    expect(check.visit.grants.slice(-lookupGrants().length)).toEqual(lookupGrants());
+    expect(check.visit.grants.slice(-lookupGrants(LOOKUP_REASON).length)).toEqual(lookupGrants(LOOKUP_REASON));
   });
 
   it("give the report of a read with its case, its truth and the start of the loss", () => {

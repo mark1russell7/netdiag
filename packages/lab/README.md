@@ -135,7 +135,7 @@ The lookups of the owners and the origins send no packet out of the lab.
 - The agent image has no `netdiag-cli`, so the agent has no RDAP client and no TXT client of its own.
 - The RDAP port of the agent (`refuseRdap`) refuses each request. The TXT port (`refuseTxt`) refuses each query.
 - Each hop of the lab has a private address. Thus each lookup gives the outcome `special`, and the probes do not use the ports.
-- The plan grants the hosts of RDAP and the zones of Team Cymru by name, as `planCheck` of the CLI does. `lookupGrants` gives these grants.
+- The plan grants the hosts of RDAP and the zones of Team Cymru by name, as `planCheck` of the CLI does. `lookupGrants` of netdiag gives the grants to the lab and to the CLI.
 
 ## The bars of the gate
 

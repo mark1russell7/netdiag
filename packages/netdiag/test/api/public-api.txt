@@ -326,6 +326,7 @@ largePacketsLost: build/index.d.ts#largePacketsLost
 layerRank: build/layer.chunk.d.ts#layerRank
 linkProbe: build/index.d.ts#linkProbe
 linkStateOf: build/index.d.ts#linkStateOf
+lookupGrants: build/core.chunk.d.ts#lookupGrants
 lossNetworks: build/core.chunk.d.ts#lossNetworks
 lossOf: build/core.chunk.d.ts#lossOf
 lossOrigins: build/core.chunk.d.ts#lossOrigins
@@ -630,6 +631,7 @@ labBars: build/index.chunk2.d.ts#labBars
 labGate: build/index.chunk2.d.ts#labGate
 labRecordOf: build/index.chunk2.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
+lookupGrants: build/core.chunk.d.ts#lookupGrants
 lossNetworks: build/core.chunk.d.ts#lossNetworks
 lossOf: build/core.chunk.d.ts#lossOf
 lossOrigins: build/core.chunk.d.ts#lossOrigins
@@ -1250,6 +1252,9 @@ declare function ipdv(delaysMs: readonly number[]): number[];
 
 ### build/core.chunk.d.ts#isLocalName
 declare function isLocalName(name: string): boolean;
+
+### build/core.chunk.d.ts#lookupGrants
+declare function lookupGrants(reason: string): HostGrant[];
 
 ### build/core.chunk.d.ts#lossNetworks
 declare function lossNetworks(start: LossStart, owners: readonly PathOwner[], origins?: readonly PathOrigin[]): LossNetwork[];

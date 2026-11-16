@@ -3,7 +3,7 @@ import { get } from "node:https";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { realClock } from "@mark1russell7/algebra/clock";
-import { CYMRU_ZONES, RDAP_REGISTRIES, STANDARD_CATALOG, decideScope, originProbe, ownerProbe, scopeOf, type Fact } from "@mark1russell7/netdiag";
+import { CYMRU_ZONES, RDAP_REGISTRIES, STANDARD_CATALOG, decideScope, lookupGrants, originProbe, ownerProbe, scopeOf, type Fact } from "@mark1russell7/netdiag";
 import { signsOf } from "../cases.ts";
 import type { ToolRunOptions } from "@mark1russell7/netdiag/tools";
 import { authority, fakeToolHost, startDnsServer, type Authority, type FakeRule } from "@netdiag/fixtures";
@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { refuseRdap, refuseTxt, startAgent } from "./agent.ts";
 import { KERNEL_CASES, KERNEL_LATER, KERNEL_REFERENCE_NAME, KERNEL_TARGET_NAME, TOWARD_TARGET, applySteps, faultPlan, kernelZone, type StepLab } from "./cases.ts";
 import { httpsArgs, parseHttpsArgs, startHttps } from "./https.ts";
-import { agentArgs, lookupGrants, parseAgentArgs, visitInputOf, visitOf, type AgentLine, type AgentPlan } from "./protocol.ts";
+import { agentArgs, LOOKUP_REASON, parseAgentArgs, visitInputOf, visitOf, type AgentLine, type AgentPlan } from "./protocol.ts";
 import { parseZoneArg, zoneArg } from "./resolver.ts";
 import { IMAGE_FILES, NODE_IMAGE, REPOSITORY_ROOT, kernelPlan, kernelTarget, wherePlan } from "./world.ts";
 
@@ -141,9 +141,9 @@ describe("the protocol of the agent", () => {
   });
 
   it("grants the hosts of the lookups by name only with owners, so the scope permits the peers of the two probes", () => {
-    const hosts = lookupGrants().map((grant) => (grant.kind === "host" ? `${grant.host} ${grant.basis}` : grant.cidr));
+    const hosts = lookupGrants(LOOKUP_REASON).map((grant) => `${grant.host} ${grant.basis}`);
     expect(hosts).toEqual(["data.iana.org named", ...RDAP_REGISTRIES.map((host) => `${host} named`), `${CYMRU_ZONES.ipv4} named`, `${CYMRU_ZONES.ipv6} named`]);
-    expect(visitInputOf(where).grants).toEqual([...visitInputOf(plan).grants, ...lookupGrants()]);
+    expect(visitInputOf(where).grants).toEqual([...visitInputOf(plan).grants, ...lookupGrants(LOOKUP_REASON)]);
     expect(visitInputOf(plan).grants.every((grant) => grant.kind === "range")).toBe(true);
     const peers = [
       ...ownerProbe(refuseRdap).peers({ addresses: ["172.21.0.1", "8.8.8.8"] }),

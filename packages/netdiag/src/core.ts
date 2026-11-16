@@ -58,6 +58,7 @@ export {
   type RdapService,
 } from "./lookups/rdap.ts";
 export { CYMRU_ZONES, originQuery, readOrigin, type CymruOrigin } from "./lookups/cymru.ts";
+export { lookupGrants } from "./lookups/grants.ts";
 export { DEFAULT_MTR_CYCLES, DEFAULT_PING_COUNT, MAX_MTR_CYCLES, MAX_PING_COUNT } from "./tools/counts.ts";
 export {
   MTU_SEARCHES,

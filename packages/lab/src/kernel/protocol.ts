@@ -1,4 +1,4 @@
-import { CYMRU_ZONES, LAYERS, RDAP_BOOTSTRAP, RDAP_REGISTRIES, type Fact, type Grant, type VisitInput, type VisitStep } from "@mark1russell7/netdiag";
+import { LAYERS, lookupGrants, type Fact, type Grant, type VisitInput, type VisitStep } from "@mark1russell7/netdiag";
 import { parseArgs } from "node:util";
 import { z } from "zod";
 import type { Visit } from "../run.ts";
@@ -118,24 +118,18 @@ export function parseAgentArgs(args: readonly string[]): AgentPlan {
 }
 
 /**
- * This function gives the hosts of the lookups of the owners and of the origins, as grants by name. `planCheck` of
- * the CLI grants the same hosts for `--owners`. Without them, the scope refuses the probes of the lookups.
+ * The reason in the note of each grant of the lookups. `lookupGrants` of netdiag gives the grants, and `planCheck` of
+ * the CLI gives the same hosts for `--owners`. Without them, the scope refuses the probes of the lookups.
  */
-export function lookupGrants(): Grant[] {
-  const registries = [new URL(RDAP_BOOTSTRAP.ipv4).hostname, ...RDAP_REGISTRIES];
-  return [
-    ...registries.map((host): Grant => ({ kind: "host", host, basis: "named", note: "a registry of RDAP for the lookups of the owners" })),
-    ...Object.values(CYMRU_ZONES).map((host): Grant => ({ kind: "host", host, basis: "named", note: "a DNS zone of Team Cymru for the lookups of the origins" })),
-  ];
-}
+export const LOOKUP_REASON = "the lookups of the kernel lab";
 
 /**
  * This function gives the input of the visit of a plan. Each range of the plan is a range that the lab owns. A plan
- * with `owners` also grants the hosts of `lookupGrants`.
+ * with `owners` also grants the hosts of `lookupGrants(LOOKUP_REASON)`.
  */
 export function visitInputOf(plan: AgentPlan): VisitInput {
   const ranges: Grant[] = plan.grants.map((cidr) => ({ kind: "range", cidr, basis: "owned", note: "a host of the kernel lab" }));
-  const grants = plan.owners ? [...ranges, ...lookupGrants()] : ranges;
+  const grants = plan.owners ? [...ranges, ...lookupGrants(LOOKUP_REASON)] : ranges;
   return {
     target: { host: plan.target, port: plan.port },
     references: plan.references.map((host) => ({ host, port: plan.port })),
