@@ -31,3 +31,9 @@ trustPolicyIgnoreAfter: 10080
 trustPolicyExclude:
   - "@mark1russell7/*"
   - "@procedures/*"
+
+# The harness of the kernel lab uses Testcontainers 12.2.1. Its archiver 7 brings archiver-utils 5.0.2 with glob 10.5.0
+# and minimatch 9.0.9: CVE-2026-118773 and CVE-2026-118764. archiver-utils uses only glob.sync, and glob 14 keeps it in
+# its CommonJS entry. Remove this override when Testcontainers uses archiver 8, or archiver-utils accepts glob 14.
+overrides:
+  "archiver-utils>glob": "^14.0.2"
