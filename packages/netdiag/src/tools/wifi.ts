@@ -217,17 +217,29 @@ function bandOfText(text: string | undefined): WifiBand | undefined {
   return ghz === "2.4" || ghz === "5" || ghz === "6" ? ghz : undefined;
 }
 
+/**
+ * This function reads one field line of netsh: an indent, a key, a colon, then the end of the line or a space and the
+ * value. The first colon ends the key, because a MAC address has colons in the value. The function finds the colon with
+ * `indexOf`, not with a regular expression. Thus a long line takes linear time.
+ */
+function netshField(line: string): { readonly key: string; readonly value: string } | undefined {
+  const colon = line.indexOf(":");
+  if (colon < 2 || !/^\s/.test(line)) return undefined;
+  const rest = line.slice(colon + 1);
+  if (rest.length > 0 && !/^\s/.test(rest)) return undefined;
+  return { key: line.slice(0, colon).trim(), value: rest.trim() };
+}
+
 function readNetsh(stdout: string): WifiLink[] {
   const blocks: Map<string, string>[] = [];
   let block: Map<string, string> | undefined;
   let last: string | undefined;
   for (const line of stdout.split(LINES)) {
     if (line.trim().length === 0) continue;
-    // "    Name                   : Wi-Fi". The first colon ends the key, because a MAC address has colons in the value.
-    const field = /^\s+([^:]+?)\s*:(?:\s(.*))?$/.exec(line);
-    if (field !== null) {
-      const key = (field[1] ?? "").trim();
-      const value = (field[2] ?? "").trim();
+    // "    Name                   : Wi-Fi"
+    const field = netshField(line);
+    if (field !== undefined) {
+      const { key, value } = field;
       if (key === "Name") {
         block = new Map();
         blocks.push(block);
@@ -320,8 +332,8 @@ function readSystemProfiler(stdout: string): WifiLink[] {
     const channelText = String(network["spairport_network_channel"] ?? "");
     const channel = /^(\d+)(?:\s*\((2|5|6)GHz(?:,\s*(\d+)MHz)?\))?/.exec(channelText);
     const ghz = channel?.[2];
-    // "-52 dBm / -94 dBm"
-    const levels = /(-?\d+)\s*(?:dBm)?\s*\/\s*(-?\d+)/.exec(textOf(network["spairport_signal_noise"]) ?? "");
+    // "-52 dBm / -94 dBm". The anchor, and one space before the slash, keep the time of a long text linear.
+    const levels = /^\s*(-?\d+)\s*(?:dBm\s*)?\/\s*(-?\d+)/.exec(textOf(network["spairport_signal_noise"]) ?? "");
     const ssid = textOf(network["_name"]);
     const rate = network["spairport_network_rate"];
     links.push(

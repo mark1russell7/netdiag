@@ -327,6 +327,26 @@ describe("readWifi on macOS", () => {
   });
 });
 
+describe("readWifi on long output", () => {
+  // The two inputs that CodeQL found for the old regular expressions of netsh and system_profiler. Their time was
+  // quadratic in the length of the line, so these tests did not end in the time limit of the test.
+  it("reads a long line of netsh in linear time", () => {
+    const line = `\t${"\t\t".repeat(50_000)}x\n`;
+    expect(() => readWifi(one("win32", "netsh", ok(line)))).toThrow(/only English output/);
+  });
+
+  it("reads a long signal text of system_profiler in linear time", () => {
+    const report = profilerReport([
+      {
+        _name: "en0",
+        spairport_current_network_information: { _name: "lab-net", spairport_signal_noise: "9".repeat(100_000) },
+        spairport_status_information: "spairport_status_connected",
+      },
+    ]);
+    expect(read(one("darwin", "system_profiler", ok(report)))).toEqual([{ interface: "en0", state: "connected", ssid: "lab-net" }]);
+  });
+});
+
 describe("readWifi on other systems", () => {
   it("throws for a system with no adapter", () => {
     expect(() => readWifi({ platform: "freebsd", runs: [] })).toThrow(/freebsd/);
