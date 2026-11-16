@@ -129,8 +129,8 @@ function bytesOf(text: string): number[] | undefined {
 }
 
 /**
- * This function gives the bytes of the canonical form of an IP address: 4 for IPv4, 16 for IPv6, or `undefined` for a
- * text that is not an address. Thus a mapped IPv4 address gives 4 bytes. The zone of an IPv6 address does not change the bytes.
+ * This function gives the bytes of the canonical form of an IP address. It gives 4 bytes for IPv4, 16 for IPv6, or
+ * `undefined` for a text that is not an address. Thus a mapped IPv4 address gives 4 bytes. The zone of an IPv6 address does not change the bytes.
  */
 export function addressBytes(address: string): number[] | undefined {
   return bytesOf(canonicalAddress(address));

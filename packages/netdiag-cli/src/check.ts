@@ -28,8 +28,8 @@ export interface CheckDeps {
 }
 
 /**
- * This function gives the parts of this computer: the monotonic clock, `runCommand` of `@procedures/shell`, the DNS
- * resolvers, the port of RDAP over `polite-crawler` and the port of TXT queries over `node:dns`.
+ * This function gives the parts of this computer: the monotonic clock, `runCommand` of `@procedures/shell` and the DNS
+ * resolvers. It also gives the port of RDAP over `polite-crawler` and the port of TXT queries over `node:dns`.
  */
 export function systemDeps(): CheckDeps {
   return {

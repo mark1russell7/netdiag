@@ -139,7 +139,7 @@ export function subjectText(role: string, host: string): string {
   return role === "local" ? "this computer" : `${role} ${host}`;
 }
 
-/** This function gives the owner of a hop for a person, with no origin AS: its network, holder and country, or the outcome of the lookup. */
+/** This function gives the owner of a hop for a person, with no origin AS. The text is its network, holder and country, or the outcome of the lookup. */
 function ownerName(owner: PathOwner): string {
   switch (owner.outcome) {
     case "found": {
@@ -223,8 +223,8 @@ export function hopsText(hops: readonly LossHop[]): string {
 }
 
 /**
- * This function gives the short name of a network where a loss can start: the name and the origin AS, the origin AS
- * alone, or the first hop.
+ * This function gives the short name of a network where a loss can start. The short name is the name and the origin AS,
+ * the origin AS alone, or the first hop.
  */
 export function networkName(network: LossNetwork): string {
   const found = network.owner?.outcome === "found" ? network.owner.network : undefined;
@@ -255,8 +255,8 @@ const UNDER = " ".repeat(8);
 
 /**
  * This function gives the lines of the text report of a check. The lines show the most probable causes with their
- * probabilities and the next step with its gain. They also show the problems of the visit, the owners and the origin AS
- * of the hops, where each loss starts and the count of the evidence. The cause of a loss names the networks where the
+ * probabilities and the next step with its gain. They also show the problems of the visit, and the owners and the origin
+ * AS of the hops. Then they show where each loss starts and the count of the evidence. The cause of a loss names the networks where the
  * loss can start.
  */
 export function formatReport(report: CheckReport): string[] {

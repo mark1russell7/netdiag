@@ -52,8 +52,8 @@ export interface CheckOptions {
   /** The number of cycles of `mtr` to each address. The default is 0, or `DEFAULT_MTR_CYCLES` with `owners`. 0 starts no `mtr`. */
   readonly mtrCycles?: number | undefined;
   /**
-   * `true` looks up the owner network of each hop of `mtr` in the public registries of RDAP, and its origin AS in the DNS
-   * of Team Cymru. The check then grants the bootstrap host of IANA, each registry of `RDAP_REGISTRIES` and each zone of `CYMRU_ZONES`.
+   * `true` looks up the owner network of each hop of `mtr` in the public registries of RDAP. It also looks up the origin AS
+   * of each hop in the DNS of Team Cymru. The check then grants the bootstrap host of IANA, each registry of `RDAP_REGISTRIES` and each zone of `CYMRU_ZONES`.
    */
   readonly owners?: boolean | undefined;
 }

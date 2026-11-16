@@ -2,8 +2,8 @@
  * The entry `@mark1russell7/netdiag/core` has all of netdiag that imports no module of Node. A browser can import it.
  *
  * The entry has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the
- * kinds of facts, the metrics and the readers. It also has the data of a visit, the limits of the echo requests, the
- * readers of RDAP and the readers of the DNS of Team Cymru. The probes and the visit are in the root entry.
+ * kinds of facts, the metrics and the readers. It also has the data of a visit and the limits of the echo requests. The
+ * readers of RDAP and of the DNS of Team Cymru are in it too. The probes and the visit are in the root entry.
  *
  * @packageDocumentation
  */

@@ -14,7 +14,7 @@ This package has the core model of netdiag. It has the typed facts at each layer
 | `@mark1russell7/netdiag/diagnosis` | The probability model, the next probe and the lab score. |
 | `@mark1russell7/netdiag/tools` | The adapters of outside tools. |
 
-The core has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the kinds of facts, the metrics and the readers. It also has the data of a visit, the limits of the echo requests, the readers of RDAP and the readers of the DNS of Team Cymru.
+The core has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the kinds of facts, the metrics and the readers. It also has the data of a visit and the limits of the echo requests. The readers of RDAP and of the DNS of Team Cymru are in it too.
 
 ## Facts
 

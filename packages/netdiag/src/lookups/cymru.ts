@@ -1,6 +1,6 @@
 /**
- * The data of the IP to ASN service of Team Cymru over DNS. A TXT query of the reversed address under a zone of the
- * service gives the BGP prefix of the address and the AS numbers that announce it.
+ * The data of the IP to ASN service of Team Cymru over DNS. A TXT query of the reversed address goes to a zone of the
+ * service. Its answer gives the BGP prefix of the address and the AS numbers that announce it.
  *
  * Each function is pure, and the module imports no module of Node. Thus a browser can read a record of a lookup.
  *
