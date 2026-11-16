@@ -2223,6 +2223,7 @@ export declare const VISIT_RECORDS: readonly RecordType[];
 interface VisitOptions {
   readonly clock: Clock;
   readonly tools?: ToolHost | undefined;
+  readonly wifi?: boolean | undefined;
   readonly interfaces?: (() => InterfaceTable) | undefined;
   readonly pingCount?: number | undefined;
   readonly mtrCycles?: number | undefined;
