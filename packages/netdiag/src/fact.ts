@@ -1,5 +1,6 @@
-import type { Layer } from "./layer.ts";
-import type { Target } from "./target.ts";
+import { err, ok, type Result } from "@mark1russell7/optional";
+import { isLayer, type Layer } from "./layer.ts";
+import type { HostKind, Target } from "./target.ts";
 
 /**
  * The time of a fact, in milliseconds on the monotonic clock of the runner.
@@ -84,4 +85,64 @@ export interface Observation<V = unknown> {
 /** This function makes an observation with a type check of its value against its kind. */
 export function observe<V>(kind: FactKind<V>, subject: Target, value: V, time?: FactTime): Observation<V> {
   return time === undefined ? { kind, subject, value } : { kind, subject, value, time };
+}
+
+/** The kinds of the host of a target. The list is the type `HostKind` of `target.ts`. */
+const HOST_KINDS: ReadonlySet<string> = new Set<HostKind>(["name", "ipv4", "ipv6"]);
+
+/** This function tells if a value is a plain object of JSON. The checks of the fact kinds also use it. */
+export function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** This function tells if a value is a text with one character or more. */
+export function isText(value: unknown): value is string {
+  return typeof value === "string" && value !== "";
+}
+
+/** This function tells if a value is a TCP or UDP port: an integer from 1 to 65535. */
+export function isPort(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 65535;
+}
+
+function isSubject(value: unknown): value is Target {
+  if (!isRecord(value) || !isText(value["host"]) || typeof value["kind"] !== "string" || !HOST_KINDS.has(value["kind"])) return false;
+  return value["port"] === undefined || isPort(value["port"]);
+}
+
+function isTime(value: unknown): value is FactTime {
+  if (!isRecord(value)) return false;
+  const { start, end } = value;
+  return typeof start === "number" && typeof end === "number" && Number.isFinite(start) && Number.isFinite(end) && start <= end;
+}
+
+function isSource(value: unknown): value is FactSource {
+  return isRecord(value) && isText(value["probe"]) && isText(value["version"]) && (value["tool"] === undefined || isText(value["tool"]));
+}
+
+/**
+ * This function reads a fact of a record, for example a fact of a JSON report, and checks it.
+ *
+ * - A fact has an id, a kind, a layer, a subject, a time, a source and a value. The start of its time is at or before its end.
+ * - A fact of a kind of `kinds` has the layer of its kind, and its value passes the check of its kind.
+ * - The function does not check the value of a fact of another kind. Thus a record of a later version can have new kinds.
+ *
+ * The result is the same object with the type `Fact`, or the problems of the value.
+ */
+export function readFact(value: unknown, kinds: readonly FactKind<unknown>[]): Result<Fact, string[]> {
+  if (!isRecord(value)) return err(["The fact is not an object."]);
+  const name = isText(value["id"]) ? `The fact ${value["id"]}` : "The fact";
+  const problems: string[] = [];
+  if (!isText(value["id"])) problems.push(`${name} has no id.`);
+  if (typeof value["kind"] !== "string" || !KIND_NAME.test(value["kind"])) problems.push(`${name} has no valid kind.`);
+  if (!isLayer(value["layer"])) problems.push(`${name} has no valid layer.`);
+  if (!isSubject(value["subject"])) problems.push(`${name} has no valid subject.`);
+  if (!isTime(value["time"])) problems.push(`${name} has no valid time.`);
+  if (!isSource(value["source"])) problems.push(`${name} has no valid source.`);
+  if (!("value" in value)) problems.push(`${name} has no value.`);
+  if (problems.length > 0) return err(problems);
+  const fact = value as unknown as Fact;
+  const kind = kinds.find((each) => each.kind === fact.kind);
+  if (kind !== undefined && !isFactOf(kind, fact)) return err([`${name} has a layer or a value that the kind ${fact.kind} does not accept.`]);
+  return ok(fact);
 }

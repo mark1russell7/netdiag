@@ -54,4 +54,16 @@ check("with no probe, the gate fails", await until(() => text("#lab-result").inc
 set("#lab-bar", "0");
 check("with the bar 0, the gate passes", await until(() => text("#lab-result").includes("The gate passes")), text("#lab-result"));
 
+// 4. Read a check report
+check("the report section has the samples of the lab", $$("#report-sample option").length > 0, $$("#report-sample option").length);
+check("a report has a row for each layer", $$("#report-flow .flow-layer").length === 9, $$("#report-flow .flow-layer").length);
+check("a report has a ring for each part", $$("#report-rings .ring").length >= 6, $$("#report-rings .ring").length);
+check("a report has a lane for each host", $$("#report-timeline .lane").length > 0, text("#report-timeline"));
+set("#report-sample", "port.closed");
+check("a pick of a sample shows its report", await until(() => text("#report-head").includes("port.closed")), text("#report-head"));
+set("#report-text", '{"format": "netdiag-check/0"}');
+click("#report-read");
+check("a file of another format gives its problem", await until(() => text("#report-problems").includes("netdiag-check/1")), text("#report-problems"));
+check("a file that is not a report removes the views", $$("#report-flow .flow-layer").length === 0, $$("#report-flow .flow-layer").length);
+
 export {};

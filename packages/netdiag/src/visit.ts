@@ -36,7 +36,10 @@ export interface VisitResolver {
  * - `gateway`: the default gateway of this computer.
  * - `local`: this computer, for example the state of its link.
  */
-export type VisitRole = "target" | "reference" | "gateway" | "local";
+export type VisitRole = (typeof VISIT_ROLES)[number];
+
+/** The roles of a host in a visit. The type `VisitRole` is one of them. */
+export const VISIT_ROLES: readonly ["target", "reference", "gateway", "local"] = ["target", "reference", "gateway", "local"];
 
 /** One step of a visit: a fact, or a problem of a probe that did not end. `host` is the host of the role. */
 export type VisitStep =

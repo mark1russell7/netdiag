@@ -32,6 +32,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./report": "./src/report.ts",
     "./package.json": "./package.json"
   },
   "files": [
@@ -53,6 +54,10 @@
       ".": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
+      },
+      "./report": {
+        "types": "./build/report.d.ts",
+        "default": "./build/report.js"
       },
       "./package.json": "./package.json"
     }

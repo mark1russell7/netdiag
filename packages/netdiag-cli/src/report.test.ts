@@ -2,7 +2,7 @@ import { DNS_ANSWER, TCP_CONNECT, target, type Fact, type VisitRole, type VisitS
 import { describe, expect, it } from "vitest";
 import { TOP_CAUSES } from "./next.ts";
 import { planCheck, type CheckOptions, type CheckPlan } from "./plan.ts";
-import { CHECK_FORMAT, formatReport, percentOf, reportOf, subjectText, type CheckReport } from "./report.ts";
+import { CHECK_FORMAT, MAX_REPORT_PROBLEMS, formatReport, percentOf, readCheckReport, reportOf, subjectText, type CheckReport } from "./report.ts";
 
 // The report of fixed steps of a visit. No test sends a packet.
 
@@ -105,5 +105,71 @@ describe("the text of a report", () => {
 
   it("writes a small probability as <1%", () => {
     expect([percentOf(0), percentOf(0.004), percentOf(0.006), percentOf(0.5), percentOf(1)]).toEqual(["0%", "<1%", "1%", "50%", "100%"]);
+  });
+});
+
+describe("readCheckReport", () => {
+  const report = reportOf(plan({ target: "shop.example", reference: ["example.org"] }), REFUSED);
+  /** This function gives a copy of the report through JSON, with the fields of `change`. */
+  const changed = (change: Record<string, unknown>): Record<string, unknown> => ({ ...(JSON.parse(JSON.stringify(report)) as object), ...change });
+  const problemsOf = (value: unknown): readonly string[] => {
+    const read = readCheckReport(value);
+    return read.tag === "err" ? read.error : [];
+  };
+
+  it("gives the same report after a round trip through JSON", () => {
+    expect(readCheckReport(JSON.parse(JSON.stringify(report)))).toEqual({ tag: "ok", value: report });
+    const empty = reportOf(plan({ target: "192.0.2.10" }), []);
+    expect(readCheckReport(JSON.parse(JSON.stringify(empty)))).toEqual({ tag: "ok", value: empty });
+  });
+
+  it("refuses a value that is not a report of the format netdiag-check/1", () => {
+    expect(problemsOf("text")).toEqual(["The report is not a JSON object."]);
+    expect(problemsOf([report])).toEqual(["The report is not a JSON object."]);
+    expect(problemsOf(changed({ format: "netdiag-check/2" }))).toEqual(['The format of the report is "netdiag-check/2", not "netdiag-check/1".']);
+    expect(problemsOf({})).toEqual(['The format of the report is null, not "netdiag-check/1".']);
+  });
+
+  it("gives the problems of the fields", () => {
+    expect(problemsOf(changed({ target: "", scheme: "ftp", path: "shop" }))).toEqual([
+      "The report has no target.",
+      "The scheme of the report is not http or https.",
+      "The path of the report does not start with /.",
+    ]);
+    expect(problemsOf(changed({ evidence: "none" }))).toEqual(["The field evidence of the report is not a list."]);
+    expect(problemsOf(changed({ grants: [{ kind: "host", basis: "named" }] }))).toEqual(["The item 1 of grants is not a grant."]);
+    expect(problemsOf(changed({ problems: [{ role: "router", host: "", problem: "x" }] }))).toEqual(["The item 1 of problems is not a problem of a probe."]);
+  });
+
+  it("checks the order and the sum of the probabilities of the causes", () => {
+    const causes = report.causes;
+    expect(causes.length).toBeGreaterThan(1);
+    expect(problemsOf(changed({ causes: [...causes].reverse() }))).toEqual(["The causes do not go from the most probable."]);
+    const half = causes.map((cause) => ({ ...cause, probability: cause.probability / 2 }));
+    expect(problemsOf(changed({ causes: half }))).toEqual([`The probabilities of the causes sum to ${half.reduce((sum, cause) => sum + cause.probability, 0)}, not 1.`]);
+  });
+
+  it("checks that the next step is the first of the choices", () => {
+    expect(report.choices.length).toBeGreaterThan(1);
+    expect(problemsOf(changed({ next: report.choices[1] }))).toEqual(["The next step is not the first of the choices."]);
+    expect(problemsOf(changed({ next: null }))).toEqual(["The next step is not the first of the choices."]);
+    expect(problemsOf(changed({ next: null, choices: [] }))).toEqual([]);
+  });
+
+  it("checks each fact, and each fact id that the report names", () => {
+    const [first, second] = report.facts;
+    if (first === undefined || second === undefined) throw new Error("The report has no facts.");
+    expect(problemsOf(changed({ facts: [{ ...first, fact: { ...first.fact, layer: "tls" } }, ...report.facts.slice(1)] }))).toEqual([
+      `The item 1 of facts: The fact ${first.fact.id} has a layer or a value that the kind dns.answer does not accept.`,
+    ]);
+    expect(problemsOf(changed({ facts: [first, { ...second, fact: { ...second.fact, id: first.fact.id } }, ...report.facts.slice(2)] }))).toContain(
+      `The fact id ${first.fact.id} is not unique.`,
+    );
+    expect(problemsOf(changed({ skipped: [{ fact: "f999", reason: "No reader." }] }))).toEqual(["The report names the fact f999, and has no fact with this id."]);
+  });
+
+  it("gives at most MAX_REPORT_PROBLEMS problems", () => {
+    const many = Array.from({ length: 50 }, () => ({ role: "router" }));
+    expect(problemsOf(changed({ problems: many }))).toHaveLength(MAX_REPORT_PROBLEMS);
   });
 });

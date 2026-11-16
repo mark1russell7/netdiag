@@ -6,6 +6,8 @@
 import { byId, copyText, h, setupTheme } from "@mark1russell7/site-pages/chrome";
 import { examples, verdict } from "@mark1russell7/site-pages/demo";
 import { GAIN_RESOLUTION, NONE, UNKNOWN, type Diagnosis, type Evidence } from "@mark1russell7/netdiag/diagnosis";
+import { readCheckReport, type CheckReport } from "@mark1russell7/netdiag-cli/report";
+import { readSamples } from "@netdiag/lab/samples";
 import {
   CATALOG,
   FEATURE_NAMES,
@@ -27,6 +29,8 @@ import {
   search,
   searchDone,
 } from "./model.ts";
+import { flowOf, ringsOf, timelineOf, type FlowItem, type RingId } from "./report-views.ts";
+import samplesJson from "./samples.json";
 
 setupTheme(byId<HTMLButtonElement>("theme"), "theme");
 
@@ -475,3 +479,225 @@ for (const control of [labRuns, labBar, labSeed]) control.addEventListener("inpu
 });
 for (const box of labProbes) box.addEventListener("change", showLab);
 showLab();
+
+// 4. Read a check report
+
+/** The names of the rings of the network, from the computer to the service. */
+const RING_NAMES: Readonly<Record<RingId, string>> = {
+  interface: "The interface",
+  wifi: "The Wi-Fi link",
+  gateway: "The gateway",
+  resolver: "The DNS resolver",
+  path: "The path",
+  service: "The service",
+  other: "Another part",
+  unknown: "An unknown cause",
+  none: "No fault",
+};
+
+/** The ids of the views of a report. A file that is not a report empties them. */
+const REPORT_VIEWS = ["report-head", "report-rings", "report-flow", "report-causes", "report-next", "report-timeline"] as const;
+
+const reportSample = byId<HTMLSelectElement>("report-sample");
+const reportFile = byId<HTMLInputElement>("report-file");
+const reportText = byId<HTMLTextAreaElement>("report-text");
+const sampleFile = readSamples(samplesJson);
+const samples = sampleFile.tag === "ok" ? sampleFile.value.samples : [];
+if (sampleFile.tag === "err") console.error("The samples of the lab have problems:", sampleFile.error);
+
+/** This function shows the problems of a file that is not a report, and removes the views of the last report. */
+function showReportProblems(what: string, problems: readonly string[]): void {
+  byId("report-problems").replaceChildren(
+    h("div", { class: "sp-empty problems" }, h("p", {}, `The page cannot read ${what} as a report:`), h("ul", {}, ...problems.map((problem) => h("li", {}, problem)))),
+  );
+  for (const id of REPORT_VIEWS) byId(id).replaceChildren();
+}
+
+/** This function shows the verdict of a report: the most probable cause and its step. */
+function reportVerdict(report: CheckReport): HTMLElement {
+  const top = report.causes[0];
+  if (top === undefined) return h("p", { class: "sp-empty" }, "The report has no causes.");
+  if (top.id === NONE) return verdict(true, `No fault, ${percent(top.probability)}:`, " the observations agree with a network that works.");
+  if (top.id === UNKNOWN) return verdict(false, `An unknown cause, ${percent(top.probability)}:`, " no fault of the catalog explains the observations together. ", top.step);
+  return verdict(false, `${top.summary.replace(/\.$/, "")}, ${percent(top.probability)}:`, " ", top.step);
+}
+
+/** This function shows an observation of a layer, with its tone. */
+function flowItem(item: FlowItem): HTMLElement {
+  return h(
+    "li",
+    { class: `obs-item ${item.tone}${item.ignored === undefined ? "" : " ignored"}`, title: item.ignored ?? "" },
+    observation(item.evidence),
+    item.ignored === undefined ? null : h("span", { class: "tag" }, "not used"),
+  );
+}
+
+/** This function gives a list of code names, separated by commas. */
+function codeList(names: readonly string[]): (string | HTMLElement)[] {
+  return names.flatMap((name, index) => [index === 0 ? "" : ", ", h("code", {}, name)]);
+}
+
+/** This function shows the verdict and the facts of a report. `truth` is the fault of a lab sample. */
+function showReportHead(report: CheckReport, source: string, truth: string | undefined): void {
+  const unended = report.problems.length;
+  const named = report.causes[0]?.id === truth ? ", and the check names it first." : ", and the check names another cause first.";
+  byId("report-head").replaceChildren(
+    h(
+      "p",
+      { class: "report-target" },
+      h("code", {}, `${report.scheme}://${report.target}${report.path}`),
+      ` ${source}: ${String(report.facts.length)} facts, ${String(report.evidence.length)} observations${unended === 0 ? "" : `, ${String(unended)} probes that did not end`}.`,
+    ),
+    reportVerdict(report),
+    truth === undefined ? null : h("p", { class: "note small" }, "The fault of this lab case is ", h("code", {}, truth), named),
+  );
+}
+
+/** This function shows the probability of each ring of the network. */
+function showRings(report: CheckReport): void {
+  const rings = ringsOf(report.causes);
+  const most = Math.max(...rings.map((ring) => ring.probability));
+  byId("report-rings").replaceChildren(
+    ...rings.map((ring) =>
+      h(
+        "li",
+        { class: `ring${ring.probability === most && most > 0 ? " most" : ""}${ring.ring === "none" ? " healthy" : ""}`, style: `--p: ${width(ring.probability)}` },
+        h("span", { class: "ring-name" }, RING_NAMES[ring.ring]),
+        h("b", { class: "pct" }, percent(ring.probability)),
+        // The ring names its top cause only when its percent is not 0%.
+        ring.top === undefined || percent(ring.probability) === "0%" ? null : h("code", { class: "ring-top" }, ring.top.id),
+      ),
+    ),
+  );
+}
+
+/** This function shows the observations of each layer. */
+function showFlow(report: CheckReport): void {
+  byId("report-flow").replaceChildren(
+    ...flowOf(report).map((row) =>
+      h(
+        "li",
+        { class: `flow-layer ${row.state}` },
+        h("span", { class: "flow-name" }, LAYER_NAMES[row.layer]),
+        h("span", { class: `tag ${row.state}` }, row.state === "none" ? "no observation" : row.state),
+        row.facts === 0 ? null : h("span", { class: "flow-facts" }, `${String(row.facts)} fact${row.facts === 1 ? "" : "s"}`),
+        row.target.length === 0 ? null : h("ul", { class: "obs-list", "aria-label": "The target" }, ...row.target.map(flowItem)),
+        row.others.length === 0 ? null : h("ul", { class: "obs-list others", "aria-label": "The other hosts" }, ...row.others.map(flowItem)),
+      ),
+    ),
+  );
+}
+
+/** This function shows the next step of a report, and the count of the other steps. */
+function showNext(report: CheckReport): void {
+  const next = report.next;
+  byId("report-next").replaceChildren(
+    next === null
+      ? h("p", { class: "sp-empty" }, "No probe can tell more about the most probable causes.")
+      : h(
+          "div",
+          { class: "next-step" },
+          h("p", {}, h("b", {}, next.step)),
+          h("p", { class: "note small" }, `It can give ${next.gain.toFixed(2)} bits of information about the causes. It observes `, ...codeList(next.observes.map((item) => item.feature)), "."),
+          report.choices.length < 2 ? null : h("p", { class: "note small" }, `${String(report.choices.length - 1)} other steps, for example `, ...codeList(report.choices.slice(1, 4).map((step) => step.id)), "."),
+        ),
+  );
+}
+
+/** This function shows each fact of a report on a lane of its host, at its time. */
+function showTimeline(report: CheckReport): void {
+  const timeline = timelineOf(report);
+  const span = Math.max(timeline.span, 1);
+  const lanes = timeline.lanes.map((lane, index) =>
+    h(
+      "div",
+      { class: "lane" },
+      h("span", { class: "lane-name" }, lane),
+      h(
+        "span",
+        { class: "lane-track" },
+        ...timeline.bars
+          .filter((bar) => bar.lane === index)
+          .map((bar) =>
+            h("span", {
+              class: "bar",
+              "data-layer": bar.layer,
+              style: `left: ${width(bar.start / span)}; width: max(3px, ${width((bar.end - bar.start) / span)})`,
+              title: `${bar.kind}: ${bar.start.toFixed(0)} to ${bar.end.toFixed(0)} ms`,
+            }),
+          ),
+      ),
+    ),
+  );
+  byId("report-timeline").replaceChildren(
+    ...lanes,
+    lanes.length === 0 ? h("p", { class: "sp-empty" }, "The report has no facts.") : h("p", { class: "lane-axis note small" }, h("span", {}, "0 ms"), h("span", {}, `${timeline.span.toFixed(0)} ms`)),
+  );
+}
+
+/** This function shows each view of a report. `truth` is the fault of a lab sample. */
+function showReport(report: CheckReport, source: string, truth?: string): void {
+  byId("report-problems").replaceChildren();
+  showReportHead(report, source, truth);
+  showRings(report);
+  showFlow(report);
+  showCauses(byId("report-causes"), { causes: report.causes, used: report.evidence, ignored: report.ignored }, { count: 5, truth });
+  showNext(report);
+  showTimeline(report);
+}
+
+/** This function reads the text of a file or of the paste box, and shows the report or its problems. */
+function readReportText(text: string, source: string): void {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    showReportProblems(source, ["The text is not JSON. Write the report with the option --json."]);
+    return;
+  }
+  const read = readCheckReport(value);
+  if (read.tag === "err") {
+    showReportProblems(source, read.error);
+    return;
+  }
+  reportSample.value = "";
+  showReport(read.value, `From ${source}`);
+}
+
+/** This function reads the file of a visitor. */
+async function readReportFile(file: File): Promise<void> {
+  readReportText(await file.text(), `the file ${file.name}`);
+}
+
+/** This function shows the selected sample of the lab, or the first sample. */
+function showSample(): void {
+  const sample = samples.find((each) => each.id === reportSample.value) ?? samples[0];
+  if (sample === undefined) return;
+  reportSample.value = sample.id;
+  showReport(sample.report, `The lab case ${sample.id}`, sample.truth);
+}
+
+reportSample.replaceChildren(...samples.map((sample) => h("option", { value: sample.id }, `${sample.id}: ${sample.summary}`)));
+reportSample.addEventListener("input", showSample);
+reportFile.addEventListener("change", () => {
+  const file = reportFile.files?.[0];
+  if (file !== undefined) void readReportFile(file);
+});
+byId("report-read").addEventListener("click", () => {
+  readReportText(reportText.value, "the pasted text");
+});
+const reportSection = byId("report-section");
+reportSection.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  reportSection.classList.add("dropping");
+});
+reportSection.addEventListener("dragleave", () => {
+  reportSection.classList.remove("dropping");
+});
+reportSection.addEventListener("drop", (event) => {
+  event.preventDefault();
+  reportSection.classList.remove("dropping");
+  const file = event.dataTransfer?.files[0];
+  if (file !== undefined) void readReportFile(file);
+});
+showSample();

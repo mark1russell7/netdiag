@@ -5,6 +5,7 @@ export {
   factsOf,
   isFactOf,
   observe,
+  readFact,
   type Fact,
   type FactKind,
   type FactSource,
@@ -82,6 +83,7 @@ export * from "./readers.ts";
 export {
   MTU_SEARCHES,
   VISIT_RECORDS,
+  VISIT_ROLES,
   describeOutcome,
   largePacketsLost,
   visitTarget,

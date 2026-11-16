@@ -13,15 +13,10 @@ import {
 } from "@mark1russell7/netdiag";
 import { DEFAULT_PING_COUNT, MAX_PING_COUNT } from "@mark1russell7/netdiag/tools";
 import { err, ok, type Result } from "@mark1russell7/optional";
+import { isScheme, type Scheme } from "./scheme.ts";
 
 // The plan of a check: the options of the command line, changed into the input of a visit. The plan is the scope rule
 // of the command: it grants only the hosts that the user names, the DNS resolver and the ranges of `--grant`.
-
-/** The schemes of the HTTP request of a check. */
-export const SCHEMES: readonly ["http", "https"] = ["http", "https"];
-
-/** A scheme of the HTTP request of a check. */
-export type Scheme = (typeof SCHEMES)[number];
 
 /** The options of the command `check`. Each field is a flag of the command line. */
 export interface CheckOptions {
@@ -73,10 +68,6 @@ interface Located {
   readonly target: Target;
   readonly scheme?: Scheme | undefined;
   readonly path?: string | undefined;
-}
-
-function isScheme(text: string): text is Scheme {
-  return (SCHEMES as readonly string[]).includes(text);
 }
 
 /** This function reads a host of the user. A URL also gives a scheme and a path. Only a port in the text stays in the target. */

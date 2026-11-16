@@ -20,6 +20,8 @@ A fact has a layer, a time, a source and a value. Its kind names the type of its
 
 A fact is plain data, so a record of facts is JSON.
 
+`readFact(value, kinds)` reads a fact of JSON and checks each field. A fact of a kind of `kinds` also passes the check of its kind. The function does not check the value of a fact of another kind, so a record of a later version can have new kinds.
+
 ## Probes
 
 A probe is an adapter. It tells if it is available, it does its work, and it parses its raw output into observations.

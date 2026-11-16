@@ -35,6 +35,16 @@ On a computer with no set-up, `--hosts local` uses addresses of `127.0.0.0/8`. T
 
 The command writes `runs.ndjson`, `records.ndjson`, `score.json` and `summary.md`. With `--bars <file>`, it also writes `gate.json`, and a failed gate gives the exit code 1.
 
+### The sample reports of the site
+
+The command `samples-main.ts` starts the world of each loopback case. Then it starts `netdiag check` in the world, as a user does:
+
+```sh
+node packages/lab/src/samples-main.ts --hosts ci --commit <sha> --out lab-out/samples.json
+```
+
+The file has the format `netdiag-samples/1`: the id, the true fault and the report of each case. `readSamples` of the entry `@netdiag/lab/samples` reads it. The site shows the samples in its demo 4, from `packages/site/src/samples.json`. A case that gives no report gives the exit code 2.
+
 ## The kernel lab
 
 The kernel lab makes the faults of the path with real kernels in Docker. It uses the harness of `mark1russell7/systems` (`@mark1russell7/harness`). It needs Docker, so only CI starts it.

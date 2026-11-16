@@ -24,7 +24,7 @@ describe("the home page", () => {
 
   it("has a door to each demo", () => {
     const doors = [...page.matchAll(/<li><a href="#([^"]+)">/g)].map((match) => match[1]!);
-    expect(doors).toEqual(["board-title", "search-title", "lab-title"]);
+    expect(doors).toEqual(["board-title", "search-title", "lab-title", "report-title"]);
     for (const door of doors) expect(page).toContain(`id="${door}"`);
   });
 });

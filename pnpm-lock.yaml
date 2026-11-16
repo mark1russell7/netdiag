@@ -245,6 +245,9 @@ importers:
       '@mark1russell7/netdiag':
         specifier: workspace:*
         version: link:../netdiag
+      '@mark1russell7/netdiag-cli':
+        specifier: workspace:*
+        version: link:../netdiag-cli
       '@mark1russell7/optional':
         specifier: ^1.2.0
         version: 1.2.0
@@ -395,12 +398,18 @@ importers:
       '@mark1russell7/netdiag':
         specifier: workspace:*
         version: link:../netdiag
+      '@mark1russell7/netdiag-cli':
+        specifier: workspace:*
+        version: link:../netdiag-cli
       '@mark1russell7/rigor-generators':
         specifier: ^0.1.16
         version: 0.1.16
       '@mark1russell7/site-pages':
         specifier: ^0.4.12
         version: 0.4.12
+      '@netdiag/lab':
+        specifier: workspace:*
+        version: link:../lab
       '@types/node':
         specifier: ^26.6.5
         version: 26.6.6
