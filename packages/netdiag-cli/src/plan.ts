@@ -45,7 +45,7 @@ export interface CheckOptions {
   readonly pingCount?: number | undefined;
   /**
    * `true` searches the MTU of the path to each address. Without it, the check searches only after a TLS handshake or
-   * an HTTP response that timed out. `false` never searches.
+   * an HTTP response that timed out. `false` does not search.
    */
   readonly mtu?: boolean | undefined;
 }

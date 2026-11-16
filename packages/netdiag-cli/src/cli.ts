@@ -44,7 +44,7 @@ const CHECK_INPUT = z.object({
   mtu: z
     .boolean()
     .optional()
-    .describe("Search the MTU of the path to each address. The default searches only after a time-out of TLS or HTTP. --no-mtu never searches"),
+    .describe("Search the MTU of the path to each address. The default searches only after a time-out of TLS or HTTP. --no-mtu starts no search"),
 });
 
 /** This function makes the command line of netdiag with the command `check`. */
