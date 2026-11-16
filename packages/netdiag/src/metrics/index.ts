@@ -6,6 +6,7 @@
  * - The RTO of RFC 6298, with the rule of Karn.
  * - The capacity of the narrowest link, from packet pairs.
  * - The search for the MTU of a path, with "do not fragment".
+ * - The roams, the drops, the changes of channel and the signal of a Wi-Fi link.
  *
  * @packageDocumentation
  */
@@ -14,3 +15,12 @@ export { echoMetrics, lossOf, type EchoMetrics, type LossEstimate } from "./loss
 export { PAIR_LEVEL, bandwidthOf, packetPairs, type BandwidthEstimate } from "./pairs.ts";
 export { RTO_ALPHA, RTO_BETA, RTO_K, ackSamples, rtoOf, type RtoEstimate, type RtoOptions } from "./rto.ts";
 export { ETHERNET_MTU, IPV4_MIN_MTU, IPV6_MIN_MTU, mtuOf, nextMtuSize, type MtuBounds } from "./mtu.ts";
+export {
+  WIFI_CHANGE_KINDS,
+  wifiChanges,
+  wifiSignalOf,
+  type WifiChange,
+  type WifiChangeKind,
+  type WifiChanges,
+  type WifiSignalSummary,
+} from "./wifi.ts";

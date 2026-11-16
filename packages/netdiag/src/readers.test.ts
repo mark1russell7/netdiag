@@ -35,6 +35,8 @@ import {
   TLS_RATIO_BINS,
   TLS_TRUST_VALUES,
   TRUSTS,
+  WIFI_LINK,
+  WIFI_SIGNAL_BINS,
   binOf,
   diagnose,
   featuresOf,
@@ -55,6 +57,7 @@ import {
   type TcpConnect,
   type TlsHandshake,
   type Trust,
+  type WifiLink,
 } from "./index.ts";
 
 type Entry = readonly [FactKind<unknown>, unknown, number?];
@@ -191,6 +194,12 @@ describe("the tables of the readers", () => {
     expect(PATH_LOSS_BINS.at(-1)?.below).toBeUndefined();
   });
 
+  it("give each value of the feature wifi.signal from a bin of the level in dBm", () => {
+    expect(WIFI_SIGNAL_BINS.map((bin) => bin.value).sort()).toEqual([...featureValues("wifi.signal")].sort());
+    expect(WIFI_SIGNAL_BINS.at(-1)?.below).toBeUndefined();
+    expect([-90, -75.1, -75, -60.1, -60, -30].map((dbm) => binOf(WIFI_SIGNAL_BINS, dbm))).toEqual(["weak", "weak", "fair", "fair", "strong", "strong"]);
+  });
+
   it("put a number at a limit in the next bin", () => {
     expect([149.9, 150, 899, 900, 5000].map((ms) => binOf(TCP_TIME_BINS, ms))).toEqual(["short", "long", "long", "retry", "retry"]);
     expect([2.9, 3, 7.9, 8].map((r) => binOf(TLS_RATIO_BINS, r))).toEqual(["low", "mid", "mid", "high"]);
@@ -199,7 +208,7 @@ describe("the tables of the readers", () => {
   });
 
   it("name only features of the catalog, with the fact kinds of the readers", () => {
-    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE, PATH_MTU].map((kind) => kind.kind);
+    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE, PATH_MTU, WIFI_LINK].map((kind) => kind.kind);
     for (const [feature, sources] of Object.entries(FEATURE_SOURCES)) {
       expect(STANDARD_FEATURES.map((f) => f.id)).toContain(feature);
       for (const source of sources) for (const kind of source) expect(kinds).toContain(kind);
@@ -215,6 +224,7 @@ describe("the tables of the readers", () => {
     expect(featuresOf([PATH_REPORT.kind, PATH_TRACE.kind])).toEqual(["path.loss"]);
     expect(featuresOf([LINK_STATE.kind])).toEqual(["link.state"]);
     expect(featuresOf([PATH_MTU.kind])).toEqual(["path.mtu"]);
+    expect(featuresOf([WIFI_LINK.kind])).toEqual(["wifi.signal"]);
     expect(featuresOf([])).toEqual([]);
   });
 
@@ -473,6 +483,52 @@ describe("a property of the readers", () => {
         for (const evidence of readEvidence(facts, { gateway }).evidence) expect(named).toContain(evidence.feature);
       }),
       { seed: 20261116, numRuns: 300 },
+    );
+  });
+});
+
+function wifi(link: WifiLink): Entry {
+  return [WIFI_LINK, link, 1];
+}
+
+describe("the reader of the Wi-Fi link", () => {
+  it("gives wifi.signal for each connected interface, from the level or from the quality of Windows", () => {
+    const { evidence, skipped } = readEvidence(
+      factsOf([
+        wifi({ interface: "wlan0", state: "connected", signalDbm: -52 }),
+        wifi({ interface: "Wi-Fi", state: "connected", quality: 30 }),
+        wifi({ interface: "en0", state: "connected", quality: 70 }),
+      ]),
+    );
+    expect(evidence).toEqual([
+      { feature: "wifi.signal", value: "strong", primary: true, facts: ["f0"] },
+      { feature: "wifi.signal", value: "weak", primary: true, facts: ["f1"] },
+      { feature: "wifi.signal", value: "fair", primary: true, facts: ["f2"] },
+    ]);
+    expect(skipped).toEqual([]);
+  });
+
+  it("lets the last fact of an interface decide", () => {
+    const facts = factsOf([wifi({ interface: "wlan0", state: "connected", signalDbm: -50 }), wifi({ interface: "wlan0", state: "connected", signalDbm: -80 })]);
+    expect(readEvidence(facts).evidence).toEqual([{ feature: "wifi.signal", value: "weak", primary: true, facts: ["f0", "f1"] }]);
+  });
+
+  it("gives no evidence for an interface with no link, or with no level and no quality", () => {
+    const { evidence, skipped } = readEvidence(factsOf([wifi({ interface: "wlan1", state: "off" }), wifi({ interface: "wlan0", state: "connected", channel: 6 })]));
+    expect(evidence).toEqual([]);
+    expect(skipped.map((item) => item.fact)).toEqual(["f0", "f1"]);
+    expect(skipped[0]?.reason).toContain("off");
+  });
+
+  it("gives a value of the feature for each level and quality in the range of the kind", () => {
+    fc.assert(
+      fc.property(fc.oneof(fc.record({ signalDbm: fc.integer({ min: -120, max: -1 }) }), fc.record({ quality: fc.integer({ min: 0, max: 100 }) })), (fields) => {
+        const link: WifiLink = { interface: "wlan0", state: "connected", ...fields };
+        expect(WIFI_LINK.check(link)).toBe(true);
+        const [item] = readEvidence(factsOf([wifi(link)])).evidence;
+        expect(featureValues("wifi.signal")).toContain(item?.value);
+      }),
+      { seed: 20261115, numRuns: 500 },
     );
   });
 });

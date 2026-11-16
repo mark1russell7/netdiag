@@ -1,6 +1,7 @@
 import { addressKind, canonicalAddress } from "./address/index.ts";
 import type { Evidence } from "./diagnosis/model.ts";
 import { isFactOf, type Fact, type FactKind } from "./fact.ts";
+import { wifiSignalOf } from "./metrics/wifi.ts";
 import {
   DNS_ANSWER,
   HTTP_RESPONSE,
@@ -11,6 +12,7 @@ import {
   PATH_TRACE,
   TCP_CONNECT,
   TLS_HANDSHAKE,
+  WIFI_LINK,
   type ConnectOutcome,
   type DnsAnswer,
   type DnsOutcome,
@@ -27,6 +29,7 @@ import {
   type TcpConnect,
   type TlsHandshake,
   type Trust,
+  type WifiLink,
 } from "./kinds.ts";
 
 // The readers change facts into evidence for the model. Each value that they give is a value of a feature of the
@@ -141,6 +144,12 @@ export const PATH_LOSS_BINS: readonly Bin[] = [{ below: 0.95, value: "high" }, {
  */
 export const LOSS_MIN_SENT = 20;
 
+/**
+ * The bins of the feature `wifi.signal`, on the signal level in dBm. A level below -75 dBm is weak. A level of -60 dBm or
+ * more is strong.
+ */
+export const WIFI_SIGNAL_BINS: readonly Bin[] = [{ below: -75, value: "weak" }, { below: -60, value: "fair" }, { value: "strong" }];
+
 /** The suffixes of the names of local networks and of the special-use names (RFC 6761, RFC 6762 and RFC 8375). */
 export const LOCAL_SUFFIXES: readonly string[] = ["local", "localhost", "test", "invalid", "example", "home.arpa", "internal", "lan", "home", "corp", "intranet", "private"];
 
@@ -174,6 +183,7 @@ interface Facts {
   readonly trace: Fact<PathTrace>[];
   readonly link: Fact<LinkState>[];
   readonly mtu: Fact<PathMtu>[];
+  readonly wifi: Fact<WifiLink>[];
 }
 
 /**
@@ -196,6 +206,7 @@ export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[
   "icmp.reply": [[ICMP_ECHO.kind]],
   "path.loss": [[ICMP_ECHO.kind], [PATH_REPORT.kind]],
   "path.mtu": [[PATH_MTU.kind]],
+  "wifi.signal": [[WIFI_LINK.kind]],
 };
 
 /** The options of `featuresOf`. */
@@ -229,6 +240,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["trace", PATH_TRACE],
   ["link", LINK_STATE],
   ["mtu", PATH_MTU],
+  ["wifi", WIFI_LINK],
 ];
 
 /**
@@ -242,13 +254,14 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - An ICMP echo fact with replies to `LOSS_MIN_SENT` requests or more gives `path.loss`. A report of `mtr` gives it from
  *   the last hop, when the address answered there.
  * - A fact `path.mtu` with the outcome `measured` gives `path.mtu` for its address. `PATH_MTU_VALUES` gives the value.
+ * - A Wi-Fi fact of a connected interface gives `wifi.signal`, one for each interface. A quality of Windows changes to dBm.
  * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
  */
 export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {
   const primaryOf = options.primary ?? (() => true);
   const slots = new Map<string, Slot>();
   const skipped: Skipped[] = [];
-  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [], mtu: [] };
+  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [], mtu: [], wifi: [] };
 
   for (const fact of facts) {
     const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
@@ -369,6 +382,14 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
   }
 
   for (const fact of sorted.link) note("link.state", fact.value.gateway ?? "", fact, LINK_STATE_VALUES[fact.value.state]);
+
+  for (const fact of sorted.wifi) {
+    const link = fact.value;
+    const level = wifiSignalOf(link);
+    if (level !== undefined) note("wifi.signal", link.interface, fact, binOf(WIFI_SIGNAL_BINS, level));
+    else if (link.state !== "connected") skipped.push({ fact: fact.id, reason: `The Wi-Fi interface ${link.interface} is ${link.state}, so it has no signal.` });
+    else skipped.push({ fact: fact.id, reason: `The Wi-Fi fact of ${link.interface} has no signal level and no quality.` });
+  }
 
   for (const fact of sorted.trace) {
     skipped.push({ fact: fact.id, reason: "The catalog has no feature for the hops of a path. The lab runs fit such a feature later." });

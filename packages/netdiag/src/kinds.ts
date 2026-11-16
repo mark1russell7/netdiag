@@ -824,5 +824,88 @@ export const PATH_MTU: FactKind<PathMtu> = defineFactKind<PathMtu>({
     mtuAgrees(value["outcome"], value["mtu"], value["ceiling"], value["stop"]),
 });
 
+/**
+ * The states of a Wi-Fi interface.
+ *
+ * - `connected`: the interface has a link to an access point.
+ * - `disconnected`: the radio is on, but the interface has no link.
+ * - `off`: the radio is off. Only Windows and macOS tell this state. On Linux, an interface with the radio off is `disconnected`.
+ */
+export const WIFI_STATES = ["connected", "disconnected", "off"] as const;
+export type WifiState = (typeof WIFI_STATES)[number];
+
+/** The radio bands of Wi-Fi, in GHz. */
+export const WIFI_BANDS = ["2.4", "5", "6"] as const;
+export type WifiBand = (typeof WIFI_BANDS)[number];
+
+/** The widths of a Wi-Fi channel, in MHz. */
+export const WIFI_WIDTHS = [20, 40, 80, 160, 320] as const;
+
+/** The lowest signal or noise level of a Wi-Fi fact, in dBm. A tool gives a lower value when it has no measurement. */
+export const WIFI_FLOOR_DBM = -120;
+
+/**
+ * The Wi-Fi link of one interface, from the tool of the operating system. Only the state `connected` has the fields of
+ * the link. Each field of the link is optional, because each tool gives other fields.
+ */
+export interface WifiLink {
+  /** The name of the interface, for example `wlan0`, `en0` or `Wi-Fi`. `os.networkInterfaces()` uses the same name. */
+  readonly interface: string;
+  readonly state: WifiState;
+  /** The name of the network. macOS and Windows hide it without the location permission. */
+  readonly ssid?: string | undefined;
+  /** The MAC address of the access point, in lower case. A change of it on one network is a roam. */
+  readonly bssid?: string | undefined;
+  /** The level of the signal, in dBm. */
+  readonly signalDbm?: number | undefined;
+  /** The signal quality of Windows, from 0 to 100. An older Windows gives it and no level in dBm. */
+  readonly quality?: number | undefined;
+  /** The level of the noise, in dBm. */
+  readonly noiseDbm?: number | undefined;
+  readonly channel?: number | undefined;
+  readonly band?: WifiBand | undefined;
+  /** The width of the channel, in MHz. */
+  readonly widthMhz?: number | undefined;
+  /** The rate of the last frames that this computer sent, in Mbit/s. */
+  readonly txMbps?: number | undefined;
+  /** The rate of the last frames that this computer received, in Mbit/s. */
+  readonly rxMbps?: number | undefined;
+  /** The standard of the link, for example `802.11ax`. */
+  readonly standard?: string | undefined;
+}
+
+const WIFI_LINK_FIELDS = ["ssid", "bssid", "signalDbm", "quality", "noiseDbm", "channel", "band", "widthMhz", "txMbps", "rxMbps", "standard"] as const;
+
+function isLevel(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= WIFI_FLOOR_DBM && value < 0;
+}
+
+function isRate(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+/** The fact kind `wifi.link`. */
+export const WIFI_LINK: FactKind<WifiLink> = defineFactKind<WifiLink>({
+  kind: "wifi.link",
+  layer: "wifi",
+  summary: "The Wi-Fi link of one interface: the state, the access point, the signal, the noise, the channel and the rates.",
+  check: (value): value is WifiLink =>
+    isRecord(value) &&
+    isText(value["interface"]) &&
+    isOneOf(WIFI_STATES, value["state"]) &&
+    (value["state"] === "connected" || WIFI_LINK_FIELDS.every((field) => value[field] === undefined)) &&
+    optional(value["ssid"], isText) &&
+    optional(value["bssid"], (bssid) => typeof bssid === "string" && /^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/.test(bssid)) &&
+    optional(value["signalDbm"], isLevel) &&
+    optional(value["quality"], (quality) => isCount(quality) && quality <= 100) &&
+    optional(value["noiseDbm"], isLevel) &&
+    optional(value["channel"], (channel) => isCount(channel) && channel >= 1 && channel <= 233) &&
+    optional(value["band"], (band) => isOneOf(WIFI_BANDS, band)) &&
+    optional(value["widthMhz"], (width) => (WIFI_WIDTHS as readonly unknown[]).includes(width)) &&
+    optional(value["txMbps"], isRate) &&
+    optional(value["rxMbps"], isRate) &&
+    optional(value["standard"], isText),
+});
+
 /** The fact kinds of the adapters of outside tools (`@mark1russell7/netdiag/tools`). */
-export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE, PATH_MTU];
+export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE, PATH_MTU, WIFI_LINK];

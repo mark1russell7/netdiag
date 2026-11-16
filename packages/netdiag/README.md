@@ -132,6 +132,7 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 | `mtrProbe(host)` | `path.mtr` | `mtr` (Linux and macOS) | `path.report`: the loss and the round-trip times of each hop over many cycles. |
 | `iperf3Probe(host)` | `path.iperf3` | `iperf3` (3.1 or later) | `path.throughput`: the rates of the sender and the receiver, the TCP retransmits, the UDP jitter and loss, and each interval. |
 | `captureProbe(host)` | `path.capture` | `tshark` | `path.capture`: the packets of one flow, with the time, the addresses, the ports and the TCP fields of each packet. |
+| `wifiProbe(host)` | `wifi.link` | `iw` on Linux, `system_profiler` on macOS, `netsh` on Windows | `wifi.link`: the state, the access point, the signal, the noise, the channel and the rates of each Wi-Fi interface. |
 
 - A host starts each tool. Its `run(command, args, options)` starts a program with a list of arguments and no shell.
 - `commandHost(runner, platform)` makes a host from a function with the shape of `runCommand` of `@procedures/shell`. A test gives a fake host.
@@ -145,6 +146,11 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 - The capture adapter builds the capture filter from typed fields: an address, a port and a protocol. It does not accept free text.
 - A capture needs the privilege to capture on the interface. The adapter does not use promiscuous mode or name lookups.
 - The scope rule applies to the server of `iperf3` and to the address of a capture, as to the other adapters.
+- The Wi-Fi adapter reads the state of the radio and sends no packet. Its facts have the subject `localhost`.
+- On Linux, the Wi-Fi adapter starts `iw dev`. For each managed interface, it then starts `iw dev <name> link` and `iw dev <name> survey dump`.
+- macOS 14.4 and later have no `airport` tool. The adapter reads the JSON report of `system_profiler SPAirPortDataType`.
+- On Windows 11, `netsh` needs the location permission. Without it, the adapter fails with the step that gives the permission.
+- macOS and Windows hide the name of the network without the location permission. The fact then has no `ssid`.
 - The estimators of ND-6 read the facts `path.throughput` and `path.capture`. This step has no readers for them.
 - Output that netdiag cannot read gives the outcome `error` with the reason. It does not give a reply that did not occur.
 - The table `TOOL_LICENSES` holds the license of each tool as data. A tool with a restrictive license has no adapter.
@@ -220,6 +226,7 @@ const result = diagnose(STANDARD_CATALOG, [
 | `icmp.reply` | The echo requests to each other address: `reply`, `none` or `unreachable`. |
 | `path.mtu` | A measured MTU: `full` at the ceiling, `reduced` with a message of a router, `silent` with no message. `silent` tells an MTU black hole. |
 | `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. |
+| `wifi.signal` | The signal level of each connected Wi-Fi interface: `strong` at -60 dBm or more, `weak` below -75 dBm. The quality of Windows changes to dBm. |
 
 - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
 - A fact that gives no evidence goes in `skipped`, with the reason. For example, the catalog has no value for the TLS outcome `not-tls` yet.
@@ -253,6 +260,8 @@ The estimators read the values of the facts. Each time is in milliseconds. The s
 | `echoMetrics(echo)` | The loss and the delay summary of an `icmp.echo` fact. The loss of a round trip is an upper bound of the one-way loss of each direction. |
 | `ackSamples(capture)` | The RTT samples of a `path.capture` fact: the ACKs of the remote host. By the rule of Karn, an ACK of a retransmitted segment gives no sample. |
 | `rtoOf(samples, options)` | The RTO of RFC 6298: `SRTT + max(G, 4 * RTTVAR)`, from 1 second to 60 seconds by default. |
+| `wifiSignalOf(link)` | The signal level of a connected Wi-Fi link, in dBm. The quality of Windows gives the level `quality / 2 - 100`. |
+| `wifiChanges(facts)` | The roams, the drops, the joins and the changes of network and channel of each Wi-Fi interface, and the summary of its signal. |
 | `packetPairs(capture)`, `bandwidthOf(capture)` | The capacity of the narrowest link, from the gap between two full segments of a burst at the receiver. `bandwidthOf` gives the median of the pairs. |
 
 ```ts

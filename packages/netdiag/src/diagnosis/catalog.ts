@@ -17,7 +17,7 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "wifi.signal",
     layer: "wifi",
-    summary: "The strength of the Wi-Fi signal: strong above -60 dBm, weak below -75 dBm.",
+    summary: "The strength of the Wi-Fi signal: strong at -60 dBm or more, weak below -75 dBm.",
     values: ["strong", "fair", "weak"],
     healthy: { strong: 0.7, fair: 0.25, weak: 0.05 },
   },

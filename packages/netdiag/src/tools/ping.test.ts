@@ -2,7 +2,7 @@ import { fakeClock, type FakeClock } from "@mark1russell7/algebra/clock";
 import { fakeToolHost, type FakeRule, type FakeToolHost } from "@netdiag/fixtures";
 import { describe, expect, it } from "vitest";
 import { ICMP_ECHO, createRunner, scopeOf, type Fact, type IcmpEcho, type Runner } from "../index.ts";
-import { TOOL_LICENSES, captureProbe, iperf3Probe, mtrProbe, mtuProbe, pingCommand, pingProbe, readPing, toolLicense, tracerouteProbe, type ToolOutput, type ToolRaw, type ToolRunOptions } from "./index.ts";
+import { TOOL_LICENSES, captureProbe, iperf3Probe, mtrProbe, mtuProbe, pingCommand, pingProbe, readPing, toolLicense, tracerouteProbe, wifiProbe, type ToolOutput, type ToolRaw, type ToolRunOptions } from "./index.ts";
 
 // The samples of Windows come from ping.exe of Windows 11. The samples of Linux (iputils) and macOS follow the formats
 // of these tools, with documentation addresses.
@@ -292,7 +292,8 @@ describe("the licenses of the tools", () => {
     const tools = TOOL_LICENSES.map((row) => row.tool);
     expect(new Set(tools).size).toBe(tools.length);
     const host = fakeHost("linux", fakeClock(), []);
-    const probes = [pingProbe(host), mtuProbe(host), tracerouteProbe(host), mtrProbe(host), iperf3Probe(host), captureProbe(host)];
+    const wifi = ["linux", "darwin", "win32"].map((platform) => wifiProbe(fakeHost(platform, fakeClock(), [])));
+    const probes = [pingProbe(host), mtuProbe(host), tracerouteProbe(host), mtrProbe(host), iperf3Probe(host), captureProbe(host), ...wifi];
     for (const probe of probes) {
       const row = toolLicense(probe.tool ?? "");
       expect(row?.use).toBe("adapter");
