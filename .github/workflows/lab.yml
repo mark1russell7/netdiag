@@ -121,7 +121,7 @@ jobs:
   # passes only when each lab job passed. The job bars starts only on a dispatch, so ALLOW_SKIP names it.
   lab-ok:
     name: Lab OK
-    if: always()
+    if: ${{ !cancelled() }}
     needs: [lab, bars]
     runs-on: ubuntu-latest
     timeout-minutes: 2
