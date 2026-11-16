@@ -32,6 +32,7 @@ ConnectOutcome: build/counts.chunk.d.ts#ConnectOutcome
 type Contribution: build/index.chunk2.d.ts#Contribution
 DEFAULT_MAX_BYTES: build/index.d.ts#DEFAULT_MAX_BYTES
 DEFAULT_MAX_PORTS_PER_HOST: build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+DEFAULT_MTR_CYCLES: build/counts.chunk.d.ts#DEFAULT_MTR_CYCLES
 DEFAULT_OWNER_REDIRECTS: build/index.d.ts#DEFAULT_OWNER_REDIRECTS
 DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
 DEFAULT_RDAP_BODY: build/index.d.ts#DEFAULT_RDAP_BODY
@@ -117,6 +118,7 @@ LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
+MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_OWNER_ADDRESSES: build/index.d.ts#MAX_OWNER_ADDRESSES
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
 MAX_REGISTRY_TEXT: build/core.chunk.d.ts#MAX_REGISTRY_TEXT
@@ -361,6 +363,7 @@ type ClockOrigin: build/core.chunk.d.ts#ClockOrigin
 ConnectOutcome: build/counts.chunk.d.ts#ConnectOutcome
 type Contribution: build/index.chunk2.d.ts#Contribution
 DEFAULT_MAX_PORTS_PER_HOST: build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+DEFAULT_MTR_CYCLES: build/counts.chunk.d.ts#DEFAULT_MTR_CYCLES
 DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
 DNS_ANSWER: build/counts.chunk.d.ts#DNS_ANSWER
 DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
@@ -428,6 +431,7 @@ LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
+MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
 MAX_REGISTRY_TEXT: build/core.chunk.d.ts#MAX_REGISTRY_TEXT
 MIN_CONNECT_MS: build/core.chunk.d.ts#MIN_CONNECT_MS
@@ -697,7 +701,7 @@ DEFAULT_CAPTURE_PACKETS: build/tools.d.ts#DEFAULT_CAPTURE_PACKETS
 DEFAULT_CAPTURE_SECONDS: build/tools.d.ts#DEFAULT_CAPTURE_SECONDS
 DEFAULT_IPERF3_PORT: build/tools.d.ts#DEFAULT_IPERF3_PORT
 DEFAULT_IPERF3_SECONDS: build/tools.d.ts#DEFAULT_IPERF3_SECONDS
-DEFAULT_MTR_CYCLES: build/tools.d.ts#DEFAULT_MTR_CYCLES
+DEFAULT_MTR_CYCLES: build/counts.chunk.d.ts#DEFAULT_MTR_CYCLES
 DEFAULT_MTU_COUNT: build/tools.d.ts#DEFAULT_MTU_COUNT
 DEFAULT_MTU_WAIT_MS: build/tools.d.ts#DEFAULT_MTU_WAIT_MS
 DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
@@ -715,7 +719,7 @@ MAX_CAPTURE_SECONDS: build/tools.d.ts#MAX_CAPTURE_SECONDS
 MAX_IPERF3_BITS_PER_SECOND: build/tools.d.ts#MAX_IPERF3_BITS_PER_SECOND
 MAX_IPERF3_SECONDS: build/tools.d.ts#MAX_IPERF3_SECONDS
 MAX_IPERF3_STREAMS: build/tools.d.ts#MAX_IPERF3_STREAMS
-MAX_MTR_CYCLES: build/tools.d.ts#MAX_MTR_CYCLES
+MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_MTU_CEILING: build/tools.d.ts#MAX_MTU_CEILING
 MAX_MTU_COUNT: build/tools.d.ts#MAX_MTU_COUNT
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
@@ -1254,6 +1258,9 @@ type CertProblem = (typeof CERT_PROBLEMS)[number];
 ### build/counts.chunk.d.ts#ConnectOutcome
 type ConnectOutcome = (typeof CONNECT_OUTCOMES)[number];
 
+### build/counts.chunk.d.ts#DEFAULT_MTR_CYCLES
+declare const DEFAULT_MTR_CYCLES = 20;
+
 ### build/counts.chunk.d.ts#DEFAULT_PING_COUNT
 declare const DEFAULT_PING_COUNT = 4;
 
@@ -1402,6 +1409,9 @@ interface LinkState {
 
 ### build/counts.chunk.d.ts#LinkStateValue
 type LinkStateValue = (typeof LINK_STATES)[number];
+
+### build/counts.chunk.d.ts#MAX_MTR_CYCLES
+declare const MAX_MTR_CYCLES = 100;
 
 ### build/counts.chunk.d.ts#MAX_PING_COUNT
 declare const MAX_PING_COUNT = 100;
@@ -2406,6 +2416,8 @@ interface VisitOptions {
   readonly interfaces?: (() => InterfaceTable) | undefined;
   readonly pingCount?: number | undefined;
   readonly mtrCycles?: number | undefined;
+  readonly owners?: RdapGet | undefined;
+  readonly ownerOptions?: OwnerProbeOptions | undefined;
   readonly mtu?: MtuSearch | undefined;
   readonly scheme?: "http" | "https" | undefined;
   readonly path?: string | undefined;
@@ -2501,9 +2513,6 @@ export declare const DEFAULT_IPERF3_PORT = 5201;
 ### build/tools.d.ts#DEFAULT_IPERF3_SECONDS
 export declare const DEFAULT_IPERF3_SECONDS = 10;
 
-### build/tools.d.ts#DEFAULT_MTR_CYCLES
-export declare const DEFAULT_MTR_CYCLES = 20;
-
 ### build/tools.d.ts#DEFAULT_MTU_COUNT
 export declare const DEFAULT_MTU_COUNT = 3;
 
@@ -2559,9 +2568,6 @@ export declare const MAX_IPERF3_SECONDS = 60;
 
 ### build/tools.d.ts#MAX_IPERF3_STREAMS
 export declare const MAX_IPERF3_STREAMS = 16;
-
-### build/tools.d.ts#MAX_MTR_CYCLES
-export declare const MAX_MTR_CYCLES = 100;
 
 ### build/tools.d.ts#MAX_MTU_CEILING
 export declare const MAX_MTU_CEILING = 9216;

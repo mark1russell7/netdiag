@@ -23,6 +23,8 @@ type NextProbeKind: build/report.chunk.d.ts#NextProbeKind
 type NextStep: build/report.chunk.d.ts#NextStep
 PROGRAM: build/index.d.ts#PROGRAM
 type PlanSystem: build/report.chunk.d.ts#PlanSystem
+RDAP_ACTIVE_HOSTS: build/index.d.ts#RDAP_ACTIVE_HOSTS
+RDAP_SOURCE: build/index.d.ts#RDAP_SOURCE
 SCHEMES: build/report.chunk.d.ts#SCHEMES
 type Scheme: build/report.chunk.d.ts#Scheme
 TOP_CAUSES: build/report.chunk.d.ts#TOP_CAUSES
@@ -32,14 +34,18 @@ formatReport: build/report.chunk.d.ts#formatReport
 isScheme: build/report.chunk.d.ts#isScheme
 main: build/index.d.ts#main
 nextSteps: build/report.chunk.d.ts#nextSteps
+ownerText: build/report.chunk.d.ts#ownerText
 packageVersion: build/index.d.ts#packageVersion
 percentOf: build/report.chunk.d.ts#percentOf
 planCheck: build/report.chunk.d.ts#planCheck
+rdapPort: build/index.d.ts#rdapPort
 readCheckReport: build/report.chunk.d.ts#readCheckReport
 reportOf: build/report.chunk.d.ts#reportOf
 stepText: build/report.chunk.d.ts#stepText
 subjectText: build/report.chunk.d.ts#subjectText
 systemDeps: build/index.d.ts#systemDeps
+systemRdap: build/index.d.ts#systemRdap
+userAgentOf: build/index.d.ts#userAgentOf
 
 ## ./report (build/report.d.ts): names
 
@@ -49,6 +55,7 @@ CheckProblem: build/report.chunk.d.ts#CheckProblem
 CheckReport: build/report.chunk.d.ts#CheckReport
 MAX_REPORT_PROBLEMS: build/report.chunk.d.ts#MAX_REPORT_PROBLEMS
 formatReport: build/report.chunk.d.ts#formatReport
+ownerText: build/report.chunk.d.ts#ownerText
 percentOf: build/report.chunk.d.ts#percentOf
 readCheckReport: build/report.chunk.d.ts#readCheckReport
 reportOf: build/report.chunk.d.ts#reportOf
@@ -66,6 +73,7 @@ interface CheckDeps {
   readonly tools?: ToolHost | undefined;
   readonly resolvers: readonly string[];
   readonly tls?: TlsProbeOptions | undefined;
+  readonly rdap?: RdapGet | undefined;
   readonly signal?: AbortSignal | undefined;
 }
 
@@ -80,6 +88,12 @@ interface NetdiagCliOptions {
 ### build/index.d.ts#PROGRAM
 export declare const PROGRAM = "netdiag";
 
+### build/index.d.ts#RDAP_ACTIVE_HOSTS
+export declare const RDAP_ACTIVE_HOSTS = 2;
+
+### build/index.d.ts#RDAP_SOURCE
+export declare const RDAP_SOURCE = "RDAP";
+
 ### build/index.d.ts#check
 export declare function check(options: CheckOptions, deps: CheckDeps): Promise<CheckReport>;
 
@@ -92,8 +106,17 @@ export declare function main(argv: readonly string[]): Promise<number>;
 ### build/index.d.ts#packageVersion
 export declare function packageVersion(): string;
 
+### build/index.d.ts#rdapPort
+export declare function rdapPort(pace: Pace, transport: Transport): RdapGet;
+
 ### build/index.d.ts#systemDeps
 export declare function systemDeps(): CheckDeps;
+
+### build/index.d.ts#systemRdap
+export declare function systemRdap(version: string): RdapGet;
+
+### build/index.d.ts#userAgentOf
+export declare function userAgentOf(version: string): string;
 
 ### build/report.chunk.d.ts#ADD_GATEWAY
 declare const ADD_GATEWAY = "Give the address of your router with --gateway <address>.";
@@ -123,6 +146,8 @@ interface CheckOptions {
   readonly grant?: readonly string[] | undefined;
   readonly pingCount?: number | undefined;
   readonly mtu?: boolean | undefined;
+  readonly mtrCycles?: number | undefined;
+  readonly owners?: boolean | undefined;
 }
 
 ### build/report.chunk.d.ts#CheckPlan
@@ -131,6 +156,8 @@ interface CheckPlan {
   readonly scheme: Scheme;
   readonly path: string;
   readonly pingCount: number;
+  readonly mtrCycles: number;
+  readonly owners: boolean;
   readonly mtu?: MtuSearch | undefined;
   readonly visit: VisitInput;
 }
@@ -207,6 +234,9 @@ declare function isScheme(value: unknown): value is Scheme;
 
 ### build/report.chunk.d.ts#nextSteps
 declare function nextSteps(diagnosis: Diagnosis, plan: CheckPlan, addressed: ReadonlySet<VisitRole>): NextStep[];
+
+### build/report.chunk.d.ts#ownerText
+declare function ownerText(owner: PathOwner): string;
 
 ### build/report.chunk.d.ts#percentOf
 declare function percentOf(probability: number): string;
