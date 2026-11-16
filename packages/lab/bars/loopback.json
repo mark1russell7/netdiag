@@ -1,0 +1,13 @@
+{
+  "none": 0.565,
+  "captive.portal": 0.565,
+  "resolver.down": 0.236,
+  "resolver.failing": 0.565,
+  "name.missing": 0.565,
+  "port.closed": 0.565,
+  "tls.proxy": 0.565,
+  "tls.cert-invalid": 0.722,
+  "tls.mismatch": 0.565,
+  "server.slow": 0.565,
+  "server.error": 0.565
+}

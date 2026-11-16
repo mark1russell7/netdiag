@@ -1,0 +1,10 @@
+{
+  "none": 0.565,
+  "gateway.down": 0.565,
+  "host.down": 0.565,
+  "filter.drop": 0.565,
+  "filter.icmp": 0.565,
+  "filter.reset": 0.565,
+  "path.loss": 0.565,
+  "path.mtu": 0.565
+}
