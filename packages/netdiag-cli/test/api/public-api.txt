@@ -21,6 +21,7 @@ type NetdiagCliOptions: build/index.d.ts#NetdiagCliOptions
 type NextProbe: build/report.chunk.d.ts#NextProbe
 type NextProbeKind: build/report.chunk.d.ts#NextProbeKind
 type NextStep: build/report.chunk.d.ts#NextStep
+PATH_LOSS_FAULT: build/report.chunk.d.ts#PATH_LOSS_FAULT
 PROGRAM: build/index.d.ts#PROGRAM
 type PlanSystem: build/report.chunk.d.ts#PlanSystem
 RDAP_ACTIVE_HOSTS: build/index.d.ts#RDAP_ACTIVE_HOSTS
@@ -31,9 +32,13 @@ TOP_CAUSES: build/report.chunk.d.ts#TOP_CAUSES
 check: build/index.d.ts#check
 createNetdiagCli: build/index.d.ts#createNetdiagCli
 formatReport: build/report.chunk.d.ts#formatReport
+hopsText: build/report.chunk.d.ts#hopsText
 isScheme: build/report.chunk.d.ts#isScheme
 main: build/index.d.ts#main
+networkName: build/report.chunk.d.ts#networkName
 nextSteps: build/report.chunk.d.ts#nextSteps
+originLines: build/report.chunk.d.ts#originLines
+originText: build/report.chunk.d.ts#originText
 ownerText: build/report.chunk.d.ts#ownerText
 packageVersion: build/index.d.ts#packageVersion
 percentOf: build/report.chunk.d.ts#percentOf
@@ -54,7 +59,12 @@ CheckFact: build/report.chunk.d.ts#CheckFact
 CheckProblem: build/report.chunk.d.ts#CheckProblem
 CheckReport: build/report.chunk.d.ts#CheckReport
 MAX_REPORT_PROBLEMS: build/report.chunk.d.ts#MAX_REPORT_PROBLEMS
+PATH_LOSS_FAULT: build/report.chunk.d.ts#PATH_LOSS_FAULT
 formatReport: build/report.chunk.d.ts#formatReport
+hopsText: build/report.chunk.d.ts#hopsText
+networkName: build/report.chunk.d.ts#networkName
+originLines: build/report.chunk.d.ts#originLines
+originText: build/report.chunk.d.ts#originText
 ownerText: build/report.chunk.d.ts#ownerText
 percentOf: build/report.chunk.d.ts#percentOf
 readCheckReport: build/report.chunk.d.ts#readCheckReport
@@ -212,6 +222,9 @@ interface NextStep {
   readonly observes: readonly Observable[];
 }
 
+### build/report.chunk.d.ts#PATH_LOSS_FAULT
+declare const PATH_LOSS_FAULT = "path.loss";
+
 ### build/report.chunk.d.ts#PlanSystem
 interface PlanSystem {
   readonly resolvers: readonly string[];
@@ -229,11 +242,23 @@ declare const TOP_CAUSES = 3;
 ### build/report.chunk.d.ts#formatReport
 declare function formatReport(report: CheckReport): string[];
 
+### build/report.chunk.d.ts#hopsText
+declare function hopsText(hops: readonly LossHop[]): string;
+
 ### build/report.chunk.d.ts#isScheme
 declare function isScheme(value: unknown): value is Scheme;
 
+### build/report.chunk.d.ts#networkName
+declare function networkName(network: LossNetwork): string;
+
 ### build/report.chunk.d.ts#nextSteps
 declare function nextSteps(diagnosis: Diagnosis, plan: CheckPlan, addressed: ReadonlySet<VisitRole>): NextStep[];
+
+### build/report.chunk.d.ts#originLines
+declare function originLines(origin: LossOrigin): string[];
+
+### build/report.chunk.d.ts#originText
+declare function originText(origin: LossOrigin): string;
 
 ### build/report.chunk.d.ts#ownerText
 declare function ownerText(owner: PathOwner): string;
