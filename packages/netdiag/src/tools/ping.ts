@@ -1,9 +1,8 @@
-import { isIP } from "node:net";
 import { observe, type Observation } from "../fact.ts";
 import { ICMP_ECHO, type IcmpEcho } from "../kinds.ts";
 import { defineProbe, type Availability, type Probe, type ProbeContext } from "../probe.ts";
 import { target, type Target } from "../target.ts";
-import { ENGLISH, firstLine, integerIn, LINES, LOCAL_UNREACHABLE, toolAddress, type ToolAddress } from "./common.ts";
+import { ENGLISH, firstLine, integerIn, LINES, LOCAL_UNREACHABLE, toolAddress, withoutSeparator, type ToolAddress } from "./common.ts";
 import { AVAILABILITY_TIMEOUT_MS, availabilityOf, runTool, TOOL_MARGIN_MS, type ToolCommand, type ToolHost, type ToolRaw } from "./host.ts";
 
 // The adapter of the tool `ping`. It reads the English output of iputils on Linux, of the BSD ping on macOS and of
@@ -147,11 +146,6 @@ function readUnix(stdout: string, stderr: string): PingLines {
   }
   const sent = /^(\d+) packets transmitted, \d+ (?:packets )?received/m.exec(stdout)?.[1];
   return { sent: sent === undefined ? undefined : Number(sent), replies, unreachable, failure };
-}
-
-/** This function removes the `:` or `,` after an address in a line of ping. An IPv6 address keeps its own last `:`. */
-function withoutSeparator(text: string): string {
-  return isIP(text) === 0 ? text.replace(/[:,]$/, "") : text;
 }
 
 function readWindows(stdout: string): PingLines {

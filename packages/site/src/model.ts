@@ -40,6 +40,7 @@ export const FEATURE_NAMES: Readonly<Record<string, string>> = {
   "wifi.signal": "The Wi-Fi signal",
   "gateway.reply": "A ping of the gateway",
   "path.loss": "The packet loss",
+  "path.mtu": "The MTU of the path",
   "dns.answer": "The DNS answer",
   "dns.address": "The address that DNS gives",
   "ip.family": "The address families that connect",
@@ -217,6 +218,8 @@ export const PROBES: readonly Probe[] = [
   { id: "ping-gateway", label: "Ping the gateway 20 times", kinds: ["icmp.echo"], gateway: true, cost: 20, observes: target("gateway.reply", "path.loss") },
   { id: "ping-target", label: "Ping the target 20 times", kinds: ["icmp.echo"], gateway: false, cost: 20, observes: target("icmp.reply", "path.loss") },
   { id: "mtr", label: "Measure the path with mtr", kinds: ["path.report"], cost: 20, observes: target("path.loss") },
+  // The search for the MTU takes approximately 1 second on most paths, and up to 30 seconds on an MTU black hole.
+  { id: "mtu", label: "Find the MTU of the path", kinds: ["path.mtu"], cost: 10, observes: target("path.mtu") },
   {
     id: "https-reference",
     label: "An HTTPS request to a second host",

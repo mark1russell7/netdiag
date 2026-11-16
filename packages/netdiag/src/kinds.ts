@@ -738,5 +738,103 @@ export const PATH_CAPTURE: FactKind<PathCapture> = defineFactKind<PathCapture>({
     optional(value["detail"], isText),
 });
 
+/**
+ * The results of the echo requests of one size with "do not fragment".
+ *
+ * - `reply`: an echo reply came back, so packets of this size pass.
+ * - `too-big`: a router or this computer told that the packet is too large. The message can tell the MTU.
+ * - `none`: no reply came back, and no message told that the packet is too large.
+ * - `error`: the tool failed, or netdiag cannot read its output.
+ */
+export const MTU_TRY_RESULTS = ["reply", "too-big", "none", "error"] as const;
+export type MtuTryResult = (typeof MTU_TRY_RESULTS)[number];
+
+/** The echo requests of one size in a search for the MTU. */
+export interface MtuTry {
+  /** The size of the IP packet in bytes, with the IP header and the ICMP header. */
+  readonly size: number;
+  readonly result: MtuTryResult;
+  /** The MTU that the message of the result `too-big` tells, in bytes. Some messages do not tell it. */
+  readonly mtu?: number | undefined;
+  /** The router that sent the message of the result `too-big`. A message of this computer has no router. */
+  readonly from?: string | undefined;
+  /** The text of the tool for the results `too-big`, `none` and `error`. */
+  readonly detail?: string | undefined;
+}
+
+/**
+ * The outcomes of a search for the MTU of the path to one address.
+ *
+ * - `measured`: the smallest size passed, so the search found the MTU.
+ * - `none`: the smallest size got no reply. The address does not answer echo requests.
+ * - `error`: the tool failed, or netdiag cannot read its output.
+ */
+export const MTU_OUTCOMES = ["measured", "none", "error"] as const;
+export type MtuOutcome = (typeof MTU_OUTCOMES)[number];
+
+/**
+ * The two ways in which a path stops a packet above its MTU.
+ *
+ * - `message`: a router or this computer tells that the packet is too large. Path MTU discovery works.
+ * - `silent`: the packet goes away with no message. This is an MTU black hole.
+ */
+export const MTU_STOPS = ["message", "silent"] as const;
+export type MtuStop = (typeof MTU_STOPS)[number];
+
+/** The result of a search for the MTU of the path to one address, with echo requests that have "do not fragment". */
+export interface PathMtu {
+  readonly address: string;
+  readonly outcome: MtuOutcome;
+  /** The largest size of the search, in bytes. */
+  readonly ceiling: number;
+  /** The largest size that passed, in bytes: the MTU of the path, or `ceiling` when each size passed. */
+  readonly mtu?: number | undefined;
+  /** The way in which the path stopped the next size above `mtu`. When `mtu` is `ceiling`, nothing stopped a size. */
+  readonly stop?: MtuStop | undefined;
+  /** The sizes in the order of the search. */
+  readonly tries: readonly MtuTry[];
+  /** The text of the tool for the outcomes `none` and `error`. */
+  readonly detail?: string | undefined;
+}
+
+function isMtuTry(value: unknown): value is MtuTry {
+  return (
+    isRecord(value) &&
+    isCount(value["size"]) &&
+    isOneOf(MTU_TRY_RESULTS, value["result"]) &&
+    optional(value["mtu"], isCount) &&
+    optional(value["from"], isText) &&
+    optional(value["detail"], isText)
+  );
+}
+
+/**
+ * This function tells if the MTU, the ceiling and the stop of a value agree with its outcome. A measured MTU is not above
+ * the ceiling, and it has a stop only when it is below the ceiling.
+ */
+function mtuAgrees(outcome: unknown, mtu: unknown, ceiling: unknown, stop: unknown): boolean {
+  if ((outcome === "measured") !== (mtu !== undefined)) return false;
+  if (mtu === undefined) return stop === undefined;
+  return typeof mtu === "number" && typeof ceiling === "number" && mtu <= ceiling && (mtu < ceiling) === (stop !== undefined);
+}
+
+/** The fact kind `path.mtu`. A measured MTU has a stop when it is below the ceiling, and no stop at the ceiling. */
+export const PATH_MTU: FactKind<PathMtu> = defineFactKind<PathMtu>({
+  kind: "path.mtu",
+  layer: "path",
+  summary: "The MTU of the path to one address, and the way in which the path stops a larger packet.",
+  check: (value): value is PathMtu =>
+    isRecord(value) &&
+    isText(value["address"]) &&
+    isOneOf(MTU_OUTCOMES, value["outcome"]) &&
+    isCount(value["ceiling"]) &&
+    optional(value["mtu"], isCount) &&
+    optional(value["stop"], (stop) => isOneOf(MTU_STOPS, stop)) &&
+    Array.isArray(value["tries"]) &&
+    value["tries"].every(isMtuTry) &&
+    optional(value["detail"], isText) &&
+    mtuAgrees(value["outcome"], value["mtu"], value["ceiling"], value["stop"]),
+});
+
 /** The fact kinds of the adapters of outside tools (`@mark1russell7/netdiag/tools`). */
-export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE];
+export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE, PATH_MTU];

@@ -18,7 +18,11 @@ import {
   LINK_STATE,
   LINK_STATE_VALUES,
   LOSS_MIN_SENT,
+  MTU_OUTCOMES,
+  MTU_STOPS,
   PATH_LOSS_BINS,
+  PATH_MTU,
+  PATH_MTU_VALUES,
   PATH_REPORT,
   PATH_TRACE,
   STANDARD_CATALOG,
@@ -45,6 +49,7 @@ import {
   type HttpResponse,
   type IcmpEcho,
   type LinkState,
+  type PathMtu,
   type PathReport,
   type PathTrace,
   type TcpConnect,
@@ -94,6 +99,20 @@ function report(address: string, outcome: PathReport["outcome"], sent = LOSS_MIN
 function trace(address: string): Entry {
   const value: PathTrace = { address, outcome: "reached", maxHops: 30, hops: [{ ttl: 1, addresses: [address], sent: 3, received: 3, rttMs: [1, 1, 1] }] };
   return [PATH_TRACE, value, 100];
+}
+
+/** This function makes the value of a search for the MTU with the ceiling 1500. A size below the ceiling has a stop. */
+function mtu(address: string, outcome: PathMtu["outcome"], size?: number, stop?: PathMtu["stop"]): Entry {
+  const value: PathMtu = {
+    address,
+    outcome,
+    ceiling: 1500,
+    tries: [],
+    ...(size === undefined ? {} : { mtu: size }),
+    ...(stop === undefined ? {} : { stop }),
+    ...(outcome === "measured" ? {} : { detail: "test" }),
+  };
+  return [PATH_MTU, value, 2000];
 }
 
 function certificate(trust: Trust): NonNullable<TlsHandshake["certificate"]> {
@@ -153,6 +172,7 @@ describe("the tables of the readers", () => {
     ["icmp.reply", ICMP_REPLY_VALUES],
     ["gateway.reply", GATEWAY_REPLY_VALUES],
     ["link.state", LINK_STATE_VALUES],
+    ["path.mtu", PATH_MTU_VALUES],
   ])("give only values of the feature %s", (id, table) => {
     for (const value of Object.values(table)) if (value !== undefined) expect(featureValues(id)).toContain(value);
   });
@@ -179,7 +199,7 @@ describe("the tables of the readers", () => {
   });
 
   it("name only features of the catalog, with the fact kinds of the readers", () => {
-    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE].map((kind) => kind.kind);
+    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE, PATH_MTU].map((kind) => kind.kind);
     for (const [feature, sources] of Object.entries(FEATURE_SOURCES)) {
       expect(STANDARD_FEATURES.map((f) => f.id)).toContain(feature);
       for (const source of sources) for (const kind of source) expect(kinds).toContain(kind);
@@ -194,6 +214,7 @@ describe("the tables of the readers", () => {
     expect(featuresOf([ICMP_ECHO.kind], { gateway: false })).toEqual(["icmp.reply", "path.loss"]);
     expect(featuresOf([PATH_REPORT.kind, PATH_TRACE.kind])).toEqual(["path.loss"]);
     expect(featuresOf([LINK_STATE.kind])).toEqual(["link.state"]);
+    expect(featuresOf([PATH_MTU.kind])).toEqual(["path.mtu"]);
     expect(featuresOf([])).toEqual([]);
   });
 
@@ -314,6 +335,23 @@ describe("readEvidence", () => {
     ]);
   });
 
+  it("gives path.mtu from a measured MTU, and no evidence for an MTU with no reply or an error", () => {
+    const facts = factsOf([
+      mtu("192.0.2.1", "measured", 1500),
+      mtu("192.0.2.2", "measured", 1400, "message"),
+      mtu("192.0.2.3", "measured", 1200, "silent"),
+      mtu("192.0.2.4", "none"),
+      mtu("192.0.2.5", "error"),
+    ]);
+    for (const fact of facts) expect(PATH_MTU.check(fact.value), JSON.stringify(fact.value)).toBe(true);
+    const { evidence, skipped } = readEvidence(facts);
+    expect(valuesOf(evidence, "path.mtu")).toEqual(["full", "reduced", "silent"]);
+    expect(skipped.map((s) => s.reason)).toEqual([
+      'The outcome "none" of path.mtu has no value of the feature path.mtu.',
+      'The outcome "error" of path.mtu has no value of the feature path.mtu.',
+    ]);
+  });
+
   it("marks the facts of a reference host", () => {
     const facts = factsOf([tcp("192.0.2.1", 443, "connected"), tcp("198.51.100.1", 443, "connected")]);
     const { evidence } = readEvidence(facts, { primary: (fact) => (fact.value as TcpConnect).address === "192.0.2.1" });
@@ -369,6 +407,12 @@ describe("the readers and the model", () => {
     expect(top([dns("example.com", "A", "ok", ["10.0.0.5"]), tcp("10.0.0.5", 443, "connected", 5), tls("10.0.0.5", "cert-error", 12, "none")])).toBe("captive.portal");
   });
 
+  it("names an MTU black hole from a silent stop above the MTU, and not from a stop with a message", () => {
+    const connect = tcp("93.184.216.34", 443, "connected", 20);
+    expect(top([connect, mtu("93.184.216.34", "measured", 1200, "silent")])).toBe("path.mtu");
+    expect(top([connect, mtu("93.184.216.34", "measured", 1400, "message")])).not.toBe("path.mtu");
+  });
+
   it("names a TLS proxy from the target and a reference host", () => {
     const entries = [tcp("93.184.216.34", 443, "connected", 5), tls("93.184.216.34", "ok", 80, "private"), tcp("198.51.100.7", 443, "connected", 6), tls("198.51.100.7", "ok", 90, "private")];
     expect(top(entries, (fact) => (fact.value as { address: string }).address === "93.184.216.34")).toBe("tls.proxy");
@@ -397,15 +441,18 @@ describe("a property of the readers", () => {
     .record({ address, outcome: fc.constantFrom("reached" as const, "stopped" as const, "error" as const), sent: fc.integer({ min: 1, max: 40 }), share: uniformDouble({ min: 0, max: 1 }) })
     .map(({ address: a, outcome, sent, share }) => report(a, outcome, sent, Math.max(1, Math.round(share * sent))));
   const traceEntry = address.map((a) => trace(a));
+  const mtuEntry = fc
+    .record({ address, outcome: fc.constantFrom(...MTU_OUTCOMES), stop: fc.option(fc.constantFrom(...MTU_STOPS), { nil: undefined }), size: fc.integer({ min: 68, max: 1499 }) })
+    .map(({ address: a, outcome, stop, size }) => (outcome !== "measured" ? mtu(a, outcome) : stop === undefined ? mtu(a, outcome, 1500) : mtu(a, outcome, size, stop)));
   const httpEntry = fc
     .record({ address, outcome: fc.constantFrom(...HTTP_OUTCOMES), status: fc.constantFrom(101, 200, 302, 404, 503), ttfb: fc.option(ms, { nil: undefined }) })
     .map(({ address: a, outcome, status, ttfb }) => http(a, outcome, outcome === "response" ? status : undefined, outcome === "response" ? ttfb : undefined));
 
   it("gives only evidence that the model uses, and accounts for each fact", () => {
     fc.assert(
-      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry, icmpEntry, reportEntry, traceEntry), { maxLength: 24 }), fc.boolean(), fc.option(address, { nil: undefined }), (entries, split, gateway) => {
+      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry, icmpEntry, reportEntry, traceEntry, mtuEntry), { maxLength: 24 }), fc.boolean(), fc.option(address, { nil: undefined }), (entries, split, gateway) => {
         const facts = factsOf(entries);
-        for (const fact of facts) expect([DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, PATH_TRACE].find((k) => k.kind === fact.kind)?.check(fact.value)).toBe(true);
+        for (const fact of facts) expect([DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, PATH_TRACE, PATH_MTU].find((k) => k.kind === fact.kind)?.check(fact.value)).toBe(true);
         const reading = readEvidence(facts, { ...(split ? { primary: (fact: Fact) => Number(fact.id.slice(1)) % 2 === 0 } : {}), gateway });
         expect(diagnose(STANDARD_CATALOG, reading.evidence).ignored).toEqual([]);
         const seen = new Set([...reading.evidence.flatMap((e) => e.facts ?? []), ...reading.skipped.map((s) => s.fact)]);
@@ -419,7 +466,7 @@ describe("a property of the readers", () => {
 
   it("give only the features that featuresOf names for the kinds of the facts", () => {
     fc.assert(
-      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry, icmpEntry, reportEntry, traceEntry), { maxLength: 24 }), fc.option(address, { nil: undefined }), (entries, gateway) => {
+      fc.property(fc.array(fc.oneof(dnsEntry, tcpEntry, tlsEntry, httpEntry, icmpEntry, reportEntry, traceEntry, mtuEntry), { maxLength: 24 }), fc.option(address, { nil: undefined }), (entries, gateway) => {
         const facts = factsOf(entries);
         const kinds = [...new Set(facts.map((fact) => fact.kind))];
         const named = new Set(featuresOf(kinds, gateway === undefined ? { gateway: false } : {}));

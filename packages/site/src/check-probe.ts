@@ -35,7 +35,7 @@ click('#board-stack button[data-feature="tcp.connect"][data-value="refused"]');
 check("a click on a value adds an observation", await until(() => text("#board-count") === "1 observation."), text("#board-count"));
 
 // 2. Find a hidden fault
-check("the search ranks the eight probes", $$("#search-probes .probe").length === 8 && $("#search-probes .probe.best") !== null, $$("#search-probes .probe").length);
+check("the search ranks the nine probes", $$("#search-probes .probe").length === 9 && $("#search-probes .probe.best") !== null, $$("#search-probes .probe").length);
 check("the fault starts hidden", text("#search-result").includes("The fault is hidden"), text("#search-result"));
 set("#search-truth", "tls.proxy");
 click("#search-auto");

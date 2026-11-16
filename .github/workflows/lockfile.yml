@@ -1,0 +1,23 @@
+# Makes the pnpm-lock.yaml of a pull request branch again, on a runner (the shared workflow of the template). Start it
+# on the branch when a merge of main conflicts in pnpm-lock.yaml, or a dependency changes, and this computer has no
+# memory for an install:
+#
+#   gh workflow run lockfile.yml -R mark1russell7/netdiag --ref <branch>
+#
+# The artifact "lockfile" has pnpm-lock.yaml and merge.txt. The header of the shared workflow tells the next steps.
+name: Lockfile
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: lockfile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lockfile:
+    uses: mark1russell7/template/.github/workflows/reusable-lockfile.yml@eb7f3517aa8614e338a46acd37ab0c49395be5f9 # main
+    permissions:
+      contents: read
