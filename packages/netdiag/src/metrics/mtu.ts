@@ -57,7 +57,7 @@ function foundOf(tries: readonly MtuTry[]): Found {
  * When a told MTU fails, a message was false. After that, the search uses no message, and each size is a middle. Thus
  * false messages cannot make the search long.
  *
- * An error ends the search. The search also ends when the two sizes are next to each other. The function never gives a
+ * An error ends the search. The search also ends when the two sizes are next to each other. The function does not give a
  * size that the search tried, so each search ends. A search has at most `4 + 3 * ceil(log2(ceiling - floor))` tries.
  */
 export function nextMtuSize(tries: readonly MtuTry[], bounds: MtuBounds): number | undefined {

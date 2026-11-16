@@ -127,7 +127,8 @@ describe("a property of the search for the MTU", () => {
   it("finds the MTU of each path that passes each size up to its MTU, with any message", () => {
     fc.assert(
       fc.property(bounds, fc.double({ min: -0.1, max: 1.1, noNaN: true }), fc.constantFrom("silent", "true", "any"), told, (b, share, kind, tell) => {
-        const mtu = Math.round(b.floor + share * (b.ceiling - b.floor));
+        // A path MTU below 0 is not a path: no message tells a negative MTU.
+        const mtu = Math.max(0, Math.round(b.floor + share * (b.ceiling - b.floor)));
         const path = kind === "silent" ? blackHole(mtu) : kind === "true" ? withMessage(mtu) : withMessage(mtu, tell);
         const { tries, value } = measure(path, b);
         if (mtu < b.floor) expect(value.outcome).toBe("none");

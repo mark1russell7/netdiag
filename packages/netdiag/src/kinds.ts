@@ -808,6 +808,16 @@ function isMtuTry(value: unknown): value is MtuTry {
   );
 }
 
+/**
+ * This function tells if the MTU, the ceiling and the stop of a value agree with its outcome. A measured MTU is not above
+ * the ceiling, and it has a stop only when it is below the ceiling.
+ */
+function mtuAgrees(outcome: unknown, mtu: unknown, ceiling: unknown, stop: unknown): boolean {
+  if ((outcome === "measured") !== (mtu !== undefined)) return false;
+  if (mtu === undefined) return stop === undefined;
+  return typeof mtu === "number" && typeof ceiling === "number" && mtu <= ceiling && (mtu < ceiling) === (stop !== undefined);
+}
+
 /** The fact kind `path.mtu`. A measured MTU has a stop when it is below the ceiling, and no stop at the ceiling. */
 export const PATH_MTU: FactKind<PathMtu> = defineFactKind<PathMtu>({
   kind: "path.mtu",
@@ -823,9 +833,7 @@ export const PATH_MTU: FactKind<PathMtu> = defineFactKind<PathMtu>({
     Array.isArray(value["tries"]) &&
     value["tries"].every(isMtuTry) &&
     optional(value["detail"], isText) &&
-    (value["outcome"] === "measured") === (value["mtu"] !== undefined) &&
-    (value["mtu"] === undefined || (value["mtu"] <= value["ceiling"] && (value["mtu"] < value["ceiling"]) === (value["stop"] !== undefined))) &&
-    (value["mtu"] !== undefined || value["stop"] === undefined),
+    mtuAgrees(value["outcome"], value["mtu"], value["ceiling"], value["stop"]),
 });
 
 /** The fact kinds of the adapters of outside tools (`@mark1russell7/netdiag/tools`). */
