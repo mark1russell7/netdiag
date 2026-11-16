@@ -1,8 +1,21 @@
-import { DNS_ANSWER, PATH_OWNER, TCP_CONNECT, target, type Fact, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
+import { DNS_ANSWER, PATH_OWNER, PATH_REPORT, TCP_CONNECT, target, type Fact, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { TOP_CAUSES } from "./next.ts";
 import { planCheck, type CheckOptions, type CheckPlan } from "./plan.ts";
-import { CHECK_FORMAT, MAX_REPORT_PROBLEMS, formatReport, ownerText, percentOf, readCheckReport, reportOf, subjectText, type CheckReport } from "./report.ts";
+import {
+  CHECK_FORMAT,
+  MAX_REPORT_PROBLEMS,
+  PATH_LOSS_FAULT,
+  formatReport,
+  hopsText,
+  networkName,
+  ownerText,
+  percentOf,
+  readCheckReport,
+  reportOf,
+  subjectText,
+  type CheckReport,
+} from "./report.ts";
 
 // The report of fixed steps of a visit. No test sends a packet.
 
@@ -147,6 +160,73 @@ describe("the owners of the hops in a report", () => {
 
   it("reads a report with owners after a round trip through JSON", () => {
     expect(readCheckReport(JSON.parse(JSON.stringify(report)))).toEqual({ tag: "ok", value: report });
+  });
+});
+
+/** A report of mtr to the address of the target: `lost` probes of `sent` lost at each hop. */
+const path = (sent: number, hops: readonly (readonly [string, number])[]): VisitStep =>
+  fact("target", "shop.example", PATH_REPORT.kind, PATH_REPORT.layer, "192.0.2.10", {
+    address: "192.0.2.10",
+    outcome: "reached",
+    cycles: sent,
+    hops: hops.map(([address, lost], index) => ({ ttl: index + 1, address, sent, received: sent - lost })),
+  });
+
+const network = (handle: string, name: string, originAs: readonly number[]) => ({ handle, name, start: "0.0.0.0", end: "0.0.0.0", cidrs: [], originAs });
+
+describe("the start of a loss in a report", () => {
+  const options = { target: "shop.example" };
+  const connected = [answer("target", "shop.example", "ok", ["192.0.2.10"]), connect("target", "shop.example", "192.0.2.10", "connected")];
+  // With 100 cycles and 10 lost at the destination, the p of each hop with no loss is 0.0034. So the loss starts after hop 2.
+  const hops = [["192.168.1.1", 0], ["198.51.100.1", 0], ["203.0.113.1", 10], ["192.0.2.10", 10]] as const;
+  const steps = [
+    ...connected,
+    path(100, hops),
+    owner("203.0.113.1", { outcome: "found", registry: "rdap.arin.net", network: network("NET-T", "TRANSIT-NET", [64501]) }),
+    owner("192.0.2.10", { outcome: "found", registry: "rdap.arin.net", network: network("NET-S", "SHOP-NET", []) }),
+  ];
+  const report = reportOf(plan(options), steps);
+  const sentence = "The loss of 10% to 192.0.2.10 starts in one of 2 networks: TRANSIT-NET (AS64501) or SHOP-NET.";
+
+  it("names the networks under the cause of a loss, and shows the hops of each network", () => {
+    const lines = formatReport(report);
+    const cause = report.causes.slice(0, TOP_CAUSES).find((item) => item.id === PATH_LOSS_FAULT);
+    expect(cause).toBeDefined();
+    const at = lines.findIndex((line) => line.endsWith(`  ${cause?.summary ?? ""}`));
+    expect(lines[at + 2]).toBe(`        Where: ${sentence}`);
+    const start = lines.indexOf("Where the loss starts (1)");
+    expect(lines.slice(start, start + 5)).toEqual([
+      "Where the loss starts (1)",
+      `  ${sentence}`,
+      "    The loss starts after hop 2 (198.51.100.1), a hop with a clearly lower loss.",
+      "    hop 3 (203.0.113.1): TRANSIT-NET (NET-T), AS64501",
+      "    hop 4 (192.0.2.10): SHOP-NET (NET-S)",
+    ]);
+    expect(readCheckReport(JSON.parse(JSON.stringify(report)))).toEqual({ tag: "ok", value: report });
+  });
+
+  it("tells to give more cycles when no hop has a clearly lower loss, and names a hop with no lookup", () => {
+    const lines = formatReport(reportOf(plan(options), [...connected, path(20, [["192.168.1.1", 0], ["192.0.2.10", 4]])]));
+    const start = lines.indexOf("Where the loss starts (1)");
+    expect(lines.slice(start + 1, start + 6)).toEqual([
+      "  The loss of 20% to 192.0.2.10 starts in one of 2 networks: the network of 192.168.1.1 or the network of 192.0.2.10.",
+      "    No hop has a clearly lower loss, so the loss can start on the first link.",
+      "    More cycles give a shorter part of the path. Give --mtr-cycles 100.",
+      "    hop 1 (192.168.1.1): no lookup of the owner",
+      "    hop 2 (192.0.2.10): no lookup of the owner",
+    ]);
+  });
+
+  it("shows no start without a loss at the destination", () => {
+    const lines = formatReport(reportOf(plan(options), [...connected, path(100, [["192.168.1.1", 40], ["192.0.2.10", 0]])]));
+    expect(lines.some((line) => line.startsWith("Where the loss starts") || line.includes("Where: "))).toBe(false);
+  });
+
+  it("writes one hop, a range of hops, and a network with no owner", () => {
+    const loss = { sent: 100, lost: 0, ratio: 0, low: 0, high: 0.04 };
+    expect(hopsText([])).toBe("no hop");
+    expect(hopsText([{ ttl: 7, address: "203.0.113.2", loss }, { ttl: 8, address: "203.0.113.7", loss }])).toBe("hops 7 to 8 (203.0.113.2, 203.0.113.7)");
+    expect(networkName({ hops: [] })).toBe("the network of a hop");
   });
 });
 
