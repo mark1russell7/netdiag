@@ -218,8 +218,8 @@ function bandOfText(text: string | undefined): WifiBand | undefined {
 }
 
 /**
- * This function reads one field line of netsh: an indent, a key, a colon, then the end of the line or a space and the
- * value. The first colon ends the key, because a MAC address has colons in the value. The function finds the colon with
+ * This function reads one field line of netsh: an indent, a key and a colon. Then the line ends, or a space and the
+ * value follow. The first colon ends the key, because a MAC address has colons in the value. The function finds the colon with
  * `indexOf`, not with a regular expression. Thus a long line takes linear time.
  */
 function netshField(line: string): { readonly key: string; readonly value: string } | undefined {
