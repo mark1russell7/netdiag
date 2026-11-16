@@ -177,18 +177,9 @@ describe("the visit of a target", () => {
     const ok = (stdout: string) => ({ exitCode: 0, stdout, stderr: "" });
     const iw = (match: (args: readonly string[]) => boolean, stdout: string): FakeRule => [(args, command) => command === "iw" && match(args), ok(stdout)];
     const tools = fakeToolHost<ToolRunOptions>("linux", [
-      iw((args) => args[0] === "--version", "iw version 6.9
-"),
-      iw((args) => args.join(" ") === "dev", "phy#0
-	Interface wlan0
-		ifindex 3
-		type managed
-"),
-      iw((args) => args.at(-1) === "link", "Connected to 02:00:00:00:00:aa (on wlan0)
-	SSID: lab-net
-	freq: 5180
-	signal: -80 dBm
-"),
+      iw((args) => args[0] === "--version", "iw version 6.9\n"),
+      iw((args) => args.join(" ") === "dev", "phy#0\n\tInterface wlan0\n\t\tifindex 3\n\t\ttype managed\n"),
+      iw((args) => args.at(-1) === "link", "Connected to 02:00:00:00:00:aa (on wlan0)\n\tSSID: lab-net\n\tfreq: 5180\n\tsignal: -80 dBm\n"),
       iw((args) => args.at(-1) === "dump", ""),
     ]);
     const steps = await visit({ target: { host: NAME }, grants: [range(`${RESOLVER}/32`)] }, { tools, pingCount: 0, wifi: true });
