@@ -1,8 +1,8 @@
-import { DNS_ANSWER, LAYERS, STANDARD_CATALOG, TCP_CONNECT, target, type Fact, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
+import { DNS_ANSWER, LAYERS, PATH_ORIGIN, PATH_OWNER, PATH_REPORT, STANDARD_CATALOG, TCP_CONNECT, target, type Fact, type PathOrigin, type PathOwner, type ReportHop, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
 import { PARTS, type Cause } from "@mark1russell7/netdiag/diagnosis";
 import { planCheck, reportOf } from "@mark1russell7/netdiag-cli";
 import { describe, expect, it } from "vitest";
-import { flowOf, ringsOf, timelineOf, toneOf } from "./report-views.ts";
+import { flowOf, pathsOf, ringsOf, timelineOf, toneOf } from "./report-views.ts";
 
 // The views of a report of fixed steps: the target refuses the connect, and the reference host accepts it.
 
@@ -97,5 +97,84 @@ describe("timelineOf", () => {
 
   it("gives an empty timeline for a report with no facts", () => {
     expect(timelineOf(reportOf(planned.value, []))).toEqual({ lanes: [], bars: [], span: 0 });
+  });
+});
+
+describe("pathsOf", () => {
+  const DESTINATION = "192.0.2.10";
+  /** A report of mtr to the destination, with the hops in the order of the TTL. */
+  const path = (cycles: number, hops: readonly ReportHop[], outcome = "reached"): VisitStep =>
+    fact("target", "shop.example", PATH_REPORT.kind, PATH_REPORT.layer, DESTINATION, 2000, 2100, { address: DESTINATION, outcome, cycles, hops });
+  /** The hops of a report: `lost` probes of `sent` lost at each address. */
+  const hops = (sent: number, losses: readonly (readonly [string, number])[]): ReportHop[] =>
+    losses.map(([address, lost], index) => ({ ttl: index + 1, address, sent, received: sent - lost }));
+  const owner = (value: PathOwner): VisitStep => fact("target", "shop.example", PATH_OWNER.kind, PATH_OWNER.layer, value.address, 2100, 2101, value);
+  const origin = (value: PathOrigin): VisitStep => fact("target", "shop.example", PATH_ORIGIN.kind, PATH_ORIGIN.layer, value.address, 2101, 2102, value);
+  const network = (handle: string, name: string, originAs: readonly number[]) => ({ handle, name, start: "0.0.0.0", end: "0.0.0.0", cidrs: [], originAs });
+  const viewOf = (steps: readonly VisitStep[]) => pathsOf(reportOf(planned.value, [...STEPS, ...steps]));
+
+  it("gives no view for a report with no report of mtr", () => {
+    expect(pathsOf(report)).toEqual([]);
+  });
+
+  it("puts the start of a loss after the gateway, and names each network with the words of the CLI", () => {
+    // With 100 cycles and 10 lost at the destination, each hop with no loss is clearly lower. So the loss starts after hop 2.
+    const views = viewOf([
+      path(100, hops(100, [["192.168.1.1", 0], ["198.51.100.1", 0], ["203.0.113.1", 10], [DESTINATION, 10]])),
+      owner({ address: "203.0.113.1", outcome: "found", registry: "rdap.arin.net", network: network("NET-T", "TRANSIT-NET", [64501]) }),
+      owner({ address: DESTINATION, outcome: "found", registry: "rdap.arin.net", network: network("NET-S", "SHOP-NET", []) }),
+    ]);
+    expect(views).toHaveLength(1);
+    const view = views[0];
+    expect(view).toMatchObject({ subject: "target shop.example", address: DESTINATION, outcome: "reached", cycles: 100 });
+    expect(view?.summary).toBe("The loss of 10% to 192.0.2.10 starts in one of 2 networks: TRANSIT-NET (AS64501) or SHOP-NET.");
+    expect(view?.notes).toEqual(["The loss starts after hop 2 (198.51.100.1), a hop with a clearly lower loss."]);
+    expect(view?.networks).toEqual([
+      { name: "TRANSIT-NET (AS64501)", hops: "hop 3 (203.0.113.1)" },
+      { name: "SHOP-NET", hops: "hop 4 (192.0.2.10)" },
+    ]);
+    expect(view?.hops.map((hop) => [hop.ttl, hop.place, hop.lossText, hop.network])).toEqual([
+      [1, "clear", "0%", "no lookup of the owner"],
+      [2, "bound", "0%", "no lookup of the owner"],
+      [3, "start", "10%", "TRANSIT-NET (NET-T), AS64501"],
+      [4, "start", "10%", "SHOP-NET (NET-S)"],
+    ]);
+    expect(view?.hops[2]?.loss).toBeCloseTo(0.1, 9);
+  });
+
+  it("starts the loss on the first link when no hop has a clearly lower loss, with the hint of more cycles", () => {
+    const view = viewOf([path(20, hops(20, [["192.168.1.1", 0], [DESTINATION, 4]]))])[0];
+    expect(view?.hops.map((hop) => hop.place)).toEqual(["start", "start"]);
+    expect(view?.notes).toEqual(["No hop has a clearly lower loss, so the loss can start on the first link.", "More cycles give a shorter part of the path. Give --mtr-cycles 100."]);
+    expect(view?.networks.map((item) => item.name)).toEqual(["the network of 192.168.1.1", "the network of 192.0.2.10"]);
+  });
+
+  it("gives no start for a path with no loss at the destination, or a path that did not reach it", () => {
+    const silent: ReportHop = { ttl: 2, sent: 100, received: 0 };
+    const view = viewOf([path(100, [{ ttl: 1, address: "192.168.1.1", sent: 100, received: 60 }, silent, { ttl: 3, address: DESTINATION, sent: 100, received: 100 }])])[0];
+    expect(view).toMatchObject({ summary: "The path to 192.0.2.10 has no loss at the destination.", notes: [], networks: [] });
+    expect(view?.hops.map((hop) => [hop.place, hop.lossText, hop.address, hop.network])).toEqual([
+      ["clear", "40%", "192.168.1.1", "no lookup of the owner"],
+      ["clear", "100%", undefined, "no answer"],
+      ["clear", "0%", DESTINATION, "no lookup of the owner"],
+    ]);
+    const stopped = viewOf([path(100, hops(100, [["192.168.1.1", 0]]), "stopped")])[0];
+    expect(stopped).toMatchObject({ outcome: "stopped", summary: "The probes of mtr did not reach 192.0.2.10.", networks: [] });
+    expect(viewOf([path(100, [{ ttl: 1, address: DESTINATION, sent: 0, received: 0 }])])[0]?.hops[0]).toMatchObject({ lossText: "no probe", loss: undefined });
+  });
+
+  it("names a private hop with special owners and origins, as the hops of the kernel lab", () => {
+    const view = viewOf([
+      path(60, hops(60, [["172.21.0.1", 0], [DESTINATION, 11]])),
+      owner({ address: "172.21.0.1", outcome: "special", class: "private" }),
+      origin({ address: "172.21.0.1", outcome: "special", class: "private" }),
+      origin({ address: DESTINATION, outcome: "special", class: "documentation" }),
+    ])[0];
+    expect(view?.hops.map((hop) => [hop.place, hop.network])).toEqual([
+      ["bound", "a special-purpose address (private), with no lookup"],
+      ["start", "a special-purpose address (documentation), with no lookup"],
+    ]);
+    expect(view?.networks).toEqual([{ name: "the network of 192.0.2.10", hops: "hop 2 (192.0.2.10)" }]);
+    expect(view?.summary).toBe("The loss of 18% to 192.0.2.10 starts in the network of 192.0.2.10.");
   });
 });

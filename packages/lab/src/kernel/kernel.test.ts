@@ -3,17 +3,17 @@ import { get } from "node:https";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { realClock } from "@mark1russell7/algebra/clock";
-import { STANDARD_CATALOG, type Fact } from "@mark1russell7/netdiag";
+import { CYMRU_ZONES, RDAP_REGISTRIES, STANDARD_CATALOG, decideScope, originProbe, ownerProbe, scopeOf, type Fact } from "@mark1russell7/netdiag";
 import { signsOf } from "../cases.ts";
 import type { ToolRunOptions } from "@mark1russell7/netdiag/tools";
-import { authority, fakeToolHost, startDnsServer, type Authority } from "@netdiag/fixtures";
+import { authority, fakeToolHost, startDnsServer, type Authority, type FakeRule } from "@netdiag/fixtures";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { startAgent } from "./agent.ts";
+import { refuseRdap, refuseTxt, startAgent } from "./agent.ts";
 import { KERNEL_CASES, KERNEL_LATER, KERNEL_REFERENCE_NAME, KERNEL_TARGET_NAME, TOWARD_TARGET, applySteps, faultPlan, kernelZone, type StepLab } from "./cases.ts";
 import { httpsArgs, parseHttpsArgs, startHttps } from "./https.ts";
-import { agentArgs, parseAgentArgs, visitInputOf, visitOf, type AgentLine, type AgentPlan } from "./protocol.ts";
+import { agentArgs, lookupGrants, parseAgentArgs, visitInputOf, visitOf, type AgentLine, type AgentPlan } from "./protocol.ts";
 import { parseZoneArg, zoneArg } from "./resolver.ts";
-import { IMAGE_FILES, NODE_IMAGE, REPOSITORY_ROOT, kernelPlan, kernelTarget } from "./world.ts";
+import { IMAGE_FILES, NODE_IMAGE, REPOSITORY_ROOT, kernelPlan, kernelTarget, wherePlan } from "./world.ts";
 
 // The parts of the kernel lab that operate with no Docker. CI starts the worlds (lab-kernel.yml). No assertion examines a time.
 
@@ -132,6 +132,32 @@ describe("the protocol of the agent", () => {
     expect(visitInputOf(plain)).not.toHaveProperty("gateway");
   });
 
+  const where = wherePlan({ ...PEERS, resolver: "172.20.0.4", gateway: "172.21.0.1" });
+
+  it("gives the option --owners only to a plan with owners, and reads it back", () => {
+    expect(agentArgs(plan)).not.toContain("--owners");
+    expect(agentArgs(where)).toContain("--owners");
+    expect(parseAgentArgs(agentArgs(where))).toEqual(where);
+  });
+
+  it("grants the hosts of the lookups by name only with owners, so the scope permits the peers of the two probes", () => {
+    const hosts = lookupGrants().map((grant) => (grant.kind === "host" ? `${grant.host} ${grant.basis}` : grant.cidr));
+    expect(hosts).toEqual(["data.iana.org named", ...RDAP_REGISTRIES.map((host) => `${host} named`), `${CYMRU_ZONES.ipv4} named`, `${CYMRU_ZONES.ipv6} named`]);
+    expect(visitInputOf(where).grants).toEqual([...visitInputOf(plan).grants, ...lookupGrants()]);
+    expect(visitInputOf(plan).grants.every((grant) => grant.kind === "range")).toBe(true);
+    const peers = [
+      ...ownerProbe(refuseRdap).peers({ addresses: ["172.21.0.1", "8.8.8.8"] }),
+      ...originProbe(refuseTxt).peers({ addresses: ["172.21.0.1", "8.8.8.8", "2001:4860::8888"], resolver: "172.20.0.4" }),
+    ];
+    const scopeOfPlan = (agent: AgentPlan) => {
+      const scope = scopeOf(visitInputOf(agent).grants);
+      if (scope.tag === "err") throw new Error(scope.error.join(" "));
+      return scope.value;
+    };
+    for (const peer of peers) expect(decideScope(scopeOfPlan(where), peer).allowed, peer.host).toBe(true);
+    expect(peers.filter((peer) => !decideScope(scopeOfPlan(plan), peer).allowed).map((peer) => peer.host)).toContain("data.iana.org");
+  });
+
   it("refuses an empty scope and a port that is not a number", () => {
     const args = agentArgs(plan);
     expect(() => parseAgentArgs(args.filter((arg) => !arg.endsWith("/32") && arg !== "--grant"))).toThrow(RangeError);
@@ -161,6 +187,24 @@ describe("the protocol of the agent", () => {
     expect(visit.facts.map((each) => visit.read.primary?.(each))).toEqual([true, false]);
     expect(visit.problems).toEqual(["The ping of x did not end."]);
     expect(visit.read.gateway).toBeUndefined();
+    expect(visit.steps).toEqual([
+      { kind: "fact", role: "target", host: KERNEL_TARGET_NAME, fact: fact("f1", PEERS.target) },
+      { kind: "fact", role: "reference", host: KERNEL_REFERENCE_NAME, fact: fact("f2", PEERS.reference) },
+      { kind: "problem", role: "reference", host: KERNEL_REFERENCE_NAME, problem: "The ping of x did not end." },
+    ]);
+  });
+
+  it("keeps no step of a line with no host, and gives a problem for it", () => {
+    const lines = [
+      { ev: "fact", t: 1, role: "target", fact: fact("f1", PEERS.target) },
+      { ev: "problem", t: 2, role: "target", problem: "The ping of x did not end." },
+      { ev: "done", t: 3 },
+    ];
+    const visit = visitOf(lines);
+    if (visit.status !== "visited") throw new Error("no visit");
+    expect(visit.steps).toEqual([]);
+    expect(visit.problems).toHaveLength(2);
+    expect(visit.problems[1]).toBe("The agent wrote a problem line that is not valid.");
   });
 
   it("reads the facts of the roles local and gateway as facts that are not primary, and keeps the gateway", () => {
@@ -267,5 +311,45 @@ describe("the HTTPS host and the agent on loopback addresses", () => {
       await dns.close();
       await host.close();
     }
+  });
+
+  it("looks up the owner and the origin of each hop with owners, and each private hop gets the outcome special", async () => {
+    const pems = await ca.issue(["127.0.0.2"]);
+    const host = await startHttps({ port: 0, ...pems }, "127.0.0.2");
+    const root = join(folder, "root-owners.pem");
+    writeFileSync(root, ca.cert);
+    try {
+      const base = wherePlan({ target: "127.0.0.2", reference: "127.0.0.3", resolver: "127.0.0.1", gateway: "127.0.0.4" });
+      const plan: AgentPlan = { ...base, port: host.port, mtrCycles: 2, root };
+      const hubs = ["127.0.0.4", "127.0.0.2"].map((address, index) => ({ count: index + 1, host: address, "Loss%": 0, Snt: 2, Last: 0.5, Best: 0.4, Avg: 0.6, Wrst: 1.2, StDev: 0.1 }));
+      const report = JSON.stringify({ report: { mtr: { src: "lab", dst: "127.0.0.2", tos: 0, tests: 2 }, hubs } });
+      const rules: FakeRule[] = [
+        [(args, command) => command === "mtr" && args[0] === "--version", { exitCode: 0, stdout: "mtr 0.95\n", stderr: "" }],
+        [(args, command) => command === "mtr" && args[0] === "--json", { exitCode: 0, stdout: report, stderr: "" }],
+      ];
+      const tools = fakeToolHost<ToolRunOptions>("linux", rules);
+      const lines: AgentLine[] = [];
+      await startAgent(agentArgs(plan), { tools, clock: realClock, write: (line) => lines.push(line) });
+      expect(lines.filter((line) => line.ev === "problem" || line.ev === "fail")).toEqual([]);
+      const lookups = lines.flatMap((line) =>
+        line.ev === "fact" && (line.fact.kind === "path.owner" || line.fact.kind === "path.origin") ? [`${line.role} ${line.fact.kind} ${JSON.stringify(line.fact.value)}`] : [],
+      );
+      expect(lookups).toEqual([
+        'target path.owner {"address":"127.0.0.4","outcome":"special","class":"loopback"}',
+        'target path.owner {"address":"127.0.0.2","outcome":"special","class":"loopback"}',
+        'target path.origin {"address":"127.0.0.4","outcome":"special","class":"loopback"}',
+        'target path.origin {"address":"127.0.0.2","outcome":"special","class":"loopback"}',
+      ]);
+      expect(tools.calls.map((call) => `${call.command} ${call.args[0] ?? ""}`)).toEqual(["mtr --version", "mtr --json"]);
+    } finally {
+      await host.close();
+    }
+  });
+
+  it("refuses each lookup that leaves the lab", async () => {
+    const request = { host: "rdap.arin.net", url: "https://rdap.arin.net/registry/ip/8.8.8.8", headers: {}, what: "the network of 8.8.8.8" };
+    await expect(refuseRdap(request, new AbortController().signal)).rejects.toThrow("The kernel lab sends no request to rdap.arin.net.");
+    const query = { name: "8.8.8.8.origin.asn.cymru.com", resolver: "172.20.0.4", port: 53, timeoutMs: 1000 };
+    await expect(refuseTxt(query, new AbortController().signal)).resolves.toEqual({ outcome: "refused", records: [] });
   });
 });

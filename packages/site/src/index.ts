@@ -29,7 +29,7 @@ import {
   search,
   searchDone,
 } from "./model.ts";
-import { flowOf, ringsOf, timelineOf, type FlowItem, type RingId } from "./report-views.ts";
+import { flowOf, pathsOf, ringsOf, timelineOf, type FlowItem, type PathHop, type PathView, type RingId } from "./report-views.ts";
 import samplesJson from "./samples.json";
 
 setupTheme(byId<HTMLButtonElement>("theme"), "theme");
@@ -496,7 +496,7 @@ const RING_NAMES: Readonly<Record<RingId, string>> = {
 };
 
 /** The ids of the views of a report. A file that is not a report empties them. */
-const REPORT_VIEWS = ["report-head", "report-rings", "report-flow", "report-causes", "report-next", "report-timeline"] as const;
+const REPORT_VIEWS = ["report-head", "report-rings", "report-path", "report-flow", "report-causes", "report-next", "report-timeline"] as const;
 
 const reportSample = byId<HTMLSelectElement>("report-sample");
 const reportFile = byId<HTMLInputElement>("report-file");
@@ -571,6 +571,43 @@ function showRings(report: CheckReport): void {
   );
 }
 
+/** The tag of a hop in the part where the loss starts, and of the hop before the part. */
+const PLACE_TAGS: Readonly<Record<PathHop["place"], string>> = { start: "the loss can start", bound: "lower loss", clear: "" };
+
+/** This function shows a hop of a path: its TTL, its address, its loss and its network. */
+function pathHop(hop: PathHop): HTMLElement {
+  return h(
+    "li",
+    { class: `hop ${hop.place}` },
+    h("span", { class: "hop-ttl" }, String(hop.ttl)),
+    h("code", { class: "hop-address" }, hop.address ?? "*"),
+    h("span", { class: "hop-loss" }, h("span", { class: "meter", style: `--p: ${width(hop.loss ?? 0)}` }), h("span", { class: "pct" }, hop.lossText)),
+    h("span", { class: "hop-network" }, hop.network),
+    hop.place === "clear" ? null : h("span", { class: `tag ${hop.place === "start" ? "unusual" : "usual"}` }, PLACE_TAGS[hop.place]),
+  );
+}
+
+/** This function shows one report of mtr: the sentence of the start, the hops, and the networks where the loss can start. */
+function pathView(view: PathView): HTMLElement {
+  const hops = view.hops.length;
+  return h(
+    "div",
+    { class: "path" },
+    h("p", { class: "path-summary" }, h("b", {}, view.summary)),
+    h("p", { class: "note small" }, `From ${view.subject}: ${String(hops)} hop${hops === 1 ? "" : "s"}, ${String(view.cycles)} cycles of mtr.`, ...view.notes.map((note) => ` ${note}`)),
+    h("ol", { class: "hops", "aria-label": `The hops to ${view.address}` }, ...view.hops.map(pathHop)),
+    view.networks.length === 0
+      ? null
+      : h("ul", { class: "start-networks", "aria-label": "The networks where the loss can start" }, ...view.networks.map((network) => h("li", {}, h("b", {}, network.name), `: ${network.hops}`))),
+  );
+}
+
+/** This function shows the path of each report of mtr. A report with no report of mtr shows one short line. */
+function showPaths(report: CheckReport): void {
+  const views = pathsOf(report);
+  byId("report-path").replaceChildren(...(views.length === 0 ? [h("p", { class: "sp-empty" }, "No path: the check did not trace the path with mtr.")] : views.map(pathView)));
+}
+
 /** This function shows the observations of each layer. */
 function showFlow(report: CheckReport): void {
   byId("report-flow").replaceChildren(
@@ -640,6 +677,7 @@ function showReport(report: CheckReport, source: string, truth?: string): void {
   byId("report-problems").replaceChildren();
   showReportHead(report, source, truth);
   showRings(report);
+  showPaths(report);
   showFlow(report);
   showCauses(byId("report-causes"), { causes: report.causes, used: report.evidence, ignored: report.ignored }, { count: 5, truth });
   showNext(report);

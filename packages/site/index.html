@@ -115,6 +115,9 @@
     <h3>Where the fault is</h3>
     <p class="note small">Each box is a part of the network, from your computer to the service. Its shade is the probability of a fault in it.</p>
     <ol id="report-rings" class="rings"></ol>
+    <h3>Where the loss starts</h3>
+    <p class="note small">Each row is a hop of the path that <code>mtr</code> traced, from your computer to the destination. Red rows are the part where the loss can start.</p>
+    <div id="report-path" class="paths"></div>
     <h3>The observations of each layer</h3>
     <ol id="report-flow" class="flow"></ol>
     <h3>The most probable causes</h3>

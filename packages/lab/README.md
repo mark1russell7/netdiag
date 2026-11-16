@@ -45,6 +45,8 @@ node packages/lab/src/samples-main.ts --hosts ci --commit <sha> --out lab-out/sa
 
 The file has the format `netdiag-samples/1`: the id, the true fault and the report of each case. `readSamples` of the entry `@netdiag/lab/samples` reads it. The site shows the samples in its demo 4, from `packages/site/src/samples.json`. A case that gives no report gives the exit code 2.
 
+The where cases of the kernel lab give a second file of samples, `packages/site/src/where-samples.json`. The section "The where cases" tells how the job `where` writes it.
+
 ## The kernel lab
 
 The kernel lab makes the faults of the path with real kernels in Docker. It uses the harness of `mark1russell7/systems` (`@mark1russell7/harness`). It needs Docker, so only CI starts it.
@@ -102,6 +104,7 @@ The where cases examine `lossStart` of netdiag: the part of a path where a loss 
 | `none` | No fault. | No part, because the path has no loss. |
 
 - The agent visits the address of the target, with no reference host and no ping. It starts 60 cycles of `mtr` (`WHERE_CYCLES`).
+- The agent also looks up the owner and the origin AS of each hop, as `netdiag check --owners` does.
 - A run has a read only when each probe ended and the visit has one report of `mtr` that reached the target.
 - With a loss of 30% and 60 cycles, `lossStart` misses the start after the router in approximately 2 of 10000 runs.
 - On the first link, it puts a false start after the router in approximately 5 of 1000 runs.
@@ -113,7 +116,26 @@ The where cases examine `lossStart` of netdiag: the part of a path where a loss 
 node packages/lab/src/kernel/where-main.ts --rounds 5 --out lab-where-out --bars packages/lab/bars/where.json
 ```
 
-The command writes `where.ndjson`, `score.json` and `summary.md`, and `gate.json` with `--bars`. The field `score` of `score.json` has the recalls, so `bars-main.ts` reads the file. The exit code is 2 when a run has no read, and 1 when the gate fails. Each other result gives 0.
+The command writes `where.ndjson`, `score.json`, `samples.json` and `summary.md`, and `gate.json` with `--bars`. The field `score` of `score.json` has the recalls, so `bars-main.ts` reads the file. The exit code is 2 when a run has no read, and 1 when the gate fails. Each other result gives 0.
+
+#### The samples of the where cases
+
+The file `samples.json` has the format `netdiag-samples/1`. It has the report of the first read of each where case.
+
+- `reportOf` of the CLI makes each report from the steps of the visit. `checkPlanOf` gives the plan of the check from the plan of the agent.
+- The true fault of the two loss cases is `path.loss`. The true fault of the control is `none`.
+- The commit of the file is the head of the pull request, else `GITHUB_SHA`. The option `--commit` sets it.
+- The command reads the file with `readSamples`. A file with problems gives the exit code 2.
+- The site keeps the file of one CI run as `packages/site/src/where-samples.json`. Copy the file from the artifact `lab-where-<sha>-1` of the run.
+
+#### The lookups that cannot leave the lab
+
+The lookups of the owners and the origins send no packet out of the lab.
+
+- The agent image has no `netdiag-cli`, so the agent has no RDAP client and no TXT client of its own.
+- The RDAP port of the agent (`refuseRdap`) refuses each request. The TXT port (`refuseTxt`) refuses each query.
+- Each hop of the lab has a private address. Thus each lookup gives the outcome `special`, and the probes do not use the ports.
+- The plan grants the hosts of RDAP and the zones of Team Cymru by name, as `planCheck` of the CLI does. `lookupGrants` gives these grants.
 
 ## The bars of the gate
 

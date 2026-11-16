@@ -1,18 +1,23 @@
-import { labBars, labGate, type Fact, type PathReport, type ReportHop } from "@mark1russell7/netdiag";
+import { PATH_ORIGIN, PATH_OWNER, labBars, labGate, lossOrigins, type Fact, type PathReport, type ReportHop, type VisitStep } from "@mark1russell7/netdiag";
+import { readCheckReport } from "@mark1russell7/netdiag-cli/report";
 import { wilson } from "@mark1russell7/rigor-statistics";
 import { describe, expect, it } from "vitest";
 import { runScore } from "../bars.ts";
 import { visitRounds, type LabRound, type Visit } from "../run.ts";
+import { SAMPLES_FORMAT, readSamples } from "../samples.ts";
 import { KERNEL_PORT, TOWARD_CLIENT, faultPlan } from "./cases.ts";
+import { lookupGrants, visitInputOf } from "./protocol.ts";
 import {
   WHERE_CASES,
   WHERE_CATALOG,
   WHERE_CYCLES,
+  checkPlanOf,
   partText,
   readWhere,
   samePart,
   whereMarkdown,
   whereRecalls,
+  whereSample,
   whereScores,
   type WhereCase,
   type WhereRun,
@@ -61,6 +66,14 @@ describe("the where cases", () => {
     expect(NONE).toMatchObject({ fault: null, expect: null });
   });
 
+  it("give the truth path.loss to each loss case, and none to the control", () => {
+    expect(WHERE_CASES.map((labCase) => [labCase.id, labCase.truth])).toEqual([
+      ["loss.last-link", "path.loss"],
+      ["loss.first-link", "path.loss"],
+      ["none", "none"],
+    ]);
+  });
+
   it("put netem on the router toward the client, and remove it", () => {
     expect(faultPlan(FIRST.fault, ADDRESSES)).toEqual({
       apply: [{ op: "netem", spec: "loss 30%", at: TOWARD_CLIENT }],
@@ -68,9 +81,10 @@ describe("the where cases", () => {
     });
   });
 
-  it("give the agent the address of the target, no reference host, no ping and 60 cycles of mtr", () => {
-    expect(wherePlan(ADDRESSES)).toEqual({ ...kernelPlan(ADDRESSES), target: TARGET, references: [], pingCount: 0, mtrCycles: 60 });
+  it("give the agent the address of the target, no reference host, no ping, 60 cycles of mtr and the lookups", () => {
+    expect(wherePlan(ADDRESSES)).toEqual({ ...kernelPlan(ADDRESSES), target: TARGET, references: [], pingCount: 0, mtrCycles: 60, owners: true });
     expect(wherePlan(ADDRESSES).port).toBe(KERNEL_PORT);
+    expect(kernelPlan(ADDRESSES).owners).toBe(false);
   });
 });
 
@@ -221,5 +235,55 @@ describe("visitRounds", () => {
       Promise.resolve({ visit: (labCase) => Promise.resolve(visits[labCase.id] ?? visited([])), close: () => Promise.resolve() });
     const runs = await visitRounds([LAST, NONE], 2, start, readWhere);
     expect(runs.map((run) => `${run.case}#${run.round} ${run.status}`)).toEqual(["loss.last-link#0 read", "none#0 no-read", "none#1 no-read", "loss.last-link#1 read"]);
+  });
+});
+
+describe("the samples of the where cases", () => {
+  const plan = wherePlan(ADDRESSES);
+  const step = (fact: Fact): VisitStep => ({ kind: "fact", role: "target", host: TARGET, fact });
+  const special = (id: string, kind: typeof PATH_OWNER.kind | typeof PATH_ORIGIN.kind, address: string): Fact => ({
+    id,
+    kind,
+    layer: "path",
+    subject: { host: address, kind: "ipv4" },
+    time: { start: 1, end: 2 },
+    source: { probe: kind === PATH_OWNER.kind ? "rdap.owner" : "dns.origin", version: "1" },
+    value: { address, outcome: "special", class: "private" },
+  });
+  const facts = [
+    reportFact("r", [hop(1, GATEWAY, 0), hop(2, TARGET, 18)]),
+    special("o1", PATH_OWNER.kind, GATEWAY),
+    special("o2", PATH_OWNER.kind, TARGET),
+    special("g1", PATH_ORIGIN.kind, GATEWAY),
+    special("g2", PATH_ORIGIN.kind, TARGET),
+  ];
+  const visit: Visit = { status: "visited", facts, read: { gateway: GATEWAY }, problems: [], steps: facts.map(step) };
+
+  it("give the plan of the check from the plan of the agent, with the grants of the agent", () => {
+    const check = checkPlanOf(plan);
+    expect(check).toMatchObject({ target: { host: TARGET, kind: "ipv4", port: KERNEL_PORT }, scheme: "https", path: "/", pingCount: 0, mtrCycles: 60, owners: true, mtu: "auto" });
+    expect(check.visit).toEqual(visitInputOf(plan));
+    expect(check.visit.grants.slice(-lookupGrants().length)).toEqual(lookupGrants());
+  });
+
+  it("give the report of a read with its case, its truth and the start of the loss", () => {
+    const run = read(LAST, visit);
+    const sample = whereSample(LAST, run, plan, visit);
+    expect(sample).toMatchObject({ id: "loss.last-link", truth: "path.loss", summary: LAST.summary });
+    if (sample === undefined) return;
+    expect(readCheckReport(JSON.parse(JSON.stringify(sample.report)))).toMatchObject({ tag: "ok" });
+    expect(sample.report.target).toBe(`${TARGET}:443`);
+    expect(sample.report.grants).toEqual(visitInputOf(plan).grants);
+    expect(sample.report.facts.map((item) => `${item.role} ${item.host} ${item.fact.id}`)).toEqual(facts.map((fact) => `target ${TARGET} ${fact.id}`));
+    const origins = lossOrigins(sample.report.facts.map((item) => item.fact));
+    expect(origins.map((origin) => origin.networks.map((network) => [network.owner?.outcome, network.origin?.outcome]))).toEqual([[["special", "special"]]]);
+    const file = { format: SAMPLES_FORMAT, commit: "0123abc", samples: [sample] };
+    expect(readSamples(JSON.parse(JSON.stringify(file)))).toMatchObject({ tag: "ok" });
+  });
+
+  it("give no sample for a run with no read, or for a visit with no steps", () => {
+    expect(whereSample(LAST, read(LAST, visited(facts, ["The agent did not end."])), plan, visit)).toBeUndefined();
+    expect(whereSample(LAST, read(LAST, visited(facts)), plan, visited(facts))).toBeUndefined();
+    expect(whereSample(LAST, read(LAST, { status: "no-visit", reason: "no docker" }), plan, { status: "no-visit", reason: "no docker" })).toBeUndefined();
   });
 });
