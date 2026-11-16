@@ -909,3 +909,94 @@ export const WIFI_LINK: FactKind<WifiLink> = defineFactKind<WifiLink>({
 
 /** The fact kinds of the adapters of outside tools (`@mark1russell7/netdiag/tools`). */
 export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE, PATH_MTU, WIFI_LINK];
+
+/**
+ * The outcomes of a lookup of the owner of an address in the public registries.
+ *
+ * - `found`: a registry gave the network of the address.
+ * - `unregistered`: the registry has no network for the address. It gave the status 404.
+ * - `special`: the address is in a special-purpose range, for example a private range. netdiag did no lookup.
+ * - `unlisted`: the bootstrap of IANA gives no registry for the address, or that registry is not a permitted registry.
+ * - `failed`: the lookup gave no usable answer, for example a registry that stopped, or a body that is not RDAP.
+ */
+export const OWNER_OUTCOMES = ["found", "unregistered", "special", "unlisted", "failed"] as const;
+
+/** The outcome of a lookup of the owner of an address. */
+export type OwnerOutcome = (typeof OWNER_OUTCOMES)[number];
+
+/** The network of an address in a registry: the RDAP object of the class `ip network` (RFC 9083). */
+export interface OwnerNetwork {
+  /** The handle of the network in the registry, for example `NET-192-0-2-0-1`. */
+  readonly handle: string;
+  /** The name of the network, for example `EXAMPLE-NET`. */
+  readonly name?: string | undefined;
+  /** The first address of the network. */
+  readonly start: string;
+  /** The last address of the network. */
+  readonly end: string;
+  /** The CIDR ranges of the network, from the extension `cidr0`. A registry with no `cidr0` gives no range. */
+  readonly cidrs: readonly string[];
+  /** The name of the holder: the `fn` of the vCard of the entity with the role `registrant`. */
+  readonly holder?: string | undefined;
+  /** The first line of the description of the network, for example the `descr` of a RIPE or APNIC record. */
+  readonly description?: string | undefined;
+  /** The country code of the network, for example `NL`. */
+  readonly country?: string | undefined;
+  /** The origin AS numbers that the registry keeps for the network, from the extension `arin_originas0`. */
+  readonly originAs: readonly number[];
+}
+
+/** The owner of one address on a path: the registered network of the address, from a lookup in RDAP. */
+export interface PathOwner {
+  readonly address: string;
+  readonly outcome: OwnerOutcome;
+  /** The class of the address for the outcome `special`, for example `private`. */
+  readonly class?: string | undefined;
+  /** The host of the registry that gave the last answer, for example `rdap.db.ripe.net`. */
+  readonly registry?: string | undefined;
+  /** The network of the address. Only the outcome `found` has a network. */
+  readonly network?: OwnerNetwork | undefined;
+  /** The reason in plain words for the outcomes `unlisted` and `failed`. */
+  readonly detail?: string | undefined;
+}
+
+function isAsNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 4_294_967_295;
+}
+
+function isOwnerNetwork(value: unknown): value is OwnerNetwork {
+  return (
+    isRecord(value) &&
+    isText(value["handle"]) &&
+    optional(value["name"], isText) &&
+    isText(value["start"]) &&
+    isText(value["end"]) &&
+    isTextList(value["cidrs"]) &&
+    optional(value["holder"], isText) &&
+    optional(value["description"], isText) &&
+    optional(value["country"], isText) &&
+    Array.isArray(value["originAs"]) &&
+    value["originAs"].every(isAsNumber)
+  );
+}
+
+/** The fact kind `path.owner`. */
+export const PATH_OWNER: FactKind<PathOwner> = defineFactKind<PathOwner>({
+  kind: "path.owner",
+  layer: "path",
+  summary: "The registered network of one address on a path: its handle, its range, its holder and its country, from a lookup in RDAP.",
+  check: (value): value is PathOwner =>
+    isRecord(value) &&
+    isText(value["address"]) &&
+    isOneOf(OWNER_OUTCOMES, value["outcome"]) &&
+    optional(value["class"], isText) &&
+    optional(value["registry"], isText) &&
+    optional(value["network"], isOwnerNetwork) &&
+    (value["outcome"] === "found") === (value["network"] !== undefined) &&
+    (value["outcome"] !== "found" || value["registry"] !== undefined) &&
+    (value["outcome"] === "special") === (value["class"] !== undefined) &&
+    optional(value["detail"], isText),
+});
+
+/** The fact kinds of the lookups in the public registries. */
+export const LOOKUP_KINDS: readonly FactKind<unknown>[] = [PATH_OWNER];
