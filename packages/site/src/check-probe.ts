@@ -62,8 +62,8 @@ check("a report has a lane for each host", $$("#report-timeline .lane").length >
 set("#report-sample", "loopback/port.closed");
 check("a pick of a sample shows its report", await until(() => text("#report-head").includes("port.closed")), text("#report-head"));
 set("#report-sample", "where/loss.last-link");
-check("a where sample shows the hops of its path", await until(() => $("#report-path .hop").length > 0), text("#report-path"));
-check("a where sample marks the hop where the loss can start", $("#report-path .hop.start").length > 0, text("#report-path"));
+check("a where sample shows the hops of its path", await until(() => $$("#report-path .hop").length > 0), text("#report-path"));
+check("a where sample marks the hop where the loss can start", $$("#report-path .hop.start").length > 0, text("#report-path"));
 set("#report-text", '{"format": "netdiag-check/0"}');
 click("#report-read");
 check("a file of another format gives its problem", await until(() => text("#report-problems").includes("netdiag-check/1")), text("#report-problems"));
