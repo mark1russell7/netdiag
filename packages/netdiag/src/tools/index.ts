@@ -80,3 +80,16 @@ export {
   readCapture,
   type CaptureInput,
 } from "./capture.ts";
+export {
+  IW_TIMEOUT_MS,
+  NETSH_TIMEOUT_MS,
+  SYSTEM_PROFILER_TIMEOUT_MS,
+  WIFI_TOOLS,
+  readWifi,
+  wifiAvailability,
+  wifiChannelOf,
+  wifiProbe,
+  type WifiChannel,
+  type WifiInput,
+  type WifiRaw,
+} from "./wifi.ts";
