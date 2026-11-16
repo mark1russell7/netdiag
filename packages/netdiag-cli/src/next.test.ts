@@ -108,6 +108,17 @@ describe("the next steps", () => {
     for (const step of found.filter((each) => each.id === "target.tls")) expect(step.observes.map((item) => item.feature)).not.toContain("http.status");
   });
 
+  it("offer the MTU search of the target after a TLS handshake that timed out, and not after a value of path.mtu", () => {
+    const evidence = [primary("tcp.connect", "connected"), primary("tls.handshake", "timeout"), primary("icmp.reply", "reply")];
+    const found = steps({ target: "192.0.2.10", gateway: "192.0.2.1" }, evidence, ["target", "gateway"]);
+    expectRanked(found);
+    const mtu = found.find((step) => step.id === "target.mtu");
+    expect(mtu?.step).toBe("Run the check again with --mtu.");
+    expect(mtu?.observes).toEqual([{ feature: "path.mtu", primary: true }]);
+    const measured = steps({ target: "192.0.2.10", gateway: "192.0.2.1" }, [...evidence, primary("path.mtu", "silent")], ["target", "gateway"]);
+    expect(measured.map((step) => step.id)).not.toContain("target.mtu");
+  });
+
   it("give no step when the diagnosis has no cause", () => {
     const diagnosis = { ...diagnose(STANDARD_CATALOG, []), causes: [] };
     expect(nextSteps(diagnosis, plan({ target: "example.com" }), new Set())).toEqual([]);
@@ -137,6 +148,13 @@ describe("the instruction of a next step", () => {
     if (none.tag === "err") throw new Error(none.error.join(" "));
     expect(stepText(probe("target.dns"), [], none.value)).toMatch(/--resolver <address>/);
     expect(stepText(probe("target.tls"), [], plan({ target: "http://example.com/" }))).toBe("Run the check again with --scheme https.");
+  });
+
+  it("asks for --mtu, unless the check searched each address", () => {
+    const mtu = [{ feature: "path.mtu", primary: true }];
+    expect(stepText(probe("target.mtu"), mtu, plan({ target: "example.com" }))).toBe("Run the check again with --mtu.");
+    expect(stepText(probe("target.mtu"), mtu, plan({ target: "example.com", mtu: false }))).toBe("Run the check again with --mtu.");
+    expect(stepText(probe("target.mtu"), mtu, plan({ target: "example.com", mtu: true }))).toMatch(/^The check has no value of path.mtu from the MTU search of example.com./);
   });
 
   it("tells the user to read the problems of a probe that gave no result", () => {

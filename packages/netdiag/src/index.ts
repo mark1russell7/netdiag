@@ -80,9 +80,12 @@ export {
 } from "./probes/socket.ts";
 export * from "./readers.ts";
 export {
+  MTU_SEARCHES,
   VISIT_RECORDS,
   describeOutcome,
+  largePacketsLost,
   visitTarget,
+  type MtuSearch,
   type VisitHost,
   type VisitInput,
   type VisitOptions,

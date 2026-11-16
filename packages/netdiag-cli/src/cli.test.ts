@@ -67,6 +67,7 @@ describe("the command line", () => {
       "10.1.0.0/16",
       "--ping-count",
       "20",
+      "--mtu",
     ]);
     expect(result.errors).toEqual([]);
     expect(result.code).toBe(0);
@@ -81,6 +82,7 @@ describe("the command line", () => {
         gateway: "192.0.2.1",
         grant: ["10.1.0.0/16"],
         pingCount: 20,
+        mtu: true,
       },
     ]);
   });

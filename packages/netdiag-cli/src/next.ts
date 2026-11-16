@@ -4,6 +4,7 @@ import {
   HTTP_RESPONSE,
   ICMP_ECHO,
   LOSS_MIN_SENT,
+  PATH_MTU,
   STANDARD_CATALOG,
   TCP_CONNECT,
   TLS_HANDSHAKE,
@@ -23,8 +24,11 @@ import type { CheckPlan } from "./plan.ts";
 // the facts of the probe give, and that the evidence does not have yet. `rankProbes` orders the candidates by the
 // information that they can give about the most probable causes.
 
-/** A probe of a visit: the DNS query, the ICMP echo requests, the TLS handshake, the HTTP request or the HTTPS request. */
-export type NextProbeKind = "dns" | "ping" | "tls" | "http" | "https";
+/**
+ * A probe of a visit: the DNS query, the ICMP echo requests, the TLS handshake, the HTTP request, the HTTPS request or
+ * the MTU search.
+ */
+export type NextProbeKind = "dns" | "ping" | "tls" | "http" | "https" | "mtu";
 
 /** A probe that the next step can start, for one role of the visit. */
 export interface NextProbe {
@@ -59,9 +63,10 @@ const PROBE_KINDS: Readonly<Record<NextProbeKind, readonly string[]>> = {
   tls: [TCP_CONNECT.kind, TLS_HANDSHAKE.kind],
   http: [TCP_CONNECT.kind, HTTP_RESPONSE.kind],
   https: [TCP_CONNECT.kind, TLS_HANDSHAKE.kind, HTTP_RESPONSE.kind],
+  mtu: [PATH_MTU.kind],
 };
 
-const PROBE_COSTS: Readonly<Record<NextProbeKind, number>> = { dns: 1, tls: 2, http: 3, https: 3, ping: 5 };
+const PROBE_COSTS: Readonly<Record<NextProbeKind, number>> = { dns: 1, tls: 2, http: 3, https: 3, ping: 5, mtu: 10 };
 
 const PROBE_NAMES: Readonly<Record<NextProbeKind, string>> = {
   dns: "DNS query",
@@ -69,6 +74,7 @@ const PROBE_NAMES: Readonly<Record<NextProbeKind, string>> = {
   tls: "TLS handshake",
   http: "HTTP request",
   https: "HTTPS request",
+  mtu: "MTU search",
 };
 
 function nextProbe(role: VisitRole, probe: NextProbeKind): NextProbe {
@@ -77,6 +83,7 @@ function nextProbe(role: VisitRole, probe: NextProbeKind): NextProbe {
 
 /**
  * The candidates of the next step: each probe of the target and of the reference hosts, and the ping of the gateway.
+ * The MTU search of the path to an address is a candidate of the target and of the reference hosts.
  *
  * - The HTTPS request is one candidate. It observes the features of the TCP connect, the TLS handshake and the HTTP
  *   answer together, 7 in all. Thus its gain counts what the three stages tell together.
@@ -84,7 +91,7 @@ function nextProbe(role: VisitRole, probe: NextProbeKind): NextProbe {
  * - The HTTP request is the candidate of the scheme `http`, and the HTTPS request is the candidate of the scheme `https`.
  */
 export const NEXT_PROBES: readonly NextProbe[] = [
-  ...(["target", "reference"] as const).flatMap((role) => (["dns", "ping", "tls", "http", "https"] as const).map((probe) => nextProbe(role, probe))),
+  ...(["target", "reference"] as const).flatMap((role) => (["dns", "ping", "tls", "http", "https", "mtu"] as const).map((probe) => nextProbe(role, probe))),
   nextProbe("gateway", "ping"),
 ];
 
@@ -148,6 +155,8 @@ function ready(probe: NextProbe, plan: CheckPlan, addressed: ReadonlySet<VisitRo
       return addressed.has(probe.role) && openOrIs(evidence, primary, "tcp.connect", "connected");
     case "https":
       return addressed.has(probe.role) && openOrIs(evidence, primary, "tcp.connect", "connected") && openOrIs(evidence, primary, "tls.handshake", "ok");
+    case "mtu":
+      return addressed.has(probe.role);
   }
 }
 
@@ -166,6 +175,9 @@ export function stepText(probe: NextProbe, observes: readonly Observable[], plan
       break;
     case "tls":
       if (plan.scheme === "http") return "Run the check again with --scheme https.";
+      break;
+    case "mtu":
+      if ((plan.mtu ?? "auto") !== "always") return "Run the check again with --mtu.";
       break;
     case "http":
     case "https":

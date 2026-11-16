@@ -24,8 +24,9 @@ The check has these steps:
 
 1. It asks the DNS resolver for the IPv4 and IPv6 addresses of each name.
 2. It pings each address, connects to it, does the TLS handshake and sends one HTTP request.
-3. It reads the facts into evidence. The catalog of faults gives the probability of each cause.
-4. It finds the probe with the largest information gain over the 3 most probable causes. This probe is the next step.
+3. It searches the MTU of the path to an address when the TLS handshake or the HTTP response times out after a TCP connect.
+4. It reads the facts into evidence. The catalog of faults gives the probability of each cause.
+5. It finds the probe with the largest information gain over the 3 most probable causes. This probe is the next step.
 
 ## The options
 
@@ -39,6 +40,7 @@ The check has these steps:
 | `--gateway <address>` | None | It adds the IP address of your router. The check pings it. |
 | `--grant <cidr>` | None | It adds a CIDR range that you own. Give the option again for more ranges. |
 | `--ping-count <count>` | 4 | It sets the number of echo requests to each address, from 0 to 100. A measure of the loss needs 20 or more. |
+| `--mtu`, `--no-mtu` | A search after a time-out | `--mtu` searches the MTU of the path to each address. `--no-mtu` starts no search. |
 | `--json` | Off | It writes the whole report as JSON. |
 | `--help` | Off | It shows the options. |
 | `--version` | Off | It shows the version. |

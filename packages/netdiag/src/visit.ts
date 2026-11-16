@@ -1,6 +1,6 @@
 import type { Clock } from "@mark1russell7/algebra/clock";
 import { factsOf, type Fact } from "./fact.ts";
-import { DNS_ANSWER, type RecordType } from "./kinds.ts";
+import { DNS_ANSWER, HTTP_RESPONSE, TCP_CONNECT, TLS_HANDSHAKE, type RecordType } from "./kinds.ts";
 import { LINK_SUBJECT, linkProbe, type InterfaceTable } from "./probes/link.ts";
 import { DNS_PROBE, httpProbe, type TlsProbeOptions } from "./probes/native.ts";
 import type { Probe } from "./probe.ts";
@@ -9,6 +9,7 @@ import { decideScope, resolvedGrant, scopeOf, type Grant } from "./scope.ts";
 import { hostKind, target } from "./target.ts";
 import type { ToolHost } from "./tools/host.ts";
 import { mtrProbe } from "./tools/mtr.ts";
+import { mtuProbe } from "./tools/mtu.ts";
 import { DEFAULT_PING_COUNT, pingProbe } from "./tools/ping.ts";
 
 // A visit is the standard set of probes of one target. The lab agent (ND-7) and the command-line tool (ND-8) use it.
@@ -54,6 +55,19 @@ export interface VisitInput {
   readonly grants: readonly Grant[];
 }
 
+/**
+ * When a visit searches the MTU of the path to an address.
+ *
+ * - `auto`: after a TLS handshake or an HTTP response that timed out after a TCP connect. A path that drops large
+ *   packets with no message gives this sign: the small packets of the connect pass, and the large packets do not.
+ * - `always`: after the HTTP request to each address.
+ * - `never`: the visit does not search.
+ */
+export type MtuSearch = "auto" | "always" | "never";
+
+/** The values of `MtuSearch`. */
+export const MTU_SEARCHES: readonly MtuSearch[] = ["auto", "always", "never"];
+
 /** The options of a visit. */
 export interface VisitOptions {
   readonly clock: Clock;
@@ -61,10 +75,12 @@ export interface VisitOptions {
   readonly tools?: ToolHost | undefined;
   /** The source of the interfaces of the link probe. The default is `os.networkInterfaces()`. A test gives a table. */
   readonly interfaces?: (() => InterfaceTable) | undefined;
-  /** The number of echo requests to each address. The default is `DEFAULT_PING_COUNT`. 0 starts no `ping`. */
+  /** The number of echo requests to each address. The default is `DEFAULT_PING_COUNT`. 0 sends none. The option `mtu` controls the MTU search. */
   readonly pingCount?: number | undefined;
   /** The number of cycles of `mtr` to each address. The default 0 starts no `mtr`. */
   readonly mtrCycles?: number | undefined;
+  /** When the visit searches the MTU of the path to an address. The default is `auto`. The search needs `tools`. */
+  readonly mtu?: MtuSearch | undefined;
   /** The default is `https`. */
   readonly scheme?: "http" | "https" | undefined;
   /** The path of the HTTP request. The default is `/`. */
@@ -95,6 +111,17 @@ export function describeOutcome(outcome: ProbeOutcome<unknown>): string {
   }
 }
 
+/**
+ * This function tells if the facts of an HTTP request have the sign of a path that drops large packets: a TCP connect
+ * that connected, then a TLS handshake or an HTTP response that timed out.
+ */
+export function largePacketsLost(facts: readonly Fact[]): boolean {
+  const connected = factsOf(TCP_CONNECT, facts).some((fact) => fact.value.outcome === "connected");
+  const handshake = factsOf(TLS_HANDSHAKE, facts).some((fact) => fact.value.outcome === "timeout");
+  const response = factsOf(HTTP_RESPONSE, facts).some((fact) => fact.value.outcome === "timeout");
+  return connected && (handshake || response);
+}
+
 function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutcome<unknown>): VisitStep[] {
   if (outcome.status !== "done") return [{ kind: "problem", role, host, problem: `The ${what} did not end: ${describeOutcome(outcome)}.` }];
   return outcome.facts.map((fact) => ({ kind: "fact", role, host, fact }));
@@ -107,6 +134,7 @@ function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutc
  * - For each name, it asks the resolver for the A records and then the AAAA records.
  * - When a host grant puts a name in the scope, the addresses of its answers go into the scope.
  * - For each address, it starts `ping`, then `mtr`, then one HTTP request. A probe of an address out of the scope gives a problem.
+ * - After the HTTP request, it searches the MTU of the path to the address when the option `mtu` tells it to.
  * - For the gateway, it starts `ping` only.
  *
  * The function marks no fact as a fact of the target. The roles of the steps let the caller decide. It throws a
@@ -121,6 +149,8 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
   const mtrCycles = options.mtrCycles ?? 0;
   const ping = options.tools === undefined || pingCount === 0 ? undefined : pingProbe(options.tools);
   const mtr = options.tools === undefined || mtrCycles === 0 ? undefined : mtrProbe(options.tools);
+  const mtuSearch = options.mtu ?? "auto";
+  const mtu = options.tools === undefined || mtuSearch === "never" ? undefined : mtuProbe(options.tools);
   const http = httpProbe(options.tls);
   const scheme = options.scheme ?? "https";
   const link = linkProbe(options.interfaces);
@@ -154,7 +184,12 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
       if (ping !== undefined) yield* stepsOf(role, host.host, `ping of ${address}`, await run(ping, { address, count: pingCount }));
       if (mtr !== undefined) yield* stepsOf(role, host.host, `mtr of ${address}`, await run(mtr, { address, cycles: mtrCycles }));
       const request = { address, scheme, port: host.port, host: name, path: options.path, timeoutMs: options.httpTimeoutMs };
-      yield* stepsOf(role, host.host, `HTTP request to ${address}`, await run(http, request));
+      const answer = await run(http, request);
+      yield* stepsOf(role, host.host, `HTTP request to ${address}`, answer);
+      const lost = answer.status === "done" && largePacketsLost(answer.facts);
+      if (mtu !== undefined && (mtuSearch === "always" || lost)) {
+        yield* stepsOf(role, host.host, `MTU search of ${address}`, await run(mtu, { address }));
+      }
     }
   }
   if (input.gateway !== undefined && ping !== undefined) {

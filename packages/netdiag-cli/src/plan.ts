@@ -5,6 +5,7 @@ import {
   namedGrant,
   parseTarget,
   type Grant,
+  type MtuSearch,
   type Target,
   type VisitHost,
   type VisitInput,
@@ -42,6 +43,11 @@ export interface CheckOptions {
   readonly grant?: readonly string[] | undefined;
   /** The number of echo requests to each address. The default is `DEFAULT_PING_COUNT`. */
   readonly pingCount?: number | undefined;
+  /**
+   * `true` searches the MTU of the path to each address. Without it, the check searches only after a TLS handshake or
+   * an HTTP response that timed out. `false` never searches.
+   */
+  readonly mtu?: boolean | undefined;
 }
 
 /** The parts of the computer that a plan reads. */
@@ -57,6 +63,8 @@ export interface CheckPlan {
   readonly scheme: Scheme;
   readonly path: string;
   readonly pingCount: number;
+  /** When the visit searches the MTU of the path to an address. The default is `auto`. */
+  readonly mtu?: MtuSearch | undefined;
   /** The input of `visitTarget`, with the grants of the scope. */
   readonly visit: VisitInput;
 }
@@ -176,5 +184,6 @@ export function planCheck(options: CheckOptions, system: PlanSystem): Result<Che
     ...(resolver === undefined ? {} : { resolver }),
     grants,
   };
-  return ok({ target, scheme, path, pingCount, visit });
+  const mtu: MtuSearch = options.mtu === undefined ? "auto" : options.mtu ? "always" : "never";
+  return ok({ target, scheme, path, pingCount, mtu, visit });
 }

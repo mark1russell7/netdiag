@@ -41,6 +41,10 @@ const CHECK_INPUT = z.object({
     .max(MAX_PING_COUNT)
     .optional()
     .describe(`The number of echo requests to each address. The default is ${DEFAULT_PING_COUNT}`),
+  mtu: z
+    .boolean()
+    .optional()
+    .describe("Search the MTU of the path to each address. The default searches only after a time-out of TLS or HTTP. --no-mtu never searches"),
 });
 
 /** This function makes the command line of netdiag with the command `check`. */
