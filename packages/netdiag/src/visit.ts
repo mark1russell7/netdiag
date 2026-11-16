@@ -11,6 +11,7 @@ import type { ToolHost } from "./tools/host.ts";
 import { mtrProbe } from "./tools/mtr.ts";
 import { mtuProbe } from "./tools/mtu.ts";
 import { DEFAULT_PING_COUNT, pingProbe } from "./tools/ping.ts";
+import { wifiProbe } from "./tools/wifi.ts";
 import type { MtuSearch, VisitHost, VisitInput, VisitRole, VisitStep } from "./visit-types.ts";
 
 export {
@@ -29,8 +30,13 @@ export {
 /** The options of a visit. */
 export interface VisitOptions {
   readonly clock: Clock;
-  /** The host of the outside tools. Without a host, the visit starts no `ping` and no `mtr`. */
+  /** The host of the outside tools. Without a host, the visit starts no `ping`, no `mtr`, no MTU search and no read of the Wi-Fi link. */
   readonly tools?: ToolHost | undefined;
+  /**
+   * The visit reads the Wi-Fi link of this computer with the tool of the operating system. The default is `true`. The
+   * read needs `tools`. A lab with no Wi-Fi sets `false`.
+   */
+  readonly wifi?: boolean | undefined;
   /** The source of the interfaces of the link probe. The default is `os.networkInterfaces()`. A test gives a table. */
   readonly interfaces?: (() => InterfaceTable) | undefined;
   /** The number of echo requests to each address. The default is `DEFAULT_PING_COUNT`. 0 sends none. The option `mtu` controls the MTU search. */
@@ -89,6 +95,7 @@ function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutc
  * This function starts the probes of a visit, and gives each fact and each problem when it occurs.
  *
  * - First, it reads the state of the link of this computer, to the gateway when the input has it. This read sends no packet.
+ * - Then it reads the Wi-Fi link of this computer with `wifiProbe`, when the options have `tools`. This read also sends no packet.
  * - For each name, it asks the resolver for the A records and then the AAAA records.
  * - When a host grant puts a name in the scope, the addresses of its answers go into the scope.
  * - For each address, it starts `ping`, then `mtr`, then one HTTP request. A probe of an address out of the scope gives a problem.
@@ -113,6 +120,9 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
   const scheme = options.scheme ?? "https";
   const link = linkProbe(options.interfaces);
   yield* stepsOf("local", input.gateway ?? LINK_SUBJECT, "read of the link", await run(link, { gateway: input.gateway }));
+  if (options.tools !== undefined && options.wifi !== false) {
+    yield* stepsOf("local", LINK_SUBJECT, "read of the Wi-Fi link", await run(wifiProbe(options.tools), {}));
+  }
   const hosts: readonly { readonly role: VisitRole; readonly host: VisitHost }[] = [
     { role: "target", host: input.target },
     ...(input.references ?? []).map((host) => ({ role: "reference" as const, host })),

@@ -32,6 +32,8 @@ export async function startAgent(args: readonly string[], deps: AgentDeps): Prom
     const steps = visitTarget(visitInputOf(plan), {
       clock,
       tools: deps.tools,
+      // The networks of the lab have no Wi-Fi.
+      wifi: false,
       pingCount: plan.pingCount,
       mtrCycles: plan.mtrCycles,
       tls: { publicRoots: [root] },

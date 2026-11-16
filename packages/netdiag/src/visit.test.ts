@@ -11,6 +11,7 @@ import {
   PATH_MTU,
   TCP_CONNECT,
   TLS_HANDSHAKE,
+  WIFI_LINK,
   isFactOf,
   largePacketsLost,
   target,
@@ -85,7 +86,8 @@ const range = (cidr: string): Grant => ({ kind: "range", cidr, basis: "owned" })
 
 async function visit(input: VisitInput, options: Partial<VisitOptions> = {}): Promise<VisitStep[]> {
   const steps: VisitStep[] = [];
-  for await (const step of visitTarget(input, { clock: realClock, tls: { roots: [ca.cert] }, interfaces: () => TABLE, ...options })) steps.push(step);
+  // The fake tool hosts of most tests have no Wi-Fi tool. The tests of the Wi-Fi read set the option wifi.
+  for await (const step of visitTarget(input, { clock: realClock, tls: { roots: [ca.cert] }, interfaces: () => TABLE, wifi: false, ...options })) steps.push(step);
   return steps;
 }
 
@@ -169,6 +171,44 @@ describe("the visit of a target", () => {
     expect(tools.calls).toEqual([]);
     const alone = await visit({ target: { host: NAME }, grants: [] }, { interfaces: () => ({ lo: TABLE["lo"] }) });
     expect(alone[0]?.kind === "fact" && isFactOf(LINK_STATE, alone[0].fact) && alone[0].fact.value.state).toBe("down");
+  });
+
+  it("reads the Wi-Fi link after the link, with the tool of the system, and sends no packet for it", async () => {
+    const ok = (stdout: string) => ({ exitCode: 0, stdout, stderr: "" });
+    const iw = (match: (args: readonly string[]) => boolean, stdout: string): FakeRule => [(args, command) => command === "iw" && match(args), ok(stdout)];
+    const tools = fakeToolHost<ToolRunOptions>("linux", [
+      iw((args) => args[0] === "--version", "iw version 6.9
+"),
+      iw((args) => args.join(" ") === "dev", "phy#0
+	Interface wlan0
+		ifindex 3
+		type managed
+"),
+      iw((args) => args.at(-1) === "link", "Connected to 02:00:00:00:00:aa (on wlan0)
+	SSID: lab-net
+	freq: 5180
+	signal: -80 dBm
+"),
+      iw((args) => args.at(-1) === "dump", ""),
+    ]);
+    const steps = await visit({ target: { host: NAME }, grants: [range(`${RESOLVER}/32`)] }, { tools, pingCount: 0, wifi: true });
+    expect(shape(steps)).toEqual(["local link.state localhost", "local wifi.link localhost"]);
+    const wifi = steps[1];
+    expect(wifi?.kind === "fact" && isFactOf(WIFI_LINK, wifi.fact) ? wifi.fact.value : undefined).toMatchObject({ interface: "wlan0", state: "connected", ssid: "lab-net", signalDbm: -80, channel: 36, band: "5" });
+    expect(tools.calls.map((call) => [call.command, ...call.args].join(" "))).toEqual(["iw --version", "iw dev", "iw dev wlan0 link", "iw dev wlan0 survey dump"]);
+  });
+
+  it("reads the Wi-Fi link by default, gives a problem for a Wi-Fi tool that does not start, and does not read it with wifi false", async () => {
+    const input: VisitInput = { target: { host: NAME }, grants: [range(`${RESOLVER}/32`)] };
+    const missing = fakeToolHost<ToolRunOptions>("linux", []);
+    const steps = await visit(input, { tools: missing, pingCount: 0, wifi: undefined });
+    expect(steps.filter((step) => step.kind === "problem" && step.role === "local")).toEqual([
+      { kind: "problem", role: "local", host: "localhost", problem: "The read of the Wi-Fi link did not end: unavailable: The tool iw does not start: no rule." },
+    ]);
+    const off = fakeToolHost<ToolRunOptions>("linux", []);
+    const quiet = await visit(input, { tools: off, pingCount: 0, wifi: false });
+    expect(quiet.some((step) => step.role === "local" && step.kind === "problem")).toBe(false);
+    expect(off.calls).toEqual([]);
   });
 
   it("refuses a grant with a problem before the first probe", async () => {
