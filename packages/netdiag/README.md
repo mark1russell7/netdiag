@@ -110,6 +110,7 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 | Probe | Id | Tool | Facts |
 | --- | --- | --- | --- |
 | `pingProbe(host)` | `icmp.ping` | `ping` | `icmp.echo`: the echo replies, their round-trip times, and the messages of an unreachable address. |
+| `mtuProbe(host)` | `path.mtu` | `ping` | `path.mtu`: the MTU of the path, and how the path stops a larger packet: with a message or with no message. |
 | `tracerouteProbe(host)` | `path.traceroute` | `traceroute`, `tracert` on Windows | `path.trace`: the routers that answered each TTL, their round-trip times, and the messages of an unreachable address. |
 | `mtrProbe(host)` | `path.mtr` | `mtr` (Linux and macOS) | `path.report`: the loss and the round-trip times of each hop over many cycles. |
 | `iperf3Probe(host)` | `path.iperf3` | `iperf3` (3.1 or later) | `path.throughput`: the rates of the sender and the receiver, the TCP retransmits, the UDP jitter and loss, and each interval. |
@@ -120,6 +121,7 @@ The entry `@mark1russell7/netdiag/tools` has optional adapters of outside tools.
 - netdiag does not depend on `@procedures/shell`. The caller gives the function.
 - An adapter reads only English output. On Linux and macOS, it sets `LC_ALL=C`. On Windows, the language of the system sets the output.
 - On Linux, the adapter reads the `ping` of iputils. On macOS, it uses `ping6` for an IPv6 address.
+- The probe `path.mtu` starts `ping` with "do not fragment" for each size of the search. On macOS and Windows, it supports only IPv4.
 - On Linux, the trace adapter reads the Modern traceroute (the package `traceroute`). On macOS, it uses `traceroute6` for an IPv6 address.
 - The `mtr` adapter reads the JSON report of `mtr --json` (version 0.92 or later). The default of 20 cycles takes approximately 20 seconds.
 - The `iperf3` adapter reads the JSON report of `iperf3 -J`. The user operates the server. A UDP test always has a target rate, 1 Mbit/s by default.
@@ -199,6 +201,7 @@ const result = diagnose(STANDARD_CATALOG, [
 | `link.state` | The link fact of each gateway. An interface that is up on the network of the gateway gives `up`. With no gateway, an interface that is up and not loopback gives `up`. |
 | `gateway.reply` | The echo requests to the address of the option `gateway`. An unreachable gateway gives `none`. |
 | `icmp.reply` | The echo requests to each other address: `reply`, `none` or `unreachable`. |
+| `path.mtu` | A measured MTU: `full` at the ceiling, `reduced` with a message of a router, `silent` with no message. `silent` tells an MTU black hole. |
 | `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. |
 
 - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
@@ -244,7 +247,15 @@ const { loss, delay } = echoMetrics(echo);
 const rto = rtoOf(ackSamples(capture), { minMs: 200 });
 ```
 
-The MTU of a path needs a probe with "do not fragment". It is the next step of ND-6.
+### The MTU of a path
+
+`nextMtuSize(tries, bounds)` gives the next size of a search, and `mtuOf(address, tries, bounds)` gives the value of a fact `path.mtu`. The state of a search is its list of tries, so a test can replay a search with no tool.
+
+- Each size is the size of an IP packet. The floor is 68 bytes for IPv4 and 1280 bytes for IPv6. The default ceiling is 1500 bytes.
+- The first size is the ceiling. Most paths pass it, so most searches end after one try.
+- A message of a router can tell the MTU. The search tries that MTU and one byte above it.
+- A path that drops a large packet with no message is an MTU black hole. The search finds its MTU by halves.
+- After a false message, the search uses no message. A search has at most `4 + 3 * ceil(log2(ceiling - floor))` tries.
 
 ## The lab score
 

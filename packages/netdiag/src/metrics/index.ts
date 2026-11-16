@@ -5,6 +5,7 @@
  * - The loss of RFC 7680.
  * - The RTO of RFC 6298, with the rule of Karn.
  * - The capacity of the narrowest link, from packet pairs.
+ * - The search for the MTU of a path, with "do not fragment".
  *
  * @packageDocumentation
  */
@@ -12,3 +13,4 @@ export { JITTER_GAIN, PDV_QUANTILE, delayMetrics, ipdv, pdv, rfc3550Jitter, type
 export { echoMetrics, lossOf, type EchoMetrics, type LossEstimate } from "./loss.ts";
 export { PAIR_LEVEL, bandwidthOf, packetPairs, type BandwidthEstimate } from "./pairs.ts";
 export { RTO_ALPHA, RTO_BETA, RTO_K, ackSamples, rtoOf, type RtoEstimate, type RtoOptions } from "./rto.ts";
+export { ETHERNET_MTU, IPV4_MIN_MTU, IPV6_MIN_MTU, mtuOf, nextMtuSize, type MtuBounds } from "./mtu.ts";

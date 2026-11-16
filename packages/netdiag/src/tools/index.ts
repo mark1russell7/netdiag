@@ -38,6 +38,18 @@ export {
   tracerouteProbe,
   type TraceInput,
 } from "./traceroute.ts";
+export {
+  DEFAULT_MTU_COUNT,
+  DEFAULT_MTU_WAIT_MS,
+  ECHO_HEADER_BYTES,
+  MAX_MTU_CEILING,
+  MAX_MTU_COUNT,
+  mtuCommand,
+  mtuProbe,
+  readMtuTry,
+  type MtuInput,
+  type MtuRaw,
+} from "./mtu.ts";
 export { DEFAULT_MTR_CYCLES, MAX_MTR_CYCLES, MTR_GRACE_MS, mtrAvailability, mtrCommand, mtrProbe, readMtr, type MtrInput } from "./mtr.ts";
 export {
   DEFAULT_IPERF3_PORT,

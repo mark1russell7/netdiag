@@ -36,6 +36,13 @@ export const STANDARD_FEATURES: readonly Feature[] = [
     healthy: { none: 0.9, some: 0.08, high: 0.02 },
   },
   {
+    id: "path.mtu",
+    layer: "path",
+    summary: "The MTU of the path: full at the ceiling of the search, reduced with a message that tells the MTU, or silent with no message.",
+    values: ["full", "reduced", "silent"],
+    healthy: { full: 0.85, reduced: 0.14, silent: 0.01 },
+  },
+  {
     id: "dns.answer",
     layer: "dns",
     summary: "The result of the DNS lookup of the name of the target. The value unreachable tells that no DNS service listens on the resolver.",
@@ -272,6 +279,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     summary: "Large packets do not pass, and no ICMP message tells the size (an MTU black hole).",
     step: "Lower the MTU of the interface or of the VPN, or enable MSS clamping on the router.",
     predicts: {
+      "path.mtu": { expect: "silent", strength: "strong" },
       "tls.handshake": { expect: "timeout", strength: "strong" },
       "http.status": { expect: "none", strength: "usual" },
     },

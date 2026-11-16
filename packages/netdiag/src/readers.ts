@@ -6,6 +6,7 @@ import {
   HTTP_RESPONSE,
   ICMP_ECHO,
   LINK_STATE,
+  PATH_MTU,
   PATH_REPORT,
   PATH_TRACE,
   TCP_CONNECT,
@@ -19,6 +20,8 @@ import {
   type IcmpEcho,
   type LinkState,
   type LinkStateValue,
+  type MtuStop,
+  type PathMtu,
   type PathReport,
   type PathTrace,
   type TcpConnect,
@@ -115,6 +118,12 @@ export const ICMP_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>> =
 export const LINK_STATE_VALUES: Readonly<Record<LinkStateValue, string>> = { up: "up", down: "down" };
 
 /**
+ * The value of the feature `path.mtu` for each stop of a measured MTU. A measured MTU with no stop has the value `full`.
+ * A message makes the value `reduced`, because path MTU discovery works.
+ */
+export const PATH_MTU_VALUES: Readonly<Record<MtuStop | "full", string>> = { full: "full", message: "reduced", silent: "silent" };
+
+/**
  * The value of the feature `gateway.reply` for each outcome of the ICMP echo requests to the gateway. When this computer
  * tells that the gateway is unreachable, the gateway gives no reply.
  */
@@ -164,6 +173,7 @@ interface Facts {
   readonly report: Fact<PathReport>[];
   readonly trace: Fact<PathTrace>[];
   readonly link: Fact<LinkState>[];
+  readonly mtu: Fact<PathMtu>[];
 }
 
 /**
@@ -185,6 +195,7 @@ export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[
   "gateway.reply": [[ICMP_ECHO.kind]],
   "icmp.reply": [[ICMP_ECHO.kind]],
   "path.loss": [[ICMP_ECHO.kind], [PATH_REPORT.kind]],
+  "path.mtu": [[PATH_MTU.kind]],
 };
 
 /** The options of `featuresOf`. */
@@ -217,6 +228,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["report", PATH_REPORT],
   ["trace", PATH_TRACE],
   ["link", LINK_STATE],
+  ["mtu", PATH_MTU],
 ];
 
 /**
@@ -229,13 +241,14 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - A link fact gives `link.state`, one for each gateway.
  * - An ICMP echo fact with replies to `LOSS_MIN_SENT` requests or more gives `path.loss`. A report of `mtr` gives it from
  *   the last hop, when the address answered there.
+ * - A fact `path.mtu` with the outcome `measured` gives `path.mtu` for its address. `PATH_MTU_VALUES` gives the value.
  * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
  */
 export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {
   const primaryOf = options.primary ?? (() => true);
   const slots = new Map<string, Slot>();
   const skipped: Skipped[] = [];
-  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [] };
+  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [], mtu: [] };
 
   for (const fact of facts) {
     const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
@@ -347,6 +360,12 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     const loss = lossOf(fact);
     if (typeof loss === "string") skipped.push({ fact: fact.id, reason: loss });
     else if (loss !== undefined) note("path.loss", loss.address, fact, binOf(PATH_LOSS_BINS, loss.share));
+  }
+
+  for (const fact of sorted.mtu) {
+    const mtu = fact.value;
+    if (mtu.outcome !== "measured") skip(fact, "path.mtu", mtu.outcome);
+    else note("path.mtu", canonicalAddress(mtu.address), fact, PATH_MTU_VALUES[mtu.stop ?? "full"]);
   }
 
   for (const fact of sorted.link) note("link.state", fact.value.gateway ?? "", fact, LINK_STATE_VALUES[fact.value.state]);

@@ -12,23 +12,23 @@ export interface ToolLicense {
   readonly tool: string;
   readonly license: string;
   readonly use: ToolUse;
-  /** The id of the probe of the adapter. A planned adapter has no probe yet. */
-  readonly probe?: string | undefined;
+  /** The ids of the probes that start the tool. A tool with the use `not-bundled` has no probe. */
+  readonly probes: readonly string[];
 }
 
 /**
- * The licenses of the outside tools, as data. netdiag bundles no tool. A test makes sure that the probe of each adapter
- * has a row with the use `adapter`.
+ * The licenses of the outside tools, as data. netdiag bundles no tool. A test makes sure that each probe of an adapter
+ * is in the row of its tool, with the use `adapter`.
  */
 export const TOOL_LICENSES: readonly ToolLicense[] = [
-  { tool: "ping", license: "The license of the operating system", use: "adapter", probe: "icmp.ping" },
-  { tool: "traceroute", license: "GPL on Linux", use: "adapter", probe: "path.traceroute" },
-  { tool: "mtr", license: "GPL", use: "adapter", probe: "path.mtr" },
-  { tool: "tshark", license: "GPL", use: "adapter", probe: "path.capture" },
-  { tool: "iperf3", license: "BSD", use: "adapter", probe: "path.iperf3" },
-  { tool: "nmap", license: "NPSL", use: "not-bundled" },
-  { tool: "masscan", license: "AGPL", use: "not-bundled" },
-  { tool: "speedtest", license: "Ookla EULA", use: "not-bundled" },
+  { tool: "ping", license: "The license of the operating system", use: "adapter", probes: ["icmp.ping", "path.mtu"] },
+  { tool: "traceroute", license: "GPL on Linux", use: "adapter", probes: ["path.traceroute"] },
+  { tool: "mtr", license: "GPL", use: "adapter", probes: ["path.mtr"] },
+  { tool: "tshark", license: "GPL", use: "adapter", probes: ["path.capture"] },
+  { tool: "iperf3", license: "BSD", use: "adapter", probes: ["path.iperf3"] },
+  { tool: "nmap", license: "NPSL", use: "not-bundled", probes: [] },
+  { tool: "masscan", license: "AGPL", use: "not-bundled", probes: [] },
+  { tool: "speedtest", license: "Ookla EULA", use: "not-bundled", probes: [] },
 ];
 
 /** This function gives the row of a tool, or `undefined` for a tool that is not in the table. */

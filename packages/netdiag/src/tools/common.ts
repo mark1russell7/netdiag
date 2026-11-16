@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { addressFamily, canonicalAddress, type AddressFamily } from "../address/index.ts";
 
 // The parts that the adapters share. The entry `@mark1russell7/netdiag/tools` does not export this module.
@@ -44,4 +45,9 @@ export function firstLine(text: string): string | undefined {
     .split(LINES)
     .find((line) => line.trim().length > 0)
     ?.trim();
+}
+
+/** This function removes the `:` or `,` after an address in a line of ping. An IPv6 address keeps its own last `:`. */
+export function withoutSeparator(text: string): string {
+  return isIP(text) === 0 ? text.replace(/[:,]$/, "") : text;
 }
