@@ -3,7 +3,7 @@
 # resolver use it. The target uses the base image with no change.
 #
 # The base is pinned by digest. The harness refuses a base that is not.
-FROM node:24.21.0-trixie-slim@sha256:173f125896c3b47ddf056734c7ea789d04595a6a08769a8f78e0df642781fb66
+FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc
 
 # The tools of the visit: ping of iputils, mtr, Modern traceroute and ip.
 RUN apt-get update \
