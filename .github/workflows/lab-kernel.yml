@@ -5,7 +5,7 @@
 # The command is packages/lab/src/kernel/main.ts. The job fails when a case gives no read, or when the recall of a
 # class is below its bar in packages/lab/bars/kernel.json. The bars hold for 5 rounds, so a run with other rounds has
 # no gate. A dispatch with 5 runs or more and `bars` true computes new bars (step 4). The job `where` starts the
-# where cases of ND-15 in their own worlds.
+# where cases of ND-15 in their own worlds, with the bars in packages/lab/bars/where.json.
 name: Lab (kernel)
 
 on:
@@ -86,8 +86,8 @@ jobs:
           retention-days: 30
 
   # The where cases (ND-15): a loss on one link of the path, and the part of the path that lossStart of netdiag gives.
-  # The command is packages/lab/src/kernel/where-main.ts. The cases have no bar yet, so the job fails only for a run
-  # with no read.
+  # The command is packages/lab/src/kernel/where-main.ts. The job fails for a run with no read, and for a hit rate
+  # below its bar. The bars hold for 5 rounds. Until a dispatch gives the file of the bars, the job has no gate.
   where:
     name: Kernel lab, where the loss starts
     strategy:
@@ -120,7 +120,10 @@ jobs:
             echo "image: $ImageOS $ImageVersion"
           } | tee lab-where-out/runner.txt
       - name: Start the where cases
-        run: node packages/lab/src/kernel/where-main.ts --rounds "$ROUNDS" --out lab-where-out
+        run: |
+          bars=()
+          if [ "$ROUNDS" = 5 ] && [ -f packages/lab/bars/where.json ]; then bars=(--bars packages/lab/bars/where.json); fi
+          node packages/lab/src/kernel/where-main.ts --rounds "$ROUNDS" --out lab-where-out "${bars[@]}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -131,9 +134,10 @@ jobs:
 
   # The bars of the gate (ND-7, step 4): the least lower end of the recall of each hypothesis over the runs, minus the
   # spread of these lower ends. A dispatch with runs [1,2,3,4,5] and bars true gives them. A pull request commits them.
+  # The job gives the bars of the kernel lab and of the where cases, each from the runs of its own job.
   bars:
     name: Bars of the gate
-    needs: lab
+    needs: [lab, where]
     if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.bars }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -151,9 +155,17 @@ jobs:
         with:
           pattern: lab-kernel-${{ github.sha }}-*
           path: runs
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: lab-where-${{ github.sha }}-*
+          path: where-runs
       - name: Compute the bars
         run: node packages/lab/src/bars-main.ts --out bars-out/kernel.json runs/* | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Compute the bars of the where cases
+        if: ${{ !cancelled() }}
+        run: node packages/lab/src/bars-main.ts --title "The bars of the where cases" --out bars-out/where.json where-runs/* | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
         with:
           name: lab-kernel-bars-${{ github.sha }}
           path: bars-out/

@@ -3,13 +3,15 @@
 //
 //   node packages/lab/src/bars-main.ts --out packages/lab/bars/kernel.json run-1 run-2 run-3 run-4 run-5
 //
+// The option --title sets the heading of the table, for example for the where cases of the kernel lab.
+//
 // Each argument is the folder of one run, or its file `score.json`. The exit code is 0 when the command wrote the bars,
 // and 2 when a run gives no bars.
 
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { parseArgs } from "node:util";
-import { labBars, type LabScore } from "@mark1russell7/netdiag";
+import { labBars, type LabRecalls } from "@mark1russell7/netdiag";
 import { barsMarkdown, runScore, type RunScoreFile } from "./bars.ts";
 
 const { values, positionals } = parseArgs({
@@ -18,13 +20,14 @@ const { values, positionals } = parseArgs({
     out: { type: "string" },
     k: { type: "string", default: "2" },
     minimum: { type: "string", default: "5" },
+    title: { type: "string", default: "The bars of the gate" },
   },
 });
 
 if (values.out === undefined) throw new Error("The option --out <file> is necessary.");
 const problems: string[] = [];
 const names: string[] = [];
-const scores: LabScore[] = [];
+const scores: LabRecalls[] = [];
 for (const path of positionals) {
   const file = path.endsWith(".json") ? path : join(path, "score.json");
   const name = path.endsWith(".json") ? basename(dirname(path)) : basename(path);
@@ -43,4 +46,4 @@ if (bars === undefined || bars.tag === "err") {
 
 await mkdir(dirname(values.out), { recursive: true });
 await writeFile(values.out, JSON.stringify(bars.value, null, 2) + "\n");
-process.stdout.write(barsMarkdown(names, scores, bars.value));
+process.stdout.write(barsMarkdown(names, scores, bars.value, values.title));

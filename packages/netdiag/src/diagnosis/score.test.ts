@@ -1,7 +1,7 @@
 import { wilson } from "@mark1russell7/rigor-statistics";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { LAB_RECORD_FORMAT, STANDARD_CATALOG, diagnose, labBars, labGate, labRecordOf, scoreLab, type LabRecord, type LabScore } from "./index.ts";
+import { LAB_RECORD_FORMAT, STANDARD_CATALOG, diagnose, labBars, labGate, labRecordOf, scoreLab, type LabRecalls, type LabRecord, type LabScore } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
 const ids = catalog.hypotheses.map((hypothesis) => hypothesis.id);
@@ -172,5 +172,34 @@ describe("labBars", () => {
     expect(labBars([one, one, one, one, { ...one, catalog: "other@1" }])).toMatchObject({ tag: "err", error: [expect.stringContaining("2 catalogs")] });
     const some = [one, one, one, one, run({ none: [2, 2], "port.closed": [1, 1] })];
     expect(labBars(some)).toMatchObject({ tag: "err", error: [expect.stringContaining('"port.closed" has a read in 1 of 5 runs')] });
+  });
+});
+
+describe("the recalls of a lab with no catalog of faults", () => {
+  /** The recalls of one run of two cases, with no confusion table: `hits` of `reads` for each case. */
+  const recalls = (counts: Readonly<Record<string, readonly [hits: number, reads: number]>>): LabRecalls => ({
+    catalog: "cases@1",
+    classes: Object.entries(counts).map(([label, [hits, reads]]) => ({ label, support: reads, recallInterval: wilson(hits, reads) })),
+  });
+
+  it("give the bars and the gate as a score does", () => {
+    const runs = [5, 5, 4, 5, 5].map((hits) => recalls({ "loss.last-link": [hits, 5], none: [5, 5] }));
+    const bars = labBars(runs);
+    expect(bars).toEqual({
+      tag: "ok",
+      value: { "loss.last-link": expectedBar([5, 5, 4, 5, 5].map((hits) => wilson(hits, 5).low)), none: expectedBar(Array(5).fill(wilson(5, 5).low)) },
+    });
+    if (bars.tag !== "ok") return;
+    const gate = labGate(recalls({ "loss.last-link": [5, 5], none: [0, 0] }), bars.value);
+    expect(gate).toMatchObject({ tag: "ok", value: { pass: false, unbarred: [] } });
+    expect(gate.tag === "ok" && gate.value.verdicts.map((verdict) => verdict.status)).toEqual(["pass", "no-read"]);
+    expect(labGate(recalls({ none: [5, 5] }), { "loss.last-link": 0.5 })).toMatchObject({ tag: "err", error: [expect.stringContaining('"loss.last-link"')] });
+  });
+
+  it("give the gate of a score from its catalog and the three fields of each class only", () => {
+    const score: LabRecalls = scored(RECORDS);
+    const only: LabRecalls = { catalog: score.catalog, classes: score.classes.map(({ label, support, recallInterval }) => ({ label, support, recallInterval })) };
+    const bars = { "port.closed": 0.25, none: 0.5 };
+    expect(labGate(only, bars)).toEqual(labGate(score, bars));
   });
 });

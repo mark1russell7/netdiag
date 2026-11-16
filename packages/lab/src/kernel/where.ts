@@ -1,6 +1,6 @@
-import { PATH_REPORT, factsOf, lossStart, type PathReport } from "@mark1russell7/netdiag";
+import { PATH_REPORT, factsOf, lossStart, type LabGate, type LabRecalls, type PathReport } from "@mark1russell7/netdiag";
 import { wilson, type Proportion } from "@mark1russell7/rigor-statistics";
-import { percent } from "../report.ts";
+import { gateLines, percent } from "../report.ts";
 import type { Visit } from "../run.ts";
 import { TOWARD_CLIENT, type KernelFault } from "./cases.ts";
 
@@ -17,6 +17,8 @@ export const WHERE_CYCLES = 60;
 export const WHERE_LOSS = "loss 30%";
 /** The format of a where run. */
 export const WHERE_RUN_FORMAT = "netdiag.lab-where/1";
+/** The version of the set of where cases. A change of a case, of the loss or of the cycles gives a new version, and thus new bars. */
+export const WHERE_CATALOG = "kernel-where@1";
 
 /** The name of a hop of the path: `gateway` for the router, `target` for the destination. Each other address is its own name. */
 export type WhereHop = string;
@@ -153,6 +155,14 @@ export function whereScores(cases: readonly WhereCase[], runs: readonly WhereRun
   });
 }
 
+/**
+ * This function gives the recalls of the where cases, so that `labBars` and `labGate` of netdiag read them. The recall
+ * of a case is the part of its reads with a hit. A case with no read has the support 0.
+ */
+export function whereRecalls(scores: readonly WhereScore[]): LabRecalls {
+  return { catalog: WHERE_CATALOG, classes: scores.map((score) => ({ label: score.case, support: score.reads, recallInterval: score.rate })) };
+}
+
 /** This function gives the text of a part of a path. */
 export function partText(part: WherePart | null): string {
   if (part === null) return "no loss";
@@ -160,8 +170,8 @@ export function partText(part: WherePart | null): string {
   return part.after === null ? `from the first link: ${hops}` : `after \`${part.after}\`: ${hops}`;
 }
 
-/** This function gives the scores and the runs of the where cases as Markdown, for the summary of a CI run. */
-export function whereMarkdown(scores: readonly WhereScore[], runs: readonly WhereRun[], rounds: number): string {
+/** This function gives the scores, the runs and the gate of the where cases as Markdown, for the summary of a CI run. */
+export function whereMarkdown(scores: readonly WhereScore[], runs: readonly WhereRun[], rounds: number, gate?: LabGate): string {
   const reads = runs.filter(isRead).length;
   const lines = ["## The where cases of the kernel lab", ""];
   lines.push(`${scores.length} cases, ${rounds} rounds, ${WHERE_CYCLES} cycles of mtr: ${reads} reads and ${runs.length - reads} runs with no read.`, "");
@@ -183,5 +193,6 @@ export function whereMarkdown(scores: readonly WhereScore[], runs: readonly Wher
     for (const run of noReads) lines.push(`- \`${run.case}#${run.round}\`: ${run.reason}`);
     lines.push("");
   }
+  if (gate !== undefined) lines.push(...gateLines(gate, "Case", "Reads"));
   return lines.join("\n");
 }
