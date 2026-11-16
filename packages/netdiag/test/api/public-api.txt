@@ -102,6 +102,7 @@ LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
+LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
@@ -117,6 +118,10 @@ type LinkRaw: build/index.d.ts#LinkRaw
 LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
+type LossHop: build/core.chunk.d.ts#LossHop
+type LossNetwork: build/core.chunk.d.ts#LossNetwork
+type LossOrigin: build/core.chunk.d.ts#LossOrigin
+type LossStart: build/core.chunk.d.ts#LossStart
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_OWNER_ADDRESSES: build/index.d.ts#MAX_OWNER_ADDRESSES
@@ -303,7 +308,10 @@ largePacketsLost: build/index.d.ts#largePacketsLost
 layerRank: build/layer.chunk.d.ts#layerRank
 linkProbe: build/index.d.ts#linkProbe
 linkStateOf: build/index.d.ts#linkStateOf
+lossNetworks: build/core.chunk.d.ts#lossNetworks
 lossOf: build/core.chunk.d.ts#lossOf
+lossOrigins: build/core.chunk.d.ts#lossOrigins
+lossStart: build/core.chunk.d.ts#lossStart
 mtuOf: build/counts.chunk.d.ts#mtuOf
 namedGrant: build/core.chunk.d.ts#namedGrant
 networkQuery: build/core.chunk.d.ts#networkQuery
@@ -417,6 +425,7 @@ LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
+LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
@@ -430,6 +439,10 @@ LinkInterface: build/counts.chunk.d.ts#LinkInterface
 LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
+type LossHop: build/core.chunk.d.ts#LossHop
+type LossNetwork: build/core.chunk.d.ts#LossNetwork
+type LossOrigin: build/core.chunk.d.ts#LossOrigin
+type LossStart: build/core.chunk.d.ts#LossStart
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
@@ -586,7 +599,10 @@ labBars: build/index.chunk2.d.ts#labBars
 labGate: build/index.chunk2.d.ts#labGate
 labRecordOf: build/index.chunk2.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
+lossNetworks: build/core.chunk.d.ts#lossNetworks
 lossOf: build/core.chunk.d.ts#lossOf
+lossOrigins: build/core.chunk.d.ts#lossOrigins
+lossStart: build/core.chunk.d.ts#lossStart
 mtuOf: build/counts.chunk.d.ts#mtuOf
 namedGrant: build/core.chunk.d.ts#namedGrant
 networkQuery: build/core.chunk.d.ts#networkQuery
@@ -874,6 +890,9 @@ declare const LOCAL_SUFFIXES: readonly string[];
 ### build/core.chunk.d.ts#LOSS_MIN_SENT
 declare const LOSS_MIN_SENT = 20;
 
+### build/core.chunk.d.ts#LOSS_START_LEVEL
+declare const LOSS_START_LEVEL = .05;
+
 ### build/core.chunk.d.ts#LossEstimate
 interface LossEstimate {
   readonly sent: number;
@@ -881,6 +900,34 @@ interface LossEstimate {
   readonly ratio: number;
   readonly low: number;
   readonly high: number;
+}
+
+### build/core.chunk.d.ts#LossHop
+interface LossHop {
+  readonly ttl: number;
+  readonly address: string;
+  readonly loss: LossEstimate;
+}
+
+### build/core.chunk.d.ts#LossNetwork
+interface LossNetwork {
+  readonly owner?: PathOwner | undefined;
+  readonly hops: readonly LossHop[];
+}
+
+### build/core.chunk.d.ts#LossOrigin
+interface LossOrigin {
+  readonly fact: string;
+  readonly start: LossStart;
+  readonly networks: readonly LossNetwork[];
+}
+
+### build/core.chunk.d.ts#LossStart
+interface LossStart {
+  readonly address: string;
+  readonly loss: LossEstimate;
+  readonly after?: LossHop | undefined;
+  readonly hops: readonly LossHop[];
 }
 
 ### build/core.chunk.d.ts#MAX_REGISTRY_TEXT
@@ -1155,8 +1202,17 @@ declare function ipdv(delaysMs: readonly number[]): number[];
 ### build/core.chunk.d.ts#isLocalName
 declare function isLocalName(name: string): boolean;
 
+### build/core.chunk.d.ts#lossNetworks
+declare function lossNetworks(start: LossStart, owners: readonly PathOwner[]): LossNetwork[];
+
 ### build/core.chunk.d.ts#lossOf
 declare function lossOf(sent: number, received: number): LossEstimate | undefined;
+
+### build/core.chunk.d.ts#lossOrigins
+declare function lossOrigins(facts: readonly Fact[], level?: number): LossOrigin[];
+
+### build/core.chunk.d.ts#lossStart
+declare function lossStart(report: PathReport, level?: number): LossStart | undefined;
 
 ### build/core.chunk.d.ts#namedGrant
 declare function namedGrant(t: Target, note?: string): Grant;

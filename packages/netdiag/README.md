@@ -286,6 +286,16 @@ const { loss, delay } = echoMetrics(echo);
 const rto = rtoOf(ackSamples(capture), { minMs: 200 });
 ```
 
+### The start of a loss
+
+`lossStart(report)` gives the part of the path of a `path.report` fact where the loss to the destination starts. A router can drop its own answers to `mtr` and pass the other packets. So the loss of one hop tells only a little.
+
+- A loss of the path continues to each later hop and to the destination.
+- An exact binomial test examines each hop before the destination. The claim is "the loss of the hop is the low end of the destination loss, or more".
+- The correction of Holm at the level `LOSS_START_LEVEL` (0.05) finds the hops with a clearly lower loss.
+- The loss starts after the last of these hops. With few cycles, no hop has a clearly lower loss, and the part is the whole path.
+- `lossNetworks(start, owners)` puts the hops of the part in their networks, from the `path.owner` facts. `lossOrigins(facts)` does the two steps for each report of a visit.
+
 ### The MTU of a path
 
 `nextMtuSize(tries, bounds)` gives the next size of a search, and `mtuOf(address, tries, bounds)` gives the value of a fact `path.mtu`. The state of a search is its list of tries, so a test can replay a search with no tool.

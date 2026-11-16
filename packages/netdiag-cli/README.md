@@ -98,6 +98,16 @@ The owners of the hops (3)
   45.0.0.9: the registry has no network for this address
 ```
 
+When the destination of `mtr` has a loss, the cause "A network on the path loses packets" names the networks where the loss can start. The section "Where the loss starts" gives the hops of each network. The loss starts after the last hop with a clearly lower loss. 100 cycles give a shorter part of the path than 20 cycles.
+
+```text
+Where the loss starts (1)
+  The loss of 10% to 192.0.2.10 starts in one of 2 networks: TRANSIT-NET (AS64501) or SHOP-NET.
+    The loss starts after hop 2 (198.51.100.1), a hop with a clearly lower loss.
+    hop 3 (203.0.113.1): TRANSIT-NET (NET-T), AS64501
+    hop 4 (192.0.2.10): SHOP-NET (NET-S)
+```
+
 The probabilities come from the evidence of this check only. The next step is the option or the probe that gives the most information about the 3 most probable causes. Its gain is in bits. A small gain tells that no probe can change the probabilities much.
 
 ## The JSON report
@@ -136,6 +146,8 @@ The pure parts of the command are also exports. A program can use them with its 
 | `reportOf(plan, steps)` | It gives the report of the steps of a visit. |
 | `formatReport(report)` | It gives the lines of the text output. |
 | `ownerText(owner)` | It gives the text of the owner of a hop: the network, its holder, its country and its origin AS. |
+| `originText(origin)`, `originLines(origin)` | They give the sentence and the lines of the start of a loss, from an item of `lossOrigins`. |
+| `hopsText(hops)`, `networkName(network)` | They give the text of some hops of a path and the short name of a network. |
 | `readCheckReport(value)` | It reads a JSON report and gives the report, or at most 20 problems. |
 | `nextSteps(diagnosis, plan, addressed)` | It gives the next steps, from the largest gain. |
 | `check(options, deps)` | It plans a check, starts the visit with the given clock and tool host, and gives the report. |

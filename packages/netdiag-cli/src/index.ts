@@ -10,7 +10,12 @@ export { ADD_GATEWAY, ADD_REFERENCE, NEXT_PROBES, TOP_CAUSES, nextSteps, stepTex
 export {
   CHECK_FORMAT,
   MAX_REPORT_PROBLEMS,
+  PATH_LOSS_FAULT,
   formatReport,
+  hopsText,
+  networkName,
+  originLines,
+  originText,
   ownerText,
   percentOf,
   readCheckReport,

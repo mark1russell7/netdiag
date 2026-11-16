@@ -6,6 +6,7 @@ import {
   STANDARD_CATALOG,
   TOOL_KINDS,
   VISIT_ROLES,
+  lossOrigins,
   diagnose,
   formatTarget,
   hostKind,
@@ -17,6 +18,9 @@ import {
   type Evidence,
   type Fact,
   type Grant,
+  type LossHop,
+  type LossNetwork,
+  type LossOrigin,
   type PathOwner,
   type Skipped,
   type VisitRole,
@@ -154,18 +158,59 @@ export function ownerText(owner: PathOwner): string {
   }
 }
 
+/** The id of the fault of the catalog for a loss on the path. Its cause in a report gets the networks where the loss starts. */
+export const PATH_LOSS_FAULT = "path.loss";
+
+/** The number of cycles of `mtr` that the hint of a long part of the path tells. */
+const MORE_CYCLES = 100;
+
+/** This function gives the hops of a network for a person, for example `hops 7 to 8 (203.0.113.2, 203.0.113.7)`. */
+export function hopsText(hops: readonly LossHop[]): string {
+  const first = hops[0];
+  const last = hops.at(-1);
+  if (first === undefined || last === undefined) return "no hop";
+  const addresses = hops.map((hop) => hop.address).join(", ");
+  return first === last ? `hop ${first.ttl} (${addresses})` : `hops ${first.ttl} to ${last.ttl} (${addresses})`;
+}
+
+/** This function gives the short name of a network where a loss can start: the name and the origin AS, or the first hop. */
+export function networkName(network: LossNetwork): string {
+  const found = network.owner?.outcome === "found" ? network.owner.network : undefined;
+  if (found === undefined) return `the network of ${network.hops[0]?.address ?? "a hop"}`;
+  const origin = found.originAs.length === 0 ? "" : ` (${found.originAs.map((as) => `AS${as}`).join(" ")})`;
+  return `${found.name ?? found.handle}${origin}`;
+}
+
+/** This function gives the sentence that names the networks where the loss to a destination can start. */
+export function originText(origin: LossOrigin): string {
+  const names = origin.networks.map(networkName);
+  const where = names.length === 1 ? `in ${names[0]}` : `in one of ${names.length} networks: ${names.join(" or ")}`;
+  return `The loss of ${percentOf(origin.start.loss.ratio)} to ${origin.start.address} starts ${where}.`;
+}
+
+/** This function gives the lines of the start of a loss: the sentence, the bound and each network with its hops. */
+export function originLines(origin: LossOrigin): string[] {
+  const { after, loss } = origin.start;
+  const bound = after === undefined ? "    No hop has a clearly lower loss, so the loss can start on the first link." : `    The loss starts after ${hopsText([after])}, a hop with a clearly lower loss.`;
+  const hint = after === undefined && loss.sent < MORE_CYCLES ? [`    More cycles give a shorter part of the path. Give --mtr-cycles ${MORE_CYCLES}.`] : [];
+  const networks = origin.networks.map((network) => `    ${hopsText(network.hops)}: ${network.owner === undefined ? "no lookup of the owner" : ownerText(network.owner)}`);
+  return [`  ${originText(origin)}`, bound, ...hint, ...networks];
+}
+
 /** The indent of the lines under a cause. */
 const UNDER = " ".repeat(8);
 
 /**
  * This function gives the lines of the text report of a check. The lines show the most probable causes with their
- * probabilities and the next step with its gain. They also show the problems of the visit, the owners of the hops and the
- * count of the evidence.
+ * probabilities and the next step with its gain. They also show the problems of the visit, the owners of the hops, where
+ * each loss starts and the count of the evidence. The cause of a loss names the networks where the loss can start.
  */
 export function formatReport(report: CheckReport): string[] {
   const lines = [`netdiag check ${report.target} (${report.scheme}, path ${report.path})`, "", "The probable causes"];
+  const origins = lossOrigins(report.facts.map(({ fact }) => fact));
   for (const cause of report.causes.slice(0, TOP_CAUSES)) {
     lines.push(`  ${pad(percentOf(cause.probability), 4, { side: "start" })}  ${cause.summary}`, `${UNDER}To do: ${cause.step}`);
+    if (cause.id === PATH_LOSS_FAULT) for (const origin of origins) lines.push(`${UNDER}Where: ${originText(origin)}`);
   }
   if (report.evidence.length === 0) lines.push("  The visit gave no evidence. These probabilities are the probabilities before a probe.");
   lines.push("");
@@ -179,6 +224,10 @@ export function formatReport(report: CheckReport): string[] {
   if (owners.length > 0) {
     lines.push("", `The owners of the hops (${owners.length})`);
     for (const owner of owners) lines.push(`  ${owner.address}: ${ownerText(owner)}`);
+  }
+  if (origins.length > 0) {
+    lines.push("", `Where the loss starts (${origins.length})`);
+    for (const origin of origins) lines.push(...originLines(origin));
   }
   lines.push("", `${countOf(report.evidence.length, "observation")} from ${countOf(report.facts.length, "fact")}. The option --json gives each fact.`);
   return lines;
