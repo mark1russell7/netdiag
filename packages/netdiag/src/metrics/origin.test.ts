@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Fact, FactKind } from "../fact.ts";
-import { PATH_OWNER, PATH_REPORT, type OwnerNetwork, type PathOwner, type PathReport, type ReportHop } from "../kinds.ts";
+import { PATH_ORIGIN, PATH_OWNER, PATH_REPORT, type OwnerNetwork, type PathOrigin, type PathOwner, type PathReport, type ReportHop } from "../kinds.ts";
 import { target } from "../target.ts";
 import { lossNetworks, lossOrigins, lossStart } from "./origin.ts";
 
@@ -81,6 +81,27 @@ describe("the networks where the loss can start", () => {
     expect(lossNetworks(start, []).map((item) => item.hops.length)).toEqual([1, 1, 1]);
   });
 
+  it("puts next hops with no found owner in the network of their origin AS, and keeps the origin of the first hop", () => {
+    const start = lossStart(PATH);
+    if (start === undefined) throw new Error("the path has a loss");
+    const origins: PathOrigin[] = [
+      { address: "203.0.113.1", outcome: "found", originAs: [64501, 64500], prefix: "203.0.113.0/24" },
+      { address: "203.0.113.2", outcome: "found", originAs: [64500, 64501], prefix: "203.0.113.0/24" },
+      { address: "203.0.113.7", outcome: "unrouted" },
+    ];
+    const routed = lossNetworks(start, [], origins);
+    expect(routed.map((item) => [item.origin?.outcome, item.hops.map((one) => one.ttl)])).toEqual([
+      ["found", [6, 7]],
+      ["unrouted", [8]],
+    ]);
+    expect(routed[0]).toEqual({ origin: origins[0], hops: start.hops.slice(0, 2) });
+    const owned = lossNetworks(start, [found("203.0.113.2"), found("203.0.113.7")], origins);
+    expect(owned.map((item) => [item.owner?.outcome, item.origin?.outcome, item.hops.length])).toEqual([
+      [undefined, "found", 1],
+      ["found", "found", 2],
+    ]);
+  });
+
   it("gives the origin of each report with a loss, from the facts of a visit", () => {
     const entries: readonly (readonly [FactKind<unknown>, unknown])[] = [
       [PATH_REPORT, PATH],
@@ -88,6 +109,7 @@ describe("the networks where the loss can start", () => {
       [PATH_OWNER, found("203.0.113.1")],
       [PATH_OWNER, found("203.0.113.2")],
       [PATH_OWNER, found("203.0.113.7")],
+      [PATH_ORIGIN, { address: "203.0.113.1", outcome: "found", originAs: [64500], prefix: "203.0.113.0/24" } satisfies PathOrigin],
     ];
     const facts: Fact[] = entries.map(([kind, value], index) => ({
       id: `f${index}`,
@@ -100,6 +122,6 @@ describe("the networks where the loss can start", () => {
     }));
     const origins = lossOrigins(facts);
     expect(origins.map((item) => item.fact)).toEqual(["f0"]);
-    expect(origins[0]?.networks.map((item) => [item.owner?.network?.name, item.hops.length])).toEqual([["EXAMPLE-NET", 3]]);
+    expect(origins[0]?.networks.map((item) => [item.owner?.network?.name, item.origin?.originAs, item.hops.length])).toEqual([["EXAMPLE-NET", [64500], 3]]);
   });
 });

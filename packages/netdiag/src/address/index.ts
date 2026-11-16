@@ -124,8 +124,16 @@ function ipv6Bytes(text: string): number[] | undefined {
 }
 
 /** This function gives the bytes of an IP address: 4 for IPv4, 16 for IPv6, or `undefined` for a text that is not an address. */
-function addressBytes(text: string): number[] | undefined {
+function bytesOf(text: string): number[] | undefined {
   return ipv4Bytes(text) ?? (text.includes(":") ? ipv6Bytes(text) : undefined);
+}
+
+/**
+ * This function gives the bytes of the canonical form of an IP address. It gives 4 bytes for IPv4, 16 for IPv6, or
+ * `undefined` for a text that is not an address. Thus a mapped IPv4 address gives 4 bytes. The zone of an IPv6 address does not change the bytes.
+ */
+export function addressBytes(address: string): number[] | undefined {
+  return bytesOf(canonicalAddress(address));
 }
 
 /**
@@ -133,7 +141,7 @@ function addressBytes(text: string): number[] | undefined {
  * value of `isIP` of `node:net` with no module of Node. It does not trim the text or remove brackets.
  */
 export function ipVersion(text: string): 0 | 4 | 6 {
-  const bytes = addressBytes(text);
+  const bytes = bytesOf(text);
   return bytes === undefined ? 0 : bytes.length === 4 ? 4 : 6;
 }
 
@@ -193,13 +201,13 @@ function samePrefix(a: readonly number[], b: readonly number[], prefix: number):
  */
 export function cidrSet(ranges: readonly Cidr[]): CidrSet {
   const networks = ranges.flatMap((range) => {
-    const bytes = addressBytes(range.address);
+    const bytes = bytesOf(range.address);
     return bytes === undefined ? [] : [{ bytes, prefix: range.prefix }];
   });
   return {
     ranges: [...ranges],
     has(address) {
-      const bytes = addressBytes(canonicalAddress(address));
+      const bytes = bytesOf(canonicalAddress(address));
       if (bytes === undefined) return false;
       const forms = formsOf(bytes);
       return networks.some((network) => forms.some((form) => samePrefix(form, network.bytes, network.prefix)));

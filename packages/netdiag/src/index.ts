@@ -19,6 +19,7 @@ export {
   TLS_PROBE,
   dnsOutcome,
   httpProbe,
+  nodeResolveTxt,
   tcpProbe,
   tlsProbe,
   type DnsInput,
@@ -57,6 +58,18 @@ export {
   type RdapReply,
   type RdapRequest,
 } from "./lookups/owner.ts";
+export {
+  DEFAULT_ORIGIN_TIMEOUT_MS,
+  ORIGIN_CONCURRENCY,
+  ORIGIN_PROBE_ID,
+  originProbe,
+  type OriginInput,
+  type OriginLookup,
+  type OriginRaw,
+  type TxtAnswer,
+  type TxtQuery,
+  type TxtResolve,
+} from "./lookups/origin.ts";
 export {
   VISIT_RECORDS,
   describeOutcome,

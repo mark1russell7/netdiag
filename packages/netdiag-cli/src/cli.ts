@@ -58,7 +58,7 @@ const CHECK_INPUT = z.object({
   owners: z
     .boolean()
     .optional()
-    .describe("Look up the owner network of each hop of mtr in the public registries of RDAP. It grants the hosts of the registries"),
+    .describe("Look up the owner network of each hop of mtr in RDAP, and its origin AS in the DNS of Team Cymru. It grants these hosts"),
 });
 
 /** This function makes the command line of netdiag with the command `check`. */

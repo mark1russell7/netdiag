@@ -1,6 +1,6 @@
 import { binomialTest, holm } from "@mark1russell7/rigor-statistics";
 import { factsOf, type Fact } from "../fact.ts";
-import { PATH_OWNER, PATH_REPORT, type PathOwner, type PathReport } from "../kinds.ts";
+import { PATH_ORIGIN, PATH_OWNER, PATH_REPORT, type PathOrigin, type PathOwner, type PathReport } from "../kinds.ts";
 import { lossOf, type LossEstimate } from "./loss.ts";
 
 // Where the loss of a path starts. A router can drop its own answers to the probes of mtr and pass the other packets. So
@@ -71,30 +71,42 @@ export function lossStart(report: PathReport, level: number = LOSS_START_LEVEL):
 export interface LossNetwork {
   /** The owner of the first hop of the network. Without it, the visit did not look up the owner of the hop. */
   readonly owner?: PathOwner | undefined;
+  /** The origin of the first hop of the network, from the DNS of Team Cymru. Without it, the visit did not look up the origin of the hop. */
+  readonly origin?: PathOrigin | undefined;
   readonly hops: readonly LossHop[];
 }
 
-/** This function gives the key of the network of an owner. Two hops with one key are in one network. */
-function networkKey(owner: PathOwner | undefined, address: string): string {
+/**
+ * This function gives the key of the network of a hop. Two hops with one key are in one network. The key is the network
+ * of a found owner, else the origin AS numbers of a found origin, else the address.
+ */
+function networkKey(owner: PathOwner | undefined, origin: PathOrigin | undefined, address: string): string {
   if (owner?.outcome === "found" && owner.network !== undefined) return `network ${owner.registry ?? ""} ${owner.network.handle}`;
+  if (origin?.outcome === "found" && origin.originAs !== undefined) return `as ${[...origin.originAs].sort((a, b) => a - b).join(" ")}`;
   return `address ${address}`;
 }
 
 /**
- * This function puts the hops of a loss start in their networks, from the owners of the hops. Two next hops in one
- * network go in one item. A hop without a found owner is an item of its own.
+ * This function puts the hops of a loss start in their networks, from the owners and the origins of the hops. Two next
+ * hops in one network go in one item.
+ *
+ * - Two hops with found owners are in one network when they have one registered network.
+ * - A hop with no found owner is in the network of its origin AS, when its origin is found.
+ * - A hop with no found owner and no found origin is an item of its own.
  */
-export function lossNetworks(start: LossStart, owners: readonly PathOwner[]): LossNetwork[] {
-  const byAddress = new Map(owners.map((owner) => [owner.address, owner]));
-  const networks: { owner?: PathOwner | undefined; key: string; hops: LossHop[] }[] = [];
+export function lossNetworks(start: LossStart, owners: readonly PathOwner[], origins: readonly PathOrigin[] = []): LossNetwork[] {
+  const ownerOf = new Map(owners.map((owner) => [owner.address, owner]));
+  const originOf = new Map(origins.map((origin) => [origin.address, origin]));
+  const networks: { owner?: PathOwner | undefined; origin?: PathOrigin | undefined; key: string; hops: LossHop[] }[] = [];
   for (const hop of start.hops) {
-    const owner = byAddress.get(hop.address);
-    const key = networkKey(owner, hop.address);
+    const owner = ownerOf.get(hop.address);
+    const origin = originOf.get(hop.address);
+    const key = networkKey(owner, origin, hop.address);
     const last = networks.at(-1);
     if (last !== undefined && last.key === key) last.hops.push(hop);
-    else networks.push({ ...(owner === undefined ? {} : { owner }), key, hops: [hop] });
+    else networks.push({ ...(owner === undefined ? {} : { owner }), ...(origin === undefined ? {} : { origin }), key, hops: [hop] });
   }
-  return networks.map(({ owner, hops }) => (owner === undefined ? { hops } : { owner, hops }));
+  return networks.map(({ owner, origin, hops }) => ({ ...(owner === undefined ? {} : { owner }), ...(origin === undefined ? {} : { origin }), hops }));
 }
 
 /** The start of the loss of one report of `mtr`, with the networks of its hops. */
@@ -107,12 +119,13 @@ export interface LossOrigin {
 
 /**
  * This function gives the start of the loss of each fact `path.report` with a loss at the destination. The facts
- * `path.owner` give the networks of the hops. Without these facts, each hop is a network of its own.
+ * `path.owner` and `path.origin` give the networks of the hops. Without these facts, each hop is a network of its own.
  */
 export function lossOrigins(facts: readonly Fact[], level: number = LOSS_START_LEVEL): LossOrigin[] {
   const owners = factsOf(PATH_OWNER, facts).map((fact) => fact.value);
+  const origins = factsOf(PATH_ORIGIN, facts).map((fact) => fact.value);
   return factsOf(PATH_REPORT, facts).flatMap((fact) => {
     const start = lossStart(fact.value, level);
-    return start === undefined ? [] : [{ fact: fact.id, start, networks: lossNetworks(start, owners) }];
+    return start === undefined ? [] : [{ fact: fact.id, start, networks: lossNetworks(start, owners, origins) }];
   });
 }

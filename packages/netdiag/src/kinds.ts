@@ -998,5 +998,59 @@ export const PATH_OWNER: FactKind<PathOwner> = defineFactKind<PathOwner>({
     optional(value["detail"], isText),
 });
 
-/** The fact kinds of the lookups in the public registries. */
-export const LOOKUP_KINDS: readonly FactKind<unknown>[] = [PATH_OWNER];
+/**
+ * The outcomes of a lookup of the origin AS of an address in the DNS of Team Cymru.
+ *
+ * - `found`: the DNS gave the BGP prefix of the address and the AS numbers that announce it.
+ * - `unrouted`: the DNS gave NXDOMAIN. No BGP route covers the address.
+ * - `special`: the address is in a special-purpose range, for example a private range. netdiag did no lookup.
+ * - `failed`: the lookup gave no usable answer, for example a time-out, or a TXT record that is not in the format of Team Cymru.
+ */
+export const ORIGIN_OUTCOMES = ["found", "unrouted", "special", "failed"] as const;
+
+/** The outcome of a lookup of the origin AS of an address. */
+export type OriginOutcome = (typeof ORIGIN_OUTCOMES)[number];
+
+/** The origin of one address on a path: the BGP prefix of the address and its origin AS numbers, from the DNS of Team Cymru. */
+export interface PathOrigin {
+  readonly address: string;
+  readonly outcome: OriginOutcome;
+  /** The class of the address for the outcome `special`, for example `private`. */
+  readonly class?: string | undefined;
+  /** The AS numbers that announce the prefix in BGP. Only the outcome `found` has numbers. Two or more numbers tell of a prefix with more origins. */
+  readonly originAs?: readonly number[] | undefined;
+  /** The BGP prefix of the address, for example `216.90.108.0/24`. Only the outcome `found` has a prefix. */
+  readonly prefix?: string | undefined;
+  /** The regional registry of the prefix, for example `arin`. */
+  readonly registry?: string | undefined;
+  /** The country code of the record of the registry, for example `US`. It is not the location of the address. */
+  readonly country?: string | undefined;
+  /** The date of the allocation of the prefix by the registry, for example `1998-09-25`. */
+  readonly allocated?: string | undefined;
+  /** The reason in plain words for the outcome `failed`. */
+  readonly detail?: string | undefined;
+}
+
+/** The fact kind `path.origin`. */
+export const PATH_ORIGIN: FactKind<PathOrigin> = defineFactKind<PathOrigin>({
+  kind: "path.origin",
+  layer: "path",
+  summary: "The BGP prefix of one address on a path and the AS numbers that announce it, from the DNS of Team Cymru.",
+  check: (value): value is PathOrigin =>
+    isRecord(value) &&
+    isText(value["address"]) &&
+    isOneOf(ORIGIN_OUTCOMES, value["outcome"]) &&
+    optional(value["class"], isText) &&
+    optional(value["originAs"], (numbers) => Array.isArray(numbers) && numbers.length > 0 && numbers.every(isAsNumber)) &&
+    optional(value["prefix"], isText) &&
+    (value["outcome"] === "found") === (value["originAs"] !== undefined) &&
+    (value["outcome"] === "found") === (value["prefix"] !== undefined) &&
+    (value["outcome"] === "special") === (value["class"] !== undefined) &&
+    optional(value["registry"], isText) &&
+    optional(value["country"], isText) &&
+    optional(value["allocated"], isText) &&
+    optional(value["detail"], isText),
+});
+
+/** The fact kinds of the lookups in the public registries and in the DNS of Team Cymru. */
+export const LOOKUP_KINDS: readonly FactKind<unknown>[] = [PATH_OWNER, PATH_ORIGIN];

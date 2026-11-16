@@ -32,11 +32,13 @@ TOP_CAUSES: build/report.chunk.d.ts#TOP_CAUSES
 check: build/index.d.ts#check
 createNetdiagCli: build/index.d.ts#createNetdiagCli
 formatReport: build/report.chunk.d.ts#formatReport
+hopText: build/report.chunk.d.ts#hopText
 hopsText: build/report.chunk.d.ts#hopsText
 isScheme: build/report.chunk.d.ts#isScheme
 main: build/index.d.ts#main
 networkName: build/report.chunk.d.ts#networkName
 nextSteps: build/report.chunk.d.ts#nextSteps
+originAsText: build/report.chunk.d.ts#originAsText
 originLines: build/report.chunk.d.ts#originLines
 originText: build/report.chunk.d.ts#originText
 ownerText: build/report.chunk.d.ts#ownerText
@@ -61,8 +63,10 @@ CheckReport: build/report.chunk.d.ts#CheckReport
 MAX_REPORT_PROBLEMS: build/report.chunk.d.ts#MAX_REPORT_PROBLEMS
 PATH_LOSS_FAULT: build/report.chunk.d.ts#PATH_LOSS_FAULT
 formatReport: build/report.chunk.d.ts#formatReport
+hopText: build/report.chunk.d.ts#hopText
 hopsText: build/report.chunk.d.ts#hopsText
 networkName: build/report.chunk.d.ts#networkName
+originAsText: build/report.chunk.d.ts#originAsText
 originLines: build/report.chunk.d.ts#originLines
 originText: build/report.chunk.d.ts#originText
 ownerText: build/report.chunk.d.ts#ownerText
@@ -84,6 +88,7 @@ interface CheckDeps {
   readonly resolvers: readonly string[];
   readonly tls?: TlsProbeOptions | undefined;
   readonly rdap?: RdapGet | undefined;
+  readonly origins?: TxtResolve | undefined;
   readonly signal?: AbortSignal | undefined;
 }
 
@@ -242,6 +247,9 @@ declare const TOP_CAUSES = 3;
 ### build/report.chunk.d.ts#formatReport
 declare function formatReport(report: CheckReport): string[];
 
+### build/report.chunk.d.ts#hopText
+declare function hopText(owner: PathOwner | undefined, origin: PathOrigin | undefined): string;
+
 ### build/report.chunk.d.ts#hopsText
 declare function hopsText(hops: readonly LossHop[]): string;
 
@@ -254,6 +262,9 @@ declare function networkName(network: LossNetwork): string;
 ### build/report.chunk.d.ts#nextSteps
 declare function nextSteps(diagnosis: Diagnosis, plan: CheckPlan, addressed: ReadonlySet<VisitRole>): NextStep[];
 
+### build/report.chunk.d.ts#originAsText
+declare function originAsText(owner: PathOwner | undefined, origin: PathOrigin | undefined): string;
+
 ### build/report.chunk.d.ts#originLines
 declare function originLines(origin: LossOrigin): string[];
 
@@ -261,7 +272,7 @@ declare function originLines(origin: LossOrigin): string[];
 declare function originText(origin: LossOrigin): string;
 
 ### build/report.chunk.d.ts#ownerText
-declare function ownerText(owner: PathOwner): string;
+declare function ownerText(owner: PathOwner, origin?: PathOrigin): string;
 
 ### build/report.chunk.d.ts#percentOf
 declare function percentOf(probability: number): string;

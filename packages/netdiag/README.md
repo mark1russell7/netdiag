@@ -14,7 +14,7 @@ This package has the core model of netdiag. It has the typed facts at each layer
 | `@mark1russell7/netdiag/diagnosis` | The probability model, the next probe and the lab score. |
 | `@mark1russell7/netdiag/tools` | The adapters of outside tools. |
 
-The core has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the kinds of facts, the metrics and the readers. It also has the data of a visit, the limits of the echo requests and the readers of RDAP.
+The core has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the kinds of facts, the metrics and the readers. It also has the data of a visit and the limits of the echo requests. The readers of RDAP and of the DNS of Team Cymru are in it too.
 
 ## Facts
 
@@ -177,6 +177,24 @@ The probe `ownerProbe(get)` gives the fact `path.owner` for each address of a pa
 
 The core has the readers of RDAP: `readBootstrap`, `serviceFor` and `readNetwork`.
 
+## The origins of a path
+
+The probe `originProbe(resolve)` gives the fact `path.origin` for each address of a path. The fact has the BGP prefix of the address and its origin AS numbers.
+
+- The source is the DNS of Team Cymru. `mtr -z` uses the same source.
+- The probe sends one TXT query for each public address. A private or shared address gets the outcome `special` and no query.
+- An IPv4 query has the parts of the address in the reverse order, under `origin.asn.cymru.com`.
+- An IPv6 query has the 32 hexadecimal digits of the address in the reverse order, under `origin6.asn.cymru.com`.
+- The answer has the form `AS numbers | prefix | country | registry | date`. The parser refuses an answer of a different form.
+- The outcome NXDOMAIN gives the outcome `unrouted`: no BGP route holds the address.
+- The country is a field of the registry record. It is not the location of the address.
+- The peers are the resolver and the zones of `CYMRU_ZONES`. The queries send the addresses of the path to Team Cymru, so the user must name the zones in the scope.
+- The port `resolve` sends one TXT query. `nodeResolveTxt` is a port over `node:dns`. The probe sends `ORIGIN_CONCURRENCY` (4) queries at a time or fewer.
+- The queries do not go through `polite-crawler`, because `polite-crawler` has no DNS transport.
+- A visit with the option `origins` (a port), a resolver and `mtrCycles` looks up the hops of each fact `path.report`.
+
+`LOOKUP_KINDS` has the fact kinds `path.owner` and `path.origin`. The core has the readers of the DNS of Team Cymru: `originQuery` and `readOrigin`.
+
 ## Diagnosis
 
 The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It imports no `node:` module, so a browser can also use it.
@@ -294,7 +312,7 @@ const rto = rtoOf(ackSamples(capture), { minMs: 200 });
 - An exact binomial test examines each hop before the destination. The claim is "the loss of the hop is the low end of the destination loss, or more".
 - The correction of Holm at the level `LOSS_START_LEVEL` (0.05) finds the hops with a clearly lower loss.
 - The loss starts after the last of these hops. With few cycles, no hop has a clearly lower loss, and the part is the whole path.
-- `lossNetworks(start, owners)` puts the hops of the part in their networks, from the `path.owner` facts. `lossOrigins(facts)` does the two steps for each report of a visit.
+- `lossNetworks(start, owners, origins)` puts the hops of the part in their networks, from the `path.owner` facts. A hop with no found owner goes in the network of its origin AS. `lossOrigins(facts)` does the two steps for each report of a visit.
 
 ### The MTU of a path
 

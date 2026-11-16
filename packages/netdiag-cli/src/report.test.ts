@@ -1,4 +1,4 @@
-import { DNS_ANSWER, PATH_OWNER, PATH_REPORT, TCP_CONNECT, target, type Fact, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
+import { DNS_ANSWER, PATH_ORIGIN, PATH_OWNER, PATH_REPORT, TCP_CONNECT, target, type Fact, type PathOrigin, type PathOwner, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { TOP_CAUSES } from "./next.ts";
 import { planCheck, type CheckOptions, type CheckPlan } from "./plan.ts";
@@ -7,8 +7,10 @@ import {
   MAX_REPORT_PROBLEMS,
   PATH_LOSS_FAULT,
   formatReport,
+  hopText,
   hopsText,
   networkName,
+  originAsText,
   ownerText,
   percentOf,
   readCheckReport,
@@ -160,6 +162,68 @@ describe("the owners of the hops in a report", () => {
 
   it("reads a report with owners after a round trip through JSON", () => {
     expect(readCheckReport(JSON.parse(JSON.stringify(report)))).toEqual({ tag: "ok", value: report });
+  });
+});
+
+const origin = (address: string, value: Readonly<Record<string, unknown>>): VisitStep =>
+  fact("target", "shop.example", PATH_ORIGIN.kind, "path", address, { address, ...value });
+
+describe("the origin AS of the hops in a report", () => {
+  const options = { target: "shop.example", reference: ["example.org"] };
+  const steps = [
+    ...REFUSED,
+    owner("8.8.4.4", { outcome: "found", registry: "rdap.arin.net", network: NETWORK }),
+    origin("8.8.4.4", { outcome: "found", originAs: [64500], prefix: "8.8.4.0/24", country: "US", registry: "arin" }),
+    owner("8.8.4.9", { outcome: "found", registry: "rdap.arin.net", network: NETWORK }),
+    origin("8.8.4.9", { outcome: "found", originAs: [64511], prefix: "8.8.4.0/24", country: "ZZ" }),
+    origin("9.9.9.9", { outcome: "found", originAs: [64502, 64503], prefix: "9.9.9.0/24" }),
+    origin("10.0.0.1", { outcome: "special", class: "private" }),
+  ];
+  const report = reportOf(plan(options), steps);
+
+  it("shows the origin AS beside the owner, and both values when RDAP and the DNS do not agree", () => {
+    const lines = formatReport(report);
+    const start = lines.indexOf("The owners of the hops (4)");
+    expect(lines.slice(start, start + 5)).toEqual([
+      "The owners of the hops (4)",
+      "  8.8.4.4: EXAMPLE-8 (NET-8-8-4-0-1), Example Networks Inc., US, AS64500",
+      "  8.8.4.9: EXAMPLE-8 (NET-8-8-4-0-1), Example Networks Inc., US, AS64500 in RDAP, AS64511 in the DNS of Team Cymru",
+      "  9.9.9.9: no lookup of the owner, AS64502 AS64503",
+      "  10.0.0.1: a special-purpose address (private), with no lookup",
+    ]);
+    expect(lines.some((line) => line.includes("ZZ"))).toBe(false);
+    expect(readCheckReport(JSON.parse(JSON.stringify(report)))).toEqual({ tag: "ok", value: report });
+  });
+
+  it("names each source of the origin AS when a source has no route or no answer", () => {
+    const registered: PathOwner = { address: "8.8.4.4", outcome: "found", registry: "rdap.arin.net", network: NETWORK };
+    const bare: PathOwner = { address: "8.8.4.4", outcome: "found", registry: "rdap.arin.net", network: { ...NETWORK, originAs: [] } };
+    const unrouted: PathOrigin = { address: "8.8.4.4", outcome: "unrouted" };
+    const failed: PathOrigin = { address: "8.8.4.4", outcome: "failed", detail: "The query gave the outcome servfail (ESERVFAIL)." };
+    const same: PathOrigin = { address: "8.8.4.4", outcome: "found", originAs: [64500], prefix: "8.8.4.0/24" };
+    expect(originAsText(undefined, undefined)).toBe("");
+    expect(originAsText(registered, undefined)).toBe("AS64500");
+    expect(originAsText(registered, same)).toBe("AS64500");
+    expect(originAsText(bare, same)).toBe("AS64500");
+    expect(originAsText(bare, unrouted)).toBe("no BGP route in the DNS of Team Cymru");
+    expect(originAsText(registered, unrouted)).toBe("AS64500 in RDAP, no BGP route in the DNS of Team Cymru");
+    expect(originAsText(registered, failed)).toBe("AS64500, no origin AS from the DNS of Team Cymru: The query gave the outcome servfail (ESERVFAIL).");
+    expect(originAsText(bare, { address: "8.8.4.4", outcome: "special", class: "private" })).toBe("");
+    expect(ownerText({ address: "8.8.4.4", outcome: "unregistered", registry: "rdap.arin.net" }, same)).toBe("the registry has no network for this address, AS64500");
+    expect(hopText(undefined, undefined)).toBe("no lookup of the owner");
+    expect(hopText(undefined, unrouted)).toBe("no lookup of the owner, no BGP route in the DNS of Team Cymru");
+    expect(hopText(registered, same)).toBe(ownerText(registered));
+  });
+
+  it("names a network of the start of a loss by its origin AS when the hop has no found owner", () => {
+    const loss = { sent: 100, lost: 0, ratio: 0, low: 0, high: 0.04 };
+    const hops = [{ ttl: 3, address: "203.0.113.1", loss }];
+    const routed: PathOrigin = { address: "203.0.113.1", outcome: "found", originAs: [64501, 64502], prefix: "203.0.113.0/24" };
+    expect(networkName({ origin: routed, hops })).toBe("the network of AS64501 AS64502");
+    expect(networkName({ origin: { address: "203.0.113.1", outcome: "unrouted" }, hops })).toBe("the network of 203.0.113.1");
+    const transit: PathOwner = { address: "203.0.113.1", outcome: "found", registry: "rdap.arin.net", network: network("NET-T", "TRANSIT-NET", [64501]) };
+    expect(networkName({ owner: transit, origin: routed, hops })).toBe("TRANSIT-NET (AS64501 in RDAP, AS64501 AS64502 in the DNS of Team Cymru)");
+    expect(networkName({ owner: transit, origin: { ...routed, originAs: [64501] }, hops })).toBe("TRANSIT-NET (AS64501)");
   });
 });
 

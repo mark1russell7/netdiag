@@ -43,12 +43,12 @@ The check has these steps:
 | `--ping-count <count>` | 4 | It sets the number of echo requests to each address, from 0 to 100. A measure of the loss needs 20 or more. |
 | `--mtu`, `--no-mtu` | A search after a time-out | `--mtu` searches the MTU of the path to each address. `--no-mtu` starts no search. |
 | `--mtr-cycles <count>` | 0, or 20 with `--owners` | It sets the number of cycles of `mtr` to each address, from 0 to 100. 0 starts no `mtr`. |
-| `--owners` | Off | It looks up the owner network of each hop of `mtr` in the public registries of RDAP. |
+| `--owners` | Off | It looks up the owner network of each hop of `mtr` in the registries of RDAP, and its origin AS in the DNS of Team Cymru. |
 | `--json` | Off | It writes the whole report as JSON. |
 | `--help` | Off | It shows the options. |
 | `--version` | Off | It shows the version. |
 
-netdiag starts `mtr` only on Linux and macOS. Thus `--owners` gives no owner on Windows.
+netdiag starts `mtr` only on Linux and macOS. Thus `--owners` gives no owner and no origin AS on Windows.
 
 The exit code is 0 after a check. It is 1 for an option that is not valid. A fault of the network does not change the exit code.
 
@@ -62,10 +62,13 @@ netdiag sends packets only to the hosts that you name or own. The check grants o
 - each range of `--grant`
 - each address that the resolver gives for a granted name
 - with `--owners`, the bootstrap host of IANA (`data.iana.org`) and the RDAP host of each regional registry
+- with `--owners`, the DNS zones of Team Cymru (`origin.asn.cymru.com` and `origin6.asn.cymru.com`)
 
 The check sends no packet to another host. A grant with a problem stops the check before the first probe. Thus a typing error cannot make the scope wider.
 
 The lookups of `--owners` send the address of each public hop to its registry, over HTTPS. They go through `polite-crawler`, so each registry gets one request at a time, with a rest between two requests. A registry that refuses netdiag stops for the rest of the check.
+
+The lookups of `--owners` also send a TXT query for each public hop to the DNS resolver. The name of the query has the address of the hop, so the resolver sends it to Team Cymru. The answer gives the BGP prefix and the origin AS of the hop. The check sends 4 queries at a time or fewer.
 
 ## The output
 
@@ -89,13 +92,14 @@ The next step (it can give 0.01 bits of information about the causes)
 12 observations from 8 facts. The option --json gives each fact.
 ```
 
-With `--owners`, the text also shows the owner of each hop. The addresses and the networks are examples.
+With `--owners`, the text also shows the owner and the origin AS of each hop. When RDAP and the DNS of Team Cymru give different AS numbers, the text shows the two values. The addresses and the networks are examples.
 
 ```text
-The owners of the hops (3)
+The owners of the hops (4)
   10.0.0.1: a special-purpose address (private), with no lookup
   8.8.4.4: EXAMPLE-8 (NET-8-8-4-0-1), Example Networks Inc., US, AS64500
-  45.0.0.9: the registry has no network for this address
+  8.8.4.9: EXAMPLE-8 (NET-8-8-4-0-1), Example Networks Inc., US, AS64500 in RDAP, AS64511 in the DNS of Team Cymru
+  45.0.0.9: the registry has no network for this address, AS64502
 ```
 
 When the destination of `mtr` has a loss, the cause "A network on the path loses packets" names the networks where the loss can start. The section "Where the loss starts" gives the hops of each network. The loss starts after the last hop with a clearly lower loss. 100 cycles give a shorter part of the path than 20 cycles.
@@ -145,7 +149,8 @@ The pure parts of the command are also exports. A program can use them with its 
 | `planCheck(options, system)` | It gives the plan of a check with the grants of its scope, or each problem of the options. |
 | `reportOf(plan, steps)` | It gives the report of the steps of a visit. |
 | `formatReport(report)` | It gives the lines of the text output. |
-| `ownerText(owner)` | It gives the text of the owner of a hop: the network, its holder, its country and its origin AS. |
+| `ownerText(owner, origin)` | It gives the text of the owner of a hop: the network, its holder, its country and its origin AS. |
+| `originAsText(owner, origin)`, `hopText(owner, origin)` | They give the origin AS of a hop from the two sources, and the text of a hop with or without an owner. |
 | `originText(origin)`, `originLines(origin)` | They give the sentence and the lines of the start of a loss, from an item of `lossOrigins`. |
 | `hopsText(hops)`, `networkName(network)` | They give the text of some hops of a path and the short name of a network. |
 | `readCheckReport(value)` | It reads a JSON report and gives the report, or at most 20 problems. |

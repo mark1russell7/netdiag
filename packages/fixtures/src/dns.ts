@@ -10,6 +10,8 @@ export type ZoneEntry =
       readonly a?: readonly string[];
       /** The IPv6 addresses of the `AAAA` records, as 32 hexadecimal digits. */
       readonly aaaa?: readonly string[];
+      /** The `TXT` records. Each record is a list of strings of 255 bytes or fewer. */
+      readonly txt?: readonly (readonly string[])[];
     }
   | "silent";
 
@@ -43,8 +45,8 @@ function entryOf(zone: Zone, name: string): ZoneEntry {
 
 /**
  * This function gives the response to one DNS query, or `undefined` for no response. The response has the records
- * of the zone for the type `A` (1) or `AAAA` (28), and no records for each other type. Each record has a TTL of 300
- * seconds, minus 60 seconds for each record before it.
+ * of the zone for the type `A` (1), `AAAA` (28) or `TXT` (16), and no records for each other type. Each record has a
+ * TTL of 300 seconds, minus 60 seconds for each record before it.
  */
 export function dnsResponse(zone: Zone, query: Buffer): { readonly name: string; readonly response: Buffer | undefined } {
   let offset = 12;
@@ -60,7 +62,8 @@ export function dnsResponse(zone: Zone, query: Buffer): { readonly name: string;
   const entry = entryOf(zone, name);
   if (entry === "silent") return { name, response: undefined };
   const v4 = (entry.a ?? []).filter((address) => isIP(address) === 4).map((address) => Buffer.from(address.split(".").map(Number)));
-  const records = type === 1 ? v4 : type === 28 ? (entry.aaaa ?? []).map((hex) => Buffer.from(hex, "hex")) : [];
+  const txt = (entry.txt ?? []).map((strings) => Buffer.concat(strings.map((text) => Buffer.concat([Buffer.from([Buffer.byteLength(text)]), Buffer.from(text)]))));
+  const records = type === 1 ? v4 : type === 28 ? (entry.aaaa ?? []).map((hex) => Buffer.from(hex, "hex")) : type === 16 ? txt : [];
   const head = Buffer.alloc(12);
   head.writeUInt16BE(query.readUInt16BE(0), 0);
   head.writeUInt16BE(0x8180 | entry.rcode, 2);

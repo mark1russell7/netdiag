@@ -4,11 +4,13 @@ import { realClock } from "@mark1russell7/algebra/clock";
 import { authority, fakeToolHost, listen, startDnsServer, type Authority, type FakeRule, type Pems, type Zone } from "@netdiag/fixtures";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
+  CYMRU_ZONES,
   DNS_ANSWER,
   HTTP_RESPONSE,
   ICMP_ECHO,
   LINK_STATE,
   PATH_MTU,
+  PATH_ORIGIN,
   PATH_OWNER,
   RDAP_BOOTSTRAP,
   RDAP_REGISTRIES,
@@ -22,6 +24,7 @@ import {
   type Fact,
   type Grant,
   type RdapGet,
+  type TxtResolve,
   type VisitInput,
   type VisitOptions,
   type VisitStep,
@@ -328,6 +331,32 @@ describe("the owners of the hops of a visit", () => {
     expect(owners(refused)).toEqual([]);
     expect(problems(refused)).toEqual([expect.stringMatching(/^The lookup of the owners of the hops to 127\.0\.0\.2 did not end: /)]);
     expect(rdap.urls).toEqual([]);
+  });
+});
+
+describe("the origin AS of the hops of a visit", () => {
+  const zones: Grant[] = Object.values(CYMRU_ZONES).map((host): Grant => ({ kind: "host", host, basis: "named" }));
+  const report = mtrReport(SERVER, ["10.0.0.1", PUBLIC_HOP, SERVER]);
+
+  it("looks up the origin of each hop after mtr through the resolver of the input, and gives a problem with no resolver", async () => {
+    const port = await httpsServer();
+    const names: string[] = [];
+    const origins: TxtResolve = (query) => {
+      names.push(`${query.name} ${query.resolver}:${query.port}`);
+      return Promise.resolve({ outcome: "nxdomain", records: [], code: "ENOTFOUND" });
+    };
+    const routes = (steps: readonly VisitStep[]): string[] =>
+      steps.flatMap((step) => (step.kind === "fact" && isFactOf(PATH_ORIGIN, step.fact) ? [`${step.fact.value.address} ${step.fact.value.outcome}`] : []));
+    const grants = [range(`${SERVER}/32`), range("127.0.0.1/32"), ...zones];
+    const input: VisitInput = { target: { host: SERVER, port }, resolver: { address: "127.0.0.1", port: 5353 }, grants };
+    const steps = await visit(input, { tools: mtrHost(report), pingCount: 0, mtrCycles: 2, origins });
+    expect(problems(steps)).toEqual([]);
+    expect(routes(steps)).toEqual(["10.0.0.1 special", `${PUBLIC_HOP} unrouted`, `${SERVER} special`]);
+    expect(names).toEqual(["4.4.8.8.origin.asn.cymru.com 127.0.0.1:5353"]);
+    const alone = await visit({ target: { host: SERVER, port }, grants }, { tools: mtrHost(report), pingCount: 0, mtrCycles: 2, origins });
+    expect(routes(alone)).toEqual([]);
+    expect(problems(alone)).toEqual([`The visit has no DNS resolver for the lookups of the origin AS of the hops to ${SERVER}.`]);
+    expect(names).toHaveLength(1);
   });
 });
 

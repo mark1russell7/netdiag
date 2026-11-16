@@ -2,8 +2,8 @@
  * The entry `@mark1russell7/netdiag/core` has all of netdiag that imports no module of Node. A browser can import it.
  *
  * The entry has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the
- * kinds of facts, the metrics and the readers. It also has the data of a visit, the limits of the echo requests and the
- * readers of RDAP. The probes and the visit are in the root entry.
+ * kinds of facts, the metrics and the readers. It also has the data of a visit and the limits of the echo requests. The
+ * readers of RDAP and of the DNS of Team Cymru are in it too. The probes and the visit are in the root entry.
  *
  * @packageDocumentation
  */
@@ -57,6 +57,7 @@ export {
   type RdapBootstrap,
   type RdapService,
 } from "./lookups/rdap.ts";
+export { CYMRU_ZONES, originQuery, readOrigin, type CymruOrigin } from "./lookups/cymru.ts";
 export { DEFAULT_MTR_CYCLES, DEFAULT_PING_COUNT, MAX_MTR_CYCLES, MAX_PING_COUNT } from "./tools/counts.ts";
 export {
   MTU_SEARCHES,
