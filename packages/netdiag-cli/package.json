@@ -86,6 +86,7 @@
     "@procedures/cli-kit": "^0.57.0",
     "@procedures/client": "^0.57.0",
     "@procedures/shell": "^0.57.0",
+    "polite-crawler": "^0.7.6",
     "zod": "^4.6.7"
   }
 }
