@@ -4,7 +4,7 @@
  *
  * @packageDocumentation
  */
-import { LAYERS, type Layer } from "@mark1russell7/netdiag";
+import { LAYERS, type Layer } from "@mark1russell7/netdiag/core";
 import { PARTS, type Cause, type Evidence, type Part } from "@mark1russell7/netdiag/diagnosis";
 import { subjectText, type CheckReport } from "@mark1russell7/netdiag-cli/report";
 import { CATALOG } from "./model.ts";

@@ -549,7 +549,7 @@ function showReportHead(report: CheckReport, source: string, truth: string | und
       ` ${source}: ${String(report.facts.length)} facts, ${String(report.evidence.length)} observations${unended === 0 ? "" : `, ${String(unended)} probes that did not end`}.`,
     ),
     reportVerdict(report),
-    truth === undefined ? null : h("p", { class: "note small" }, "The fault of this lab case is ", h("code", {}, truth), named),
+    ...(truth === undefined ? [] : [h("p", { class: "note small" }, "The fault of this lab case is ", h("code", {}, truth), named)]),
   );
 }
 

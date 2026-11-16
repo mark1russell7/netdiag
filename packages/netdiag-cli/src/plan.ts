@@ -1,4 +1,6 @@
 import {
+  DEFAULT_PING_COUNT,
+  MAX_PING_COUNT,
   canonicalHost,
   grantProblems,
   hostKind,
@@ -10,8 +12,7 @@ import {
   type VisitHost,
   type VisitInput,
   type VisitResolver,
-} from "@mark1russell7/netdiag";
-import { DEFAULT_PING_COUNT, MAX_PING_COUNT } from "@mark1russell7/netdiag/tools";
+} from "@mark1russell7/netdiag/core";
 import { err, ok, type Result } from "@mark1russell7/optional";
 import { isScheme, type Scheme } from "./scheme.ts";
 

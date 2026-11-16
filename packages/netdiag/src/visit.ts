@@ -5,71 +5,26 @@ import { LINK_SUBJECT, linkProbe, type InterfaceTable } from "./probes/link.ts";
 import { DNS_PROBE, httpProbe, type TlsProbeOptions } from "./probes/native.ts";
 import type { Probe } from "./probe.ts";
 import { createRunner, type ProbeOutcome } from "./run.ts";
-import { decideScope, resolvedGrant, scopeOf, type Grant } from "./scope.ts";
+import { decideScope, resolvedGrant, scopeOf } from "./scope.ts";
 import { hostKind, target } from "./target.ts";
 import type { ToolHost } from "./tools/host.ts";
 import { mtrProbe } from "./tools/mtr.ts";
 import { mtuProbe } from "./tools/mtu.ts";
 import { DEFAULT_PING_COUNT, pingProbe } from "./tools/ping.ts";
+import type { MtuSearch, VisitHost, VisitInput, VisitRole, VisitStep } from "./visit-types.ts";
+
+export {
+  MTU_SEARCHES,
+  VISIT_ROLES,
+  type MtuSearch,
+  type VisitHost,
+  type VisitInput,
+  type VisitResolver,
+  type VisitRole,
+  type VisitStep,
+} from "./visit-types.ts";
 
 // A visit is the standard set of probes of one target. The lab agent (ND-7) and the command-line tool (ND-8) use it.
-
-/** A host of a visit: a DNS name or an IP address, and the port of its web service. */
-export interface VisitHost {
-  readonly host: string;
-  /** The port of the HTTP request. The default is the port of the scheme. */
-  readonly port?: number | undefined;
-}
-
-/** The DNS resolver of the names of a visit. */
-export interface VisitResolver {
-  readonly address: string;
-  /** The default is 53. */
-  readonly port?: number | undefined;
-}
-
-/**
- * The role of a host in a visit. The caller gives the role, and the caller decides which facts are about the target.
- *
- * - `target`: the host that the user diagnoses.
- * - `reference`: a host that works, for a comparison.
- * - `gateway`: the default gateway of this computer.
- * - `local`: this computer, for example the state of its link.
- */
-export type VisitRole = (typeof VISIT_ROLES)[number];
-
-/** The roles of a host in a visit. The type `VisitRole` is one of them. */
-export const VISIT_ROLES: readonly ["target", "reference", "gateway", "local"] = ["target", "reference", "gateway", "local"];
-
-/** One step of a visit: a fact, or a problem of a probe that did not end. `host` is the host of the role. */
-export type VisitStep =
-  | { readonly kind: "fact"; readonly role: VisitRole; readonly host: string; readonly fact: Fact }
-  | { readonly kind: "problem"; readonly role: VisitRole; readonly host: string; readonly problem: string };
-
-/** The hosts of a visit, and the grants of its scope. */
-export interface VisitInput {
-  readonly target: VisitHost;
-  readonly references?: readonly VisitHost[] | undefined;
-  /** The address of the default gateway, when the caller knows it. The visit sends it ICMP echo requests only. */
-  readonly gateway?: string | undefined;
-  /** A name of the visit needs a resolver. Without it, the visit gives a problem for each name. */
-  readonly resolver?: VisitResolver | undefined;
-  /** The grants of the scope. Each probe sends packets only to a peer in the scope. */
-  readonly grants: readonly Grant[];
-}
-
-/**
- * When a visit searches the MTU of the path to an address.
- *
- * - `auto`: after a TLS handshake or an HTTP response that timed out after a TCP connect. A path that drops large
- *   packets with no message gives this sign: the small packets of the connect pass, and the large packets do not.
- * - `always`: after the HTTP request to each address.
- * - `never`: the visit does not search.
- */
-export type MtuSearch = "auto" | "always" | "never";
-
-/** The values of `MtuSearch`. */
-export const MTU_SEARCHES: readonly MtuSearch[] = ["auto", "always", "never"];
 
 /** The options of a visit. */
 export interface VisitOptions {

@@ -1,9 +1,9 @@
 /**
  * The IP addresses and the networks of netdiag: the family and the class of an address, CIDR ranges and sets of ranges.
  *
- * This entry uses only the module `node:net`. An IPv4 address in IPv6 form (`::ffff:192.0.2.1`) is its IPv4 address.
+ * This entry uses no module of Node, so a browser can import it. An IPv4 address in IPv6 form (`::ffff:192.0.2.1`) is
+ * its IPv4 address.
  */
-import { BlockList, isIP } from "node:net";
 import { err, ok, type Result } from "@mark1russell7/optional";
 
 /** The family of an IP address. */
@@ -78,9 +78,68 @@ export function canonicalAddress(address: string): string {
   return mapped ?? text;
 }
 
+/** A part of an IPv4 address: a number from 0 to 255 with no zero before it. */
+const IPV4_PART = /^(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
+/** A group of an IPv6 address: 1 to 4 hexadecimal digits. */
+const IPV6_GROUP = /^[0-9a-f]{1,4}$/i;
+/** The zone of an IPv6 address after `%`, for example `eth0`. */
+const IPV6_ZONE = /^[0-9a-z.:-]+$/i;
+
+/** This function gives the 4 bytes of an IPv4 address in dotted form, or `undefined`. */
+function ipv4Bytes(text: string): number[] | undefined {
+  const parts = text.split(".");
+  if (parts.length !== 4 || !parts.every((part) => IPV4_PART.test(part))) return undefined;
+  return parts.map(Number);
+}
+
+/** This function gives the 16-bit groups of one side of `::`, or `undefined`. Only the last side can end in IPv4 form. */
+function ipv6Groups(side: string, last: boolean): number[] | undefined {
+  if (side === "") return [];
+  const parts = side.split(":");
+  const groups: number[] = [];
+  for (const [index, part] of parts.entries()) {
+    if (last && index === parts.length - 1 && part.includes(".")) {
+      const bytes = ipv4Bytes(part);
+      if (bytes === undefined) return undefined;
+      groups.push((bytes[0] ?? 0) * 256 + (bytes[1] ?? 0), (bytes[2] ?? 0) * 256 + (bytes[3] ?? 0));
+    } else if (IPV6_GROUP.test(part)) groups.push(Number.parseInt(part, 16));
+    else return undefined;
+  }
+  return groups;
+}
+
+/** This function gives the 16 bytes of an IPv6 address, or `undefined`. The zone after `%` does not change the bytes. */
+function ipv6Bytes(text: string): number[] | undefined {
+  const percent = text.indexOf("%");
+  if (percent !== -1 && !IPV6_ZONE.test(text.slice(percent + 1))) return undefined;
+  const sides = (percent === -1 ? text : text.slice(0, percent)).split("::");
+  if (sides.length > 2) return undefined;
+  const head = ipv6Groups(sides[0] ?? "", sides.length === 1);
+  const tail = sides.length === 2 ? ipv6Groups(sides[1] ?? "", true) : [];
+  if (head === undefined || tail === undefined) return undefined;
+  const given = head.length + tail.length;
+  if (sides.length === 1 ? given !== 8 : given > 7) return undefined;
+  const groups = [...head, ...Array<number>(8 - given).fill(0), ...tail];
+  return groups.flatMap((group) => [group >> 8, group & 0xff]);
+}
+
+/** This function gives the bytes of an IP address: 4 for IPv4, 16 for IPv6, or `undefined` for a text that is not an address. */
+function addressBytes(text: string): number[] | undefined {
+  return ipv4Bytes(text) ?? (text.includes(":") ? ipv6Bytes(text) : undefined);
+}
+
+/**
+ * This function gives the version of an IP address: 4, 6, or 0 for a text that is not an IP address. It gives the
+ * value of `isIP` of `node:net` with no module of Node. It does not trim the text or remove brackets.
+ */
+export function ipVersion(text: string): 0 | 4 | 6 {
+  const bytes = addressBytes(text);
+  return bytes === undefined ? 0 : bytes.length === 4 ? 4 : 6;
+}
+
 /** This function gives the family of an IP address, or `undefined` for a text that is not an IP address. */
 export function addressFamily(address: string): AddressFamily | undefined {
-  const family = isIP(canonicalAddress(address));
+  const family = ipVersion(canonicalAddress(address));
   return family === 4 ? "ipv4" : family === 6 ? "ipv6" : undefined;
 }
 
@@ -108,16 +167,42 @@ export interface CidrSet {
   has(address: string): boolean;
 }
 
-/** This function gives the set of some CIDR ranges. */
+/** The first 12 bytes of an IPv4 address in IPv6 form (`::ffff:0:0/96`). */
+const MAPPED_PREFIX: readonly number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff];
+
+/** This function gives the forms of an address to compare with the ranges: the address, and its IPv4 or IPv6 form for a mapped address. */
+function formsOf(bytes: readonly number[]): (readonly number[])[] {
+  if (bytes.length === 4) return [bytes, [...MAPPED_PREFIX, ...bytes]];
+  const mapped = MAPPED_PREFIX.every((byte, index) => bytes[index] === byte);
+  return mapped ? [bytes, bytes.slice(12)] : [bytes];
+}
+
+/** This function tells if the first `prefix` bits of two addresses of the same length are equal. */
+function samePrefix(a: readonly number[], b: readonly number[], prefix: number): boolean {
+  if (a.length !== b.length) return false;
+  for (let bit = 0; bit < prefix; bit += 8) {
+    const mask = prefix - bit >= 8 ? 0xff : (0xff << (8 - (prefix - bit))) & 0xff;
+    if (((a[bit / 8] ?? 0) & mask) !== ((b[bit / 8] ?? 0) & mask)) return false;
+  }
+  return true;
+}
+
+/**
+ * This function gives the set of some CIDR ranges. An IPv4 address is also in an IPv6 range that holds its IPv6 form
+ * (`::ffff:192.0.2.1`), and the reverse, as for `BlockList` of `node:net`. The zone of an IPv6 address does not change it.
+ */
 export function cidrSet(ranges: readonly Cidr[]): CidrSet {
-  const list = new BlockList();
-  for (const range of ranges) list.addSubnet(range.address, range.prefix, range.family);
+  const networks = ranges.flatMap((range) => {
+    const bytes = addressBytes(range.address);
+    return bytes === undefined ? [] : [{ bytes, prefix: range.prefix }];
+  });
   return {
     ranges: [...ranges],
     has(address) {
-      const host = canonicalAddress(address);
-      const family = addressFamily(host);
-      return family !== undefined && list.check(host, family);
+      const bytes = addressBytes(canonicalAddress(address));
+      if (bytes === undefined) return false;
+      const forms = formsOf(bytes);
+      return networks.some((network) => forms.some((form) => samePrefix(form, network.bytes, network.prefix)));
     },
   };
 }

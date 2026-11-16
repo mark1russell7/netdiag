@@ -18,7 +18,7 @@ import {
   type Skipped,
   type VisitRole,
   type VisitStep,
-} from "@mark1russell7/netdiag";
+} from "@mark1russell7/netdiag/core";
 import { err, ok, type Result } from "@mark1russell7/optional";
 import { countOf } from "@mark1russell7/text";
 import { pad } from "@mark1russell7/text/length";
@@ -269,6 +269,9 @@ export function readCheckReport(value: unknown): Result<CheckReport, string[]> {
     const read = readFact(item["fact"], FACT_KINDS);
     if (read.tag === "err") {
       problems.push(...read.error.map((problem) => `The item ${at + 1} of facts: ${problem}`));
+      // The report has this fact, but the fact is not valid. A reference to its id is thus not a second problem.
+      const fact = item["fact"];
+      if (isFields(fact) && typeof fact["id"] === "string") ids.add(fact["id"]);
       return;
     }
     need(!ids.has(read.value.id), `The fact id ${read.value.id} is not unique.`);

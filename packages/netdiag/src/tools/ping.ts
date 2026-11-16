@@ -3,7 +3,10 @@ import { ICMP_ECHO, type IcmpEcho } from "../kinds.ts";
 import { defineProbe, type Availability, type Probe, type ProbeContext } from "../probe.ts";
 import { target, type Target } from "../target.ts";
 import { ENGLISH, firstLine, integerIn, LINES, LOCAL_UNREACHABLE, toolAddress, withoutSeparator, type ToolAddress } from "./common.ts";
+import { DEFAULT_PING_COUNT, MAX_PING_COUNT } from "./counts.ts";
 import { AVAILABILITY_TIMEOUT_MS, availabilityOf, runTool, TOOL_MARGIN_MS, type ToolCommand, type ToolHost, type ToolRaw } from "./host.ts";
+
+export { DEFAULT_PING_COUNT, MAX_PING_COUNT } from "./counts.ts";
 
 // The adapter of the tool `ping`. It reads the English output of iputils on Linux, of the BSD ping on macOS and of
 // ping.exe on Windows. On Linux and macOS, `LC_ALL=C` makes the output English. On Windows, the language of the
@@ -18,14 +21,8 @@ export interface PingInput {
   readonly waitMs?: number | undefined;
 }
 
-/** The default number of echo requests. The feature `path.loss` needs `LOSS_MIN_SENT` requests or more. */
-export const DEFAULT_PING_COUNT = 4;
-
 /** The default time to wait for each reply, in milliseconds. */
 export const DEFAULT_PING_WAIT_MS = 1000;
-
-/** The largest number of echo requests in one input. */
-export const MAX_PING_COUNT = 100;
 
 /** The time between two echo requests on Linux and macOS, in milliseconds. A user without privileges can set it. */
 export const PING_INTERVAL_MS = 200;

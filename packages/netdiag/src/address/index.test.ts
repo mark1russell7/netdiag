@@ -1,3 +1,5 @@
+import { BlockList, isIP } from "node:net";
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
   ADDRESS_CLASSES,
@@ -8,6 +10,7 @@ import {
   cidrContains,
   cidrSet,
   formatCidr,
+  ipVersion,
   parseCidr,
   type Cidr,
 } from "./index.ts";
@@ -66,6 +69,62 @@ describe("CIDR ranges", () => {
     expect(["192.168.250.81", "2001:db9::1", "not an address"].map((address) => set.has(address))).toEqual([false, false, false]);
     expect(set.ranges).toHaveLength(3);
     expect(cidrSet([]).has("192.0.2.1")).toBe(false);
+  });
+
+  it("puts an IPv4 address in an IPv6 range of its IPv6 form, and the reverse", () => {
+    expect(cidrSet([cidr("::ffff:0:0/96")]).has("192.0.2.1")).toBe(true);
+    expect(cidrSet([cidr("192.0.2.0/24")]).has("::ffff:c000:201")).toBe(true);
+    expect(cidrSet([cidr("::/0")]).has("192.0.2.1")).toBe(true);
+    expect(cidrSet([cidr("0.0.0.0/0")]).has("2001:db8::1")).toBe(false);
+    expect(cidrSet([cidr("fe80::/10")]).has("fe80::1%eth0")).toBe(true);
+  });
+});
+
+// The parser of this module replaces `isIP` and `BlockList` of `node:net`, so a browser can import it. These tests
+// compare the two on the Node.js of the test.
+describe("the parser of addresses with no module of Node", () => {
+  const SEED = 20261115;
+
+  it("gives the version of each address as isIP", () => {
+    const texts = [
+      "1.2.3.4", "01.2.3.4", "256.1.1.1", "1.2.3", "1.2.3.4 ", "::", "::1", "1::", "1:2:3:4:5:6:7::", "::2:3:4:5:6:7:8",
+      "1:2:3:4:5:6:7:8", "1:2:3:4:5:6:7:8:9", "1::2::3", ":::", "1:2:3:4:5:6:1.2.3.4", "1:2:3:4:5:6::1.2.3.4", "::1.2.3.4",
+      "::ffff:1.2.3.4", "1.2.3.4::", "fe80::1%eth0", "fe80::1%", "fe80::1%a b", "fe80::1%a_b", "fe80::1%a-b.c:d", "1.2.3.4%eth0",
+      "FE80::ABCD", "12345::", "::01.2.3.4", "[::1]", "::1:2:3:4:5:6:7", "1:2:3:4:5:6:7:8%z", "", "example.com",
+    ];
+    for (const text of texts) expect(ipVersion(text), JSON.stringify(text)).toBe(isIP(text));
+  });
+
+  it("gives the version of a random text as isIP", () => {
+    const zone = fc.constantFrom("", "%eth0", "%a-b.c:d", "%", "%a b", "%1");
+    const text = fc.oneof(
+      fc.ipV4(),
+      fc.ipV4Extended(),
+      fc.tuple(fc.ipV6(), zone).map(([address, suffix]) => address + suffix),
+      fc.string({ unit: fc.constantFrom(..."0123456789abcdefABCDEF:.%"), maxLength: 45 }),
+    );
+    fc.assert(
+      fc.property(text, (value) => ipVersion(value) === isIP(value)),
+      { seed: SEED, numRuns: 3000 },
+    );
+  });
+
+  it("puts a random address in a random range as BlockList", () => {
+    const address = fc.oneof(fc.ipV4(), fc.ipV6(), fc.ipV4().map((v4) => `::ffff:${v4}`));
+    const cases = address.chain((network) => fc.tuple(fc.constant(network), fc.nat(128), fc.oneof(address, fc.constant(network))));
+    fc.assert(
+      fc.property(cases, ([network, bits, host]) => {
+        const family = isIP(network) === 4 ? "ipv4" : "ipv6";
+        const range = parseCidr(`${network}/${bits % (family === "ipv4" ? 33 : 129)}`);
+        const canonical = canonicalAddress(host);
+        const hostFamily = addressFamily(canonical);
+        if (range.tag === "err" || hostFamily === undefined) return true;
+        const list = new BlockList();
+        list.addSubnet(range.value.address, range.value.prefix, range.value.family);
+        return cidrSet([range.value]).has(host) === list.check(canonical, hostFamily);
+      }),
+      { seed: SEED, numRuns: 3000 },
+    );
   });
 });
 
