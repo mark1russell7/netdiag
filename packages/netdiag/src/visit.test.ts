@@ -1,9 +1,27 @@
 import { createServer as createHttpsServer } from "node:https";
+import { createServer as createTcpServer } from "node:net";
 import { realClock } from "@mark1russell7/algebra/clock";
 import { authority, fakeToolHost, listen, startDnsServer, type Authority, type FakeRule, type Pems, type Zone } from "@netdiag/fixtures";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { DNS_ANSWER, HTTP_RESPONSE, ICMP_ECHO, LINK_STATE, isFactOf, visitTarget, type Grant, type VisitInput, type VisitOptions, type VisitStep } from "./index.ts";
-import type { InterfaceTable } from "./probes/link.ts";
+import {
+  DNS_ANSWER,
+  HTTP_RESPONSE,
+  ICMP_ECHO,
+  LINK_STATE,
+  PATH_MTU,
+  TCP_CONNECT,
+  TLS_HANDSHAKE,
+  isFactOf,
+  largePacketsLost,
+  target,
+  visitTarget,
+  type Fact,
+  type Grant,
+  type VisitInput,
+  type VisitOptions,
+  type VisitStep,
+} from "./index.ts";
+import { LINK_SUBJECT, type InterfaceTable } from "./probes/link.ts";
 import type { ToolRunOptions } from "./tools/index.ts";
 
 // The visit operates on the loopback addresses: a DNS server of the fixtures on 127.0.0.1, an HTTPS server on
@@ -155,5 +173,83 @@ describe("the visit of a target", () => {
 
   it("refuses a grant with a problem before the first probe", async () => {
     await expect(visit({ target: { host: SERVER }, grants: [range("not a range")] })).rejects.toThrow(RangeError);
+  });
+});
+
+/** A server that takes each TCP connect and sends nothing: the TLS handshake times out, as on a path that drops large packets. */
+async function silentServer(): Promise<number> {
+  const listening = await listen(createTcpServer(), SERVER);
+  closers.push(() => listening.close());
+  return listening.port;
+}
+
+/** This function gives the MTU searches of the calls of a fake tool host: the address of each call with `-M do`. */
+function mtuCalls(calls: readonly { readonly args: readonly string[] }[]): (string | undefined)[] {
+  return calls.filter((call) => call.args.includes("-M")).map((call) => call.args.at(-1));
+}
+
+describe("the MTU search of a visit", () => {
+  const grants = [range(`${SERVER}/32`)];
+
+  it("searches the MTU after a TLS handshake that times out, with the default auto", async () => {
+    const port = await silentServer();
+    const tools = pingHost([SERVER]);
+    const steps = await visit({ target: { host: SERVER, port }, grants }, { tools, pingCount: 0, httpTimeoutMs: 300 });
+    expect(problems(steps)).toEqual([]);
+    // The input has no gateway, so the link fact has the subject of this computer.
+    expect(shape(steps)).toEqual([`local link.state ${LINK_SUBJECT}`, `target tcp.connect ${SERVER}`, `target tls.handshake ${SERVER}`, `target path.mtu ${SERVER}`]);
+    // Each try of the fake host gets replies, so the search ends with one try at the ceiling.
+    expect(mtuCalls(tools.calls)).toEqual([SERVER]);
+    const mtu = steps.flatMap((step) => (step.kind === "fact" && isFactOf(PATH_MTU, step.fact) ? [step.fact.value] : []));
+    expect(mtu.map((value) => value.outcome)).toEqual(["measured"]);
+  });
+
+  it("does not search with mtu never, and does not search after a request that works", async () => {
+    const silent = await silentServer();
+    const tools = pingHost([SERVER]);
+    const never = await visit({ target: { host: SERVER, port: silent }, grants }, { tools, pingCount: 0, httpTimeoutMs: 300, mtu: "never" });
+    expect(shape(never).some((fact) => fact.includes(" path.mtu "))).toBe(false);
+    const port = await httpsServer();
+    const works = await visit({ target: { host: SERVER, port }, grants }, { tools, pingCount: 0 });
+    expect(shape(works).some((fact) => fact.includes(" path.mtu "))).toBe(false);
+    expect(mtuCalls(tools.calls)).toEqual([]);
+  });
+
+  it("searches after each request with mtu always, and not with no tool host", async () => {
+    const port = await httpsServer();
+    const tools = pingHost([SERVER]);
+    const always = await visit({ target: { host: SERVER, port }, grants }, { tools, pingCount: 0, mtu: "always" });
+    expect(shape(always).at(-1)).toBe(`target path.mtu ${SERVER}`);
+    expect(mtuCalls(tools.calls)).toEqual([SERVER]);
+    const plain = await visit({ target: { host: SERVER, port }, grants }, { mtu: "always" });
+    expect(shape(plain).some((fact) => fact.includes(" path.mtu "))).toBe(false);
+  });
+});
+
+describe("largePacketsLost", () => {
+  const base = { subject: target(SERVER), time: { start: 0, end: 1 }, source: { probe: "test", version: "0" } };
+  const connect = (outcome: "connected" | "refused"): Fact => ({
+    ...base,
+    id: "f1",
+    kind: TCP_CONNECT.kind,
+    layer: "tcp",
+    value: { address: SERVER, port: 443, family: 4, outcome, ms: 1 },
+  });
+  const handshake = (outcome: "ok" | "timeout"): Fact => ({
+    ...base,
+    id: "f2",
+    kind: TLS_HANDSHAKE.kind,
+    layer: "tls",
+    value: { address: SERVER, port: 443, outcome, ms: 1 },
+  });
+
+  it("gives true for a connect, then a TLS handshake that times out", () => {
+    expect(largePacketsLost([connect("connected"), handshake("timeout")])).toBe(true);
+  });
+
+  it("gives false with no connect, after a refused connect, and after a handshake that works", () => {
+    expect(largePacketsLost([handshake("timeout")])).toBe(false);
+    expect(largePacketsLost([connect("refused"), handshake("timeout")])).toBe(false);
+    expect(largePacketsLost([connect("connected"), handshake("ok")])).toBe(false);
   });
 });

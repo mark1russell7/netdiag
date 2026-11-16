@@ -40,6 +40,7 @@ export async function check(options: CheckOptions, deps: CheckDeps): Promise<Che
     clock: deps.clock,
     tools: deps.tools,
     pingCount: plan.pingCount,
+    mtu: plan.mtu,
     scheme: plan.scheme,
     path: plan.path,
     tls: deps.tls,

@@ -80,6 +80,7 @@ interface CheckOptions {
   readonly gateway?: string | undefined;
   readonly grant?: readonly string[] | undefined;
   readonly pingCount?: number | undefined;
+  readonly mtu?: boolean | undefined;
 }
 
 ### build/index.d.ts#CheckPlan
@@ -88,6 +89,7 @@ interface CheckPlan {
   readonly scheme: Scheme;
   readonly path: string;
   readonly pingCount: number;
+  readonly mtu?: MtuSearch | undefined;
   readonly visit: VisitInput;
 }
 
@@ -136,7 +138,7 @@ interface NextProbe {
 }
 
 ### build/index.d.ts#NextProbeKind
-type NextProbeKind = "dns" | "ping" | "tls" | "http" | "https";
+type NextProbeKind = "dns" | "ping" | "tls" | "http" | "https" | "mtu";
 
 ### build/index.d.ts#NextStep
 interface NextStep {

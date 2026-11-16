@@ -115,10 +115,12 @@ type LossEstimate: build/index.d.ts#LossEstimate
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
 MTU_OUTCOMES: build/host.chunk.d.ts#MTU_OUTCOMES
+MTU_SEARCHES: build/index.d.ts#MTU_SEARCHES
 MTU_STOPS: build/host.chunk.d.ts#MTU_STOPS
 MTU_TRY_RESULTS: build/host.chunk.d.ts#MTU_TRY_RESULTS
 type MtuBounds: build/host.chunk.d.ts#MtuBounds
 MtuOutcome: build/host.chunk.d.ts#MtuOutcome
+type MtuSearch: build/index.d.ts#MtuSearch
 MtuStop: build/host.chunk.d.ts#MtuStop
 MtuTry: build/host.chunk.d.ts#MtuTry
 MtuTryResult: build/host.chunk.d.ts#MtuTryResult
@@ -255,6 +257,7 @@ isLocalName: build/index.d.ts#isLocalName
 labBars: build/index.chunk2.d.ts#labBars
 labGate: build/index.chunk2.d.ts#labGate
 labRecordOf: build/index.chunk2.d.ts#labRecordOf
+largePacketsLost: build/index.d.ts#largePacketsLost
 layerRank: build/layer.chunk.d.ts#layerRank
 linkProbe: build/index.d.ts#linkProbe
 linkStateOf: build/index.d.ts#linkStateOf
@@ -1522,6 +1525,12 @@ interface LossEstimate {
 ### build/index.d.ts#MIN_CONNECT_MS
 export declare const MIN_CONNECT_MS = 1;
 
+### build/index.d.ts#MTU_SEARCHES
+export declare const MTU_SEARCHES: readonly MtuSearch[];
+
+### build/index.d.ts#MtuSearch
+type MtuSearch = "auto" | "always" | "never";
+
 ### build/index.d.ts#PAIR_LEVEL
 export declare const PAIR_LEVEL = .95;
 
@@ -1744,6 +1753,7 @@ interface VisitOptions {
   readonly interfaces?: (() => InterfaceTable) | undefined;
   readonly pingCount?: number | undefined;
   readonly mtrCycles?: number | undefined;
+  readonly mtu?: MtuSearch | undefined;
   readonly scheme?: "http" | "https" | undefined;
   readonly path?: string | undefined;
   readonly tls?: TlsProbeOptions | undefined;
@@ -1828,6 +1838,9 @@ export declare function ipdv(delaysMs: readonly number[]): number[];
 
 ### build/index.d.ts#isLocalName
 export declare function isLocalName(name: string): boolean;
+
+### build/index.d.ts#largePacketsLost
+export declare function largePacketsLost(facts: readonly Fact[]): boolean;
 
 ### build/index.d.ts#linkProbe
 export declare function linkProbe(read?: () => InterfaceTable): Probe<LinkInput, LinkRaw>;

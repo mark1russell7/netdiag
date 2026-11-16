@@ -20,10 +20,15 @@ function problems(options: CheckOptions, system: PlanSystem = NO_RESOLVER): read
 }
 
 describe("the plan of a check", () => {
+  it("searches the MTU of each address with mtu true, and never with mtu false", () => {
+    expect(planned({ target: "example.com", mtu: true }).mtu).toBe("always");
+    expect(planned({ target: "example.com", mtu: false }).mtu).toBe("never");
+  });
+
   it("reads a name with the defaults: https, the path /, the default ping count and no port", () => {
     const plan = planned({ target: "WWW.Example.COM." });
     expect(plan.target).toEqual({ host: "www.example.com", kind: "name" });
-    expect([plan.scheme, plan.path, plan.pingCount]).toEqual(["https", "/", DEFAULT_PING_COUNT]);
+    expect([plan.scheme, plan.path, plan.pingCount, plan.mtu]).toEqual(["https", "/", DEFAULT_PING_COUNT, "auto"]);
     expect(plan.visit.target).toEqual({ host: "www.example.com" });
     expect(plan.visit.grants).toEqual([{ kind: "host", host: "www.example.com", basis: "named", note: "the target" }]);
   });
