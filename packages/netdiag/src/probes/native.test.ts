@@ -27,6 +27,7 @@ import {
   type TcpConnect,
   type TlsHandshake,
 } from "../index.ts";
+import { connectPhase, dialOf, handshakePhase, trustStore, watch } from "./socket.ts";
 
 const LOCAL = "127.0.0.1";
 const closers: (() => Promise<void> | void)[] = [];
@@ -238,6 +239,35 @@ describe("the TLS probe", () => {
     expect(unknown.certificate).toMatchObject({ selfSigned: true, chain: 1, trust: "none" });
     const trusted = factOf<TlsHandshake>(await runner.run(tlsProbe({ roots: [selfSigned.cert] }), { address: LOCAL, port, servername: "localhost" }), TLS_HANDSHAKE);
     expect(trusted).toMatchObject({ outcome: "ok", certificate: { selfSigned: true, chain: 1, trust: "private" } });
+  });
+
+  // The handshake reads a certificate that is not valid, but it gives no socket for it. Thus no caller can send data.
+  it("gives the socket only when the check of the certificate passed", async () => {
+    const received: Buffer[] = [];
+    const server = createTlsServer({ ...leaf }, (socket) => {
+      socket.on("data", (chunk: Buffer) => received.push(chunk));
+      socket.on("error", () => undefined);
+    });
+    server.on("tlsClientError", () => undefined);
+    const port = await serve(server);
+    const handshake = async (roots: readonly string[]) => {
+      const w = watch({ clock: realClock, signal: new AbortController().signal }, 5_000);
+      try {
+        const { socket } = await connectPhase(dialOf({}), LOCAL, port, w, realClock);
+        if (socket === undefined) throw new Error("The connect to the test server failed.");
+        return await handshakePhase(socket, { address: LOCAL, servername: "localhost" }, trustStore(roots), w, realClock);
+      } finally {
+        w.close();
+      }
+    };
+    const refused = await handshake([]);
+    expect(refused.phase).toMatchObject({ outcome: "cert-error", certificate: { problem: "untrusted" } });
+    expect(refused.secure).toBeUndefined();
+    const trusted = await handshake([ca.cert]);
+    expect(trusted.phase.outcome).toBe("ok");
+    expect(trusted.secure?.authorized).toBe(true);
+    trusted.secure?.destroy();
+    expect(received).toEqual([]);
   });
 
   it("gives alert when the client and the server have no cipher in common", async () => {

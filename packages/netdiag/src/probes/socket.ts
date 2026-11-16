@@ -343,6 +343,9 @@ export interface HandshakeInput {
 /**
  * This function does a TLS handshake on a connected socket. It does not refuse a certificate that is not valid: it
  * gives the outcome `cert-error` and the problem of the certificate.
+ *
+ * The function gives the TLS socket only when the check of the certificate passed. It destroys the socket of a
+ * certificate that is not valid. Thus no caller can send data on a connection with a certificate that is not valid.
  */
 export function handshakePhase(
   socket: Socket,
@@ -360,9 +363,8 @@ export function handshakePhase(
       ...(servername === undefined ? {} : { servername }),
       ...(input.alpn === undefined ? {} : { ALPNProtocols: [...input.alpn] }),
       secureContext: store.context,
-      // The probe examines a certificate that is not valid, so the handshake does not stop at it. The probe then writes
-      // no data. The HTTP probe sends its request only when the check of the certificate passed.
-      // codeql[js/disabling-certificate-validation]
+      // The probe examines a certificate that is not valid, so the handshake does not stop at it. The function reads
+      // the certificate, and then destroys the socket of a certificate that is not valid. It writes no data on it.
       rejectUnauthorized: false,
     });
     secure.on("error", ignore);
@@ -392,7 +394,7 @@ export function handshakePhase(
           ...(alpn === undefined ? {} : { alpn }),
           ...(certificate === undefined ? {} : { certificate }),
         },
-        true,
+        secure.authorized,
       );
     });
     secure.once("error", (error) => {
