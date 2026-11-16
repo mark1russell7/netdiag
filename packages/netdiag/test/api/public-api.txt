@@ -106,7 +106,9 @@ LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
+type LabClassRecall: build/index.chunk2.d.ts#LabClassRecall
 type LabGate: build/index.chunk2.d.ts#LabGate
+type LabRecalls: build/index.chunk2.d.ts#LabRecalls
 type LabRecord: build/index.chunk2.d.ts#LabRecord
 type LabScore: build/index.chunk2.d.ts#LabScore
 type LabStatus: build/index.chunk2.d.ts#LabStatus
@@ -429,7 +431,9 @@ LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
+type LabClassRecall: build/index.chunk2.d.ts#LabClassRecall
 type LabGate: build/index.chunk2.d.ts#LabGate
+type LabRecalls: build/index.chunk2.d.ts#LabRecalls
 type LabRecord: build/index.chunk2.d.ts#LabRecord
 type LabScore: build/index.chunk2.d.ts#LabScore
 type LabStatus: build/index.chunk2.d.ts#LabStatus
@@ -670,7 +674,9 @@ LAYERS: build/layer.chunk.d.ts#LAYERS
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
+type LabClassRecall: build/index.chunk2.d.ts#LabClassRecall
 type LabGate: build/index.chunk2.d.ts#LabGate
+type LabRecalls: build/index.chunk2.d.ts#LabRecalls
 type LabRecord: build/index.chunk2.d.ts#LabRecord
 type LabScore: build/index.chunk2.d.ts#LabScore
 type LabStatus: build/index.chunk2.d.ts#LabStatus
@@ -2096,11 +2102,20 @@ interface LabCause {
   readonly probability: number;
 }
 
+### build/index.chunk2.d.ts#LabClassRecall
+type LabClassRecall = Pick<ClassScore<string>, "label" | "support" | "recallInterval">;
+
 ### build/index.chunk2.d.ts#LabGate
 interface LabGate {
   readonly pass: boolean;
   readonly verdicts: readonly LabVerdict[];
   readonly unbarred: readonly string[];
+}
+
+### build/index.chunk2.d.ts#LabRecalls
+interface LabRecalls {
+  readonly catalog: string;
+  readonly classes: readonly LabClassRecall[];
 }
 
 ### build/index.chunk2.d.ts#LabRecord
@@ -2207,10 +2222,10 @@ declare function expand(feature: Feature, prediction: Prediction): Result<Distri
 declare function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus?: string): Contribution[];
 
 ### build/index.chunk2.d.ts#labBars
-declare function labBars(scores: readonly LabScore[], options?: LabBarsOptions): Result<LabBars, string[]>;
+declare function labBars(scores: readonly LabRecalls[], options?: LabBarsOptions): Result<LabBars, string[]>;
 
 ### build/index.chunk2.d.ts#labGate
-declare function labGate(score: LabScore, bars: LabBars): Result<LabGate, string[]>;
+declare function labGate(score: LabRecalls, bars: LabBars): Result<LabGate, string[]>;
 
 ### build/index.chunk2.d.ts#labRecordOf
 declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis): Result<LabRecord, string>;

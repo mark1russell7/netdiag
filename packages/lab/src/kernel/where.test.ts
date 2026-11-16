@@ -1,8 +1,22 @@
-import type { Fact, PathReport, ReportHop } from "@mark1russell7/netdiag";
+import { labBars, labGate, type Fact, type PathReport, type ReportHop } from "@mark1russell7/netdiag";
+import { wilson } from "@mark1russell7/rigor-statistics";
 import { describe, expect, it } from "vitest";
+import { runScore } from "../bars.ts";
 import { visitRounds, type LabRound, type Visit } from "../run.ts";
 import { KERNEL_PORT, TOWARD_CLIENT, faultPlan } from "./cases.ts";
-import { WHERE_CASES, WHERE_CYCLES, partText, readWhere, samePart, whereMarkdown, whereScores, type WhereCase, type WhereRun } from "./where.ts";
+import {
+  WHERE_CASES,
+  WHERE_CATALOG,
+  WHERE_CYCLES,
+  partText,
+  readWhere,
+  samePart,
+  whereMarkdown,
+  whereRecalls,
+  whereScores,
+  type WhereCase,
+  type WhereRun,
+} from "./where.ts";
 import { kernelPlan, wherePlan } from "./world.ts";
 
 // The where cases with fake visits: no world starts. The reports have the counts of mtr, and lossStart of netdiag reads them.
@@ -167,6 +181,36 @@ describe("the score of the where cases", () => {
     expect(markdown).toContain("| `loss.first-link` | 0 | 0 | – | 0% to 100% | 1 |");
     expect(markdown).toContain("- `loss.last-link#1`: the loss starts from the first link: `gateway`, `target`. The case expects after `gateway`: `target`.");
     expect(markdown).toContain("- `loss.first-link#0`: The visit did not end: no agent");
+    expect(markdown).not.toContain("### The gate");
+  });
+
+  it("gives the recalls of the cases, and labGate of netdiag holds them", () => {
+    const recalls = whereRecalls(whereScores(WHERE_CASES, runs));
+    expect(recalls.catalog).toBe(WHERE_CATALOG);
+    expect(recalls.classes.map(({ label, support }) => ({ label, support }))).toEqual([
+      { label: "loss.last-link", support: 2 },
+      { label: "loss.first-link", support: 0 },
+      { label: "none", support: 1 },
+    ]);
+    expect(recalls.classes[0]?.recallInterval).toEqual(wilson(1, 2));
+    // The low ends are 0.095 for 1 of 2 and 0.207 for 1 of 1. A case with no read gets no-read, so the gate fails.
+    const gate = labGate(recalls, { "loss.last-link": 0.05, "loss.first-link": 0.5, none: 0.1 });
+    expect(gate).toMatchObject({ tag: "ok", value: { pass: false } });
+    expect(gate.tag === "ok" && gate.value.verdicts.map((verdict) => verdict.status)).toEqual(["pass", "no-read", "pass"]);
+    if (gate.tag !== "ok") return;
+    const markdown = whereMarkdown(whereScores(WHERE_CASES, runs), runs, 2, gate.value);
+    expect(markdown).toContain("### The gate: fail");
+    expect(markdown).toContain("| Case | Bar | Lower bound | Reads | Status |");
+    expect(markdown).toContain("| `loss.first-link` | 50% | – | 0 | no-read |");
+  });
+
+  it("gives a score file that runScore of the bars reads, and refuses a run with no read", () => {
+    const recalls = whereRecalls(whereScores(WHERE_CASES, runs));
+    expect(runScore("where-1", { score: recalls, noReads: 1 })).toEqual({ tag: "err", error: "The run where-1 has 1 cases with no read." });
+    expect(runScore("where-2", { score: recalls, noReads: 0 })).toEqual({ tag: "ok", value: recalls });
+    // labBars gives no bar to a case with no read in each run. runScore refuses such runs before labBars reads them.
+    const bars = labBars(Array.from({ length: 5 }, () => recalls));
+    expect(bars.tag === "ok" && Object.keys(bars.value)).toEqual(["loss.last-link", "none"]);
   });
 });
 

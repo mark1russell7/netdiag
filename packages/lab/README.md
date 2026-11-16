@@ -105,13 +105,15 @@ The where cases examine `lossStart` of netdiag: the part of a path where a loss 
 - A run has a read only when each probe ended and the visit has one report of `mtr` that reached the target.
 - With a loss of 30% and 60 cycles, `lossStart` misses the start after the router in approximately 2 of 10000 runs.
 - On the first link, it puts a false start after the router in approximately 5 of 1000 runs.
-- The cases have no bar yet. Their bars come from 5 runs in CI, as the bars of the gate do.
+- The recall of a case is the part of its reads with a hit. `whereRecalls` gives the recalls in the form that `labBars` and `labGate` of netdiag read.
+- The bars of the cases are in `bars/where.json`. They come from 5 runs in CI, as the bars of the gate do.
+- Until a dispatch gives this file, the job `where` has no gate. A file with no bar for a case stops the command.
 
 ```sh
-node packages/lab/src/kernel/where-main.ts --rounds 5 --out lab-where-out
+node packages/lab/src/kernel/where-main.ts --rounds 5 --out lab-where-out --bars packages/lab/bars/where.json
 ```
 
-The command writes `where.ndjson`, `score.json` and `summary.md`. The exit code is 2 when a run has no read. Each other result gives 0.
+The command writes `where.ndjson`, `score.json` and `summary.md`, and `gate.json` with `--bars`. The field `score` of `score.json` has the recalls, so `bars-main.ts` reads the file. The exit code is 2 when a run has no read, and 1 when the gate fails. Each other result gives 0.
 
 ## The bars of the gate
 
@@ -131,6 +133,7 @@ node packages/lab/src/bars-main.ts --out bars-out/kernel.json runs/*
 - Each argument is the folder of one run, or its file `score.json`.
 - A run with a case with no read gives no bars. The exit code is then 2.
 - The options `--k` and `--minimum` set the number of standard deviations (2) and the fewest runs (5).
+- The option `--title` sets the heading of the table. The job `bars` also gives `where.json` from the runs of the job `where`.
 
 ### The bars in the repository
 

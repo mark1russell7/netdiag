@@ -104,6 +104,20 @@ export function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Resul
   });
 }
 
+/** The recall of one hypothesis in one run of a lab: its number of records and the Wilson interval of its recall. */
+export type LabClassRecall = Pick<ClassScore<string>, "label" | "support" | "recallInterval">;
+
+/**
+ * The recalls of one run of a lab: the part of a score that `labGate` and `labBars` read. A `LabScore` is one. A lab
+ * with no catalog of faults, for example a lab of the start of a loss, gives one for its cases.
+ */
+export interface LabRecalls {
+  /** The version of the catalog, or of the set of cases. */
+  readonly catalog: string;
+  /** The recall of each hypothesis or case, in the order of the catalog. */
+  readonly classes: readonly LabClassRecall[];
+}
+
 /** The least lower end of the Wilson interval of the recall, for each hypothesis that the gate holds. */
 export type LabBars = Readonly<Record<string, number>>;
 
@@ -136,9 +150,9 @@ export interface LabGate {
  * This function holds the recall of each hypothesis with a bar. A hypothesis passes when the lower end of its
  * recall interval is the bar or more. A bar for a hypothesis that is not in the score is an error.
  */
-export function labGate(score: LabScore, bars: LabBars): Result<LabGate, string[]> {
+export function labGate(score: LabRecalls, bars: LabBars): Result<LabGate, string[]> {
   const problems: string[] = [];
-  const labels = new Set(score.table.labels);
+  const labels = new Set(score.classes.map((each) => each.label));
   for (const [hypothesis, bar] of Object.entries(bars)) {
     if (!labels.has(hypothesis)) problems.push(`The bar of "${hypothesis}" is not for a hypothesis of the catalog ${score.catalog}.`);
     if (!(bar >= 0 && bar <= 1)) problems.push(`The bar of "${hypothesis}" is ${bar}. A bar is from 0 to 1.`);
@@ -179,7 +193,7 @@ export const LAB_BAR_STEP = 0.001;
  * - A hypothesis with no read in each run gets no bar. A hypothesis with a read in only some runs is an error.
  * - Fewer runs than `minimum`, and scores of different catalogs, are errors.
  */
-export function labBars(scores: readonly LabScore[], options: LabBarsOptions = {}): Result<LabBars, string[]> {
+export function labBars(scores: readonly LabRecalls[], options: LabBarsOptions = {}): Result<LabBars, string[]> {
   const k = options.k ?? 2;
   const minimum = options.minimum ?? 5;
   const problems: string[] = [];

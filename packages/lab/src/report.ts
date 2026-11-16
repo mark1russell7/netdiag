@@ -31,6 +31,17 @@ export function labReport(catalog: Catalog, runs: readonly CaseRun[], rounds: nu
 /** This function gives a part from 0 to 1 as a whole percent, or a dash for no value. */
 export const percent = (x: number | undefined): string => (x === undefined ? "–" : `${(100 * x).toFixed(0)}%`);
 
+/**
+ * This function gives the gate as lines of Markdown: a heading with the result, and a table of the verdicts. `column` is
+ * the heading of the first column. `support` is the heading of the column of the counts.
+ */
+export function gateLines(gate: LabGate, column = "Hypothesis", support = "Cases"): string[] {
+  const lines = [`### The gate: ${gate.pass ? "pass" : "fail"}`, "", `| ${column} | Bar | Lower bound | ${support} | Status |`, "| --- | ---: | ---: | ---: | --- |"];
+  for (const v of gate.verdicts) lines.push(`| \`${v.hypothesis}\` | ${percent(v.bar)} | ${percent(v.low)} | ${v.support} | ${v.status} |`);
+  lines.push("");
+  return lines;
+}
+
 /** A class of the catalog that a lab cannot make yet, and the change that it waits for. */
 export interface LaterClass {
   readonly hypothesis: string;
@@ -71,11 +82,7 @@ export function reportMarkdown(report: LabReport, gate?: LabGate, options: Repor
     for (const run of report.noReads) lines.push(`- \`${run.case}#${run.round}\`: ${run.reason}`);
     lines.push("");
   }
-  if (gate !== undefined) {
-    lines.push(`### The gate: ${gate.pass ? "pass" : "fail"}`, "", "| Hypothesis | Bar | Lower bound | Cases | Status |", "| --- | ---: | ---: | ---: | --- |");
-    for (const v of gate.verdicts) lines.push(`| \`${v.hypothesis}\` | ${percent(v.bar)} | ${percent(v.low)} | ${v.support} | ${v.status} |`);
-    lines.push("");
-  }
+  if (gate !== undefined) lines.push(...gateLines(gate));
   const later = options.later ?? [];
   if (later.length > 0) {
     lines.push("### Later: the classes with no case and no bar", "");

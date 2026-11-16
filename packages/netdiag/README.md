@@ -325,6 +325,8 @@ A lab makes one fault on purpose. Then netdiag must name it. The entry `@mark1ru
 - The spread is `noiseFloor` of `@mark1russell7/rigor-statistics`: 2 standard deviations, or `k` with the option `k`.
 - `labBars` rounds each bar down to `LAB_BAR_STEP` (0.001). A bar is 0 or more.
 - A hypothesis with a read in only some runs is an error. A hypothesis with no read in each run gets no bar.
+- `labGate` and `labBars` read only a `LabRecalls`: the catalog, and the support and the recall interval of each class.
+- A `LabScore` is a `LabRecalls`. A lab with no catalog of faults gives a `LabRecalls` for its cases, and uses the same gate.
 
 ```ts
 import { STANDARD_CATALOG, diagnose, labGate, labRecordOf, scoreLab } from "@mark1russell7/netdiag/diagnosis";
