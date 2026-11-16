@@ -32,7 +32,9 @@ ConnectOutcome: build/counts.chunk.d.ts#ConnectOutcome
 type Contribution: build/index.chunk2.d.ts#Contribution
 DEFAULT_MAX_BYTES: build/index.d.ts#DEFAULT_MAX_BYTES
 DEFAULT_MAX_PORTS_PER_HOST: build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+DEFAULT_OWNER_REDIRECTS: build/index.d.ts#DEFAULT_OWNER_REDIRECTS
 DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
+DEFAULT_RDAP_BODY: build/index.d.ts#DEFAULT_RDAP_BODY
 DEFAULT_TIMEOUT_MS: build/index.d.ts#DEFAULT_TIMEOUT_MS
 DNS_ANSWER: build/counts.chunk.d.ts#DNS_ANSWER
 DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
@@ -97,6 +99,7 @@ LINK_STATES: build/counts.chunk.d.ts#LINK_STATES
 LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
+LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
@@ -114,7 +117,9 @@ LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
+MAX_OWNER_ADDRESSES: build/index.d.ts#MAX_OWNER_ADDRESSES
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
+MAX_REGISTRY_TEXT: build/core.chunk.d.ts#MAX_REGISTRY_TEXT
 MIN_CONNECT_MS: build/core.chunk.d.ts#MIN_CONNECT_MS
 MTU_OUTCOMES: build/counts.chunk.d.ts#MTU_OUTCOMES
 MTU_SEARCHES: build/core.chunk.d.ts#MTU_SEARCHES
@@ -128,8 +133,16 @@ MtuTry: build/counts.chunk.d.ts#MtuTry
 MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
 NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk2.d.ts#NONE
+OWNER_OUTCOMES: build/counts.chunk.d.ts#OWNER_OUTCOMES
+OWNER_PROBE_ID: build/index.d.ts#OWNER_PROBE_ID
 type Observable: build/index.chunk2.d.ts#Observable
 type Observation: build/counts.chunk.d.ts#Observation
+type OwnerExchange: build/index.d.ts#OwnerExchange
+type OwnerInput: build/index.d.ts#OwnerInput
+OwnerNetwork: build/counts.chunk.d.ts#OwnerNetwork
+OwnerOutcome: build/counts.chunk.d.ts#OwnerOutcome
+type OwnerProbeOptions: build/index.d.ts#OwnerProbeOptions
+type OwnerRaw: build/index.d.ts#OwnerRaw
 PACKET_PROTOCOLS: build/counts.chunk.d.ts#PACKET_PROTOCOLS
 PAIR_LEVEL: build/core.chunk.d.ts#PAIR_LEVEL
 PARTS: build/index.chunk2.d.ts#PARTS
@@ -137,6 +150,7 @@ PATH_CAPTURE: build/counts.chunk.d.ts#PATH_CAPTURE
 PATH_LOSS_BINS: build/core.chunk.d.ts#PATH_LOSS_BINS
 PATH_MTU: build/counts.chunk.d.ts#PATH_MTU
 PATH_MTU_VALUES: build/core.chunk.d.ts#PATH_MTU_VALUES
+PATH_OWNER: build/counts.chunk.d.ts#PATH_OWNER
 PATH_REPORT: build/counts.chunk.d.ts#PATH_REPORT
 PATH_THROUGHPUT: build/counts.chunk.d.ts#PATH_THROUGHPUT
 PATH_TRACE: build/counts.chunk.d.ts#PATH_TRACE
@@ -145,6 +159,7 @@ PacketProtocol: build/counts.chunk.d.ts#PacketProtocol
 type Part: build/index.chunk2.d.ts#Part
 PathCapture: build/counts.chunk.d.ts#PathCapture
 PathMtu: build/counts.chunk.d.ts#PathMtu
+PathOwner: build/counts.chunk.d.ts#PathOwner
 PathReport: build/counts.chunk.d.ts#PathReport
 PathThroughput: build/counts.chunk.d.ts#PathThroughput
 PathTrace: build/counts.chunk.d.ts#PathTrace
@@ -155,12 +170,19 @@ type ProbeChoice: build/index.chunk2.d.ts#ProbeChoice
 type ProbeContext: build/counts.chunk.d.ts#ProbeContext
 type ProbeMode: build/counts.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/core.chunk.d.ts#ProbeOutcome
+RDAP_BOOTSTRAP: build/core.chunk.d.ts#RDAP_BOOTSTRAP
+RDAP_REGISTRIES: build/core.chunk.d.ts#RDAP_REGISTRIES
 RECORD_TYPES: build/counts.chunk.d.ts#RECORD_TYPES
 RTO_ALPHA: build/core.chunk.d.ts#RTO_ALPHA
 RTO_BETA: build/core.chunk.d.ts#RTO_BETA
 RTO_K: build/core.chunk.d.ts#RTO_K
 type RangeGrant: build/core.chunk.d.ts#RangeGrant
 type RankOptions: build/index.chunk2.d.ts#RankOptions
+type RdapBootstrap: build/core.chunk.d.ts#RdapBootstrap
+type RdapGet: build/index.d.ts#RdapGet
+type RdapReply: build/index.d.ts#RdapReply
+type RdapRequest: build/index.d.ts#RdapRequest
+type RdapService: build/core.chunk.d.ts#RdapService
 type Reach: build/index.chunk2.d.ts#Reach
 ReadOptions: build/core.chunk.d.ts#ReadOptions
 Reading: build/core.chunk.d.ts#Reading
@@ -282,22 +304,28 @@ linkStateOf: build/index.d.ts#linkStateOf
 lossOf: build/core.chunk.d.ts#lossOf
 mtuOf: build/counts.chunk.d.ts#mtuOf
 namedGrant: build/core.chunk.d.ts#namedGrant
+networkQuery: build/core.chunk.d.ts#networkQuery
 nextMtuSize: build/counts.chunk.d.ts#nextMtuSize
 observe: build/counts.chunk.d.ts#observe
+ownerProbe: build/index.d.ts#ownerProbe
 packetPairs: build/core.chunk.d.ts#packetPairs
 parseCidr: build/index.chunk.d.ts#parseCidr
 parseTarget: build/counts.chunk.d.ts#parseTarget
 pdv: build/core.chunk.d.ts#pdv
 predictive: build/index.chunk2.d.ts#predictive
 rankProbes: build/index.chunk2.d.ts#rankProbes
+readBootstrap: build/core.chunk.d.ts#readBootstrap
 readEvidence: build/core.chunk.d.ts#readEvidence
 readFact: build/counts.chunk.d.ts#readFact
+readNetwork: build/core.chunk.d.ts#readNetwork
 resolvedGrant: build/core.chunk.d.ts#resolvedGrant
 rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
 rtoOf: build/core.chunk.d.ts#rtoOf
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
+secureBase: build/core.chunk.d.ts#secureBase
+serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
@@ -384,6 +412,7 @@ LINK_STATE: build/counts.chunk.d.ts#LINK_STATE
 LINK_STATES: build/counts.chunk.d.ts#LINK_STATES
 LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
+LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
@@ -400,6 +429,7 @@ LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
+MAX_REGISTRY_TEXT: build/core.chunk.d.ts#MAX_REGISTRY_TEXT
 MIN_CONNECT_MS: build/core.chunk.d.ts#MIN_CONNECT_MS
 MTU_OUTCOMES: build/counts.chunk.d.ts#MTU_OUTCOMES
 MTU_SEARCHES: build/core.chunk.d.ts#MTU_SEARCHES
@@ -413,8 +443,11 @@ MtuTry: build/counts.chunk.d.ts#MtuTry
 MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
 NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk2.d.ts#NONE
+OWNER_OUTCOMES: build/counts.chunk.d.ts#OWNER_OUTCOMES
 type Observable: build/index.chunk2.d.ts#Observable
 type Observation: build/counts.chunk.d.ts#Observation
+OwnerNetwork: build/counts.chunk.d.ts#OwnerNetwork
+OwnerOutcome: build/counts.chunk.d.ts#OwnerOutcome
 PACKET_PROTOCOLS: build/counts.chunk.d.ts#PACKET_PROTOCOLS
 PAIR_LEVEL: build/core.chunk.d.ts#PAIR_LEVEL
 PARTS: build/index.chunk2.d.ts#PARTS
@@ -422,6 +455,7 @@ PATH_CAPTURE: build/counts.chunk.d.ts#PATH_CAPTURE
 PATH_LOSS_BINS: build/core.chunk.d.ts#PATH_LOSS_BINS
 PATH_MTU: build/counts.chunk.d.ts#PATH_MTU
 PATH_MTU_VALUES: build/core.chunk.d.ts#PATH_MTU_VALUES
+PATH_OWNER: build/counts.chunk.d.ts#PATH_OWNER
 PATH_REPORT: build/counts.chunk.d.ts#PATH_REPORT
 PATH_THROUGHPUT: build/counts.chunk.d.ts#PATH_THROUGHPUT
 PATH_TRACE: build/counts.chunk.d.ts#PATH_TRACE
@@ -430,6 +464,7 @@ PacketProtocol: build/counts.chunk.d.ts#PacketProtocol
 type Part: build/index.chunk2.d.ts#Part
 PathCapture: build/counts.chunk.d.ts#PathCapture
 PathMtu: build/counts.chunk.d.ts#PathMtu
+PathOwner: build/counts.chunk.d.ts#PathOwner
 PathReport: build/counts.chunk.d.ts#PathReport
 PathThroughput: build/counts.chunk.d.ts#PathThroughput
 PathTrace: build/counts.chunk.d.ts#PathTrace
@@ -440,12 +475,16 @@ type ProbeChoice: build/index.chunk2.d.ts#ProbeChoice
 type ProbeContext: build/counts.chunk.d.ts#ProbeContext
 type ProbeMode: build/counts.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/core.chunk.d.ts#ProbeOutcome
+RDAP_BOOTSTRAP: build/core.chunk.d.ts#RDAP_BOOTSTRAP
+RDAP_REGISTRIES: build/core.chunk.d.ts#RDAP_REGISTRIES
 RECORD_TYPES: build/counts.chunk.d.ts#RECORD_TYPES
 RTO_ALPHA: build/core.chunk.d.ts#RTO_ALPHA
 RTO_BETA: build/core.chunk.d.ts#RTO_BETA
 RTO_K: build/core.chunk.d.ts#RTO_K
 type RangeGrant: build/core.chunk.d.ts#RangeGrant
 type RankOptions: build/index.chunk2.d.ts#RankOptions
+type RdapBootstrap: build/core.chunk.d.ts#RdapBootstrap
+type RdapService: build/core.chunk.d.ts#RdapService
 type Reach: build/index.chunk2.d.ts#Reach
 ReadOptions: build/core.chunk.d.ts#ReadOptions
 Reading: build/core.chunk.d.ts#Reading
@@ -546,6 +585,7 @@ layerRank: build/layer.chunk.d.ts#layerRank
 lossOf: build/core.chunk.d.ts#lossOf
 mtuOf: build/counts.chunk.d.ts#mtuOf
 namedGrant: build/core.chunk.d.ts#namedGrant
+networkQuery: build/core.chunk.d.ts#networkQuery
 nextMtuSize: build/counts.chunk.d.ts#nextMtuSize
 observe: build/counts.chunk.d.ts#observe
 packetPairs: build/core.chunk.d.ts#packetPairs
@@ -554,14 +594,18 @@ parseTarget: build/counts.chunk.d.ts#parseTarget
 pdv: build/core.chunk.d.ts#pdv
 predictive: build/index.chunk2.d.ts#predictive
 rankProbes: build/index.chunk2.d.ts#rankProbes
+readBootstrap: build/core.chunk.d.ts#readBootstrap
 readEvidence: build/core.chunk.d.ts#readEvidence
 readFact: build/counts.chunk.d.ts#readFact
+readNetwork: build/core.chunk.d.ts#readNetwork
 resolvedGrant: build/core.chunk.d.ts#resolvedGrant
 rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
 rtoOf: build/core.chunk.d.ts#rtoOf
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
+secureBase: build/core.chunk.d.ts#secureBase
+serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
 widen: build/core.chunk.d.ts#widen
 wifiChanges: build/core.chunk.d.ts#wifiChanges
@@ -835,6 +879,9 @@ interface LossEstimate {
   readonly high: number;
 }
 
+### build/core.chunk.d.ts#MAX_REGISTRY_TEXT
+declare const MAX_REGISTRY_TEXT = 200;
+
 ### build/core.chunk.d.ts#MIN_CONNECT_MS
 declare const MIN_CONNECT_MS = 1;
 
@@ -882,6 +929,12 @@ type ProbeOutcome<R> = {
   readonly reason: string;
 };
 
+### build/core.chunk.d.ts#RDAP_BOOTSTRAP
+declare const RDAP_BOOTSTRAP: Readonly<Record<AddressFamily, string>>;
+
+### build/core.chunk.d.ts#RDAP_REGISTRIES
+declare const RDAP_REGISTRIES: readonly string[];
+
 ### build/core.chunk.d.ts#RTO_ALPHA
 declare const RTO_ALPHA: number;
 
@@ -897,6 +950,19 @@ interface RangeGrant {
   readonly cidr: string;
   readonly basis: GrantBasis;
   readonly note?: string | undefined;
+}
+
+### build/core.chunk.d.ts#RdapBootstrap
+interface RdapBootstrap {
+  readonly family: AddressFamily;
+  readonly publication?: string | undefined;
+  readonly services: readonly RdapService[];
+}
+
+### build/core.chunk.d.ts#RdapService
+interface RdapService {
+  readonly ranges: readonly Cidr[];
+  readonly urls: readonly string[];
 }
 
 ### build/core.chunk.d.ts#ReadOptions
@@ -1091,14 +1157,23 @@ declare function lossOf(sent: number, received: number): LossEstimate | undefine
 ### build/core.chunk.d.ts#namedGrant
 declare function namedGrant(t: Target, note?: string): Grant;
 
+### build/core.chunk.d.ts#networkQuery
+declare function networkQuery(base: URL, address: string): URL;
+
 ### build/core.chunk.d.ts#packetPairs
 declare function packetPairs(capture: PathCapture): number[];
 
 ### build/core.chunk.d.ts#pdv
 declare function pdv(delaysMs: readonly number[]): number[];
 
+### build/core.chunk.d.ts#readBootstrap
+declare function readBootstrap(text: string, family: AddressFamily): Result<RdapBootstrap, string>;
+
 ### build/core.chunk.d.ts#readEvidence
 declare function readEvidence(facts: readonly Fact[], options?: ReadOptions): Reading;
+
+### build/core.chunk.d.ts#readNetwork
+declare function readNetwork(text: string): Result<OwnerNetwork, string>;
 
 ### build/core.chunk.d.ts#resolvedGrant
 declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;
@@ -1113,6 +1188,12 @@ declare function rtoOf(samplesMs: readonly number[], options?: RtoOptions): RtoE
 declare function scopeOf(grants: readonly Grant[], options?: {
   readonly maxPortsPerHost?: number;
 }): Result<Scope, string[]>;
+
+### build/core.chunk.d.ts#secureBase
+declare function secureBase(service: RdapService): URL | undefined;
+
+### build/core.chunk.d.ts#serviceFor
+declare function serviceFor(bootstrap: RdapBootstrap, address: string): RdapService | undefined;
 
 ### build/core.chunk.d.ts#widen
 declare function widen(scope: Scope, grants: readonly Grant[]): Result<Scope, string[]>;
@@ -1302,6 +1383,9 @@ declare const LINK_STATE: FactKind<LinkState>;
 ### build/counts.chunk.d.ts#LINK_STATES
 declare const LINK_STATES: readonly ["up", "down"];
 
+### build/counts.chunk.d.ts#LOOKUP_KINDS
+declare const LOOKUP_KINDS: readonly FactKind<unknown>[];
+
 ### build/counts.chunk.d.ts#LinkInterface
 interface LinkInterface {
   readonly name: string;
@@ -1358,6 +1442,9 @@ type MtuTryResult = (typeof MTU_TRY_RESULTS)[number];
 ### build/counts.chunk.d.ts#NATIVE_KINDS
 declare const NATIVE_KINDS: readonly FactKind<unknown>[];
 
+### build/counts.chunk.d.ts#OWNER_OUTCOMES
+declare const OWNER_OUTCOMES: readonly ["found", "unregistered", "special", "unlisted", "failed"];
+
 ### build/counts.chunk.d.ts#Observation
 interface Observation<V = unknown> {
   readonly kind: FactKind<V>;
@@ -1365,6 +1452,22 @@ interface Observation<V = unknown> {
   readonly value: V;
   readonly time?: FactTime | undefined;
 }
+
+### build/counts.chunk.d.ts#OwnerNetwork
+interface OwnerNetwork {
+  readonly handle: string;
+  readonly name?: string | undefined;
+  readonly start: string;
+  readonly end: string;
+  readonly cidrs: readonly string[];
+  readonly holder?: string | undefined;
+  readonly description?: string | undefined;
+  readonly country?: string | undefined;
+  readonly originAs: readonly number[];
+}
+
+### build/counts.chunk.d.ts#OwnerOutcome
+type OwnerOutcome = (typeof OWNER_OUTCOMES)[number];
 
 ### build/counts.chunk.d.ts#PACKET_PROTOCOLS
 declare const PACKET_PROTOCOLS: readonly ["tcp", "udp", "other"];
@@ -1374,6 +1477,9 @@ declare const PATH_CAPTURE: FactKind<PathCapture>;
 
 ### build/counts.chunk.d.ts#PATH_MTU
 declare const PATH_MTU: FactKind<PathMtu>;
+
+### build/counts.chunk.d.ts#PATH_OWNER
+declare const PATH_OWNER: FactKind<PathOwner>;
 
 ### build/counts.chunk.d.ts#PATH_REPORT
 declare const PATH_REPORT: FactKind<PathReport>;
@@ -1409,6 +1515,16 @@ interface PathMtu {
   readonly mtu?: number | undefined;
   readonly stop?: MtuStop | undefined;
   readonly tries: readonly MtuTry[];
+  readonly detail?: string | undefined;
+}
+
+### build/counts.chunk.d.ts#PathOwner
+interface PathOwner {
+  readonly address: string;
+  readonly outcome: OwnerOutcome;
+  readonly class?: string | undefined;
+  readonly registry?: string | undefined;
+  readonly network?: OwnerNetwork | undefined;
   readonly detail?: string | undefined;
 }
 
@@ -2050,6 +2166,12 @@ interface ConnectOptions {
 ### build/index.d.ts#DEFAULT_MAX_BYTES
 export declare const DEFAULT_MAX_BYTES = 65536;
 
+### build/index.d.ts#DEFAULT_OWNER_REDIRECTS
+export declare const DEFAULT_OWNER_REDIRECTS = 2;
+
+### build/index.d.ts#DEFAULT_RDAP_BODY
+export declare const DEFAULT_RDAP_BODY = 524288;
+
 ### build/index.d.ts#DEFAULT_TIMEOUT_MS
 export declare const DEFAULT_TIMEOUT_MS = 5e3;
 
@@ -2151,6 +2273,63 @@ interface LinkRaw {
   readonly gateway?: string | undefined;
   readonly start: number;
   readonly end: number;
+}
+
+### build/index.d.ts#MAX_OWNER_ADDRESSES
+export declare const MAX_OWNER_ADDRESSES = 64;
+
+### build/index.d.ts#OWNER_PROBE_ID
+export declare const OWNER_PROBE_ID = "rdap.owner";
+
+### build/index.d.ts#OwnerExchange
+interface OwnerExchange {
+  readonly url: string;
+  readonly status?: number | undefined;
+  readonly location?: string | undefined;
+  readonly body?: string | undefined;
+  readonly error?: string | undefined;
+}
+
+### build/index.d.ts#OwnerInput
+interface OwnerInput {
+  readonly addresses: readonly string[];
+  readonly registries?: readonly string[] | undefined;
+}
+
+### build/index.d.ts#OwnerProbeOptions
+interface OwnerProbeOptions {
+  readonly maxRedirects?: number | undefined;
+  readonly maxBody?: number | undefined;
+}
+
+### build/index.d.ts#OwnerRaw
+interface OwnerRaw {
+  readonly bootstraps: readonly {
+    readonly family: AddressFamily;
+    readonly exchange: OwnerExchange;
+  }[];
+  readonly lookups: readonly {
+    readonly address: string;
+    readonly exchanges: readonly OwnerExchange[];
+  }[];
+}
+
+### build/index.d.ts#RdapGet
+type RdapGet = (request: RdapRequest, signal: AbortSignal) => Promise<RdapReply>;
+
+### build/index.d.ts#RdapReply
+interface RdapReply {
+  readonly status: number;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly body: string;
+}
+
+### build/index.d.ts#RdapRequest
+interface RdapRequest {
+  readonly host: string;
+  readonly url: string;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly what: string;
 }
 
 ### build/index.d.ts#TCP_PROBE
@@ -2266,6 +2445,9 @@ export declare function linkProbe(read?: () => InterfaceTable): Probe<LinkInput,
 
 ### build/index.d.ts#linkStateOf
 export declare function linkStateOf(interfaces: readonly LinkInterface[], gateway?: string): LinkState;
+
+### build/index.d.ts#ownerProbe
+export declare function ownerProbe(get: RdapGet, options?: OwnerProbeOptions): Probe<OwnerInput, OwnerRaw>;
 
 ### build/index.d.ts#tcpProbe
 export declare function tcpProbe(options?: ConnectOptions): Probe<TcpInput, TcpRaw>;

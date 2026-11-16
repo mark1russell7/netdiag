@@ -34,7 +34,7 @@ export interface RdapReply {
 /**
  * The port of the probe of the owners. The port sends one GET request at the pace of its host, and gives the answer.
  *
- * - The port does not follow a redirect. The probe follows a redirect only to an permitted registry.
+ * - The port does not follow a redirect. The probe follows a redirect only to a permitted registry.
  * - The port gives each status. It throws when the registry gives no answer, and when the signal stops the request.
  */
 export type RdapGet = (request: RdapRequest, signal: AbortSignal) => Promise<RdapReply>;
