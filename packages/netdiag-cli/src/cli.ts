@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { DEFAULT_PING_COUNT, MAX_PING_COUNT } from "@mark1russell7/netdiag/tools";
+import { DEFAULT_MTR_CYCLES, DEFAULT_PING_COUNT, MAX_MTR_CYCLES, MAX_PING_COUNT } from "@mark1russell7/netdiag/tools";
 import { createProcedureCli, type Print, type ProcedureCli, type Terminal } from "@procedures/cli-kit";
 import { defineProcedure } from "@procedures/client";
 import { z } from "zod";
@@ -7,6 +6,9 @@ import { check, systemDeps } from "./check.ts";
 import type { CheckOptions } from "./plan.ts";
 import { formatReport, type CheckReport } from "./report.ts";
 import { SCHEMES } from "./scheme.ts";
+import { packageVersion } from "./version.ts";
+
+export { packageVersion } from "./version.ts";
 
 // The command line of netdiag. `@procedures/cli-kit` makes the flags from the input schema of the command `check`, and
 // gives the help, `--json` and the exit code.
@@ -46,6 +48,17 @@ const CHECK_INPUT = z.object({
     .boolean()
     .optional()
     .describe("Search the MTU of the path to each address. The default searches only after a time-out of TLS or HTTP. --no-mtu starts no search"),
+  mtrCycles: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_MTR_CYCLES)
+    .optional()
+    .describe(`The number of cycles of mtr to each address. The default 0 starts no mtr, and --owners sets ${DEFAULT_MTR_CYCLES}`),
+  owners: z
+    .boolean()
+    .optional()
+    .describe("Look up the owner network of each hop of mtr in the public registries of RDAP. It grants the hosts of the registries"),
 });
 
 /** This function makes the command line of netdiag with the command `check`. */
@@ -70,13 +83,6 @@ export function createNetdiagCli(options: NetdiagCliOptions): ProcedureCli {
     print: options.print,
     terminal: options.terminal,
   });
-}
-
-/** This function gives the version in `package.json` of this package. */
-export function packageVersion(): string {
-  const manifest: unknown = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-  const version = typeof manifest === "object" && manifest !== null && "version" in manifest ? manifest.version : undefined;
-  return typeof version === "string" ? version : "0.0.0";
 }
 
 /** This function operates the command line on this computer, and gives the exit code. */

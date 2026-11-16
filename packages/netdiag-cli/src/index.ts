@@ -11,6 +11,7 @@ export {
   CHECK_FORMAT,
   MAX_REPORT_PROBLEMS,
   formatReport,
+  ownerText,
   percentOf,
   readCheckReport,
   reportOf,
@@ -20,4 +21,5 @@ export {
   type CheckReport,
 } from "./report.ts";
 export { check, systemDeps, type CheckDeps } from "./check.ts";
+export { RDAP_ACTIVE_HOSTS, RDAP_SOURCE, rdapPort, systemRdap, userAgentOf } from "./rdap.ts";
 export { PROGRAM, createNetdiagCli, main, packageVersion, type NetdiagCliOptions } from "./cli.ts";

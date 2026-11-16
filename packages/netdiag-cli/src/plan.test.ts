@@ -1,5 +1,5 @@
-import { decideScope, scopeOf, target, type Grant } from "@mark1russell7/netdiag";
-import { DEFAULT_PING_COUNT, MAX_PING_COUNT } from "@mark1russell7/netdiag/tools";
+import { RDAP_REGISTRIES, decideScope, scopeOf, target, type Grant } from "@mark1russell7/netdiag";
+import { DEFAULT_MTR_CYCLES, DEFAULT_PING_COUNT, MAX_MTR_CYCLES, MAX_PING_COUNT } from "@mark1russell7/netdiag/tools";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { planCheck, type CheckOptions, type CheckPlan, type PlanSystem } from "./plan.ts";
@@ -23,6 +23,25 @@ describe("the plan of a check", () => {
   it("searches the MTU of each address with mtu true, and never with mtu false", () => {
     expect(planned({ target: "example.com", mtu: true }).mtu).toBe("always");
     expect(planned({ target: "example.com", mtu: false }).mtu).toBe("never");
+  });
+
+  it("starts mtr with mtrCycles, and grants the registries of RDAP only with owners", () => {
+    const plain = planned({ target: "example.com" });
+    expect([plain.mtrCycles, plain.owners]).toEqual([0, false]);
+    expect(plain.visit.grants.some((grant) => grant.kind === "host" && RDAP_REGISTRIES.includes(grant.host))).toBe(false);
+    expect(planned({ target: "example.com", mtrCycles: 5 }).mtrCycles).toBe(5);
+    const owners = planned({ target: "example.com", owners: true });
+    expect([owners.mtrCycles, owners.owners]).toEqual([DEFAULT_MTR_CYCLES, true]);
+    const registries = owners.visit.grants.filter((grant) => grant.note === "a registry of RDAP for --owners");
+    expect(registries.map((grant) => [grant.kind === "host" ? grant.host : grant.cidr, grant.basis])).toEqual(
+      ["data.iana.org", ...RDAP_REGISTRIES].map((host) => [host, "named"]),
+    );
+  });
+
+  it("refuses a number of cycles of mtr out of the range, and owners with no mtr", () => {
+    expect(problems({ target: "example.com", mtrCycles: MAX_MTR_CYCLES + 1 })).toEqual([`The number of cycles of mtr ${MAX_MTR_CYCLES + 1} is not an integer from 0 to ${MAX_MTR_CYCLES}.`]);
+    expect(problems({ target: "example.com", mtrCycles: 1.5 })).toHaveLength(1);
+    expect(problems({ target: "example.com", owners: true, mtrCycles: 0 })[0]).toMatch(/--mtr-cycles 1 or more/);
   });
 
   it("reads a name with the defaults: https, the path /, the default ping count and no port", () => {

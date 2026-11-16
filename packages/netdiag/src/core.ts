@@ -57,7 +57,7 @@ export {
   type RdapBootstrap,
   type RdapService,
 } from "./lookups/rdap.ts";
-export { DEFAULT_PING_COUNT, MAX_PING_COUNT } from "./tools/counts.ts";
+export { DEFAULT_MTR_CYCLES, DEFAULT_PING_COUNT, MAX_MTR_CYCLES, MAX_PING_COUNT } from "./tools/counts.ts";
 export {
   MTU_SEARCHES,
   VISIT_ROLES,

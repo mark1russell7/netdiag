@@ -42,9 +42,13 @@ The check has these steps:
 | `--grant <cidr>` | None | It adds a CIDR range that you own. Give the option again for more ranges. |
 | `--ping-count <count>` | 4 | It sets the number of echo requests to each address, from 0 to 100. A measure of the loss needs 20 or more. |
 | `--mtu`, `--no-mtu` | A search after a time-out | `--mtu` searches the MTU of the path to each address. `--no-mtu` starts no search. |
+| `--mtr-cycles <count>` | 0, or 20 with `--owners` | It sets the number of cycles of `mtr` to each address, from 0 to 100. 0 starts no `mtr`. |
+| `--owners` | Off | It looks up the owner network of each hop of `mtr` in the public registries of RDAP. |
 | `--json` | Off | It writes the whole report as JSON. |
 | `--help` | Off | It shows the options. |
 | `--version` | Off | It shows the version. |
+
+netdiag starts `mtr` only on Linux and macOS. Thus `--owners` gives no owner on Windows.
 
 The exit code is 0 after a check. It is 1 for an option that is not valid. A fault of the network does not change the exit code.
 
@@ -57,8 +61,11 @@ netdiag sends packets only to the hosts that you name or own. The check grants o
 - the gateway, when you give `--gateway`
 - each range of `--grant`
 - each address that the resolver gives for a granted name
+- with `--owners`, the bootstrap host of IANA (`data.iana.org`) and the RDAP host of each regional registry
 
 The check sends no packet to another host. A grant with a problem stops the check before the first probe. Thus a typing error cannot make the scope wider.
+
+The lookups of `--owners` send the address of each public hop to its registry, over HTTPS. They go through `polite-crawler`, so each registry gets one request at a time, with a rest between two requests. A registry that refuses netdiag stops for the rest of the check.
 
 ## The output
 
@@ -80,6 +87,15 @@ The next step (it can give 0.01 bits of information about the causes)
   Run the check again with --ping-count 20.
 
 12 observations from 8 facts. The option --json gives each fact.
+```
+
+With `--owners`, the text also shows the owner of each hop. The addresses and the networks are examples.
+
+```text
+The owners of the hops (3)
+  10.0.0.1: a special-purpose address (private), with no lookup
+  8.8.4.4: EXAMPLE-8 (NET-8-8-4-0-1), Example Networks Inc., US, AS64500
+  45.0.0.9: the registry has no network for this address
 ```
 
 The probabilities come from the evidence of this check only. The next step is the option or the probe that gives the most information about the 3 most probable causes. Its gain is in bits. A small gain tells that no probe can change the probabilities much.
@@ -119,9 +135,12 @@ The pure parts of the command are also exports. A program can use them with its 
 | `planCheck(options, system)` | It gives the plan of a check with the grants of its scope, or each problem of the options. |
 | `reportOf(plan, steps)` | It gives the report of the steps of a visit. |
 | `formatReport(report)` | It gives the lines of the text output. |
+| `ownerText(owner)` | It gives the text of the owner of a hop: the network, its holder, its country and its origin AS. |
 | `readCheckReport(value)` | It reads a JSON report and gives the report, or at most 20 problems. |
 | `nextSteps(diagnosis, plan, addressed)` | It gives the next steps, from the largest gain. |
 | `check(options, deps)` | It plans a check, starts the visit with the given clock and tool host, and gives the report. |
+| `rdapPort(pace, transport)` | It gives the port of the lookups of the owners over `send` of `polite-crawler/api`. |
+| `systemRdap(version)` | It gives the port of this computer, with the `fetch` of Node.js and the pace of `polite-crawler`. |
 | `createNetdiagCli(options)` | It makes the command line with a given check, output and terminal. |
 
 ## License

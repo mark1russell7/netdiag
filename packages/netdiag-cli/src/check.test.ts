@@ -3,10 +3,10 @@ import { realClock } from "@mark1russell7/algebra/clock";
 import type { ToolRunOptions } from "@mark1russell7/netdiag/tools";
 import { authority, fakeToolHost, listen, startDnsServer, type Authority, type DnsServer, type FakeRule, type Pems } from "@netdiag/fixtures";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { VisitRole } from "@mark1russell7/netdiag";
+import { PATH_OWNER, RDAP_BOOTSTRAP, isFactOf, type RdapGet, type VisitRole } from "@mark1russell7/netdiag";
 import { check } from "./check.ts";
 import { createNetdiagCli } from "./cli.ts";
-import type { CheckReport } from "./report.ts";
+import { formatReport, type CheckReport } from "./report.ts";
 
 // The check from end to end on the loopback addresses: a DNS server of the fixtures on 127.0.0.1, an HTTPS server on
 // 127.0.0.2 and a fake host of ping. No assertion examines a time.
@@ -63,15 +63,45 @@ function pingText(address: string): string {
   ].join("\n");
 }
 
-/** A fake ping that answers each address, so that only the scope of the check limits the requests. */
-function pingHost() {
+/** A fake ping that answers each address, so that only the scope of the check limits the requests. The rules of `first` go first. */
+function pingHost(first: readonly FakeRule[] = []) {
   const version: FakeRule = [(args) => args[0] === "-V", { exitCode: 0, stdout: "ping from iputils 20240117\n", stderr: "" }];
   const reply: FakeRule = [() => true, { exitCode: 0, stdout: "", stderr: "" }];
   const replies = [SERVER, RESOLVER, OUTSIDE_ADDRESS].map((address): FakeRule => [(args) => args.at(-1) === address, { exitCode: 0, stdout: pingText(address), stderr: "" }]);
-  return fakeToolHost<ToolRunOptions>("linux", [version, ...replies, reply]);
+  return fakeToolHost<ToolRunOptions>("linux", [...first, version, ...replies, reply]);
 }
 
+/** A public address in the range of the bootstrap below. The fake registry has no network for it. */
+const PUBLIC_HOP = "8.8.4.4";
+const BOOTSTRAP = JSON.stringify({ version: "1.0", publication: "2026-11-03T22:00:01Z", services: [[["8.0.0.0/8"], ["https://rdap.arin.net/registry/"]]] });
+const hop = (count: number, host: string) => ({ count, host, "Loss%": 0, Snt: 2, Last: 0.5, Best: 0.4, Avg: 0.6, Wrst: 1.2, StDev: 0.1 });
+/** The JSON report of mtr 0.95 for the path to the server: a private router, a public router and the server. */
+const MTR_REPORT = JSON.stringify({ report: { mtr: { src: "lab", dst: SERVER, tos: 0, tests: 2 }, hubs: [hop(1, "10.0.0.1"), hop(2, PUBLIC_HOP), hop(3, SERVER)] } });
+const MTR_RULES: readonly FakeRule[] = [
+  [(args, command) => command === "mtr" && args[0] === "--version", { exitCode: 0, stdout: "mtr 0.95\n", stderr: "" }],
+  [(args, command) => command === "mtr" && args[0] === "--json", { exitCode: 0, stdout: MTR_REPORT, stderr: "" }],
+];
+
 describe("a check from end to end", () => {
+  it("looks up the owners of the hops of mtr with owners, through the port of RDAP", async () => {
+    const port = await httpsServer();
+    const urls: string[] = [];
+    const rdap: RdapGet = (request) => {
+      urls.push(request.url);
+      return Promise.resolve(request.url === RDAP_BOOTSTRAP.ipv4 ? { status: 200, headers: {}, body: BOOTSTRAP } : { status: 404, headers: {}, body: "" });
+    };
+    const deps = { clock: realClock, tools: pingHost(MTR_RULES), resolvers: [], tls: { roots: [ca.cert] }, rdap };
+    const report = await check({ target: `${SERVER}:${port}`, pingCount: 0, owners: true, mtrCycles: 2 }, deps);
+    const owners = report.facts.flatMap(({ fact }) => (isFactOf(PATH_OWNER, fact) ? [`${fact.value.address} ${fact.value.outcome}`] : []));
+    expect(owners).toEqual(["10.0.0.1 special", `${PUBLIC_HOP} unregistered`, `${SERVER} special`]);
+    expect(urls).toEqual([RDAP_BOOTSTRAP.ipv4, `https://rdap.arin.net/registry/ip/${PUBLIC_HOP}`]);
+    expect(formatReport(report)).toContain(`  ${PUBLIC_HOP}: the registry has no network for this address`);
+    // Without the option owners, the check looks up no owner, also with a port.
+    const plain = await check({ target: `${SERVER}:${port}`, pingCount: 0, mtrCycles: 2 }, deps);
+    expect(plain.facts.some(({ fact }) => isFactOf(PATH_OWNER, fact))).toBe(false);
+    expect(urls).toHaveLength(2);
+  });
+
   it("probes only the named hosts, the resolver, the gateway and the addresses of the named hosts", async () => {
     const port = await httpsServer();
     const dns = await dnsServer();

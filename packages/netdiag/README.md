@@ -173,6 +173,7 @@ The probe `ownerProbe(get)` gives the fact `path.owner` for each address of a pa
 - The peers are `data.iana.org` and the five registries of `RDAP_REGISTRIES`. The lookups send the addresses of the path to the registries, so the user must name these peers in the scope.
 - The port `get` sends one GET request. The command-line tool gives a port over `send` of `polite-crawler/api`, which keeps the pace of each registry.
 - Only ARIN gives the origin AS numbers of a network, with the extension `arin_originas0`.
+- A visit with the option `owners` (a port) and `mtrCycles` looks up the hops of each fact `path.report`. It looks up each hop one time.
 
 The core has the readers of RDAP: `readBootstrap`, `serviceFor` and `readNetwork`.
 
