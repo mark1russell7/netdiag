@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { realClock, type Clock } from "@mark1russell7/algebra/clock";
-import { visitTarget, type MtuSearch } from "@mark1russell7/netdiag";
+import { visitTarget } from "@mark1russell7/netdiag";
 import { commandHost, type ToolHost } from "@mark1russell7/netdiag/tools";
 import { errorMessage } from "@mark1russell7/text";
 import { runCommand } from "@procedures/shell/command";
@@ -19,14 +19,10 @@ export interface AgentDeps {
 }
 
 /**
- * The MTU search of the kernel visit. The value `never` is a shortcut: the fault `mtu` of the harness drops only TCP
- * segments, so a ping search finds the full MTU. The search starts when the fault drops each protocol.
- */
-const KERNEL_MTU_SEARCH: MtuSearch = "never";
-
-/**
  * This function reads the arguments, operates the visit and writes a line for each step, then the line `done`. An
  * argument that is not valid, a root file that it cannot read and a visit that throws give the line `fail`.
+ *
+ * The visit keeps the MTU search of `netdiag check`: it searches an address after a TLS or HTTP time-out.
  */
 export async function startAgent(args: readonly string[], deps: AgentDeps): Promise<void> {
   const { clock, write } = deps;
@@ -41,7 +37,6 @@ export async function startAgent(args: readonly string[], deps: AgentDeps): Prom
       tls: { publicRoots: [root] },
       dnsTimeoutMs: plan.dnsTimeoutMs,
       httpTimeoutMs: plan.httpTimeoutMs,
-      mtu: KERNEL_MTU_SEARCH,
     });
     for await (const step of steps) write(stepLine(step, clock.now()));
     write({ ev: "done", t: clock.now() });

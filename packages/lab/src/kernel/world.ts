@@ -23,8 +23,11 @@ export const KERNEL_TOPOLOGY: Topology = { name: "kernel", hops: [{ name: KERNEL
 export const KERNEL_PING_COUNT = 50;
 /** The path of the PEM file of the lab root in the client container. */
 export const KERNEL_ROOT_PATH = "/tmp/netdiag-lab-root.pem";
-/** The longest time of the agent of one case, in milliseconds. Two pings of 50 requests take approximately 25 seconds. */
-export const AGENT_LIMIT_MS = 120_000;
+/**
+ * The longest time of the agent of one case, in milliseconds. Two pings of 50 requests take approximately 25 seconds. An
+ * MTU search of one address behind a black hole takes approximately 20 seconds: each lost size waits 3 seconds.
+ */
+export const AGENT_LIMIT_MS = 180_000;
 
 /** The path of the root of the repository. The build context of the netdiag image is this folder. */
 export const REPOSITORY_ROOT: string = fileURLToPath(new URL("../../../../", import.meta.url));
