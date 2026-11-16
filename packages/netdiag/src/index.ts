@@ -44,6 +44,20 @@ export {
   type TlsPhase,
 } from "./probes/socket.ts";
 export {
+  DEFAULT_OWNER_REDIRECTS,
+  DEFAULT_RDAP_BODY,
+  MAX_OWNER_ADDRESSES,
+  OWNER_PROBE_ID,
+  ownerProbe,
+  type OwnerExchange,
+  type OwnerInput,
+  type OwnerProbeOptions,
+  type OwnerRaw,
+  type RdapGet,
+  type RdapReply,
+  type RdapRequest,
+} from "./lookups/owner.ts";
+export {
   VISIT_RECORDS,
   describeOutcome,
   largePacketsLost,

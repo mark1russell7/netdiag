@@ -14,7 +14,7 @@ This package has the core model of netdiag. It has the typed facts at each layer
 | `@mark1russell7/netdiag/diagnosis` | The probability model, the next probe and the lab score. |
 | `@mark1russell7/netdiag/tools` | The adapters of outside tools. |
 
-The core has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the kinds of facts, the metrics and the readers. It also has the data of a visit and the limits of the echo requests.
+The core has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the kinds of facts, the metrics and the readers. It also has the data of a visit, the limits of the echo requests and the readers of RDAP.
 
 ## Facts
 
@@ -163,6 +163,18 @@ const host = commandHost(runCommand, process.platform);
 // The runner comes from the example of the native probes.
 const outcome = await runner.run(pingProbe(host), { address: "192.168.1.1", count: 20 });
 ```
+
+## The owners of a path
+
+The probe `ownerProbe(get)` gives the fact `path.owner` for each address of a path. The fact has the registered network of the address, its holder and its country.
+
+- The probe looks up only public addresses. A private or shared address gets the outcome `special` and no lookup.
+- The bootstrap files of IANA (RFC 9224) give the registry of each address. The probe sends each lookup with `https` only.
+- The peers are `data.iana.org` and the five registries of `RDAP_REGISTRIES`. The lookups send the addresses of the path to the registries, so the user must name these peers in the scope.
+- The port `get` sends one GET request. The command-line tool gives a port over `send` of `polite-crawler/api`, which keeps the pace of each registry.
+- Only ARIN gives the origin AS numbers of a network, with the extension `arin_originas0`.
+
+The core has the readers of RDAP: `readBootstrap`, `serviceFor` and `readNetwork`.
 
 ## Diagnosis
 
