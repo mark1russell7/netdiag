@@ -1,6 +1,8 @@
 import {
   DNS_ANSWER,
+  LOOKUP_KINDS,
   NATIVE_KINDS,
+  PATH_OWNER,
   STANDARD_CATALOG,
   TOOL_KINDS,
   VISIT_ROLES,
@@ -15,6 +17,7 @@ import {
   type Evidence,
   type Fact,
   type Grant,
+  type PathOwner,
   type Skipped,
   type VisitRole,
   type VisitStep,
@@ -130,12 +133,34 @@ export function subjectText(role: string, host: string): string {
   return role === "local" ? "this computer" : `${role} ${host}`;
 }
 
+/** This function gives the owner of a hop for a person: its network, holder, country and origin AS, or the outcome of the lookup. */
+export function ownerText(owner: PathOwner): string {
+  switch (owner.outcome) {
+    case "found": {
+      const network = owner.network;
+      if (network === undefined) return "a network with no data";
+      const name = network.name === undefined ? network.handle : `${network.name} (${network.handle})`;
+      const holder = network.holder === undefined ? "" : `, ${network.holder}`;
+      const country = network.country === undefined ? "" : `, ${network.country}`;
+      const origin = network.originAs.length === 0 ? "" : `, ${network.originAs.map((as) => `AS${as}`).join(" ")}`;
+      return `${name}${holder}${country}${origin}`;
+    }
+    case "special":
+      return `a special-purpose address (${owner.class ?? "unknown"}), with no lookup`;
+    case "unregistered":
+      return "the registry has no network for this address";
+    default:
+      return `no owner: ${owner.detail ?? owner.outcome}`;
+  }
+}
+
 /** The indent of the lines under a cause. */
 const UNDER = " ".repeat(8);
 
 /**
  * This function gives the lines of the text report of a check. The lines show the most probable causes with their
- * probabilities and the next step with its gain. They also show the problems of the visit and the count of the evidence.
+ * probabilities and the next step with its gain. They also show the problems of the visit, the owners of the hops and the
+ * count of the evidence.
  */
 export function formatReport(report: CheckReport): string[] {
   const lines = [`netdiag check ${report.target} (${report.scheme}, path ${report.path})`, "", "The probable causes"];
@@ -149,6 +174,11 @@ export function formatReport(report: CheckReport): string[] {
   if (report.problems.length > 0) {
     lines.push("", `The problems of the visit (${report.problems.length})`);
     for (const item of report.problems) lines.push(`  ${subjectText(item.role, item.host)}: ${item.problem}`);
+  }
+  const owners = report.facts.flatMap(({ fact }) => (isFactOf(PATH_OWNER, fact) ? [fact.value] : []));
+  if (owners.length > 0) {
+    lines.push("", `The owners of the hops (${owners.length})`);
+    for (const owner of owners) lines.push(`  ${owner.address}: ${ownerText(owner)}`);
   }
   lines.push("", `${countOf(report.evidence.length, "observation")} from ${countOf(report.facts.length, "fact")}. The option --json gives each fact.`);
   return lines;
@@ -164,7 +194,7 @@ const SUM_TOLERANCE = 1e-6;
 
 const CAUSE_KINDS: ReadonlySet<unknown> = new Set(["none", "fault", "unknown"]);
 const ROLES: ReadonlySet<unknown> = new Set(VISIT_ROLES);
-const FACT_KINDS = [...NATIVE_KINDS, ...TOOL_KINDS];
+const FACT_KINDS = [...NATIVE_KINDS, ...TOOL_KINDS, ...LOOKUP_KINDS];
 
 type Fields = Readonly<Record<string, unknown>>;
 

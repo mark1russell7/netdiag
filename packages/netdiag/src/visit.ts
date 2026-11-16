@@ -1,6 +1,7 @@
 import type { Clock } from "@mark1russell7/algebra/clock";
 import { factsOf, type Fact } from "./fact.ts";
-import { DNS_ANSWER, HTTP_RESPONSE, TCP_CONNECT, TLS_HANDSHAKE, type RecordType } from "./kinds.ts";
+import { DNS_ANSWER, HTTP_RESPONSE, PATH_REPORT, TCP_CONNECT, TLS_HANDSHAKE, type RecordType } from "./kinds.ts";
+import { MAX_OWNER_ADDRESSES, ownerProbe, type OwnerProbeOptions, type RdapGet } from "./lookups/owner.ts";
 import { LINK_SUBJECT, linkProbe, type InterfaceTable } from "./probes/link.ts";
 import { DNS_PROBE, httpProbe, type TlsProbeOptions } from "./probes/native.ts";
 import type { Probe } from "./probe.ts";
@@ -43,6 +44,13 @@ export interface VisitOptions {
   readonly pingCount?: number | undefined;
   /** The number of cycles of `mtr` to each address. The default 0 starts no `mtr`. */
   readonly mtrCycles?: number | undefined;
+  /**
+   * The port of the lookups of the owners of the hops in RDAP. Without it, the visit looks up no owner. The lookups
+   * need `mtr`. The scope of the visit must have a host grant of each registry.
+   */
+  readonly owners?: RdapGet | undefined;
+  /** The options of the probe of the owners. */
+  readonly ownerOptions?: OwnerProbeOptions | undefined;
   /** When the visit searches the MTU of the path to an address. The default is `auto`. The search needs `tools`. */
   readonly mtu?: MtuSearch | undefined;
   /** The default is `https`. */
@@ -86,6 +94,12 @@ export function largePacketsLost(facts: readonly Fact[]): boolean {
   return connected && (handshake || response);
 }
 
+/** This function gives the addresses of the hops of the facts `path.report`, each one time, in the order of the hops. */
+function hopAddresses(facts: readonly Fact[]): string[] {
+  const addresses = factsOf(PATH_REPORT, facts).flatMap((fact) => fact.value.hops.flatMap((hop) => (hop.address === undefined ? [] : [hop.address])));
+  return [...new Set(addresses)];
+}
+
 function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutcome<unknown>): VisitStep[] {
   if (outcome.status !== "done") return [{ kind: "problem", role, host, problem: `The ${what} did not end: ${describeOutcome(outcome)}.` }];
   return outcome.facts.map((fact) => ({ kind: "fact", role, host, fact }));
@@ -99,6 +113,7 @@ function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutc
  * - For each name, it asks the resolver for the A records and then the AAAA records.
  * - When a host grant puts a name in the scope, the addresses of its answers go into the scope.
  * - For each address, it starts `ping`, then `mtr`, then one HTTP request. A probe of an address out of the scope gives a problem.
+ * - After `mtr`, it looks up the owner of each new hop in RDAP, when the options have `owners`. It looks up each hop one time.
  * - After the HTTP request, it searches the MTU of the path to the address when the option `mtu` tells it to.
  * - For the gateway, it starts `ping` only.
  *
@@ -114,6 +129,8 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
   const mtrCycles = options.mtrCycles ?? 0;
   const ping = options.tools === undefined || pingCount === 0 ? undefined : pingProbe(options.tools);
   const mtr = options.tools === undefined || mtrCycles === 0 ? undefined : mtrProbe(options.tools);
+  const owner = mtr === undefined || options.owners === undefined ? undefined : ownerProbe(options.owners, options.ownerOptions);
+  const looked = new Set<string>();
   const mtuSearch = options.mtu ?? "auto";
   const mtu = options.tools === undefined || mtuSearch === "never" ? undefined : mtuProbe(options.tools);
   const http = httpProbe(options.tls);
@@ -150,7 +167,15 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
     }
     for (const address of addresses) {
       if (ping !== undefined) yield* stepsOf(role, host.host, `ping of ${address}`, await run(ping, { address, count: pingCount }));
-      if (mtr !== undefined) yield* stepsOf(role, host.host, `mtr of ${address}`, await run(mtr, { address, cycles: mtrCycles }));
+      if (mtr !== undefined) {
+        const report = await run(mtr, { address, cycles: mtrCycles });
+        yield* stepsOf(role, host.host, `mtr of ${address}`, report);
+        const hops = report.status === "done" ? hopAddresses(report.facts).filter((hop) => !looked.has(hop)).slice(0, MAX_OWNER_ADDRESSES) : [];
+        if (owner !== undefined && hops.length > 0) {
+          for (const hop of hops) looked.add(hop);
+          yield* stepsOf(role, host.host, `lookup of the owners of the hops to ${address}`, await run(owner, { addresses: hops }));
+        }
+      }
       const request = { address, scheme, port: host.port, host: name, path: options.path, timeoutMs: options.httpTimeoutMs };
       const answer = await run(http, request);
       yield* stepsOf(role, host.host, `HTTP request to ${address}`, answer);

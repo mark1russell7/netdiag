@@ -2,6 +2,7 @@ import { observe, type Observation } from "../fact.ts";
 import { PATH_REPORT, type PathReport, type ReportHop } from "../kinds.ts";
 import { defineProbe, type Availability, type Probe, type ProbeContext } from "../probe.ts";
 import { target, type Target } from "../target.ts";
+import { DEFAULT_MTR_CYCLES, MAX_MTR_CYCLES } from "./counts.ts";
 import { ENGLISH, firstLine, integerIn, sameAddress, toolAddress, type ToolAddress } from "./common.ts";
 import { AVAILABILITY_TIMEOUT_MS, availabilityOf, runTool, TOOL_MARGIN_MS, type ToolCommand, type ToolHost, type ToolRaw } from "./host.ts";
 import { DEFAULT_TRACE_HOPS, MAX_TRACE_HOPS } from "./traceroute.ts";
@@ -18,11 +19,7 @@ export interface MtrInput {
   readonly maxHops?: number | undefined;
 }
 
-/** The default number of cycles. It is `LOSS_MIN_SENT` of the readers, so a report gives the feature `path.loss`. */
-export const DEFAULT_MTR_CYCLES = 20;
-
-/** The largest number of cycles of one input. */
-export const MAX_MTR_CYCLES = 100;
+export { DEFAULT_MTR_CYCLES, MAX_MTR_CYCLES } from "./counts.ts";
 
 /** The time that mtr waits for the last answers after the last cycle, in milliseconds (its option `--gracetime`). */
 export const MTR_GRACE_MS = 5000;

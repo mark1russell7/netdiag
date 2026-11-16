@@ -1,13 +1,15 @@
 import { getServers } from "node:dns";
 import { realClock, type Clock } from "@mark1russell7/algebra/clock";
-import { visitTarget, type TlsProbeOptions, type VisitStep } from "@mark1russell7/netdiag";
+import { visitTarget, type RdapGet, type TlsProbeOptions, type VisitStep } from "@mark1russell7/netdiag";
 import { commandHost, type ToolHost } from "@mark1russell7/netdiag/tools";
 import { runCommand } from "@procedures/shell/command";
 import { planCheck, type CheckOptions } from "./plan.ts";
+import { systemRdap } from "./rdap.ts";
 import { reportOf, type CheckReport } from "./report.ts";
+import { packageVersion } from "./version.ts";
 
-// The edge of a check: the visit sends the packets, and starts the outside tools. A test gives a fake tool host and
-// servers on the loopback addresses.
+// The edge of a check: the visit sends the packets, starts the outside tools, and sends the lookups of the owners. A
+// test gives a fake tool host, a fake port of RDAP and servers on the loopback addresses.
 
 /** The parts of the computer that a check uses. A test gives its own parts. */
 export interface CheckDeps {
@@ -18,12 +20,17 @@ export interface CheckDeps {
   readonly resolvers: readonly string[];
   /** The trust stores of the TLS handshake. The default is the roots of Node.js. */
   readonly tls?: TlsProbeOptions | undefined;
+  /** The port of the lookups of the owners of the hops. Without it, the option `owners` looks up no owner. */
+  readonly rdap?: RdapGet | undefined;
   readonly signal?: AbortSignal | undefined;
 }
 
-/** This function gives the parts of this computer: the monotonic clock, `runCommand` of `@procedures/shell` and the DNS resolvers. */
+/**
+ * This function gives the parts of this computer: the monotonic clock, `runCommand` of `@procedures/shell`, the DNS
+ * resolvers and the port of RDAP over `polite-crawler`.
+ */
 export function systemDeps(): CheckDeps {
-  return { clock: realClock, tools: commandHost(runCommand, process.platform), resolvers: getServers() };
+  return { clock: realClock, tools: commandHost(runCommand, process.platform), resolvers: getServers(), rdap: systemRdap(packageVersion()) };
 }
 
 /**
@@ -40,6 +47,8 @@ export async function check(options: CheckOptions, deps: CheckDeps): Promise<Che
     clock: deps.clock,
     tools: deps.tools,
     pingCount: plan.pingCount,
+    mtrCycles: plan.mtrCycles,
+    owners: plan.owners ? deps.rdap : undefined,
     mtu: plan.mtu,
     scheme: plan.scheme,
     path: plan.path,

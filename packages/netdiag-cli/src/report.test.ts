@@ -1,8 +1,8 @@
-import { DNS_ANSWER, TCP_CONNECT, target, type Fact, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
+import { DNS_ANSWER, PATH_OWNER, TCP_CONNECT, target, type Fact, type VisitRole, type VisitStep } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { TOP_CAUSES } from "./next.ts";
 import { planCheck, type CheckOptions, type CheckPlan } from "./plan.ts";
-import { CHECK_FORMAT, MAX_REPORT_PROBLEMS, formatReport, percentOf, readCheckReport, reportOf, subjectText, type CheckReport } from "./report.ts";
+import { CHECK_FORMAT, MAX_REPORT_PROBLEMS, formatReport, ownerText, percentOf, readCheckReport, reportOf, subjectText, type CheckReport } from "./report.ts";
 
 // The report of fixed steps of a visit. No test sends a packet.
 
@@ -105,6 +105,48 @@ describe("the text of a report", () => {
 
   it("writes a small probability as <1%", () => {
     expect([percentOf(0), percentOf(0.004), percentOf(0.006), percentOf(0.5), percentOf(1)]).toEqual(["0%", "<1%", "1%", "50%", "100%"]);
+  });
+});
+
+const owner = (address: string, value: Readonly<Record<string, unknown>>): VisitStep =>
+  fact("target", "shop.example", PATH_OWNER.kind, "path", address, { address, ...value });
+
+const NETWORK = { handle: "NET-8-8-4-0-1", name: "EXAMPLE-8", start: "8.8.4.0", end: "8.8.4.255", cidrs: ["8.8.4.0/24"], holder: "Example Networks Inc.", country: "US", originAs: [64500] };
+
+describe("the owners of the hops in a report", () => {
+  const options = { target: "shop.example", reference: ["example.org"] };
+  const steps = [
+    ...REFUSED,
+    owner("10.0.0.1", { outcome: "special", class: "private" }),
+    owner("8.8.4.4", { outcome: "found", registry: "rdap.arin.net", network: NETWORK }),
+    owner("8.8.4.9", { outcome: "unregistered", registry: "rdap.arin.net" }),
+    owner("45.0.0.9", { outcome: "failed", detail: "rdap.lacnic.net gave the status 500." }),
+  ];
+  const report = reportOf(plan(options), steps);
+
+  it("shows the owner of each hop in the text, and no section with no owner", () => {
+    const lines = formatReport(report);
+    const start = lines.indexOf("The owners of the hops (4)");
+    expect(lines.slice(start, start + 5)).toEqual([
+      "The owners of the hops (4)",
+      "  10.0.0.1: a special-purpose address (private), with no lookup",
+      "  8.8.4.4: EXAMPLE-8 (NET-8-8-4-0-1), Example Networks Inc., US, AS64500",
+      "  8.8.4.9: the registry has no network for this address",
+      "  45.0.0.9: no owner: rdap.lacnic.net gave the status 500.",
+    ]);
+    expect(formatReport(reportOf(plan(options), REFUSED)).some((line) => line.startsWith("The owners of the hops"))).toBe(false);
+  });
+
+  it("gives the handle of a network with no name, and no AS for a network with no origin", () => {
+    const plain = { address: "8.8.4.4", outcome: "found", registry: "rdap.arin.net", network: { handle: "NET-1", start: "8.8.4.0", end: "8.8.4.255", cidrs: [], originAs: [] } } as const;
+    expect(ownerText(plain)).toBe("NET-1");
+    expect(ownerText({ address: "9.9.9.9", outcome: "unlisted", detail: "The bootstrap of IANA gives no registry for 9.9.9.9." })).toBe(
+      "no owner: The bootstrap of IANA gives no registry for 9.9.9.9.",
+    );
+  });
+
+  it("reads a report with owners after a round trip through JSON", () => {
+    expect(readCheckReport(JSON.parse(JSON.stringify(report)))).toEqual({ tag: "ok", value: report });
   });
 });
 

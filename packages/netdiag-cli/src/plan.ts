@@ -1,6 +1,10 @@
 import {
+  DEFAULT_MTR_CYCLES,
   DEFAULT_PING_COUNT,
+  MAX_MTR_CYCLES,
   MAX_PING_COUNT,
+  RDAP_BOOTSTRAP,
+  RDAP_REGISTRIES,
   canonicalHost,
   grantProblems,
   hostKind,
@@ -44,6 +48,13 @@ export interface CheckOptions {
    * an HTTP response that timed out. `false` does not search.
    */
   readonly mtu?: boolean | undefined;
+  /** The number of cycles of `mtr` to each address. The default is 0, or `DEFAULT_MTR_CYCLES` with `owners`. 0 starts no `mtr`. */
+  readonly mtrCycles?: number | undefined;
+  /**
+   * `true` looks up the owner network of each hop of `mtr` in the public registries of RDAP. The check then grants the
+   * bootstrap host of IANA and each registry of `RDAP_REGISTRIES`.
+   */
+  readonly owners?: boolean | undefined;
 }
 
 /** The parts of the computer that a plan reads. */
@@ -59,6 +70,10 @@ export interface CheckPlan {
   readonly scheme: Scheme;
   readonly path: string;
   readonly pingCount: number;
+  /** The number of cycles of `mtr` to each address. 0 starts no `mtr`. */
+  readonly mtrCycles: number;
+  /** `true` looks up the owner of each hop in RDAP. */
+  readonly owners: boolean;
   /** When the visit searches the MTU of the path to an address. The default is `auto`. */
   readonly mtu?: MtuSearch | undefined;
   /** The input of `visitTarget`, with the grants of the scope. */
@@ -107,6 +122,7 @@ function whole(value: number, low: number, high: number): boolean {
  * - the DNS resolver, with the basis `named` from `--resolver`, or `configured` from the computer
  * - the gateway, when the user gives it, with the basis `named`
  * - each range of `--grant`, with the basis `owned`
+ * - with `--owners`, the bootstrap host of IANA and each registry of RDAP, with the basis `named`
  *
  * The visit also puts in the scope the addresses that the resolver gives for a named host.
  */
@@ -124,6 +140,10 @@ export function planCheck(options: CheckOptions, system: PlanSystem): Result<Che
   if (port !== undefined && !whole(port, 1, 65535)) problems.push(`The port ${port} is not an integer from 1 to 65535.`);
   const pingCount = options.pingCount ?? DEFAULT_PING_COUNT;
   if (!whole(pingCount, 0, MAX_PING_COUNT)) problems.push(`The ping count ${pingCount} is not an integer from 0 to ${MAX_PING_COUNT}.`);
+  const owners = options.owners === true;
+  const mtrCycles = options.mtrCycles ?? (owners ? DEFAULT_MTR_CYCLES : 0);
+  if (!whole(mtrCycles, 0, MAX_MTR_CYCLES)) problems.push(`The number of cycles of mtr ${mtrCycles} is not an integer from 0 to ${MAX_MTR_CYCLES}.`);
+  else if (owners && mtrCycles === 0) problems.push("The lookups of the owners need the hops of mtr. Give --mtr-cycles 1 or more.");
   const target: Target = port === undefined ? { host: located.value.target.host, kind: located.value.target.kind } : { ...located.value.target, port };
   grants.push(namedGrant(target, "the target"));
 
@@ -161,6 +181,10 @@ export function planCheck(options: CheckOptions, system: PlanSystem): Result<Che
     }
   }
 
+  if (owners) {
+    for (const host of [new URL(RDAP_BOOTSTRAP.ipv4).hostname, ...RDAP_REGISTRIES]) grants.push({ kind: "host", host, basis: "named", note: "a registry of RDAP for --owners" });
+  }
+
   for (const cidr of options.grant ?? []) grants.push({ kind: "range", cidr: cidr.trim(), basis: "owned", note: "a range of --grant" });
 
   // A grant with a problem stops the plan, so a typing error cannot widen the scope.
@@ -177,5 +201,5 @@ export function planCheck(options: CheckOptions, system: PlanSystem): Result<Che
     grants,
   };
   const mtu: MtuSearch = options.mtu === undefined ? "auto" : options.mtu ? "always" : "never";
-  return ok({ target, scheme, path, pingCount, mtu, visit });
+  return ok({ target, scheme, path, pingCount, mtrCycles, owners, mtu, visit });
 }

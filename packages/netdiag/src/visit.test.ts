@@ -9,6 +9,9 @@ import {
   ICMP_ECHO,
   LINK_STATE,
   PATH_MTU,
+  PATH_OWNER,
+  RDAP_BOOTSTRAP,
+  RDAP_REGISTRIES,
   TCP_CONNECT,
   TLS_HANDSHAKE,
   WIFI_LINK,
@@ -18,6 +21,7 @@ import {
   visitTarget,
   type Fact,
   type Grant,
+  type RdapGet,
   type VisitInput,
   type VisitOptions,
   type VisitStep,
@@ -254,6 +258,76 @@ describe("the MTU search of a visit", () => {
     expect(mtuCalls(tools.calls)).toEqual([SERVER]);
     const plain = await visit({ target: { host: SERVER, port }, grants }, { mtu: "always" });
     expect(shape(plain).some((fact) => fact.includes(" path.mtu "))).toBe(false);
+  });
+});
+
+/** The JSON report of mtr 0.95 for a path. The host `???` is a hop with no answer. */
+function mtrReport(dst: string, hosts: readonly string[]): string {
+  const hubs = hosts.map((host, index) =>
+    host === "???"
+      ? { count: index + 1, host, "Loss%": 100, Snt: 2, Last: 0, Best: 0, Avg: 0, Wrst: 0, StDev: 0 }
+      : { count: index + 1, host, "Loss%": 0, Snt: 2, Last: 0.5, Best: 0.4, Avg: 0.6, Wrst: 1.2, StDev: 0.1 },
+  );
+  return JSON.stringify({ report: { mtr: { src: "lab", dst, tos: 0, tests: 2 }, hubs } });
+}
+
+function mtrHost(report: string) {
+  const version: FakeRule = [(args, command) => command === "mtr" && args[0] === "--version", { exitCode: 0, stdout: "mtr 0.95\n", stderr: "" }];
+  const run: FakeRule = [(args, command) => command === "mtr" && args[0] === "--json", { exitCode: 0, stdout: report, stderr: "" }];
+  return fakeToolHost<ToolRunOptions>("linux", [version, run]);
+}
+
+/** A public address of the range of the bootstrap below. */
+const PUBLIC_HOP = "8.8.4.4";
+const BOOTSTRAP = JSON.stringify({ version: "1.0", publication: "2026-11-03T22:00:01Z", services: [[["8.0.0.0/8"], ["https://rdap.arin.net/registry/"]]] });
+const NETWORK = JSON.stringify({ objectClassName: "ip network", handle: "NET-8-8-4-0-1", startAddress: "8.8.4.0", endAddress: "8.8.4.255", name: "EXAMPLE-8" });
+
+/** A fake port of RDAP: the bootstrap of IPv4, the network of `PUBLIC_HOP`, and the status 404 for each other URL. */
+function rdapPort(): { readonly get: RdapGet; readonly urls: string[] } {
+  const urls: string[] = [];
+  const get: RdapGet = (request) => {
+    urls.push(request.url);
+    const body = request.url === RDAP_BOOTSTRAP.ipv4 ? BOOTSTRAP : request.url.endsWith(`/ip/${PUBLIC_HOP}`) ? NETWORK : undefined;
+    return Promise.resolve(body === undefined ? { status: 404, headers: {}, body: "" } : { status: 200, headers: { "content-type": "application/rdap+json" }, body });
+  };
+  return { get, urls };
+}
+
+function owners(steps: readonly VisitStep[]): string[] {
+  return steps.flatMap((step) => (step.kind === "fact" && isFactOf(PATH_OWNER, step.fact) ? [`${step.role} ${step.fact.value.address} ${step.fact.value.outcome}`] : []));
+}
+
+describe("the owners of the hops of a visit", () => {
+  const registries: Grant[] = [new URL(RDAP_BOOTSTRAP.ipv4).hostname, ...RDAP_REGISTRIES].map((host) => ({ kind: "host", host, basis: "named" }));
+  const grants = [range(`${SERVER}/32`), ...registries];
+  const report = mtrReport(SERVER, ["10.0.0.1", "???", PUBLIC_HOP, SERVER]);
+
+  it("looks up each hop after mtr, and looks up a hop of the reference only when it is new", async () => {
+    const port = await httpsServer();
+    const tools = mtrHost(report);
+    const rdap = rdapPort();
+    const input: VisitInput = { target: { host: SERVER, port }, references: [{ host: SERVER, port }], grants };
+    const steps = await visit(input, { tools, pingCount: 0, mtrCycles: 2, owners: rdap.get });
+    expect(problems(steps)).toEqual([]);
+    expect(owners(steps)).toEqual(["target 10.0.0.1 special", `target ${PUBLIC_HOP} found`, `target ${SERVER} special`]);
+    expect(rdap.urls).toEqual([RDAP_BOOTSTRAP.ipv4, `https://rdap.arin.net/registry/ip/${PUBLIC_HOP}`]);
+    const facts = shape(steps).filter((fact) => fact.startsWith("target "));
+    expect(facts.indexOf(`target path.report ${SERVER}`)).toBeLessThan(facts.indexOf(`target path.owner ${PUBLIC_HOP}`));
+  });
+
+  it("looks up no owner with no port and with no mtr, and gives a problem for a registry out of the scope", async () => {
+    const port = await httpsServer();
+    const rdap = rdapPort();
+    const plain = await visit({ target: { host: SERVER, port }, grants }, { tools: mtrHost(report), pingCount: 0, mtrCycles: 2 });
+    expect(owners(plain)).toEqual([]);
+    const noMtr = mtrHost(report);
+    const quiet = await visit({ target: { host: SERVER, port }, grants }, { tools: noMtr, pingCount: 0, owners: rdap.get });
+    expect(owners(quiet)).toEqual([]);
+    expect(noMtr.calls).toEqual([]);
+    const refused = await visit({ target: { host: SERVER, port }, grants: [range(`${SERVER}/32`)] }, { tools: mtrHost(report), pingCount: 0, mtrCycles: 2, owners: rdap.get });
+    expect(owners(refused)).toEqual([]);
+    expect(problems(refused)).toEqual([expect.stringMatching(/^The lookup of the owners of the hops to 127\.0\.0\.2 did not end: /)]);
+    expect(rdap.urls).toEqual([]);
   });
 });
 
