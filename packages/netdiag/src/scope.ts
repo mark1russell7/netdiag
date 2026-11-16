@@ -1,6 +1,5 @@
-import { isIP } from "node:net";
 import { err, ok, type Result } from "@mark1russell7/optional";
-import { cidrContains, parseCidr } from "./address/index.ts";
+import { cidrContains, ipVersion, parseCidr } from "./address/index.ts";
 import { canonicalHost, formatTarget, type Target } from "./target.ts";
 
 /**
@@ -68,7 +67,7 @@ export function grantProblems(grant: Grant): string[] {
   }
   const host = canonicalHost(grant.host);
   if (host.length === 0) return ["A host grant has an empty host."];
-  if (isIP(host) !== 0) return [`The host grant "${grant.host}" is an IP address. Use a range grant for an address.`];
+  if (ipVersion(host) !== 0) return [`The host grant "${grant.host}" is an IP address. Use a range grant for an address.`];
   return [];
 }
 
@@ -97,7 +96,7 @@ export function namedGrant(t: Target, note?: string): Grant {
 /** This function gives the grant of one address that a DNS answer for a granted name gave. */
 export function resolvedGrant(name: string, address: string, factId?: string): RangeGrant {
   const host = canonicalHost(address);
-  const family = isIP(host);
+  const family = ipVersion(host);
   if (family === 0) throw new RangeError(`"${address}" is not an IP address`);
   const note = factId === undefined ? `${canonicalHost(name)} resolved to it` : `${canonicalHost(name)} resolved to it (fact ${factId})`;
   return { kind: "range", cidr: `${host}/${family === 4 ? 32 : 128}`, basis: "resolved", note };
@@ -110,7 +109,7 @@ export function widen(scope: Scope, grants: readonly Grant[]): Result<Scope, str
 
 function grantFor(scope: Scope, peer: Target): Grant | undefined {
   const host = canonicalHost(peer.host);
-  const family = isIP(host);
+  const family = ipVersion(host);
   for (const grant of scope.grants) {
     if (grant.kind === "host") {
       if (family !== 0) continue;

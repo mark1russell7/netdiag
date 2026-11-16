@@ -1,21 +1,9 @@
-import { defineFactKind, type FactKind } from "./fact.ts";
+import { defineFactKind, isPort, isRecord, isText, type FactKind } from "./fact.ts";
 
 // The fact kinds of the native probes. This module imports no `node:` module, so a browser can read a record of facts.
 
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isText(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0;
-}
-
 function isDuration(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
-}
-
-function isPort(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 65535;
 }
 
 function isCount(value: unknown): value is number {

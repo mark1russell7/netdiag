@@ -1,4 +1,4 @@
-import { isIP } from "node:net";
+import { ipVersion } from "./address/index.ts";
 import { err, ok, type Result } from "@mark1russell7/optional";
 
 /** The kind of the host of a target: a DNS name, an IPv4 address or an IPv6 address. */
@@ -27,7 +27,7 @@ const SCHEME_PORTS: ReadonlyMap<string, number> = new Map([
 
 /** This function gives the kind of a host in its canonical form. */
 export function hostKind(host: string): HostKind {
-  const family = isIP(host);
+  const family = ipVersion(host);
   if (family === 4) return "ipv4";
   if (family === 6) return "ipv6";
   return "name";
@@ -93,11 +93,11 @@ export function parseTarget(text: string): Result<Target, string> {
     const port = url.port === "" ? SCHEME_PORTS.get(url.protocol) : Number(url.port);
     return checked(host, port, input);
   }
-  if (isIP(input) === 6) return checked(canonicalHost(input), undefined, input);
+  if (ipVersion(input) === 6) return checked(canonicalHost(input), undefined, input);
   const bracket = /^\[([^\]]+)\](?::(.*))?$/.exec(input);
   if (bracket !== null) {
     const host = bracket[1] ?? "";
-    if (isIP(host) !== 6) return err(`"${host}" is not an IPv6 address.`);
+    if (ipVersion(host) !== 6) return err(`"${host}" is not an IPv6 address.`);
     if (bracket[2] === undefined) return checked(canonicalHost(host), undefined, input);
     const port = portOf(bracket[2]);
     return port === undefined ? err(`"${bracket[2]}" is not a port from 1 to 65535.`) : checked(canonicalHost(host), port, input);

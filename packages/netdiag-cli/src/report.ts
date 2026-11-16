@@ -1,11 +1,15 @@
 import {
   DNS_ANSWER,
+  NATIVE_KINDS,
   STANDARD_CATALOG,
+  TOOL_KINDS,
+  VISIT_ROLES,
   diagnose,
   formatTarget,
   hostKind,
   isFactOf,
   readEvidence,
+  readFact,
   type Cause,
   type Diagnosis,
   type Evidence,
@@ -14,11 +18,13 @@ import {
   type Skipped,
   type VisitRole,
   type VisitStep,
-} from "@mark1russell7/netdiag";
+} from "@mark1russell7/netdiag/core";
+import { err, ok, type Result } from "@mark1russell7/optional";
 import { countOf } from "@mark1russell7/text";
 import { pad } from "@mark1russell7/text/length";
 import { TOP_CAUSES, nextSteps, type NextStep } from "./next.ts";
-import type { CheckPlan, Scheme } from "./plan.ts";
+import type { CheckPlan } from "./plan.ts";
+import { isScheme, type Scheme } from "./scheme.ts";
 
 // The report of a check: the steps of the visit, changed into evidence, the causes and the next step. Each function of
 // this module is pure: the same plan and the same steps give the same report.
@@ -146,4 +152,137 @@ export function formatReport(report: CheckReport): string[] {
   }
   lines.push("", `${countOf(report.evidence.length, "observation")} from ${countOf(report.facts.length, "fact")}. The option --json gives each fact.`);
   return lines;
+}
+
+// The reader of a JSON report. A page reads a report that a user gives, so the reader checks each field that a view uses.
+
+/** The largest number of problems that `readCheckReport` gives. A file of another format has many problems, and the first ones tell enough. */
+export const MAX_REPORT_PROBLEMS = 20;
+
+/** The largest difference of the sum of the probabilities of the causes from 1. */
+const SUM_TOLERANCE = 1e-6;
+
+const CAUSE_KINDS: ReadonlySet<unknown> = new Set(["none", "fault", "unknown"]);
+const ROLES: ReadonlySet<unknown> = new Set(VISIT_ROLES);
+const FACT_KINDS = [...NATIVE_KINDS, ...TOOL_KINDS];
+
+type Fields = Readonly<Record<string, unknown>>;
+
+function isFields(value: unknown): value is Fields {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isName(value: unknown): value is string {
+  return typeof value === "string" && value !== "";
+}
+
+function isPart(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+function isGrant(value: unknown): boolean {
+  if (!isFields(value) || !isName(value["basis"])) return false;
+  return (value["kind"] === "host" && isName(value["host"])) || (value["kind"] === "range" && isName(value["cidr"]));
+}
+
+function isCause(value: unknown): value is Cause {
+  return isFields(value) && isName(value["id"]) && CAUSE_KINDS.has(value["kind"]) && typeof value["summary"] === "string" && typeof value["step"] === "string" && isPart(value["probability"]);
+}
+
+function isNextStep(value: unknown): value is NextStep {
+  if (!isFields(value) || !isName(value["id"]) || typeof value["step"] !== "string") return false;
+  const gain = value["gain"];
+  const observes = value["observes"];
+  return (
+    typeof gain === "number" &&
+    Number.isFinite(gain) &&
+    gain >= 0 &&
+    Array.isArray(observes) &&
+    observes.every((each) => isFields(each) && isName(each["feature"]) && typeof each["primary"] === "boolean")
+  );
+}
+
+function isEvidence(value: unknown): value is Evidence {
+  if (!isFields(value) || !isName(value["feature"]) || !isName(value["value"]) || typeof value["primary"] !== "boolean") return false;
+  const facts = value["facts"];
+  return facts === undefined || (Array.isArray(facts) && facts.every(isName));
+}
+
+function isProblem(value: unknown): boolean {
+  return isFields(value) && ROLES.has(value["role"]) && typeof value["host"] === "string" && isName(value["problem"]);
+}
+
+/**
+ * This function reads a report of the format `netdiag-check/1`, for example the output of `--json`, and checks it.
+ *
+ * - Each field of `CheckReport` has its type. Each fact passes `readFact` of netdiag with the fact kinds of netdiag.
+ * - The causes go from the most probable, and their probabilities sum to 1. `next` is the first of `choices`.
+ * - Each fact id of the evidence and of `skipped` is the id of a fact of the report, and each fact id is unique.
+ *
+ * The result is the same object with the type `CheckReport`, or at most `MAX_REPORT_PROBLEMS` problems. This module
+ * starts no probe, so a browser can read a report with it.
+ */
+export function readCheckReport(value: unknown): Result<CheckReport, string[]> {
+  if (!isFields(value)) return err(["The report is not a JSON object."]);
+  if (value["format"] !== CHECK_FORMAT) return err([`The format of the report is ${JSON.stringify(value["format"] ?? null)}, not "${CHECK_FORMAT}".`]);
+  const problems: string[] = [];
+  const need = (pass: boolean, problem: string): void => {
+    if (!pass) problems.push(problem);
+  };
+  const list = (field: string, check: (item: unknown) => boolean, what: string): readonly unknown[] => {
+    const items = value[field];
+    if (!Array.isArray(items)) {
+      problems.push(`The field ${field} of the report is not a list.`);
+      return [];
+    }
+    items.forEach((item: unknown, at) => need(check(item), `The item ${at + 1} of ${field} is not ${what}.`));
+    return items;
+  };
+  need(isName(value["target"]), "The report has no target.");
+  need(isScheme(value["scheme"]), "The scheme of the report is not http or https.");
+  need(typeof value["path"] === "string" && value["path"].startsWith("/"), "The path of the report does not start with /.");
+  list("grants", isGrant, "a grant");
+  const causes = list("causes", isCause, "a cause").filter(isCause);
+  if (causes.length > 0) {
+    const sum = causes.reduce((total, cause) => total + cause.probability, 0);
+    need(Math.abs(sum - 1) <= SUM_TOLERANCE, `The probabilities of the causes sum to ${sum}, not 1.`);
+    need(
+      causes.every((cause, at) => at === 0 || (causes[at - 1]?.probability ?? 0) >= cause.probability),
+      "The causes do not go from the most probable.",
+    );
+  }
+  const choices = list("choices", isNextStep, "a next step").filter(isNextStep);
+  const next = value["next"];
+  need(next === null || isNextStep(next), "The field next of the report is not a next step or null.");
+  need((next === null && choices.length === 0) || (isNextStep(next) && next.id === choices[0]?.id), "The next step is not the first of the choices.");
+  list("problems", isProblem, "a problem of a probe");
+  const evidence = list("evidence", isEvidence, "evidence").filter(isEvidence);
+  const ignored = list("ignored", (item) => isFields(item) && isEvidence(item["evidence"]) && isName(item["reason"]), "evidence with a reason");
+  const skipped = list("skipped", (item) => isFields(item) && isName(item["fact"]) && isName(item["reason"]), "a fact with a reason");
+  const ids = new Set<string>();
+  list(
+    "facts",
+    (item) => isFields(item) && ROLES.has(item["role"]) && typeof item["host"] === "string" && isFields(item["fact"]),
+    "a fact with a role and a host",
+  ).forEach((item, at) => {
+    if (!isFields(item)) return;
+    const read = readFact(item["fact"], FACT_KINDS);
+    if (read.tag === "err") {
+      problems.push(...read.error.map((problem) => `The item ${at + 1} of facts: ${problem}`));
+      // The report has this fact, but the fact is not valid. A reference to its id is thus not a second problem.
+      const fact = item["fact"];
+      if (isFields(fact) && typeof fact["id"] === "string") ids.add(fact["id"]);
+      return;
+    }
+    need(!ids.has(read.value.id), `The fact id ${read.value.id} is not unique.`);
+    ids.add(read.value.id);
+  });
+  const cited = [
+    ...evidence.flatMap((item) => item.facts ?? []),
+    ...ignored.flatMap((item) => (isFields(item) && isEvidence(item["evidence"]) ? (item["evidence"].facts ?? []) : [])),
+    ...skipped.flatMap((item) => (isFields(item) && isName(item["fact"]) ? [item["fact"]] : [])),
+  ];
+  for (const id of new Set(cited)) need(ids.has(id), `The report names the fact ${id}, and has no fact with this id.`);
+  if (problems.length > 0) return err(problems.slice(0, MAX_REPORT_PROBLEMS));
+  return ok(value as unknown as CheckReport);
 }

@@ -1,4 +1,4 @@
-import { isIP } from "node:net";
+import { ipVersion } from "../address/index.ts";
 import { observe, type Observation } from "../fact.ts";
 import { PATH_TRACE, type PathTrace, type TraceHop } from "../kinds.ts";
 import { defineProbe, type Availability, type Probe, type ProbeContext } from "../probe.ts";
@@ -172,7 +172,7 @@ class HopBuilder {
 /** This function gives the address of a token, for example `192.0.2.1` or `(192.0.2.1)`, or `undefined`. */
 function addressOf(token: string): string | undefined {
   const text = token.replace(/^\((.*)\)$/, "$1");
-  return isIP(text) === 0 ? undefined : text;
+  return ipVersion(text) === 0 ? undefined : text;
 }
 
 /** The messages of traceroute on Linux and macOS when a socket operation fails, for example `socket: Operation not permitted`. */

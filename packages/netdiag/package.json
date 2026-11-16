@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "@mark1russell7/netdiag",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Network diagnosis: typed facts at each layer of the stack, probes as adapters, and a scope rule for active probes.",
   "keywords": [
     "network",
@@ -30,6 +30,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./core": "./src/core.ts",
     "./address": "./src/address/index.ts",
     "./diagnosis": "./src/diagnosis/index.ts",
     "./tools": "./src/tools/index.ts",
@@ -51,6 +52,10 @@
       ".": {
         "types": "./build/index.d.ts",
         "default": "./build/index.js"
+      },
+      "./core": {
+        "types": "./build/core.d.ts",
+        "default": "./build/core.js"
       },
       "./address": {
         "types": "./build/address.d.ts",

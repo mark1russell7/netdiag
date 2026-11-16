@@ -100,6 +100,15 @@ The option `--json` writes the object `CheckReport` in the format `netdiag-check
 | `ignored`, `skipped` | The evidence and the facts that the diagnosis did not use, with the reason. |
 | `facts` | Each fact of the visit, with its role and its host. |
 
+`readCheckReport(value)` reads a report of JSON and checks it. The checks are these:
+
+- Each field has its type, and each fact passes `readFact` of netdiag.
+- The causes go from the most probable, and their probabilities sum to 1.
+- `next` is the first of `choices`, and each fact id is unique.
+- Each fact id of `evidence`, `ignored` and `skipped` is the id of a fact of the report.
+
+The entry `@mark1russell7/netdiag-cli/report` has the report functions only. It starts no probe, so a page can read a report with it.
+
 ## The API
 
 The pure parts of the command are also exports. A program can use them with its own probes.
@@ -109,6 +118,7 @@ The pure parts of the command are also exports. A program can use them with its 
 | `planCheck(options, system)` | It gives the plan of a check with the grants of its scope, or each problem of the options. |
 | `reportOf(plan, steps)` | It gives the report of the steps of a visit. |
 | `formatReport(report)` | It gives the lines of the text output. |
+| `readCheckReport(value)` | It reads a JSON report and gives the report, or at most 20 problems. |
 | `nextSteps(diagnosis, plan, addressed)` | It gives the next steps, from the largest gain. |
 | `check(options, deps)` | It plans a check, starts the visit with the given clock and tool host, and gives the report. |
 | `createNetdiagCli(options)` | It makes the command line with a given check, output and terminal. |

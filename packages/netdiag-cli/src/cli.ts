@@ -4,8 +4,9 @@ import { createProcedureCli, type Print, type ProcedureCli, type Terminal } from
 import { defineProcedure } from "@procedures/client";
 import { z } from "zod";
 import { check, systemDeps } from "./check.ts";
-import { SCHEMES, type CheckOptions } from "./plan.ts";
+import type { CheckOptions } from "./plan.ts";
 import { formatReport, type CheckReport } from "./report.ts";
+import { SCHEMES } from "./scheme.ts";
 
 // The command line of netdiag. `@procedures/cli-kit` makes the flags from the input schema of the command `check`, and
 // gives the help, `--json` and the exit code.

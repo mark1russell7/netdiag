@@ -75,6 +75,12 @@ jobs:
           bars=()
           if [ "$ROUNDS" = 5 ]; then bars=(--bars packages/lab/bars/loopback.json); fi
           node packages/lab/src/main.ts --hosts ci --rounds "$ROUNDS" --out lab-out "${bars[@]}"
+      # The site shows these reports of `netdiag check` (ND-9). One run of the matrix writes them.
+      - name: Write the sample reports of the site
+        if: ${{ matrix.run == 1 }}
+        env:
+          COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node packages/lab/src/samples-main.ts --hosts ci --commit "$COMMIT" --out lab-out/samples.json
       - name: Remove the delay of the path
         if: always()
         run: sudo tc qdisc del dev lo root || true

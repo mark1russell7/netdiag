@@ -9,94 +9,95 @@
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
-type Availability: build/host.chunk.d.ts#Availability
-type BandwidthEstimate: build/index.d.ts#BandwidthEstimate
-Bin: build/index.d.ts#Bin
-CAPTURE_OUTCOMES: build/host.chunk.d.ts#CAPTURE_OUTCOMES
-CAPTURE_PROTOCOLS: build/host.chunk.d.ts#CAPTURE_PROTOCOLS
-CERT_PROBLEMS: build/host.chunk.d.ts#CERT_PROBLEMS
-CONNECT_OUTCOMES: build/host.chunk.d.ts#CONNECT_OUTCOMES
+type Availability: build/counts.chunk.d.ts#Availability
+type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
+Bin: build/core.chunk.d.ts#Bin
+CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
+CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
+CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
+CONNECT_OUTCOMES: build/counts.chunk.d.ts#CONNECT_OUTCOMES
 type Candidate: build/index.chunk2.d.ts#Candidate
-CaptureOutcome: build/host.chunk.d.ts#CaptureOutcome
-CaptureProtocol: build/host.chunk.d.ts#CaptureProtocol
-CapturedPacket: build/host.chunk.d.ts#CapturedPacket
+CaptureOutcome: build/counts.chunk.d.ts#CaptureOutcome
+CaptureProtocol: build/counts.chunk.d.ts#CaptureProtocol
+CapturedPacket: build/counts.chunk.d.ts#CapturedPacket
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
 type Cause: build/index.chunk2.d.ts#Cause
-CertProblem: build/host.chunk.d.ts#CertProblem
+CertProblem: build/counts.chunk.d.ts#CertProblem
 Cidr: build/index.chunk.d.ts#Cidr
 CidrSet: build/index.chunk.d.ts#CidrSet
-type ClockOrigin: build/index.d.ts#ClockOrigin
+type ClockOrigin: build/core.chunk.d.ts#ClockOrigin
 type ConnectOptions: build/index.d.ts#ConnectOptions
-ConnectOutcome: build/host.chunk.d.ts#ConnectOutcome
+ConnectOutcome: build/counts.chunk.d.ts#ConnectOutcome
 type Contribution: build/index.chunk2.d.ts#Contribution
 DEFAULT_MAX_BYTES: build/index.d.ts#DEFAULT_MAX_BYTES
-DEFAULT_MAX_PORTS_PER_HOST: build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+DEFAULT_MAX_PORTS_PER_HOST: build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
 DEFAULT_TIMEOUT_MS: build/index.d.ts#DEFAULT_TIMEOUT_MS
-DNS_ANSWER: build/host.chunk.d.ts#DNS_ANSWER
-DNS_ANSWER_VALUES: build/index.d.ts#DNS_ANSWER_VALUES
-DNS_OUTCOMES: build/host.chunk.d.ts#DNS_OUTCOMES
+DNS_ANSWER: build/counts.chunk.d.ts#DNS_ANSWER
+DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
+DNS_OUTCOMES: build/counts.chunk.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
-type DelayMetrics: build/index.d.ts#DelayMetrics
+type DelayMetrics: build/core.chunk.d.ts#DelayMetrics
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Dial: build/index.d.ts#Dial
 type Distribution: build/index.chunk2.d.ts#Distribution
-DnsAnswer: build/host.chunk.d.ts#DnsAnswer
+DnsAnswer: build/counts.chunk.d.ts#DnsAnswer
 type DnsInput: build/index.d.ts#DnsInput
-DnsOutcome: build/host.chunk.d.ts#DnsOutcome
+DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
 type DnsRaw: build/index.d.ts#DnsRaw
-ECHO_OUTCOMES: build/host.chunk.d.ts#ECHO_OUTCOMES
-ETHERNET_MTU: build/host.chunk.d.ts#ETHERNET_MTU
-type EchoMetrics: build/index.d.ts#EchoMetrics
-EchoOutcome: build/host.chunk.d.ts#EchoOutcome
+ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
+ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
+type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
+EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk2.d.ts#Evidence
 type Expectation: build/index.chunk2.d.ts#Expectation
-FEATURE_SOURCES: build/index.d.ts#FEATURE_SOURCES
+FEATURE_SOURCES: build/core.chunk.d.ts#FEATURE_SOURCES
 FLOOR: build/index.chunk2.d.ts#FLOOR
-type Fact: build/host.chunk.d.ts#Fact
-type FactKind: build/host.chunk.d.ts#FactKind
-type FactSource: build/host.chunk.d.ts#FactSource
-type FactTime: build/host.chunk.d.ts#FactTime
+type Fact: build/counts.chunk.d.ts#Fact
+type FactKind: build/counts.chunk.d.ts#FactKind
+type FactSource: build/counts.chunk.d.ts#FactSource
+type FactTime: build/counts.chunk.d.ts#FactTime
 type Fault: build/index.chunk2.d.ts#Fault
 type Feature: build/index.chunk2.d.ts#Feature
-FeaturesOptions: build/index.d.ts#FeaturesOptions
+FeaturesOptions: build/core.chunk.d.ts#FeaturesOptions
 GAIN_RESOLUTION: build/index.chunk2.d.ts#GAIN_RESOLUTION
-GATEWAY_REPLY_VALUES: build/index.d.ts#GATEWAY_REPLY_VALUES
-type Grant: build/index.d.ts#Grant
-type GrantBasis: build/index.d.ts#GrantBasis
-HANDSHAKE_OUTCOMES: build/host.chunk.d.ts#HANDSHAKE_OUTCOMES
-HTTP_OUTCOMES: build/host.chunk.d.ts#HTTP_OUTCOMES
+GATEWAY_REPLY_VALUES: build/core.chunk.d.ts#GATEWAY_REPLY_VALUES
+type Grant: build/core.chunk.d.ts#Grant
+type GrantBasis: build/core.chunk.d.ts#GrantBasis
+HANDSHAKE_OUTCOMES: build/counts.chunk.d.ts#HANDSHAKE_OUTCOMES
+HTTP_OUTCOMES: build/counts.chunk.d.ts#HTTP_OUTCOMES
 HTTP_PROBE: build/index.d.ts#HTTP_PROBE
-HTTP_RESPONSE: build/host.chunk.d.ts#HTTP_RESPONSE
-HTTP_TTFB_BINS: build/index.d.ts#HTTP_TTFB_BINS
-HandshakeOutcome: build/host.chunk.d.ts#HandshakeOutcome
-type HostGrant: build/index.d.ts#HostGrant
-type HostKind: build/host.chunk.d.ts#HostKind
+HTTP_RESPONSE: build/counts.chunk.d.ts#HTTP_RESPONSE
+HTTP_TTFB_BINS: build/core.chunk.d.ts#HTTP_TTFB_BINS
+HandshakeOutcome: build/counts.chunk.d.ts#HandshakeOutcome
+type HostGrant: build/core.chunk.d.ts#HostGrant
+type HostKind: build/counts.chunk.d.ts#HostKind
 type HttpInput: build/index.d.ts#HttpInput
-HttpOutcome: build/host.chunk.d.ts#HttpOutcome
+HttpOutcome: build/counts.chunk.d.ts#HttpOutcome
 type HttpPhase: build/index.d.ts#HttpPhase
 type HttpRaw: build/index.d.ts#HttpRaw
-HttpResponse: build/host.chunk.d.ts#HttpResponse
+HttpResponse: build/counts.chunk.d.ts#HttpResponse
 type Hypothesis: build/index.chunk2.d.ts#Hypothesis
-ICMP_ECHO: build/host.chunk.d.ts#ICMP_ECHO
-ICMP_REPLY_VALUES: build/index.d.ts#ICMP_REPLY_VALUES
-IPV4_MIN_MTU: build/host.chunk.d.ts#IPV4_MIN_MTU
-IPV6_MIN_MTU: build/host.chunk.d.ts#IPV6_MIN_MTU
-IcmpEcho: build/host.chunk.d.ts#IcmpEcho
+ICMP_ECHO: build/counts.chunk.d.ts#ICMP_ECHO
+ICMP_REPLY_VALUES: build/core.chunk.d.ts#ICMP_REPLY_VALUES
+IPV4_MIN_MTU: build/counts.chunk.d.ts#IPV4_MIN_MTU
+IPV6_MIN_MTU: build/counts.chunk.d.ts#IPV6_MIN_MTU
+IcmpEcho: build/counts.chunk.d.ts#IcmpEcho
 type InterfaceAddress: build/index.d.ts#InterfaceAddress
 type InterfaceTable: build/index.d.ts#InterfaceTable
-JITTER_GAIN: build/index.d.ts#JITTER_GAIN
+JITTER_GAIN: build/core.chunk.d.ts#JITTER_GAIN
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
 LINK_PROBE: build/index.d.ts#LINK_PROBE
-LINK_STATE: build/host.chunk.d.ts#LINK_STATE
-LINK_STATES: build/host.chunk.d.ts#LINK_STATES
-LINK_STATE_VALUES: build/index.d.ts#LINK_STATE_VALUES
+LINK_STATE: build/counts.chunk.d.ts#LINK_STATE
+LINK_STATES: build/counts.chunk.d.ts#LINK_STATES
+LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
-LOCAL_SUFFIXES: build/index.d.ts#LOCAL_SUFFIXES
-LOSS_MIN_SENT: build/index.d.ts#LOSS_MIN_SENT
+LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
+LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
@@ -107,153 +108,156 @@ type LabStatus: build/index.chunk2.d.ts#LabStatus
 type LabVerdict: build/index.chunk2.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
 type LinkInput: build/index.d.ts#LinkInput
-LinkInterface: build/host.chunk.d.ts#LinkInterface
+LinkInterface: build/counts.chunk.d.ts#LinkInterface
 type LinkRaw: build/index.d.ts#LinkRaw
-LinkState: build/host.chunk.d.ts#LinkState
-LinkStateValue: build/host.chunk.d.ts#LinkStateValue
-type LossEstimate: build/index.d.ts#LossEstimate
+LinkState: build/counts.chunk.d.ts#LinkState
+LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
+type LossEstimate: build/core.chunk.d.ts#LossEstimate
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
-MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
-MTU_OUTCOMES: build/host.chunk.d.ts#MTU_OUTCOMES
-MTU_SEARCHES: build/index.d.ts#MTU_SEARCHES
-MTU_STOPS: build/host.chunk.d.ts#MTU_STOPS
-MTU_TRY_RESULTS: build/host.chunk.d.ts#MTU_TRY_RESULTS
-type MtuBounds: build/host.chunk.d.ts#MtuBounds
-MtuOutcome: build/host.chunk.d.ts#MtuOutcome
-type MtuSearch: build/index.d.ts#MtuSearch
-MtuStop: build/host.chunk.d.ts#MtuStop
-MtuTry: build/host.chunk.d.ts#MtuTry
-MtuTryResult: build/host.chunk.d.ts#MtuTryResult
-NATIVE_KINDS: build/host.chunk.d.ts#NATIVE_KINDS
+MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
+MIN_CONNECT_MS: build/core.chunk.d.ts#MIN_CONNECT_MS
+MTU_OUTCOMES: build/counts.chunk.d.ts#MTU_OUTCOMES
+MTU_SEARCHES: build/core.chunk.d.ts#MTU_SEARCHES
+MTU_STOPS: build/counts.chunk.d.ts#MTU_STOPS
+MTU_TRY_RESULTS: build/counts.chunk.d.ts#MTU_TRY_RESULTS
+type MtuBounds: build/counts.chunk.d.ts#MtuBounds
+MtuOutcome: build/counts.chunk.d.ts#MtuOutcome
+type MtuSearch: build/core.chunk.d.ts#MtuSearch
+MtuStop: build/counts.chunk.d.ts#MtuStop
+MtuTry: build/counts.chunk.d.ts#MtuTry
+MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
+NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk2.d.ts#NONE
 type Observable: build/index.chunk2.d.ts#Observable
-type Observation: build/host.chunk.d.ts#Observation
-PACKET_PROTOCOLS: build/host.chunk.d.ts#PACKET_PROTOCOLS
-PAIR_LEVEL: build/index.d.ts#PAIR_LEVEL
+type Observation: build/counts.chunk.d.ts#Observation
+PACKET_PROTOCOLS: build/counts.chunk.d.ts#PACKET_PROTOCOLS
+PAIR_LEVEL: build/core.chunk.d.ts#PAIR_LEVEL
 PARTS: build/index.chunk2.d.ts#PARTS
-PATH_CAPTURE: build/host.chunk.d.ts#PATH_CAPTURE
-PATH_LOSS_BINS: build/index.d.ts#PATH_LOSS_BINS
-PATH_MTU: build/host.chunk.d.ts#PATH_MTU
-PATH_MTU_VALUES: build/index.d.ts#PATH_MTU_VALUES
-PATH_REPORT: build/host.chunk.d.ts#PATH_REPORT
-PATH_THROUGHPUT: build/host.chunk.d.ts#PATH_THROUGHPUT
-PATH_TRACE: build/host.chunk.d.ts#PATH_TRACE
-PDV_QUANTILE: build/index.d.ts#PDV_QUANTILE
-PacketProtocol: build/host.chunk.d.ts#PacketProtocol
+PATH_CAPTURE: build/counts.chunk.d.ts#PATH_CAPTURE
+PATH_LOSS_BINS: build/core.chunk.d.ts#PATH_LOSS_BINS
+PATH_MTU: build/counts.chunk.d.ts#PATH_MTU
+PATH_MTU_VALUES: build/core.chunk.d.ts#PATH_MTU_VALUES
+PATH_REPORT: build/counts.chunk.d.ts#PATH_REPORT
+PATH_THROUGHPUT: build/counts.chunk.d.ts#PATH_THROUGHPUT
+PATH_TRACE: build/counts.chunk.d.ts#PATH_TRACE
+PDV_QUANTILE: build/core.chunk.d.ts#PDV_QUANTILE
+PacketProtocol: build/counts.chunk.d.ts#PacketProtocol
 type Part: build/index.chunk2.d.ts#Part
-PathCapture: build/host.chunk.d.ts#PathCapture
-PathMtu: build/host.chunk.d.ts#PathMtu
-PathReport: build/host.chunk.d.ts#PathReport
-PathThroughput: build/host.chunk.d.ts#PathThroughput
-PathTrace: build/host.chunk.d.ts#PathTrace
-type PortLedger: build/index.d.ts#PortLedger
+PathCapture: build/counts.chunk.d.ts#PathCapture
+PathMtu: build/counts.chunk.d.ts#PathMtu
+PathReport: build/counts.chunk.d.ts#PathReport
+PathThroughput: build/counts.chunk.d.ts#PathThroughput
+PathTrace: build/counts.chunk.d.ts#PathTrace
+type PortLedger: build/core.chunk.d.ts#PortLedger
 type Prediction: build/index.chunk2.d.ts#Prediction
-type Probe: build/host.chunk.d.ts#Probe
+type Probe: build/counts.chunk.d.ts#Probe
 type ProbeChoice: build/index.chunk2.d.ts#ProbeChoice
-type ProbeContext: build/host.chunk.d.ts#ProbeContext
-type ProbeMode: build/host.chunk.d.ts#ProbeMode
-type ProbeOutcome: build/index.d.ts#ProbeOutcome
-RECORD_TYPES: build/host.chunk.d.ts#RECORD_TYPES
-RTO_ALPHA: build/index.d.ts#RTO_ALPHA
-RTO_BETA: build/index.d.ts#RTO_BETA
-RTO_K: build/index.d.ts#RTO_K
-type RangeGrant: build/index.d.ts#RangeGrant
+type ProbeContext: build/counts.chunk.d.ts#ProbeContext
+type ProbeMode: build/counts.chunk.d.ts#ProbeMode
+type ProbeOutcome: build/core.chunk.d.ts#ProbeOutcome
+RECORD_TYPES: build/counts.chunk.d.ts#RECORD_TYPES
+RTO_ALPHA: build/core.chunk.d.ts#RTO_ALPHA
+RTO_BETA: build/core.chunk.d.ts#RTO_BETA
+RTO_K: build/core.chunk.d.ts#RTO_K
+type RangeGrant: build/core.chunk.d.ts#RangeGrant
 type RankOptions: build/index.chunk2.d.ts#RankOptions
 type Reach: build/index.chunk2.d.ts#Reach
-ReadOptions: build/index.d.ts#ReadOptions
-Reading: build/index.d.ts#Reading
-RecordType: build/host.chunk.d.ts#RecordType
-ReportHop: build/host.chunk.d.ts#ReportHop
-type RtoEstimate: build/index.d.ts#RtoEstimate
-type RtoOptions: build/index.d.ts#RtoOptions
-type Runner: build/index.d.ts#Runner
-type RunnerOptions: build/index.d.ts#RunnerOptions
+ReadOptions: build/core.chunk.d.ts#ReadOptions
+Reading: build/core.chunk.d.ts#Reading
+RecordType: build/counts.chunk.d.ts#RecordType
+ReportHop: build/counts.chunk.d.ts#ReportHop
+type RtoEstimate: build/core.chunk.d.ts#RtoEstimate
+type RtoOptions: build/core.chunk.d.ts#RtoOptions
+type Runner: build/core.chunk.d.ts#Runner
+type RunnerOptions: build/core.chunk.d.ts#RunnerOptions
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
 STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
-type Scope: build/index.d.ts#Scope
-type ScopeDecision: build/index.d.ts#ScopeDecision
-Skipped: build/index.d.ts#Skipped
+type Scope: build/core.chunk.d.ts#Scope
+type ScopeDecision: build/core.chunk.d.ts#ScopeDecision
+Skipped: build/core.chunk.d.ts#Skipped
 type Strength: build/index.chunk2.d.ts#Strength
-TCP_CONNECT: build/host.chunk.d.ts#TCP_CONNECT
-TCP_CONNECT_VALUES: build/index.d.ts#TCP_CONNECT_VALUES
+TCP_CONNECT: build/counts.chunk.d.ts#TCP_CONNECT
+TCP_CONNECT_VALUES: build/core.chunk.d.ts#TCP_CONNECT_VALUES
 TCP_PROBE: build/index.d.ts#TCP_PROBE
-TCP_TIME_BINS: build/index.d.ts#TCP_TIME_BINS
-THROUGHPUT_OUTCOMES: build/host.chunk.d.ts#THROUGHPUT_OUTCOMES
-THROUGHPUT_PROTOCOLS: build/host.chunk.d.ts#THROUGHPUT_PROTOCOLS
-TLS_HANDSHAKE: build/host.chunk.d.ts#TLS_HANDSHAKE
-TLS_HANDSHAKE_VALUES: build/index.d.ts#TLS_HANDSHAKE_VALUES
+TCP_TIME_BINS: build/core.chunk.d.ts#TCP_TIME_BINS
+THROUGHPUT_OUTCOMES: build/counts.chunk.d.ts#THROUGHPUT_OUTCOMES
+THROUGHPUT_PROTOCOLS: build/counts.chunk.d.ts#THROUGHPUT_PROTOCOLS
+TLS_HANDSHAKE: build/counts.chunk.d.ts#TLS_HANDSHAKE
+TLS_HANDSHAKE_VALUES: build/core.chunk.d.ts#TLS_HANDSHAKE_VALUES
 TLS_PROBE: build/index.d.ts#TLS_PROBE
-TLS_RATIO_BINS: build/index.d.ts#TLS_RATIO_BINS
-TLS_TRUST_VALUES: build/index.d.ts#TLS_TRUST_VALUES
-TOOL_KINDS: build/host.chunk.d.ts#TOOL_KINDS
-TRACE_OUTCOMES: build/host.chunk.d.ts#TRACE_OUTCOMES
-TRUSTS: build/host.chunk.d.ts#TRUSTS
-type Target: build/host.chunk.d.ts#Target
-TcpConnect: build/host.chunk.d.ts#TcpConnect
+TLS_RATIO_BINS: build/core.chunk.d.ts#TLS_RATIO_BINS
+TLS_TRUST_VALUES: build/core.chunk.d.ts#TLS_TRUST_VALUES
+TOOL_KINDS: build/counts.chunk.d.ts#TOOL_KINDS
+TRACE_OUTCOMES: build/counts.chunk.d.ts#TRACE_OUTCOMES
+TRUSTS: build/counts.chunk.d.ts#TRUSTS
+type Target: build/counts.chunk.d.ts#Target
+TcpConnect: build/counts.chunk.d.ts#TcpConnect
 type TcpInput: build/index.d.ts#TcpInput
 type TcpPhase: build/index.d.ts#TcpPhase
 type TcpRaw: build/index.d.ts#TcpRaw
-ThroughputInterval: build/host.chunk.d.ts#ThroughputInterval
-ThroughputOutcome: build/host.chunk.d.ts#ThroughputOutcome
-ThroughputProtocol: build/host.chunk.d.ts#ThroughputProtocol
-TlsCertificate: build/host.chunk.d.ts#TlsCertificate
-TlsHandshake: build/host.chunk.d.ts#TlsHandshake
+ThroughputInterval: build/counts.chunk.d.ts#ThroughputInterval
+ThroughputOutcome: build/counts.chunk.d.ts#ThroughputOutcome
+ThroughputProtocol: build/counts.chunk.d.ts#ThroughputProtocol
+TlsCertificate: build/counts.chunk.d.ts#TlsCertificate
+TlsHandshake: build/counts.chunk.d.ts#TlsHandshake
 type TlsInput: build/index.d.ts#TlsInput
 type TlsPhase: build/index.d.ts#TlsPhase
 type TlsProbeOptions: build/index.d.ts#TlsProbeOptions
 type TlsRaw: build/index.d.ts#TlsRaw
-TraceHop: build/host.chunk.d.ts#TraceHop
-TraceOutcome: build/host.chunk.d.ts#TraceOutcome
-Trust: build/host.chunk.d.ts#Trust
+TraceHop: build/counts.chunk.d.ts#TraceHop
+TraceOutcome: build/counts.chunk.d.ts#TraceOutcome
+Trust: build/counts.chunk.d.ts#Trust
 UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
 VISIT_RECORDS: build/index.d.ts#VISIT_RECORDS
-type ValueOf: build/host.chunk.d.ts#ValueOf
-type VisitHost: build/index.d.ts#VisitHost
-type VisitInput: build/index.d.ts#VisitInput
+VISIT_ROLES: build/core.chunk.d.ts#VISIT_ROLES
+type ValueOf: build/counts.chunk.d.ts#ValueOf
+type VisitHost: build/core.chunk.d.ts#VisitHost
+type VisitInput: build/core.chunk.d.ts#VisitInput
 type VisitOptions: build/index.d.ts#VisitOptions
-type VisitResolver: build/index.d.ts#VisitResolver
-type VisitRole: build/index.d.ts#VisitRole
-type VisitStep: build/index.d.ts#VisitStep
-ackSamples: build/index.d.ts#ackSamples
+type VisitResolver: build/core.chunk.d.ts#VisitResolver
+type VisitRole: build/core.chunk.d.ts#VisitRole
+type VisitStep: build/core.chunk.d.ts#VisitStep
+ackSamples: build/core.chunk.d.ts#ackSamples
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
-bandwidthOf: build/index.d.ts#bandwidthOf
-binOf: build/index.d.ts#binOf
+bandwidthOf: build/core.chunk.d.ts#bandwidthOf
+binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
-canonicalHost: build/host.chunk.d.ts#canonicalHost
+canonicalHost: build/counts.chunk.d.ts#canonicalHost
 certProblem: build/index.d.ts#certProblem
 cidrContains: build/index.chunk.d.ts#cidrContains
 cidrSet: build/index.chunk.d.ts#cidrSet
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
 connectOutcome: build/index.d.ts#connectOutcome
-createRunner: build/index.d.ts#createRunner
-decideScope: build/index.d.ts#decideScope
-defineFactKind: build/host.chunk.d.ts#defineFactKind
-defineProbe: build/host.chunk.d.ts#defineProbe
-delayMetrics: build/index.d.ts#delayMetrics
+createRunner: build/core.chunk.d.ts#createRunner
+decideScope: build/core.chunk.d.ts#decideScope
+defineFactKind: build/counts.chunk.d.ts#defineFactKind
+defineProbe: build/counts.chunk.d.ts#defineProbe
+delayMetrics: build/core.chunk.d.ts#delayMetrics
 describeOutcome: build/index.d.ts#describeOutcome
 diagnose: build/index.chunk2.d.ts#diagnose
 dnsOutcome: build/index.d.ts#dnsOutcome
-echoMetrics: build/index.d.ts#echoMetrics
+echoMetrics: build/core.chunk.d.ts#echoMetrics
 expand: build/index.chunk2.d.ts#expand
 explain: build/index.chunk2.d.ts#explain
-factsOf: build/host.chunk.d.ts#factsOf
-featuresOf: build/index.d.ts#featuresOf
+factsOf: build/counts.chunk.d.ts#factsOf
+featuresOf: build/core.chunk.d.ts#featuresOf
 formatCidr: build/index.chunk.d.ts#formatCidr
-formatTarget: build/host.chunk.d.ts#formatTarget
-grantProblems: build/index.d.ts#grantProblems
+formatTarget: build/counts.chunk.d.ts#formatTarget
+grantProblems: build/core.chunk.d.ts#grantProblems
 handshakeOutcome: build/index.d.ts#handshakeOutcome
-hostKind: build/host.chunk.d.ts#hostKind
+hostKind: build/counts.chunk.d.ts#hostKind
 httpProbe: build/index.d.ts#httpProbe
 interfaceOf: build/index.d.ts#interfaceOf
-ipdv: build/index.d.ts#ipdv
-isFactOf: build/host.chunk.d.ts#isFactOf
+ipVersion: build/index.chunk.d.ts#ipVersion
+ipdv: build/core.chunk.d.ts#ipdv
+isFactOf: build/counts.chunk.d.ts#isFactOf
 isLayer: build/layer.chunk.d.ts#isLayer
-isLocalName: build/index.d.ts#isLocalName
+isLocalName: build/core.chunk.d.ts#isLocalName
 labBars: build/index.chunk2.d.ts#labBars
 labGate: build/index.chunk2.d.ts#labGate
 labRecordOf: build/index.chunk2.d.ts#labRecordOf
@@ -261,30 +265,275 @@ largePacketsLost: build/index.d.ts#largePacketsLost
 layerRank: build/layer.chunk.d.ts#layerRank
 linkProbe: build/index.d.ts#linkProbe
 linkStateOf: build/index.d.ts#linkStateOf
-lossOf: build/index.d.ts#lossOf
-mtuOf: build/host.chunk.d.ts#mtuOf
-namedGrant: build/index.d.ts#namedGrant
-nextMtuSize: build/host.chunk.d.ts#nextMtuSize
-observe: build/host.chunk.d.ts#observe
-packetPairs: build/index.d.ts#packetPairs
+lossOf: build/core.chunk.d.ts#lossOf
+mtuOf: build/counts.chunk.d.ts#mtuOf
+namedGrant: build/core.chunk.d.ts#namedGrant
+nextMtuSize: build/counts.chunk.d.ts#nextMtuSize
+observe: build/counts.chunk.d.ts#observe
+packetPairs: build/core.chunk.d.ts#packetPairs
 parseCidr: build/index.chunk.d.ts#parseCidr
-parseTarget: build/host.chunk.d.ts#parseTarget
-pdv: build/index.d.ts#pdv
+parseTarget: build/counts.chunk.d.ts#parseTarget
+pdv: build/core.chunk.d.ts#pdv
 predictive: build/index.chunk2.d.ts#predictive
 rankProbes: build/index.chunk2.d.ts#rankProbes
-readEvidence: build/index.d.ts#readEvidence
-resolvedGrant: build/index.d.ts#resolvedGrant
-rfc3550Jitter: build/index.d.ts#rfc3550Jitter
-rtoOf: build/index.d.ts#rtoOf
-sameTarget: build/host.chunk.d.ts#sameTarget
-scopeOf: build/index.d.ts#scopeOf
+readEvidence: build/core.chunk.d.ts#readEvidence
+readFact: build/counts.chunk.d.ts#readFact
+resolvedGrant: build/core.chunk.d.ts#resolvedGrant
+rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
+rtoOf: build/core.chunk.d.ts#rtoOf
+sameTarget: build/counts.chunk.d.ts#sameTarget
+scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
-target: build/host.chunk.d.ts#target
+target: build/counts.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
 upInterfaces: build/index.d.ts#upInterfaces
 visitTarget: build/index.d.ts#visitTarget
-widen: build/index.d.ts#widen
+widen: build/core.chunk.d.ts#widen
+
+## ./core (build/core.d.ts): names
+
+ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
+AddressClass: build/index.chunk.d.ts#AddressClass
+AddressFamily: build/index.chunk.d.ts#AddressFamily
+type Availability: build/counts.chunk.d.ts#Availability
+type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
+Bin: build/core.chunk.d.ts#Bin
+CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
+CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
+CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
+CONNECT_OUTCOMES: build/counts.chunk.d.ts#CONNECT_OUTCOMES
+type Candidate: build/index.chunk2.d.ts#Candidate
+CaptureOutcome: build/counts.chunk.d.ts#CaptureOutcome
+CaptureProtocol: build/counts.chunk.d.ts#CaptureProtocol
+CapturedPacket: build/counts.chunk.d.ts#CapturedPacket
+type Catalog: build/index.chunk2.d.ts#Catalog
+type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
+type Cause: build/index.chunk2.d.ts#Cause
+CertProblem: build/counts.chunk.d.ts#CertProblem
+Cidr: build/index.chunk.d.ts#Cidr
+CidrSet: build/index.chunk.d.ts#CidrSet
+type ClockOrigin: build/core.chunk.d.ts#ClockOrigin
+ConnectOutcome: build/counts.chunk.d.ts#ConnectOutcome
+type Contribution: build/index.chunk2.d.ts#Contribution
+DEFAULT_MAX_PORTS_PER_HOST: build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
+DNS_ANSWER: build/counts.chunk.d.ts#DNS_ANSWER
+DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
+DNS_OUTCOMES: build/counts.chunk.d.ts#DNS_OUTCOMES
+type DelayMetrics: build/core.chunk.d.ts#DelayMetrics
+type Diagnosis: build/index.chunk2.d.ts#Diagnosis
+type Distribution: build/index.chunk2.d.ts#Distribution
+DnsAnswer: build/counts.chunk.d.ts#DnsAnswer
+DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
+ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
+ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
+type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
+EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
+type Evidence: build/index.chunk2.d.ts#Evidence
+type Expectation: build/index.chunk2.d.ts#Expectation
+FEATURE_SOURCES: build/core.chunk.d.ts#FEATURE_SOURCES
+FLOOR: build/index.chunk2.d.ts#FLOOR
+type Fact: build/counts.chunk.d.ts#Fact
+type FactKind: build/counts.chunk.d.ts#FactKind
+type FactSource: build/counts.chunk.d.ts#FactSource
+type FactTime: build/counts.chunk.d.ts#FactTime
+type Fault: build/index.chunk2.d.ts#Fault
+type Feature: build/index.chunk2.d.ts#Feature
+FeaturesOptions: build/core.chunk.d.ts#FeaturesOptions
+GAIN_RESOLUTION: build/index.chunk2.d.ts#GAIN_RESOLUTION
+GATEWAY_REPLY_VALUES: build/core.chunk.d.ts#GATEWAY_REPLY_VALUES
+type Grant: build/core.chunk.d.ts#Grant
+type GrantBasis: build/core.chunk.d.ts#GrantBasis
+HANDSHAKE_OUTCOMES: build/counts.chunk.d.ts#HANDSHAKE_OUTCOMES
+HTTP_OUTCOMES: build/counts.chunk.d.ts#HTTP_OUTCOMES
+HTTP_RESPONSE: build/counts.chunk.d.ts#HTTP_RESPONSE
+HTTP_TTFB_BINS: build/core.chunk.d.ts#HTTP_TTFB_BINS
+HandshakeOutcome: build/counts.chunk.d.ts#HandshakeOutcome
+type HostGrant: build/core.chunk.d.ts#HostGrant
+type HostKind: build/counts.chunk.d.ts#HostKind
+HttpOutcome: build/counts.chunk.d.ts#HttpOutcome
+HttpResponse: build/counts.chunk.d.ts#HttpResponse
+type Hypothesis: build/index.chunk2.d.ts#Hypothesis
+ICMP_ECHO: build/counts.chunk.d.ts#ICMP_ECHO
+ICMP_REPLY_VALUES: build/core.chunk.d.ts#ICMP_REPLY_VALUES
+IPV4_MIN_MTU: build/counts.chunk.d.ts#IPV4_MIN_MTU
+IPV6_MIN_MTU: build/counts.chunk.d.ts#IPV6_MIN_MTU
+IcmpEcho: build/counts.chunk.d.ts#IcmpEcho
+JITTER_GAIN: build/core.chunk.d.ts#JITTER_GAIN
+LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
+LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
+LAYERS: build/layer.chunk.d.ts#LAYERS
+LINK_STATE: build/counts.chunk.d.ts#LINK_STATE
+LINK_STATES: build/counts.chunk.d.ts#LINK_STATES
+LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
+LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
+LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
+type LabBars: build/index.chunk2.d.ts#LabBars
+type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
+type LabCause: build/index.chunk2.d.ts#LabCause
+type LabGate: build/index.chunk2.d.ts#LabGate
+type LabRecord: build/index.chunk2.d.ts#LabRecord
+type LabScore: build/index.chunk2.d.ts#LabScore
+type LabStatus: build/index.chunk2.d.ts#LabStatus
+type LabVerdict: build/index.chunk2.d.ts#LabVerdict
+type Layer: build/layer.chunk.d.ts#Layer
+LinkInterface: build/counts.chunk.d.ts#LinkInterface
+LinkState: build/counts.chunk.d.ts#LinkState
+LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
+type LossEstimate: build/core.chunk.d.ts#LossEstimate
+MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
+MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
+MIN_CONNECT_MS: build/core.chunk.d.ts#MIN_CONNECT_MS
+MTU_OUTCOMES: build/counts.chunk.d.ts#MTU_OUTCOMES
+MTU_SEARCHES: build/core.chunk.d.ts#MTU_SEARCHES
+MTU_STOPS: build/counts.chunk.d.ts#MTU_STOPS
+MTU_TRY_RESULTS: build/counts.chunk.d.ts#MTU_TRY_RESULTS
+type MtuBounds: build/counts.chunk.d.ts#MtuBounds
+MtuOutcome: build/counts.chunk.d.ts#MtuOutcome
+type MtuSearch: build/core.chunk.d.ts#MtuSearch
+MtuStop: build/counts.chunk.d.ts#MtuStop
+MtuTry: build/counts.chunk.d.ts#MtuTry
+MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
+NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
+NONE: build/index.chunk2.d.ts#NONE
+type Observable: build/index.chunk2.d.ts#Observable
+type Observation: build/counts.chunk.d.ts#Observation
+PACKET_PROTOCOLS: build/counts.chunk.d.ts#PACKET_PROTOCOLS
+PAIR_LEVEL: build/core.chunk.d.ts#PAIR_LEVEL
+PARTS: build/index.chunk2.d.ts#PARTS
+PATH_CAPTURE: build/counts.chunk.d.ts#PATH_CAPTURE
+PATH_LOSS_BINS: build/core.chunk.d.ts#PATH_LOSS_BINS
+PATH_MTU: build/counts.chunk.d.ts#PATH_MTU
+PATH_MTU_VALUES: build/core.chunk.d.ts#PATH_MTU_VALUES
+PATH_REPORT: build/counts.chunk.d.ts#PATH_REPORT
+PATH_THROUGHPUT: build/counts.chunk.d.ts#PATH_THROUGHPUT
+PATH_TRACE: build/counts.chunk.d.ts#PATH_TRACE
+PDV_QUANTILE: build/core.chunk.d.ts#PDV_QUANTILE
+PacketProtocol: build/counts.chunk.d.ts#PacketProtocol
+type Part: build/index.chunk2.d.ts#Part
+PathCapture: build/counts.chunk.d.ts#PathCapture
+PathMtu: build/counts.chunk.d.ts#PathMtu
+PathReport: build/counts.chunk.d.ts#PathReport
+PathThroughput: build/counts.chunk.d.ts#PathThroughput
+PathTrace: build/counts.chunk.d.ts#PathTrace
+type PortLedger: build/core.chunk.d.ts#PortLedger
+type Prediction: build/index.chunk2.d.ts#Prediction
+type Probe: build/counts.chunk.d.ts#Probe
+type ProbeChoice: build/index.chunk2.d.ts#ProbeChoice
+type ProbeContext: build/counts.chunk.d.ts#ProbeContext
+type ProbeMode: build/counts.chunk.d.ts#ProbeMode
+type ProbeOutcome: build/core.chunk.d.ts#ProbeOutcome
+RECORD_TYPES: build/counts.chunk.d.ts#RECORD_TYPES
+RTO_ALPHA: build/core.chunk.d.ts#RTO_ALPHA
+RTO_BETA: build/core.chunk.d.ts#RTO_BETA
+RTO_K: build/core.chunk.d.ts#RTO_K
+type RangeGrant: build/core.chunk.d.ts#RangeGrant
+type RankOptions: build/index.chunk2.d.ts#RankOptions
+type Reach: build/index.chunk2.d.ts#Reach
+ReadOptions: build/core.chunk.d.ts#ReadOptions
+Reading: build/core.chunk.d.ts#Reading
+RecordType: build/counts.chunk.d.ts#RecordType
+ReportHop: build/counts.chunk.d.ts#ReportHop
+type RtoEstimate: build/core.chunk.d.ts#RtoEstimate
+type RtoOptions: build/core.chunk.d.ts#RtoOptions
+type Runner: build/core.chunk.d.ts#Runner
+type RunnerOptions: build/core.chunk.d.ts#RunnerOptions
+STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
+STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
+STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
+STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
+type Scope: build/core.chunk.d.ts#Scope
+type ScopeDecision: build/core.chunk.d.ts#ScopeDecision
+Skipped: build/core.chunk.d.ts#Skipped
+type Strength: build/index.chunk2.d.ts#Strength
+TCP_CONNECT: build/counts.chunk.d.ts#TCP_CONNECT
+TCP_CONNECT_VALUES: build/core.chunk.d.ts#TCP_CONNECT_VALUES
+TCP_TIME_BINS: build/core.chunk.d.ts#TCP_TIME_BINS
+THROUGHPUT_OUTCOMES: build/counts.chunk.d.ts#THROUGHPUT_OUTCOMES
+THROUGHPUT_PROTOCOLS: build/counts.chunk.d.ts#THROUGHPUT_PROTOCOLS
+TLS_HANDSHAKE: build/counts.chunk.d.ts#TLS_HANDSHAKE
+TLS_HANDSHAKE_VALUES: build/core.chunk.d.ts#TLS_HANDSHAKE_VALUES
+TLS_RATIO_BINS: build/core.chunk.d.ts#TLS_RATIO_BINS
+TLS_TRUST_VALUES: build/core.chunk.d.ts#TLS_TRUST_VALUES
+TOOL_KINDS: build/counts.chunk.d.ts#TOOL_KINDS
+TRACE_OUTCOMES: build/counts.chunk.d.ts#TRACE_OUTCOMES
+TRUSTS: build/counts.chunk.d.ts#TRUSTS
+type Target: build/counts.chunk.d.ts#Target
+TcpConnect: build/counts.chunk.d.ts#TcpConnect
+ThroughputInterval: build/counts.chunk.d.ts#ThroughputInterval
+ThroughputOutcome: build/counts.chunk.d.ts#ThroughputOutcome
+ThroughputProtocol: build/counts.chunk.d.ts#ThroughputProtocol
+TlsCertificate: build/counts.chunk.d.ts#TlsCertificate
+TlsHandshake: build/counts.chunk.d.ts#TlsHandshake
+TraceHop: build/counts.chunk.d.ts#TraceHop
+TraceOutcome: build/counts.chunk.d.ts#TraceOutcome
+Trust: build/counts.chunk.d.ts#Trust
+UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
+VISIT_ROLES: build/core.chunk.d.ts#VISIT_ROLES
+type ValueOf: build/counts.chunk.d.ts#ValueOf
+type VisitHost: build/core.chunk.d.ts#VisitHost
+type VisitInput: build/core.chunk.d.ts#VisitInput
+type VisitResolver: build/core.chunk.d.ts#VisitResolver
+type VisitRole: build/core.chunk.d.ts#VisitRole
+type VisitStep: build/core.chunk.d.ts#VisitStep
+ackSamples: build/core.chunk.d.ts#ackSamples
+addressClass: build/index.chunk.d.ts#addressClass
+addressFamily: build/index.chunk.d.ts#addressFamily
+addressKind: build/index.chunk.d.ts#addressKind
+bandwidthOf: build/core.chunk.d.ts#bandwidthOf
+binOf: build/core.chunk.d.ts#binOf
+canonicalAddress: build/index.chunk.d.ts#canonicalAddress
+canonicalHost: build/counts.chunk.d.ts#canonicalHost
+cidrContains: build/index.chunk.d.ts#cidrContains
+cidrSet: build/index.chunk.d.ts#cidrSet
+compileCatalog: build/index.chunk2.d.ts#compileCatalog
+createRunner: build/core.chunk.d.ts#createRunner
+decideScope: build/core.chunk.d.ts#decideScope
+defineFactKind: build/counts.chunk.d.ts#defineFactKind
+defineProbe: build/counts.chunk.d.ts#defineProbe
+delayMetrics: build/core.chunk.d.ts#delayMetrics
+diagnose: build/index.chunk2.d.ts#diagnose
+echoMetrics: build/core.chunk.d.ts#echoMetrics
+expand: build/index.chunk2.d.ts#expand
+explain: build/index.chunk2.d.ts#explain
+factsOf: build/counts.chunk.d.ts#factsOf
+featuresOf: build/core.chunk.d.ts#featuresOf
+formatCidr: build/index.chunk.d.ts#formatCidr
+formatTarget: build/counts.chunk.d.ts#formatTarget
+grantProblems: build/core.chunk.d.ts#grantProblems
+hostKind: build/counts.chunk.d.ts#hostKind
+ipVersion: build/index.chunk.d.ts#ipVersion
+ipdv: build/core.chunk.d.ts#ipdv
+isFactOf: build/counts.chunk.d.ts#isFactOf
+isLayer: build/layer.chunk.d.ts#isLayer
+isLocalName: build/core.chunk.d.ts#isLocalName
+labBars: build/index.chunk2.d.ts#labBars
+labGate: build/index.chunk2.d.ts#labGate
+labRecordOf: build/index.chunk2.d.ts#labRecordOf
+layerRank: build/layer.chunk.d.ts#layerRank
+lossOf: build/core.chunk.d.ts#lossOf
+mtuOf: build/counts.chunk.d.ts#mtuOf
+namedGrant: build/core.chunk.d.ts#namedGrant
+nextMtuSize: build/counts.chunk.d.ts#nextMtuSize
+observe: build/counts.chunk.d.ts#observe
+packetPairs: build/core.chunk.d.ts#packetPairs
+parseCidr: build/index.chunk.d.ts#parseCidr
+parseTarget: build/counts.chunk.d.ts#parseTarget
+pdv: build/core.chunk.d.ts#pdv
+predictive: build/index.chunk2.d.ts#predictive
+rankProbes: build/index.chunk2.d.ts#rankProbes
+readEvidence: build/core.chunk.d.ts#readEvidence
+readFact: build/counts.chunk.d.ts#readFact
+resolvedGrant: build/core.chunk.d.ts#resolvedGrant
+rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
+rtoOf: build/core.chunk.d.ts#rtoOf
+sameTarget: build/counts.chunk.d.ts#sameTarget
+scopeOf: build/core.chunk.d.ts#scopeOf
+scoreLab: build/index.chunk2.d.ts#scoreLab
+target: build/counts.chunk.d.ts#target
+widen: build/core.chunk.d.ts#widen
 
 ## ./address (build/address.d.ts): names
 
@@ -300,6 +549,7 @@ canonicalAddress: build/index.chunk.d.ts#canonicalAddress
 cidrContains: build/index.chunk.d.ts#cidrContains
 cidrSet: build/index.chunk.d.ts#cidrSet
 formatCidr: build/index.chunk.d.ts#formatCidr
+ipVersion: build/index.chunk.d.ts#ipVersion
 parseCidr: build/index.chunk.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
@@ -374,7 +624,7 @@ DEFAULT_IPERF3_SECONDS: build/tools.d.ts#DEFAULT_IPERF3_SECONDS
 DEFAULT_MTR_CYCLES: build/tools.d.ts#DEFAULT_MTR_CYCLES
 DEFAULT_MTU_COUNT: build/tools.d.ts#DEFAULT_MTU_COUNT
 DEFAULT_MTU_WAIT_MS: build/tools.d.ts#DEFAULT_MTU_WAIT_MS
-DEFAULT_PING_COUNT: build/tools.d.ts#DEFAULT_PING_COUNT
+DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
 DEFAULT_PING_WAIT_MS: build/tools.d.ts#DEFAULT_PING_WAIT_MS
 DEFAULT_TRACE_HOPS: build/tools.d.ts#DEFAULT_TRACE_HOPS
 DEFAULT_TRACE_WAIT_MS: build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
@@ -391,7 +641,7 @@ MAX_IPERF3_STREAMS: build/tools.d.ts#MAX_IPERF3_STREAMS
 MAX_MTR_CYCLES: build/tools.d.ts#MAX_MTR_CYCLES
 MAX_MTU_CEILING: build/tools.d.ts#MAX_MTU_CEILING
 MAX_MTU_COUNT: build/tools.d.ts#MAX_MTU_COUNT
-MAX_PING_COUNT: build/tools.d.ts#MAX_PING_COUNT
+MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
 MAX_TRACE_HOPS: build/tools.d.ts#MAX_TRACE_HOPS
 MTR_GRACE_MS: build/tools.d.ts#MTR_GRACE_MS
 type MtrInput: build/tools.d.ts#MtrInput
@@ -442,10 +692,355 @@ tracerouteProbe: build/tools.d.ts#tracerouteProbe
 
 ## Declarations
 
-### build/host.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
-declare const AVAILABILITY_TIMEOUT_MS = 5e3;
+### build/core.chunk.d.ts#BandwidthEstimate
+interface BandwidthEstimate {
+  readonly pairs: number;
+  readonly bitsPerSecond: number;
+  readonly low: number;
+  readonly high: number;
+  readonly coverage: number;
+}
 
-### build/host.chunk.d.ts#Availability
+### build/core.chunk.d.ts#Bin
+interface Bin {
+  readonly below?: number | undefined;
+  readonly value: string;
+}
+
+### build/core.chunk.d.ts#ClockOrigin
+interface ClockOrigin {
+  readonly wall: string;
+  readonly monotonic: number;
+}
+
+### build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
+declare const DEFAULT_MAX_PORTS_PER_HOST = 8;
+
+### build/core.chunk.d.ts#DNS_ANSWER_VALUES
+declare const DNS_ANSWER_VALUES: Readonly<Partial<Record<DnsOutcome, string>>>;
+
+### build/core.chunk.d.ts#DelayMetrics
+interface DelayMetrics {
+  readonly samples: number;
+  readonly minMs: number;
+  readonly medianMs: number;
+  readonly meanMs: number;
+  readonly maxMs: number;
+  readonly sdMs?: number | undefined;
+  readonly jitterMs?: number | undefined;
+  readonly ipdvMs?: number | undefined;
+  readonly pdvMs: number;
+}
+
+### build/core.chunk.d.ts#EchoMetrics
+interface EchoMetrics {
+  readonly address: string;
+  readonly loss?: LossEstimate | undefined;
+  readonly delay?: DelayMetrics | undefined;
+}
+
+### build/core.chunk.d.ts#FEATURE_SOURCES
+declare const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[])[]>>;
+
+### build/core.chunk.d.ts#FeaturesOptions
+interface FeaturesOptions {
+  readonly gateway?: boolean | undefined;
+}
+
+### build/core.chunk.d.ts#GATEWAY_REPLY_VALUES
+declare const GATEWAY_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>>;
+
+### build/core.chunk.d.ts#Grant
+type Grant = HostGrant | RangeGrant;
+
+### build/core.chunk.d.ts#GrantBasis
+type GrantBasis = "named" | "owned" | "configured" | "resolved";
+
+### build/core.chunk.d.ts#HTTP_TTFB_BINS
+declare const HTTP_TTFB_BINS: readonly Bin[];
+
+### build/core.chunk.d.ts#HostGrant
+interface HostGrant {
+  readonly kind: "host";
+  readonly host: string;
+  readonly subdomains?: boolean | undefined;
+  readonly basis: GrantBasis;
+  readonly note?: string | undefined;
+}
+
+### build/core.chunk.d.ts#ICMP_REPLY_VALUES
+declare const ICMP_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>>;
+
+### build/core.chunk.d.ts#JITTER_GAIN
+declare const JITTER_GAIN: number;
+
+### build/core.chunk.d.ts#LINK_STATE_VALUES
+declare const LINK_STATE_VALUES: Readonly<Record<LinkStateValue, string>>;
+
+### build/core.chunk.d.ts#LOCAL_SUFFIXES
+declare const LOCAL_SUFFIXES: readonly string[];
+
+### build/core.chunk.d.ts#LOSS_MIN_SENT
+declare const LOSS_MIN_SENT = 20;
+
+### build/core.chunk.d.ts#LossEstimate
+interface LossEstimate {
+  readonly sent: number;
+  readonly lost: number;
+  readonly ratio: number;
+  readonly low: number;
+  readonly high: number;
+}
+
+### build/core.chunk.d.ts#MIN_CONNECT_MS
+declare const MIN_CONNECT_MS = 1;
+
+### build/core.chunk.d.ts#MTU_SEARCHES
+declare const MTU_SEARCHES: readonly MtuSearch[];
+
+### build/core.chunk.d.ts#MtuSearch
+type MtuSearch = "auto" | "always" | "never";
+
+### build/core.chunk.d.ts#PAIR_LEVEL
+declare const PAIR_LEVEL = .95;
+
+### build/core.chunk.d.ts#PATH_LOSS_BINS
+declare const PATH_LOSS_BINS: readonly Bin[];
+
+### build/core.chunk.d.ts#PATH_MTU_VALUES
+declare const PATH_MTU_VALUES: Readonly<Record<MtuStop | "full", string>>;
+
+### build/core.chunk.d.ts#PDV_QUANTILE
+declare const PDV_QUANTILE = .99;
+
+### build/core.chunk.d.ts#PortLedger
+type PortLedger = ReadonlyMap<string, ReadonlySet<number>>;
+
+### build/core.chunk.d.ts#ProbeOutcome
+type ProbeOutcome<R> = {
+  readonly status: "done";
+  readonly time: FactTime;
+  readonly raw: R;
+  readonly facts: readonly Fact[];
+} | {
+  readonly status: "refused";
+  readonly peer: Target;
+  readonly reason: string;
+} | {
+  readonly status: "unavailable";
+  readonly reason: string;
+} | {
+  readonly status: "failed";
+  readonly stage: "probe" | "run" | "parse";
+  readonly error: string;
+  readonly raw?: R | undefined;
+} | {
+  readonly status: "aborted";
+  readonly reason: string;
+};
+
+### build/core.chunk.d.ts#RTO_ALPHA
+declare const RTO_ALPHA: number;
+
+### build/core.chunk.d.ts#RTO_BETA
+declare const RTO_BETA: number;
+
+### build/core.chunk.d.ts#RTO_K
+declare const RTO_K = 4;
+
+### build/core.chunk.d.ts#RangeGrant
+interface RangeGrant {
+  readonly kind: "range";
+  readonly cidr: string;
+  readonly basis: GrantBasis;
+  readonly note?: string | undefined;
+}
+
+### build/core.chunk.d.ts#ReadOptions
+interface ReadOptions {
+  readonly primary?: ((fact: Fact) => boolean) | undefined;
+  readonly gateway?: string | undefined;
+}
+
+### build/core.chunk.d.ts#Reading
+interface Reading {
+  readonly evidence: readonly Evidence[];
+  readonly skipped: readonly Skipped[];
+}
+
+### build/core.chunk.d.ts#RtoEstimate
+interface RtoEstimate {
+  readonly samples: number;
+  readonly srttMs: number;
+  readonly rttvarMs: number;
+  readonly rtoMs: number;
+}
+
+### build/core.chunk.d.ts#RtoOptions
+interface RtoOptions {
+  readonly granularityMs?: number | undefined;
+  readonly minMs?: number | undefined;
+  readonly maxMs?: number | undefined;
+}
+
+### build/core.chunk.d.ts#Runner
+interface Runner {
+  readonly origin: ClockOrigin;
+  scope(): Scope;
+  facts(): readonly Fact[];
+  grant(grants: readonly Grant[]): void;
+  run<I, R>(probe: Probe<I, R>, input: I, signal?: AbortSignal): Promise<ProbeOutcome<R>>;
+}
+
+### build/core.chunk.d.ts#RunnerOptions
+interface RunnerOptions {
+  readonly scope: Scope;
+  readonly clock: Clock;
+  readonly wall?: string | undefined;
+}
+
+### build/core.chunk.d.ts#Scope
+interface Scope {
+  readonly grants: readonly Grant[];
+  readonly maxPortsPerHost: number;
+}
+
+### build/core.chunk.d.ts#ScopeDecision
+type ScopeDecision = {
+  readonly allowed: true;
+  readonly grant: Grant;
+} | {
+  readonly allowed: false;
+  readonly reason: string;
+};
+
+### build/core.chunk.d.ts#Skipped
+interface Skipped {
+  readonly fact: string;
+  readonly reason: string;
+}
+
+### build/core.chunk.d.ts#TCP_CONNECT_VALUES
+declare const TCP_CONNECT_VALUES: Readonly<Partial<Record<ConnectOutcome, string>>>;
+
+### build/core.chunk.d.ts#TCP_TIME_BINS
+declare const TCP_TIME_BINS: readonly Bin[];
+
+### build/core.chunk.d.ts#TLS_HANDSHAKE_VALUES
+declare const TLS_HANDSHAKE_VALUES: Readonly<Partial<Record<HandshakeOutcome, string>>>;
+
+### build/core.chunk.d.ts#TLS_RATIO_BINS
+declare const TLS_RATIO_BINS: readonly Bin[];
+
+### build/core.chunk.d.ts#TLS_TRUST_VALUES
+declare const TLS_TRUST_VALUES: Readonly<Record<Trust, string>>;
+
+### build/core.chunk.d.ts#VISIT_ROLES
+declare const VISIT_ROLES: readonly ["target", "reference", "gateway", "local"];
+
+### build/core.chunk.d.ts#VisitHost
+interface VisitHost {
+  readonly host: string;
+  readonly port?: number | undefined;
+}
+
+### build/core.chunk.d.ts#VisitInput
+interface VisitInput {
+  readonly target: VisitHost;
+  readonly references?: readonly VisitHost[] | undefined;
+  readonly gateway?: string | undefined;
+  readonly resolver?: VisitResolver | undefined;
+  readonly grants: readonly Grant[];
+}
+
+### build/core.chunk.d.ts#VisitResolver
+interface VisitResolver {
+  readonly address: string;
+  readonly port?: number | undefined;
+}
+
+### build/core.chunk.d.ts#VisitRole
+type VisitRole = (typeof VISIT_ROLES)[number];
+
+### build/core.chunk.d.ts#VisitStep
+type VisitStep = {
+  readonly kind: "fact";
+  readonly role: VisitRole;
+  readonly host: string;
+  readonly fact: Fact;
+} | {
+  readonly kind: "problem";
+  readonly role: VisitRole;
+  readonly host: string;
+  readonly problem: string;
+};
+
+### build/core.chunk.d.ts#ackSamples
+declare function ackSamples(capture: PathCapture): number[];
+
+### build/core.chunk.d.ts#bandwidthOf
+declare function bandwidthOf(capture: PathCapture): BandwidthEstimate | undefined;
+
+### build/core.chunk.d.ts#binOf
+declare function binOf(bins: readonly Bin[], x: number): string;
+
+### build/core.chunk.d.ts#createRunner
+declare function createRunner(options: RunnerOptions): Runner;
+
+### build/core.chunk.d.ts#decideScope
+declare function decideScope(scope: Scope, peer: Target, ledger?: PortLedger): ScopeDecision;
+
+### build/core.chunk.d.ts#delayMetrics
+declare function delayMetrics(delaysMs: readonly number[]): DelayMetrics | undefined;
+
+### build/core.chunk.d.ts#echoMetrics
+declare function echoMetrics(echo: IcmpEcho): EchoMetrics;
+
+### build/core.chunk.d.ts#featuresOf
+declare function featuresOf(kinds: readonly string[], options?: FeaturesOptions): string[];
+
+### build/core.chunk.d.ts#grantProblems
+declare function grantProblems(grant: Grant): string[];
+
+### build/core.chunk.d.ts#ipdv
+declare function ipdv(delaysMs: readonly number[]): number[];
+
+### build/core.chunk.d.ts#isLocalName
+declare function isLocalName(name: string): boolean;
+
+### build/core.chunk.d.ts#lossOf
+declare function lossOf(sent: number, received: number): LossEstimate | undefined;
+
+### build/core.chunk.d.ts#namedGrant
+declare function namedGrant(t: Target, note?: string): Grant;
+
+### build/core.chunk.d.ts#packetPairs
+declare function packetPairs(capture: PathCapture): number[];
+
+### build/core.chunk.d.ts#pdv
+declare function pdv(delaysMs: readonly number[]): number[];
+
+### build/core.chunk.d.ts#readEvidence
+declare function readEvidence(facts: readonly Fact[], options?: ReadOptions): Reading;
+
+### build/core.chunk.d.ts#resolvedGrant
+declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;
+
+### build/core.chunk.d.ts#rfc3550Jitter
+declare function rfc3550Jitter(delaysMs: readonly number[]): number | undefined;
+
+### build/core.chunk.d.ts#rtoOf
+declare function rtoOf(samplesMs: readonly number[], options?: RtoOptions): RtoEstimate | undefined;
+
+### build/core.chunk.d.ts#scopeOf
+declare function scopeOf(grants: readonly Grant[], options?: {
+  readonly maxPortsPerHost?: number;
+}): Result<Scope, string[]>;
+
+### build/core.chunk.d.ts#widen
+declare function widen(scope: Scope, grants: readonly Grant[]): Result<Scope, string[]>;
+
+### build/counts.chunk.d.ts#Availability
 type Availability = {
   readonly available: true;
   readonly version?: string | undefined;
@@ -454,25 +1049,25 @@ type Availability = {
   readonly reason: string;
 };
 
-### build/host.chunk.d.ts#CAPTURE_OUTCOMES
+### build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 declare const CAPTURE_OUTCOMES: readonly ["captured", "none", "error"];
 
-### build/host.chunk.d.ts#CAPTURE_PROTOCOLS
+### build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 declare const CAPTURE_PROTOCOLS: readonly ["tcp", "udp", "icmp"];
 
-### build/host.chunk.d.ts#CERT_PROBLEMS
+### build/counts.chunk.d.ts#CERT_PROBLEMS
 declare const CERT_PROBLEMS: readonly ["expired", "not-yet-valid", "name", "untrusted", "revoked", "other"];
 
-### build/host.chunk.d.ts#CONNECT_OUTCOMES
+### build/counts.chunk.d.ts#CONNECT_OUTCOMES
 declare const CONNECT_OUTCOMES: readonly ["connected", "refused", "timeout", "unreachable", "reset", "error"];
 
-### build/host.chunk.d.ts#CaptureOutcome
+### build/counts.chunk.d.ts#CaptureOutcome
 type CaptureOutcome = (typeof CAPTURE_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#CaptureProtocol
+### build/counts.chunk.d.ts#CaptureProtocol
 type CaptureProtocol = (typeof CAPTURE_PROTOCOLS)[number];
 
-### build/host.chunk.d.ts#CapturedPacket
+### build/counts.chunk.d.ts#CapturedPacket
 interface CapturedPacket {
   readonly atMs: number;
   readonly src: string;
@@ -489,30 +1084,22 @@ interface CapturedPacket {
   readonly bytes: number;
 }
 
-### build/host.chunk.d.ts#CertProblem
+### build/counts.chunk.d.ts#CertProblem
 type CertProblem = (typeof CERT_PROBLEMS)[number];
 
-### build/host.chunk.d.ts#CommandRunOptions
-interface CommandRunOptions {
-  readonly args: readonly string[];
-  readonly timeout: number;
-  readonly signal: AbortSignal;
-  readonly env?: Readonly<Record<string, string>> | undefined;
-}
-
-### build/host.chunk.d.ts#CommandRunner
-type CommandRunner = (command: string, options: CommandRunOptions) => Promise<ToolOutput>;
-
-### build/host.chunk.d.ts#ConnectOutcome
+### build/counts.chunk.d.ts#ConnectOutcome
 type ConnectOutcome = (typeof CONNECT_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#DNS_ANSWER
+### build/counts.chunk.d.ts#DEFAULT_PING_COUNT
+declare const DEFAULT_PING_COUNT = 4;
+
+### build/counts.chunk.d.ts#DNS_ANSWER
 declare const DNS_ANSWER: FactKind<DnsAnswer>;
 
-### build/host.chunk.d.ts#DNS_OUTCOMES
+### build/counts.chunk.d.ts#DNS_OUTCOMES
 declare const DNS_OUTCOMES: readonly ["ok", "nodata", "nxdomain", "servfail", "refused", "timeout", "unreachable", "error"];
 
-### build/host.chunk.d.ts#DnsAnswer
+### build/counts.chunk.d.ts#DnsAnswer
 interface DnsAnswer {
   readonly name: string;
   readonly record: RecordType;
@@ -524,19 +1111,19 @@ interface DnsAnswer {
   readonly code?: string | undefined;
 }
 
-### build/host.chunk.d.ts#DnsOutcome
+### build/counts.chunk.d.ts#DnsOutcome
 type DnsOutcome = (typeof DNS_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#ECHO_OUTCOMES
+### build/counts.chunk.d.ts#ECHO_OUTCOMES
 declare const ECHO_OUTCOMES: readonly ["reply", "none", "unreachable", "error"];
 
-### build/host.chunk.d.ts#ETHERNET_MTU
+### build/counts.chunk.d.ts#ETHERNET_MTU
 declare const ETHERNET_MTU = 1500;
 
-### build/host.chunk.d.ts#EchoOutcome
+### build/counts.chunk.d.ts#EchoOutcome
 type EchoOutcome = (typeof ECHO_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#Fact
+### build/counts.chunk.d.ts#Fact
 interface Fact<V = unknown> {
   readonly id: string;
   readonly kind: string;
@@ -547,7 +1134,7 @@ interface Fact<V = unknown> {
   readonly value: V;
 }
 
-### build/host.chunk.d.ts#FactKind
+### build/counts.chunk.d.ts#FactKind
 interface FactKind<V> {
   readonly kind: string;
   readonly layer: Layer;
@@ -555,38 +1142,38 @@ interface FactKind<V> {
   readonly check: (value: unknown) => value is V;
 }
 
-### build/host.chunk.d.ts#FactSource
+### build/counts.chunk.d.ts#FactSource
 interface FactSource {
   readonly probe: string;
   readonly version: string;
   readonly tool?: string | undefined;
 }
 
-### build/host.chunk.d.ts#FactTime
+### build/counts.chunk.d.ts#FactTime
 interface FactTime {
   readonly start: number;
   readonly end: number;
 }
 
-### build/host.chunk.d.ts#HANDSHAKE_OUTCOMES
+### build/counts.chunk.d.ts#HANDSHAKE_OUTCOMES
 declare const HANDSHAKE_OUTCOMES: readonly ["ok", "cert-error", "alert", "not-tls", "timeout", "reset", "closed", "error"];
 
-### build/host.chunk.d.ts#HTTP_OUTCOMES
+### build/counts.chunk.d.ts#HTTP_OUTCOMES
 declare const HTTP_OUTCOMES: readonly ["response", "protocol", "timeout", "reset", "closed", "error"];
 
-### build/host.chunk.d.ts#HTTP_RESPONSE
+### build/counts.chunk.d.ts#HTTP_RESPONSE
 declare const HTTP_RESPONSE: FactKind<HttpResponse>;
 
-### build/host.chunk.d.ts#HandshakeOutcome
+### build/counts.chunk.d.ts#HandshakeOutcome
 type HandshakeOutcome = (typeof HANDSHAKE_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#HostKind
+### build/counts.chunk.d.ts#HostKind
 type HostKind = "name" | "ipv4" | "ipv6";
 
-### build/host.chunk.d.ts#HttpOutcome
+### build/counts.chunk.d.ts#HttpOutcome
 type HttpOutcome = (typeof HTTP_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#HttpResponse
+### build/counts.chunk.d.ts#HttpResponse
 interface HttpResponse {
   readonly address: string;
   readonly port: number;
@@ -605,16 +1192,16 @@ interface HttpResponse {
   readonly code?: string | undefined;
 }
 
-### build/host.chunk.d.ts#ICMP_ECHO
+### build/counts.chunk.d.ts#ICMP_ECHO
 declare const ICMP_ECHO: FactKind<IcmpEcho>;
 
-### build/host.chunk.d.ts#IPV4_MIN_MTU
+### build/counts.chunk.d.ts#IPV4_MIN_MTU
 declare const IPV4_MIN_MTU = 68;
 
-### build/host.chunk.d.ts#IPV6_MIN_MTU
+### build/counts.chunk.d.ts#IPV6_MIN_MTU
 declare const IPV6_MIN_MTU = 1280;
 
-### build/host.chunk.d.ts#IcmpEcho
+### build/counts.chunk.d.ts#IcmpEcho
 interface IcmpEcho {
   readonly address: string;
   readonly outcome: EchoOutcome;
@@ -626,19 +1213,19 @@ interface IcmpEcho {
   readonly detail?: string | undefined;
 }
 
-### build/host.chunk.d.ts#LINK_STATE
+### build/counts.chunk.d.ts#LINK_STATE
 declare const LINK_STATE: FactKind<LinkState>;
 
-### build/host.chunk.d.ts#LINK_STATES
+### build/counts.chunk.d.ts#LINK_STATES
 declare const LINK_STATES: readonly ["up", "down"];
 
-### build/host.chunk.d.ts#LinkInterface
+### build/counts.chunk.d.ts#LinkInterface
 interface LinkInterface {
   readonly name: string;
   readonly addresses: readonly string[];
 }
 
-### build/host.chunk.d.ts#LinkState
+### build/counts.chunk.d.ts#LinkState
 interface LinkState {
   readonly state: LinkStateValue;
   readonly interfaces: readonly LinkInterface[];
@@ -646,31 +1233,34 @@ interface LinkState {
   readonly via?: string | undefined;
 }
 
-### build/host.chunk.d.ts#LinkStateValue
+### build/counts.chunk.d.ts#LinkStateValue
 type LinkStateValue = (typeof LINK_STATES)[number];
 
-### build/host.chunk.d.ts#MTU_OUTCOMES
+### build/counts.chunk.d.ts#MAX_PING_COUNT
+declare const MAX_PING_COUNT = 100;
+
+### build/counts.chunk.d.ts#MTU_OUTCOMES
 declare const MTU_OUTCOMES: readonly ["measured", "none", "error"];
 
-### build/host.chunk.d.ts#MTU_STOPS
+### build/counts.chunk.d.ts#MTU_STOPS
 declare const MTU_STOPS: readonly ["message", "silent"];
 
-### build/host.chunk.d.ts#MTU_TRY_RESULTS
+### build/counts.chunk.d.ts#MTU_TRY_RESULTS
 declare const MTU_TRY_RESULTS: readonly ["reply", "too-big", "none", "error"];
 
-### build/host.chunk.d.ts#MtuBounds
+### build/counts.chunk.d.ts#MtuBounds
 interface MtuBounds {
   readonly floor: number;
   readonly ceiling: number;
 }
 
-### build/host.chunk.d.ts#MtuOutcome
+### build/counts.chunk.d.ts#MtuOutcome
 type MtuOutcome = (typeof MTU_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#MtuStop
+### build/counts.chunk.d.ts#MtuStop
 type MtuStop = (typeof MTU_STOPS)[number];
 
-### build/host.chunk.d.ts#MtuTry
+### build/counts.chunk.d.ts#MtuTry
 interface MtuTry {
   readonly size: number;
   readonly result: MtuTryResult;
@@ -679,13 +1269,13 @@ interface MtuTry {
   readonly detail?: string | undefined;
 }
 
-### build/host.chunk.d.ts#MtuTryResult
+### build/counts.chunk.d.ts#MtuTryResult
 type MtuTryResult = (typeof MTU_TRY_RESULTS)[number];
 
-### build/host.chunk.d.ts#NATIVE_KINDS
+### build/counts.chunk.d.ts#NATIVE_KINDS
 declare const NATIVE_KINDS: readonly FactKind<unknown>[];
 
-### build/host.chunk.d.ts#Observation
+### build/counts.chunk.d.ts#Observation
 interface Observation<V = unknown> {
   readonly kind: FactKind<V>;
   readonly subject: Target;
@@ -693,28 +1283,28 @@ interface Observation<V = unknown> {
   readonly time?: FactTime | undefined;
 }
 
-### build/host.chunk.d.ts#PACKET_PROTOCOLS
+### build/counts.chunk.d.ts#PACKET_PROTOCOLS
 declare const PACKET_PROTOCOLS: readonly ["tcp", "udp", "other"];
 
-### build/host.chunk.d.ts#PATH_CAPTURE
+### build/counts.chunk.d.ts#PATH_CAPTURE
 declare const PATH_CAPTURE: FactKind<PathCapture>;
 
-### build/host.chunk.d.ts#PATH_MTU
+### build/counts.chunk.d.ts#PATH_MTU
 declare const PATH_MTU: FactKind<PathMtu>;
 
-### build/host.chunk.d.ts#PATH_REPORT
+### build/counts.chunk.d.ts#PATH_REPORT
 declare const PATH_REPORT: FactKind<PathReport>;
 
-### build/host.chunk.d.ts#PATH_THROUGHPUT
+### build/counts.chunk.d.ts#PATH_THROUGHPUT
 declare const PATH_THROUGHPUT: FactKind<PathThroughput>;
 
-### build/host.chunk.d.ts#PATH_TRACE
+### build/counts.chunk.d.ts#PATH_TRACE
 declare const PATH_TRACE: FactKind<PathTrace>;
 
-### build/host.chunk.d.ts#PacketProtocol
+### build/counts.chunk.d.ts#PacketProtocol
 type PacketProtocol = (typeof PACKET_PROTOCOLS)[number];
 
-### build/host.chunk.d.ts#PathCapture
+### build/counts.chunk.d.ts#PathCapture
 interface PathCapture {
   readonly address: string;
   readonly port?: number | undefined;
@@ -728,7 +1318,7 @@ interface PathCapture {
   readonly detail?: string | undefined;
 }
 
-### build/host.chunk.d.ts#PathMtu
+### build/counts.chunk.d.ts#PathMtu
 interface PathMtu {
   readonly address: string;
   readonly outcome: MtuOutcome;
@@ -739,7 +1329,7 @@ interface PathMtu {
   readonly detail?: string | undefined;
 }
 
-### build/host.chunk.d.ts#PathReport
+### build/counts.chunk.d.ts#PathReport
 interface PathReport {
   readonly address: string;
   readonly outcome: TraceOutcome;
@@ -748,7 +1338,7 @@ interface PathReport {
   readonly detail?: string | undefined;
 }
 
-### build/host.chunk.d.ts#PathThroughput
+### build/counts.chunk.d.ts#PathThroughput
 interface PathThroughput {
   readonly address: string;
   readonly port: number;
@@ -769,7 +1359,7 @@ interface PathThroughput {
   readonly detail?: string | undefined;
 }
 
-### build/host.chunk.d.ts#PathTrace
+### build/counts.chunk.d.ts#PathTrace
 interface PathTrace {
   readonly address: string;
   readonly outcome: TraceOutcome;
@@ -778,7 +1368,7 @@ interface PathTrace {
   readonly detail?: string | undefined;
 }
 
-### build/host.chunk.d.ts#Probe
+### build/counts.chunk.d.ts#Probe
 interface Probe<I, R> {
   readonly id: string;
   readonly version: string;
@@ -793,22 +1383,22 @@ interface Probe<I, R> {
   parse(raw: R, input: I): readonly Observation[];
 }
 
-### build/host.chunk.d.ts#ProbeContext
+### build/counts.chunk.d.ts#ProbeContext
 interface ProbeContext {
   readonly clock: Clock;
   readonly signal: AbortSignal;
 }
 
-### build/host.chunk.d.ts#ProbeMode
+### build/counts.chunk.d.ts#ProbeMode
 type ProbeMode = "active" | "passive";
 
-### build/host.chunk.d.ts#RECORD_TYPES
+### build/counts.chunk.d.ts#RECORD_TYPES
 declare const RECORD_TYPES: readonly ["A", "AAAA"];
 
-### build/host.chunk.d.ts#RecordType
+### build/counts.chunk.d.ts#RecordType
 type RecordType = (typeof RECORD_TYPES)[number];
 
-### build/host.chunk.d.ts#ReportHop
+### build/counts.chunk.d.ts#ReportHop
 interface ReportHop {
   readonly ttl: number;
   readonly address?: string | undefined;
@@ -819,38 +1409,35 @@ interface ReportHop {
   readonly worstMs?: number | undefined;
 }
 
-### build/host.chunk.d.ts#TCP_CONNECT
+### build/counts.chunk.d.ts#TCP_CONNECT
 declare const TCP_CONNECT: FactKind<TcpConnect>;
 
-### build/host.chunk.d.ts#THROUGHPUT_OUTCOMES
+### build/counts.chunk.d.ts#THROUGHPUT_OUTCOMES
 declare const THROUGHPUT_OUTCOMES: readonly ["measured", "refused", "busy", "error"];
 
-### build/host.chunk.d.ts#THROUGHPUT_PROTOCOLS
+### build/counts.chunk.d.ts#THROUGHPUT_PROTOCOLS
 declare const THROUGHPUT_PROTOCOLS: readonly ["tcp", "udp"];
 
-### build/host.chunk.d.ts#TLS_HANDSHAKE
+### build/counts.chunk.d.ts#TLS_HANDSHAKE
 declare const TLS_HANDSHAKE: FactKind<TlsHandshake>;
 
-### build/host.chunk.d.ts#TOOL_KINDS
+### build/counts.chunk.d.ts#TOOL_KINDS
 declare const TOOL_KINDS: readonly FactKind<unknown>[];
 
-### build/host.chunk.d.ts#TOOL_MARGIN_MS
-declare const TOOL_MARGIN_MS = 3e3;
-
-### build/host.chunk.d.ts#TRACE_OUTCOMES
+### build/counts.chunk.d.ts#TRACE_OUTCOMES
 declare const TRACE_OUTCOMES: readonly ["reached", "stopped", "unreachable", "error"];
 
-### build/host.chunk.d.ts#TRUSTS
+### build/counts.chunk.d.ts#TRUSTS
 declare const TRUSTS: readonly ["public", "private", "none"];
 
-### build/host.chunk.d.ts#Target
+### build/counts.chunk.d.ts#Target
 interface Target {
   readonly host: string;
   readonly kind: HostKind;
   readonly port?: number | undefined;
 }
 
-### build/host.chunk.d.ts#TcpConnect
+### build/counts.chunk.d.ts#TcpConnect
 interface TcpConnect {
   readonly address: string;
   readonly port: number;
@@ -860,7 +1447,7 @@ interface TcpConnect {
   readonly code?: string | undefined;
 }
 
-### build/host.chunk.d.ts#ThroughputInterval
+### build/counts.chunk.d.ts#ThroughputInterval
 interface ThroughputInterval {
   readonly startMs: number;
   readonly endMs: number;
@@ -872,13 +1459,13 @@ interface ThroughputInterval {
   readonly jitterMs?: number | undefined;
 }
 
-### build/host.chunk.d.ts#ThroughputOutcome
+### build/counts.chunk.d.ts#ThroughputOutcome
 type ThroughputOutcome = (typeof THROUGHPUT_OUTCOMES)[number];
 
-### build/host.chunk.d.ts#ThroughputProtocol
+### build/counts.chunk.d.ts#ThroughputProtocol
 type ThroughputProtocol = (typeof THROUGHPUT_PROTOCOLS)[number];
 
-### build/host.chunk.d.ts#TlsCertificate
+### build/counts.chunk.d.ts#TlsCertificate
 interface TlsCertificate {
   readonly subject: string;
   readonly issuer: string;
@@ -892,7 +1479,7 @@ interface TlsCertificate {
   readonly problem?: CertProblem | undefined;
 }
 
-### build/host.chunk.d.ts#TlsHandshake
+### build/counts.chunk.d.ts#TlsHandshake
 interface TlsHandshake {
   readonly address: string;
   readonly port: number;
@@ -905,6 +1492,84 @@ interface TlsHandshake {
   readonly code?: string | undefined;
   readonly certificate?: TlsCertificate | undefined;
 }
+
+### build/counts.chunk.d.ts#TraceHop
+interface TraceHop {
+  readonly ttl: number;
+  readonly addresses: readonly string[];
+  readonly sent: number;
+  readonly received: number;
+  readonly rttMs: readonly number[];
+  readonly unreachable?: string | undefined;
+}
+
+### build/counts.chunk.d.ts#TraceOutcome
+type TraceOutcome = (typeof TRACE_OUTCOMES)[number];
+
+### build/counts.chunk.d.ts#Trust
+type Trust = (typeof TRUSTS)[number];
+
+### build/counts.chunk.d.ts#ValueOf
+type ValueOf<K> = K extends FactKind<infer V> ? V : never;
+
+### build/counts.chunk.d.ts#canonicalHost
+declare function canonicalHost(host: string): string;
+
+### build/counts.chunk.d.ts#defineFactKind
+declare function defineFactKind<V>(spec: FactKind<V>): FactKind<V>;
+
+### build/counts.chunk.d.ts#defineProbe
+declare function defineProbe<I, R>(probe: Probe<I, R>): Probe<I, R>;
+
+### build/counts.chunk.d.ts#factsOf
+declare function factsOf<V>(kind: FactKind<V>, facts: readonly Fact[]): Fact<V>[];
+
+### build/counts.chunk.d.ts#formatTarget
+declare function formatTarget(t: Target): string;
+
+### build/counts.chunk.d.ts#hostKind
+declare function hostKind(host: string): HostKind;
+
+### build/counts.chunk.d.ts#isFactOf
+declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
+
+### build/counts.chunk.d.ts#mtuOf
+declare function mtuOf(address: string, tries: readonly MtuTry[], bounds: MtuBounds): PathMtu;
+
+### build/counts.chunk.d.ts#nextMtuSize
+declare function nextMtuSize(tries: readonly MtuTry[], bounds: MtuBounds): number | undefined;
+
+### build/counts.chunk.d.ts#observe
+declare function observe<V>(kind: FactKind<V>, subject: Target, value: V, time?: FactTime): Observation<V>;
+
+### build/counts.chunk.d.ts#parseTarget
+declare function parseTarget(text: string): Result<Target, string>;
+
+### build/counts.chunk.d.ts#readFact
+declare function readFact(value: unknown, kinds: readonly FactKind<unknown>[]): Result<Fact, string[]>;
+
+### build/counts.chunk.d.ts#sameTarget
+declare function sameTarget(a: Target, b: Target): boolean;
+
+### build/counts.chunk.d.ts#target
+declare function target(host: string, port?: number): Target;
+
+### build/host.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
+declare const AVAILABILITY_TIMEOUT_MS = 5e3;
+
+### build/host.chunk.d.ts#CommandRunOptions
+interface CommandRunOptions {
+  readonly args: readonly string[];
+  readonly timeout: number;
+  readonly signal: AbortSignal;
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
+
+### build/host.chunk.d.ts#CommandRunner
+type CommandRunner = (command: string, options: CommandRunOptions) => Promise<ToolOutput>;
+
+### build/host.chunk.d.ts#TOOL_MARGIN_MS
+declare const TOOL_MARGIN_MS = 3e3;
 
 ### build/host.chunk.d.ts#ToolCommand
 interface ToolCommand {
@@ -945,72 +1610,14 @@ interface ToolRunOptions {
   readonly env?: Readonly<Record<string, string>> | undefined;
 }
 
-### build/host.chunk.d.ts#TraceHop
-interface TraceHop {
-  readonly ttl: number;
-  readonly addresses: readonly string[];
-  readonly sent: number;
-  readonly received: number;
-  readonly rttMs: readonly number[];
-  readonly unreachable?: string | undefined;
-}
-
-### build/host.chunk.d.ts#TraceOutcome
-type TraceOutcome = (typeof TRACE_OUTCOMES)[number];
-
-### build/host.chunk.d.ts#Trust
-type Trust = (typeof TRUSTS)[number];
-
-### build/host.chunk.d.ts#ValueOf
-type ValueOf<K> = K extends FactKind<infer V> ? V : never;
-
 ### build/host.chunk.d.ts#availabilityOf
 declare function availabilityOf(tool: string, output: ToolOutput, version?: RegExp): Availability;
-
-### build/host.chunk.d.ts#canonicalHost
-declare function canonicalHost(host: string): string;
 
 ### build/host.chunk.d.ts#commandHost
 declare function commandHost(runner: CommandRunner, platform: string): ToolHost;
 
-### build/host.chunk.d.ts#defineFactKind
-declare function defineFactKind<V>(spec: FactKind<V>): FactKind<V>;
-
-### build/host.chunk.d.ts#defineProbe
-declare function defineProbe<I, R>(probe: Probe<I, R>): Probe<I, R>;
-
-### build/host.chunk.d.ts#factsOf
-declare function factsOf<V>(kind: FactKind<V>, facts: readonly Fact[]): Fact<V>[];
-
-### build/host.chunk.d.ts#formatTarget
-declare function formatTarget(t: Target): string;
-
-### build/host.chunk.d.ts#hostKind
-declare function hostKind(host: string): HostKind;
-
-### build/host.chunk.d.ts#isFactOf
-declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
-
-### build/host.chunk.d.ts#mtuOf
-declare function mtuOf(address: string, tries: readonly MtuTry[], bounds: MtuBounds): PathMtu;
-
-### build/host.chunk.d.ts#nextMtuSize
-declare function nextMtuSize(tries: readonly MtuTry[], bounds: MtuBounds): number | undefined;
-
-### build/host.chunk.d.ts#observe
-declare function observe<V>(kind: FactKind<V>, subject: Target, value: V, time?: FactTime): Observation<V>;
-
-### build/host.chunk.d.ts#parseTarget
-declare function parseTarget(text: string): Result<Target, string>;
-
 ### build/host.chunk.d.ts#runTool
 declare function runTool(host: ToolHost, tool: ToolCommand, context: ProbeContext): Promise<ToolRaw>;
-
-### build/host.chunk.d.ts#sameTarget
-declare function sameTarget(a: Target, b: Target): boolean;
-
-### build/host.chunk.d.ts#target
-declare function target(host: string, port?: number): Target;
 
 ### build/index.chunk.d.ts#ADDRESS_CLASSES
 declare const ADDRESS_CLASSES: readonly {
@@ -1057,6 +1664,9 @@ declare function cidrSet(ranges: readonly Cidr[]): CidrSet;
 
 ### build/index.chunk.d.ts#formatCidr
 declare function formatCidr(cidr: Cidr): string;
+
+### build/index.chunk.d.ts#ipVersion
+declare function ipVersion(text: string): 0 | 4 | 6;
 
 ### build/index.chunk.d.ts#parseCidr
 declare function parseCidr(text: string): Result<Cidr, string>;
@@ -1311,27 +1921,6 @@ declare function rankProbes(catalog: Catalog, diagnosis: Diagnosis, candidates: 
 ### build/index.chunk2.d.ts#scoreLab
 declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
 
-### build/index.d.ts#BandwidthEstimate
-interface BandwidthEstimate {
-  readonly pairs: number;
-  readonly bitsPerSecond: number;
-  readonly low: number;
-  readonly high: number;
-  readonly coverage: number;
-}
-
-### build/index.d.ts#Bin
-export interface Bin {
-  readonly below?: number | undefined;
-  readonly value: string;
-}
-
-### build/index.d.ts#ClockOrigin
-interface ClockOrigin {
-  readonly wall: string;
-  readonly monotonic: number;
-}
-
 ### build/index.d.ts#ConnectOptions
 interface ConnectOptions {
   readonly dial?: Dial | undefined;
@@ -1340,30 +1929,11 @@ interface ConnectOptions {
 ### build/index.d.ts#DEFAULT_MAX_BYTES
 export declare const DEFAULT_MAX_BYTES = 65536;
 
-### build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
-export declare const DEFAULT_MAX_PORTS_PER_HOST = 8;
-
 ### build/index.d.ts#DEFAULT_TIMEOUT_MS
 export declare const DEFAULT_TIMEOUT_MS = 5e3;
 
-### build/index.d.ts#DNS_ANSWER_VALUES
-export declare const DNS_ANSWER_VALUES: Readonly<Partial<Record<DnsOutcome, string>>>;
-
 ### build/index.d.ts#DNS_PROBE
 export declare const DNS_PROBE: Probe<DnsInput, DnsRaw>;
-
-### build/index.d.ts#DelayMetrics
-interface DelayMetrics {
-  readonly samples: number;
-  readonly minMs: number;
-  readonly medianMs: number;
-  readonly meanMs: number;
-  readonly maxMs: number;
-  readonly sdMs?: number | undefined;
-  readonly jitterMs?: number | undefined;
-  readonly ipdvMs?: number | undefined;
-  readonly pdvMs: number;
-}
 
 ### build/index.d.ts#Dial
 type Dial = (options: TcpNetConnectOpts) => Socket;
@@ -1390,44 +1960,8 @@ interface DnsRaw {
   readonly code?: string | undefined;
 }
 
-### build/index.d.ts#EchoMetrics
-interface EchoMetrics {
-  readonly address: string;
-  readonly loss?: LossEstimate | undefined;
-  readonly delay?: DelayMetrics | undefined;
-}
-
-### build/index.d.ts#FEATURE_SOURCES
-export declare const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[])[]>>;
-
-### build/index.d.ts#FeaturesOptions
-export interface FeaturesOptions {
-  readonly gateway?: boolean | undefined;
-}
-
-### build/index.d.ts#GATEWAY_REPLY_VALUES
-export declare const GATEWAY_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>>;
-
-### build/index.d.ts#Grant
-type Grant = HostGrant | RangeGrant;
-
-### build/index.d.ts#GrantBasis
-type GrantBasis = "named" | "owned" | "configured" | "resolved";
-
 ### build/index.d.ts#HTTP_PROBE
 export declare const HTTP_PROBE: Probe<HttpInput, HttpRaw>;
-
-### build/index.d.ts#HTTP_TTFB_BINS
-export declare const HTTP_TTFB_BINS: readonly Bin[];
-
-### build/index.d.ts#HostGrant
-interface HostGrant {
-  readonly kind: "host";
-  readonly host: string;
-  readonly subdomains?: boolean | undefined;
-  readonly basis: GrantBasis;
-  readonly note?: string | undefined;
-}
 
 ### build/index.d.ts#HttpInput
 interface HttpInput {
@@ -1466,9 +2000,6 @@ interface HttpRaw {
   readonly http?: HttpPhase | undefined;
 }
 
-### build/index.d.ts#ICMP_REPLY_VALUES
-export declare const ICMP_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>>;
-
 ### build/index.d.ts#InterfaceAddress
 interface InterfaceAddress {
   readonly address: string;
@@ -1479,26 +2010,14 @@ interface InterfaceAddress {
 ### build/index.d.ts#InterfaceTable
 type InterfaceTable = Readonly<Record<string, readonly InterfaceAddress[] | undefined>>;
 
-### build/index.d.ts#JITTER_GAIN
-export declare const JITTER_GAIN: number;
-
 ### build/index.d.ts#KEPT_FIELDS
 export declare const KEPT_FIELDS: readonly string[];
 
 ### build/index.d.ts#LINK_PROBE
 export declare const LINK_PROBE: Probe<LinkInput, LinkRaw>;
 
-### build/index.d.ts#LINK_STATE_VALUES
-export declare const LINK_STATE_VALUES: Readonly<Record<LinkStateValue, string>>;
-
 ### build/index.d.ts#LINK_SUBJECT
 export declare const LINK_SUBJECT = "localhost";
-
-### build/index.d.ts#LOCAL_SUFFIXES
-export declare const LOCAL_SUFFIXES: readonly string[];
-
-### build/index.d.ts#LOSS_MIN_SENT
-export declare const LOSS_MIN_SENT = 20;
 
 ### build/index.d.ts#LinkInput
 interface LinkInput {
@@ -1513,163 +2032,11 @@ interface LinkRaw {
   readonly end: number;
 }
 
-### build/index.d.ts#LossEstimate
-interface LossEstimate {
-  readonly sent: number;
-  readonly lost: number;
-  readonly ratio: number;
-  readonly low: number;
-  readonly high: number;
-}
-
-### build/index.d.ts#MIN_CONNECT_MS
-export declare const MIN_CONNECT_MS = 1;
-
-### build/index.d.ts#MTU_SEARCHES
-export declare const MTU_SEARCHES: readonly MtuSearch[];
-
-### build/index.d.ts#MtuSearch
-type MtuSearch = "auto" | "always" | "never";
-
-### build/index.d.ts#PAIR_LEVEL
-export declare const PAIR_LEVEL = .95;
-
-### build/index.d.ts#PATH_LOSS_BINS
-export declare const PATH_LOSS_BINS: readonly Bin[];
-
-### build/index.d.ts#PATH_MTU_VALUES
-export declare const PATH_MTU_VALUES: Readonly<Record<MtuStop | "full", string>>;
-
-### build/index.d.ts#PDV_QUANTILE
-export declare const PDV_QUANTILE = .99;
-
-### build/index.d.ts#PortLedger
-type PortLedger = ReadonlyMap<string, ReadonlySet<number>>;
-
-### build/index.d.ts#ProbeOutcome
-type ProbeOutcome<R> = {
-  readonly status: "done";
-  readonly time: FactTime;
-  readonly raw: R;
-  readonly facts: readonly Fact[];
-} | {
-  readonly status: "refused";
-  readonly peer: Target;
-  readonly reason: string;
-} | {
-  readonly status: "unavailable";
-  readonly reason: string;
-} | {
-  readonly status: "failed";
-  readonly stage: "probe" | "run" | "parse";
-  readonly error: string;
-  readonly raw?: R | undefined;
-} | {
-  readonly status: "aborted";
-  readonly reason: string;
-};
-
-### build/index.d.ts#RTO_ALPHA
-export declare const RTO_ALPHA: number;
-
-### build/index.d.ts#RTO_BETA
-export declare const RTO_BETA: number;
-
-### build/index.d.ts#RTO_K
-export declare const RTO_K = 4;
-
-### build/index.d.ts#RangeGrant
-interface RangeGrant {
-  readonly kind: "range";
-  readonly cidr: string;
-  readonly basis: GrantBasis;
-  readonly note?: string | undefined;
-}
-
-### build/index.d.ts#ReadOptions
-export interface ReadOptions {
-  readonly primary?: ((fact: Fact) => boolean) | undefined;
-  readonly gateway?: string | undefined;
-}
-
-### build/index.d.ts#Reading
-export interface Reading {
-  readonly evidence: readonly Evidence[];
-  readonly skipped: readonly Skipped[];
-}
-
-### build/index.d.ts#RtoEstimate
-interface RtoEstimate {
-  readonly samples: number;
-  readonly srttMs: number;
-  readonly rttvarMs: number;
-  readonly rtoMs: number;
-}
-
-### build/index.d.ts#RtoOptions
-interface RtoOptions {
-  readonly granularityMs?: number | undefined;
-  readonly minMs?: number | undefined;
-  readonly maxMs?: number | undefined;
-}
-
-### build/index.d.ts#Runner
-interface Runner {
-  readonly origin: ClockOrigin;
-  scope(): Scope;
-  facts(): readonly Fact[];
-  grant(grants: readonly Grant[]): void;
-  run<I, R>(probe: Probe<I, R>, input: I, signal?: AbortSignal): Promise<ProbeOutcome<R>>;
-}
-
-### build/index.d.ts#RunnerOptions
-interface RunnerOptions {
-  readonly scope: Scope;
-  readonly clock: Clock;
-  readonly wall?: string | undefined;
-}
-
-### build/index.d.ts#Scope
-interface Scope {
-  readonly grants: readonly Grant[];
-  readonly maxPortsPerHost: number;
-}
-
-### build/index.d.ts#ScopeDecision
-type ScopeDecision = {
-  readonly allowed: true;
-  readonly grant: Grant;
-} | {
-  readonly allowed: false;
-  readonly reason: string;
-};
-
-### build/index.d.ts#Skipped
-export interface Skipped {
-  readonly fact: string;
-  readonly reason: string;
-}
-
-### build/index.d.ts#TCP_CONNECT_VALUES
-export declare const TCP_CONNECT_VALUES: Readonly<Partial<Record<ConnectOutcome, string>>>;
-
 ### build/index.d.ts#TCP_PROBE
 export declare const TCP_PROBE: Probe<TcpInput, TcpRaw>;
 
-### build/index.d.ts#TCP_TIME_BINS
-export declare const TCP_TIME_BINS: readonly Bin[];
-
-### build/index.d.ts#TLS_HANDSHAKE_VALUES
-export declare const TLS_HANDSHAKE_VALUES: Readonly<Partial<Record<HandshakeOutcome, string>>>;
-
 ### build/index.d.ts#TLS_PROBE
 export declare const TLS_PROBE: Probe<TlsInput, TlsRaw>;
-
-### build/index.d.ts#TLS_RATIO_BINS
-export declare const TLS_RATIO_BINS: readonly Bin[];
-
-### build/index.d.ts#TLS_TRUST_VALUES
-export declare const TLS_TRUST_VALUES: Readonly<Record<Trust, string>>;
 
 ### build/index.d.ts#TcpInput
 interface TcpInput {
@@ -1731,21 +2098,6 @@ interface TlsRaw {
 ### build/index.d.ts#VISIT_RECORDS
 export declare const VISIT_RECORDS: readonly RecordType[];
 
-### build/index.d.ts#VisitHost
-interface VisitHost {
-  readonly host: string;
-  readonly port?: number | undefined;
-}
-
-### build/index.d.ts#VisitInput
-interface VisitInput {
-  readonly target: VisitHost;
-  readonly references?: readonly VisitHost[] | undefined;
-  readonly gateway?: string | undefined;
-  readonly resolver?: VisitResolver | undefined;
-  readonly grants: readonly Grant[];
-}
-
 ### build/index.d.ts#VisitOptions
 interface VisitOptions {
   readonly clock: Clock;
@@ -1763,66 +2115,17 @@ interface VisitOptions {
   readonly signal?: AbortSignal | undefined;
 }
 
-### build/index.d.ts#VisitResolver
-interface VisitResolver {
-  readonly address: string;
-  readonly port?: number | undefined;
-}
-
-### build/index.d.ts#VisitRole
-type VisitRole = "target" | "reference" | "gateway" | "local";
-
-### build/index.d.ts#VisitStep
-type VisitStep = {
-  readonly kind: "fact";
-  readonly role: VisitRole;
-  readonly host: string;
-  readonly fact: Fact;
-} | {
-  readonly kind: "problem";
-  readonly role: VisitRole;
-  readonly host: string;
-  readonly problem: string;
-};
-
-### build/index.d.ts#ackSamples
-export declare function ackSamples(capture: PathCapture): number[];
-
-### build/index.d.ts#bandwidthOf
-export declare function bandwidthOf(capture: PathCapture): BandwidthEstimate | undefined;
-
-### build/index.d.ts#binOf
-export declare function binOf(bins: readonly Bin[], x: number): string;
-
 ### build/index.d.ts#certProblem
 export declare function certProblem(code: string): CertProblem;
 
 ### build/index.d.ts#connectOutcome
 export declare function connectOutcome(code: string | undefined): ConnectOutcome;
 
-### build/index.d.ts#createRunner
-export declare function createRunner(options: RunnerOptions): Runner;
-
-### build/index.d.ts#decideScope
-export declare function decideScope(scope: Scope, peer: Target, ledger?: PortLedger): ScopeDecision;
-
-### build/index.d.ts#delayMetrics
-export declare function delayMetrics(delaysMs: readonly number[]): DelayMetrics | undefined;
-
 ### build/index.d.ts#describeOutcome
 export declare function describeOutcome(outcome: ProbeOutcome<unknown>): string;
 
 ### build/index.d.ts#dnsOutcome
 export declare function dnsOutcome(code: string | undefined): DnsOutcome;
-
-### build/index.d.ts#echoMetrics
-export declare function echoMetrics(echo: IcmpEcho): EchoMetrics;
-
-### build/index.d.ts#featuresOf
-export declare function featuresOf(kinds: readonly string[], options?: FeaturesOptions): string[];
-
-### build/index.d.ts#grantProblems
-export declare function grantProblems(grant: Grant): string[];
 
 ### build/index.d.ts#handshakeOutcome
 export declare function handshakeOutcome(thrown: unknown, expired: boolean): HandshakeOutcome;
@@ -1833,12 +2136,6 @@ export declare function httpProbe(options?: TlsProbeOptions): Probe<HttpInput, H
 ### build/index.d.ts#interfaceOf
 export declare function interfaceOf(interfaces: readonly LinkInterface[], gateway: string): string | undefined;
 
-### build/index.d.ts#ipdv
-export declare function ipdv(delaysMs: readonly number[]): number[];
-
-### build/index.d.ts#isLocalName
-export declare function isLocalName(name: string): boolean;
-
 ### build/index.d.ts#largePacketsLost
 export declare function largePacketsLost(facts: readonly Fact[]): boolean;
 
@@ -1847,35 +2144,6 @@ export declare function linkProbe(read?: () => InterfaceTable): Probe<LinkInput,
 
 ### build/index.d.ts#linkStateOf
 export declare function linkStateOf(interfaces: readonly LinkInterface[], gateway?: string): LinkState;
-
-### build/index.d.ts#lossOf
-export declare function lossOf(sent: number, received: number): LossEstimate | undefined;
-
-### build/index.d.ts#namedGrant
-export declare function namedGrant(t: Target, note?: string): Grant;
-
-### build/index.d.ts#packetPairs
-export declare function packetPairs(capture: PathCapture): number[];
-
-### build/index.d.ts#pdv
-export declare function pdv(delaysMs: readonly number[]): number[];
-
-### build/index.d.ts#readEvidence
-export declare function readEvidence(facts: readonly Fact[], options?: ReadOptions): Reading;
-
-### build/index.d.ts#resolvedGrant
-export declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;
-
-### build/index.d.ts#rfc3550Jitter
-export declare function rfc3550Jitter(delaysMs: readonly number[]): number | undefined;
-
-### build/index.d.ts#rtoOf
-export declare function rtoOf(samplesMs: readonly number[], options?: RtoOptions): RtoEstimate | undefined;
-
-### build/index.d.ts#scopeOf
-export declare function scopeOf(grants: readonly Grant[], options?: {
-  readonly maxPortsPerHost?: number;
-}): Result<Scope, string[]>;
 
 ### build/index.d.ts#tcpProbe
 export declare function tcpProbe(options?: ConnectOptions): Probe<TcpInput, TcpRaw>;
@@ -1888,9 +2156,6 @@ export declare function upInterfaces(table: InterfaceTable): LinkInterface[];
 
 ### build/index.d.ts#visitTarget
 export declare function visitTarget(input: VisitInput, options: VisitOptions): AsyncGenerator<VisitStep, void, undefined>;
-
-### build/index.d.ts#widen
-export declare function widen(scope: Scope, grants: readonly Grant[]): Result<Scope, string[]>;
 
 ### build/layer.chunk.d.ts#LAYERS
 declare const LAYERS: readonly ["link", "wifi", "ip", "route", "path", "dns", "tcp", "tls", "http"];
@@ -1940,9 +2205,6 @@ export declare const DEFAULT_MTU_COUNT = 3;
 
 ### build/tools.d.ts#DEFAULT_MTU_WAIT_MS
 export declare const DEFAULT_MTU_WAIT_MS = 1e3;
-
-### build/tools.d.ts#DEFAULT_PING_COUNT
-export declare const DEFAULT_PING_COUNT = 4;
 
 ### build/tools.d.ts#DEFAULT_PING_WAIT_MS
 export declare const DEFAULT_PING_WAIT_MS = 1e3;
@@ -1999,9 +2261,6 @@ export declare const MAX_MTU_CEILING = 9216;
 
 ### build/tools.d.ts#MAX_MTU_COUNT
 export declare const MAX_MTU_COUNT = 10;
-
-### build/tools.d.ts#MAX_PING_COUNT
-export declare const MAX_PING_COUNT = 100;
 
 ### build/tools.d.ts#MAX_TRACE_HOPS
 export declare const MAX_TRACE_HOPS = 64;

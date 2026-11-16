@@ -17,7 +17,7 @@ import {
   type Evidence,
   type Observable,
   type VisitRole,
-} from "@mark1russell7/netdiag";
+} from "@mark1russell7/netdiag/core";
 import type { CheckPlan } from "./plan.ts";
 
 // The choice of the next step. Each candidate is a probe of the visit for one role. Its features are the features that

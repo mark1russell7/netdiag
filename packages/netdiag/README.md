@@ -4,6 +4,18 @@ This package has the core model of netdiag. It has the typed facts at each layer
 
 **State: ND-1, ND-2, ND-4, the adapters of ND-3, and the lab score and the loopback lab of ND-7 of the [roadmap](../../docs/ROADMAP.md).** The kernel lab and the bars of the gate come next.
 
+## Entries
+
+| Entry | What it has |
+| --- | --- |
+| `@mark1russell7/netdiag` | All of the package: the core, the native probes and the visit of a target. |
+| `@mark1russell7/netdiag/core` | All that imports no `node:` module. A browser can import it. |
+| `@mark1russell7/netdiag/address` | The functions for IP addresses and networks. |
+| `@mark1russell7/netdiag/diagnosis` | The probability model, the next probe and the lab score. |
+| `@mark1russell7/netdiag/tools` | The adapters of outside tools. |
+
+The core has the layers, the targets, the facts, the scope and the runner. It has the addresses, the diagnosis, the kinds of facts, the metrics and the readers. It also has the data of a visit and the limits of the echo requests.
+
 ## Facts
 
 A fact has a layer, a time, a source and a value. Its kind names the type of its value, for example `tcp.connect`.
@@ -19,6 +31,8 @@ A fact has a layer, a time, a source and a value. Its kind names the type of its
 | `value` | The value. It passes the check of its kind. |
 
 A fact is plain data, so a record of facts is JSON.
+
+`readFact(value, kinds)` reads a fact of JSON and checks each field. A fact of a kind of `kinds` also passes the check of its kind. The function does not check the value of a fact of another kind, so a record of a later version can have new kinds.
 
 ## Probes
 
@@ -45,10 +59,11 @@ The scope also limits the number of ports of each host. The default limit is 8. 
 
 ## IP addresses
 
-The entry `@mark1russell7/netdiag/address` has plain functions for IP addresses and networks. It uses only the module `node:net`.
+The entry `@mark1russell7/netdiag/address` has plain functions for IP addresses and networks. It imports no module of Node, so a browser can also use it.
 
 | Function | What it gives |
 | --- | --- |
+| `ipVersion(text)` | `4`, `6`, or `0` for a text that is not an IP address. It gives the value of `isIP` of `node:net`. |
 | `addressFamily(address)` | `ipv4`, `ipv6`, or `undefined` for a text that is not an address. |
 | `addressClass(address)` | The class of the address, from the special-purpose ranges of RFC 6890. |
 | `addressKind(address)` | `private` for an address that the internet does not route to, else `public`. |
@@ -58,6 +73,8 @@ The entry `@mark1russell7/netdiag/address` has plain functions for IP addresses 
 - The classes are `unspecified`, `loopback`, `private`, `shared`, `link-local`, `unique-local`, `documentation`, `benchmarking`, `multicast`, `reserved` and `public`.
 - The table `ADDRESS_CLASSES` holds the ranges of the classes as data.
 - An IPv4 address in IPv6 form, for example `::ffff:192.0.2.1`, is its IPv4 address.
+- An IPv4 address is also in an IPv6 range that holds its IPv6 form, as for `BlockList` of `node:net`.
+- Tests compare `ipVersion` and `cidrSet` with `isIP` and `BlockList` on random addresses.
 - An address for documentation is `public`. Thus a lab can use `203.0.113.0/24` for hosts on the internet.
 
 ```ts
