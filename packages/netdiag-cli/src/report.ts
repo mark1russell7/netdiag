@@ -2,6 +2,7 @@ import {
   DNS_ANSWER,
   LOOKUP_KINDS,
   NATIVE_KINDS,
+  PATH_ORIGIN,
   PATH_OWNER,
   STANDARD_CATALOG,
   TOOL_KINDS,
@@ -21,6 +22,7 @@ import {
   type LossHop,
   type LossNetwork,
   type LossOrigin,
+  type PathOrigin,
   type PathOwner,
   type Skipped,
   type VisitRole,
@@ -137,8 +139,8 @@ export function subjectText(role: string, host: string): string {
   return role === "local" ? "this computer" : `${role} ${host}`;
 }
 
-/** This function gives the owner of a hop for a person: its network, holder, country and origin AS, or the outcome of the lookup. */
-export function ownerText(owner: PathOwner): string {
+/** This function gives the owner of a hop for a person, with no origin AS: its network, holder and country, or the outcome of the lookup. */
+function ownerName(owner: PathOwner): string {
   switch (owner.outcome) {
     case "found": {
       const network = owner.network;
@@ -146,8 +148,7 @@ export function ownerText(owner: PathOwner): string {
       const name = network.name === undefined ? network.handle : `${network.name} (${network.handle})`;
       const holder = network.holder === undefined ? "" : `, ${network.holder}`;
       const country = network.country === undefined ? "" : `, ${network.country}`;
-      const origin = network.originAs.length === 0 ? "" : `, ${network.originAs.map((as) => `AS${as}`).join(" ")}`;
-      return `${name}${holder}${country}${origin}`;
+      return `${name}${holder}${country}`;
     }
     case "special":
       return `a special-purpose address (${owner.class ?? "unknown"}), with no lookup`;
@@ -156,6 +157,54 @@ export function ownerText(owner: PathOwner): string {
     default:
       return `no owner: ${owner.detail ?? owner.outcome}`;
   }
+}
+
+function asList(numbers: readonly number[]): string {
+  return numbers.map((as) => `AS${as}`).join(" ");
+}
+
+function sameNumbers(a: readonly number[], b: readonly number[]): boolean {
+  const set = new Set(a);
+  return new Set(b).size === set.size && b.every((as) => set.has(as));
+}
+
+/**
+ * This function gives the origin AS of a hop for a person, from RDAP and from the DNS of Team Cymru. It gives an empty
+ * text when no source tells of an origin.
+ *
+ * - When one source gives AS numbers, or the two sources give the same numbers, the text has the numbers only.
+ * - When the two sources do not agree, the text names each source with its numbers.
+ * - The country of the record of Team Cymru is not in the text, because it is not a location of the address.
+ */
+export function originAsText(owner: PathOwner | undefined, origin: PathOrigin | undefined): string {
+  const registered = owner?.outcome === "found" ? (owner.network?.originAs ?? []) : [];
+  const routed = origin?.outcome === "found" ? (origin.originAs ?? []) : [];
+  if (routed.length > 0) {
+    if (registered.length === 0 || sameNumbers(registered, routed)) return asList(routed);
+    return `${asList(registered)} in RDAP, ${asList(routed)} in the DNS of Team Cymru`;
+  }
+  if (origin?.outcome === "unrouted") {
+    return registered.length === 0 ? "no BGP route in the DNS of Team Cymru" : `${asList(registered)} in RDAP, no BGP route in the DNS of Team Cymru`;
+  }
+  const failed = origin?.outcome === "failed" ? [`no origin AS from the DNS of Team Cymru: ${origin.detail ?? "no answer"}`] : [];
+  return [...(registered.length === 0 ? [] : [asList(registered)]), ...failed].join(", ");
+}
+
+/** This function gives the owner of a hop for a person: its network, holder, country and origin AS, or the outcome of the lookup. */
+export function ownerText(owner: PathOwner, origin?: PathOrigin): string {
+  const as = originAsText(owner, origin);
+  return as === "" ? ownerName(owner) : `${ownerName(owner)}, ${as}`;
+}
+
+/**
+ * This function gives a hop for a person from its owner and its origin. A hop with no owner has the text `no lookup of
+ * the owner`, and the origin AS when there is one.
+ */
+export function hopText(owner: PathOwner | undefined, origin: PathOrigin | undefined): string {
+  if (owner !== undefined) return ownerText(owner, origin);
+  if (origin?.outcome === "special") return `a special-purpose address (${origin.class ?? "unknown"}), with no lookup`;
+  const as = originAsText(undefined, origin);
+  return as === "" ? "no lookup of the owner" : `no lookup of the owner, ${as}`;
 }
 
 /** The id of the fault of the catalog for a loss on the path. Its cause in a report gets the networks where the loss starts. */
@@ -173,12 +222,16 @@ export function hopsText(hops: readonly LossHop[]): string {
   return first === last ? `hop ${first.ttl} (${addresses})` : `hops ${first.ttl} to ${last.ttl} (${addresses})`;
 }
 
-/** This function gives the short name of a network where a loss can start: the name and the origin AS, or the first hop. */
+/**
+ * This function gives the short name of a network where a loss can start: the name and the origin AS, the origin AS
+ * alone, or the first hop.
+ */
 export function networkName(network: LossNetwork): string {
   const found = network.owner?.outcome === "found" ? network.owner.network : undefined;
-  if (found === undefined) return `the network of ${network.hops[0]?.address ?? "a hop"}`;
-  const origin = found.originAs.length === 0 ? "" : ` (${found.originAs.map((as) => `AS${as}`).join(" ")})`;
-  return `${found.name ?? found.handle}${origin}`;
+  const route = network.origin?.outcome === "found" ? network.origin : undefined;
+  if (found === undefined) return route === undefined ? `the network of ${network.hops[0]?.address ?? "a hop"}` : `the network of ${asList(route.originAs ?? [])}`;
+  const as = originAsText(network.owner, route);
+  return as === "" ? (found.name ?? found.handle) : `${found.name ?? found.handle} (${as})`;
 }
 
 /** This function gives the sentence that names the networks where the loss to a destination can start. */
@@ -193,7 +246,7 @@ export function originLines(origin: LossOrigin): string[] {
   const { after, loss } = origin.start;
   const bound = after === undefined ? "    No hop has a clearly lower loss, so the loss can start on the first link." : `    The loss starts after ${hopsText([after])}, a hop with a clearly lower loss.`;
   const hint = after === undefined && loss.sent < MORE_CYCLES ? [`    More cycles give a shorter part of the path. Give --mtr-cycles ${MORE_CYCLES}.`] : [];
-  const networks = origin.networks.map((network) => `    ${hopsText(network.hops)}: ${network.owner === undefined ? "no lookup of the owner" : ownerText(network.owner)}`);
+  const networks = origin.networks.map((network) => `    ${hopsText(network.hops)}: ${hopText(network.owner, network.origin)}`);
   return [`  ${originText(origin)}`, bound, ...hint, ...networks];
 }
 
@@ -202,8 +255,9 @@ const UNDER = " ".repeat(8);
 
 /**
  * This function gives the lines of the text report of a check. The lines show the most probable causes with their
- * probabilities and the next step with its gain. They also show the problems of the visit, the owners of the hops, where
- * each loss starts and the count of the evidence. The cause of a loss names the networks where the loss can start.
+ * probabilities and the next step with its gain. They also show the problems of the visit, the owners and the origin AS
+ * of the hops, where each loss starts and the count of the evidence. The cause of a loss names the networks where the
+ * loss can start.
  */
 export function formatReport(report: CheckReport): string[] {
   const lines = [`netdiag check ${report.target} (${report.scheme}, path ${report.path})`, "", "The probable causes"];
@@ -220,10 +274,16 @@ export function formatReport(report: CheckReport): string[] {
     lines.push("", `The problems of the visit (${report.problems.length})`);
     for (const item of report.problems) lines.push(`  ${subjectText(item.role, item.host)}: ${item.problem}`);
   }
-  const owners = report.facts.flatMap(({ fact }) => (isFactOf(PATH_OWNER, fact) ? [fact.value] : []));
-  if (owners.length > 0) {
-    lines.push("", `The owners of the hops (${owners.length})`);
-    for (const owner of owners) lines.push(`  ${owner.address}: ${ownerText(owner)}`);
+  const owners = new Map<string, PathOwner>();
+  const routes = new Map<string, PathOrigin>();
+  for (const { fact } of report.facts) {
+    if (isFactOf(PATH_OWNER, fact) && !owners.has(fact.value.address)) owners.set(fact.value.address, fact.value);
+    if (isFactOf(PATH_ORIGIN, fact) && !routes.has(fact.value.address)) routes.set(fact.value.address, fact.value);
+  }
+  const hops = [...new Set([...owners.keys(), ...routes.keys()])];
+  if (hops.length > 0) {
+    lines.push("", `The owners of the hops (${hops.length})`);
+    for (const address of hops) lines.push(`  ${address}: ${hopText(owners.get(address), routes.get(address))}`);
   }
   if (origins.length > 0) {
     lines.push("", `Where the loss starts (${origins.length})`);

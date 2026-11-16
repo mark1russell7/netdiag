@@ -3,6 +3,7 @@ import { isIP } from "node:net";
 import { observe, type Observation } from "../fact.ts";
 import { DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, type DnsOutcome, type RecordType } from "../kinds.ts";
 import { defineProbe, type Availability, type Probe } from "../probe.ts";
+import type { TxtResolve } from "../lookups/origin.ts";
 import { formatTarget, target } from "../target.ts";
 import {
   connectPhase,
@@ -133,6 +134,29 @@ export const DNS_PROBE: Probe<DnsInput, DnsRaw> = defineProbe<DnsInput, DnsRaw>(
     return [observe(DNS_ANSWER, target(raw.name), { ...rest, ms: end - start }, { start, end })];
   },
 });
+
+/**
+ * This port of the probe of the origins sends one TXT query with `node:dns`, with one try and no search domain. It
+ * gives each failure of the query as an outcome. It throws only when the signal stops the query.
+ */
+export const nodeResolveTxt: TxtResolve = async (query, signal) => {
+  signal.throwIfAborted();
+  const resolver = new Resolver({ timeout: query.timeoutMs, tries: 1 });
+  resolver.setServers([formatTarget(target(query.resolver, query.port))]);
+  const stop = (): void => resolver.cancel();
+  signal.addEventListener("abort", stop, { once: true });
+  try {
+    const records = await resolver.resolveTxt(query.name);
+    signal.throwIfAborted();
+    return { outcome: "ok", records };
+  } catch (thrown) {
+    signal.throwIfAborted();
+    const code = codeOf(thrown);
+    return { outcome: dnsOutcome(code), records: [], ...(code === undefined ? {} : { code }) };
+  } finally {
+    signal.removeEventListener("abort", stop);
+  }
+};
 
 /** The input of the TCP probe: one connect to an IP address and a port. */
 export interface TcpInput {

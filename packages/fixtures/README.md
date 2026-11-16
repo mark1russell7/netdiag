@@ -10,7 +10,7 @@ When `rigor-testkit` publishes `/tls` and `/dns`, the tests of netdiag use them,
 
 | Function | What it gives |
 | --- | --- |
-| `startDnsServer({ zone, host, port })` | A DNS server on UDP. The zone is a table of names or a function. A name gets records, a response code or no answer. |
+| `startDnsServer({ zone, host, port })` | A DNS server on UDP. The zone is a table of names or a function. A name gets `A`, `AAAA` or `TXT` records, a response code or no answer. |
 | `authority(commonName)` | A root of trust. Its `issue(names, validity)` gives server certificates. An IP address goes in the IP field. |
 | `selfSigned(names)` | A self-signed server certificate. |
 | `expiredValidity()` | The times of a certificate that expired one day before the call. |

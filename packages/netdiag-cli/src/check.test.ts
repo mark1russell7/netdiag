@@ -3,7 +3,7 @@ import { realClock } from "@mark1russell7/algebra/clock";
 import type { ToolRunOptions } from "@mark1russell7/netdiag/tools";
 import { authority, fakeToolHost, listen, startDnsServer, type Authority, type DnsServer, type FakeRule, type Pems } from "@netdiag/fixtures";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import { PATH_OWNER, RDAP_BOOTSTRAP, isFactOf, type RdapGet, type VisitRole } from "@mark1russell7/netdiag";
+import { PATH_ORIGIN, PATH_OWNER, RDAP_BOOTSTRAP, isFactOf, type RdapGet, type TxtResolve, type VisitRole } from "@mark1russell7/netdiag";
 import { check } from "./check.ts";
 import { createNetdiagCli } from "./cli.ts";
 import { formatReport, type CheckReport } from "./report.ts";
@@ -100,6 +100,29 @@ describe("a check from end to end", () => {
     const plain = await check({ target: `${SERVER}:${port}`, pingCount: 0, mtrCycles: 2 }, deps);
     expect(plain.facts.some(({ fact }) => isFactOf(PATH_OWNER, fact))).toBe(false);
     expect(urls).toHaveLength(2);
+  });
+
+  it("looks up the origin AS of the public hops of mtr with owners, through the port of TXT queries", async () => {
+    const port = await httpsServer();
+    const dns = await dnsServer();
+    const queries: string[] = [];
+    const origins: TxtResolve = (query) => {
+      queries.push(`${query.name} ${query.resolver}:${query.port}`);
+      return Promise.resolve({ outcome: "ok", records: [["64500 | 8.8.4.0/24 | ZZ | arin | 2000-01-01"]] });
+    };
+    const rdap: RdapGet = (request) =>
+      Promise.resolve(request.url === RDAP_BOOTSTRAP.ipv4 ? { status: 200, headers: {}, body: BOOTSTRAP } : { status: 404, headers: {}, body: "" });
+    const deps = { clock: realClock, tools: pingHost(MTR_RULES), resolvers: [], tls: { roots: [ca.cert] }, rdap, origins };
+    const options = { target: `${SERVER}:${port}`, resolver: `${RESOLVER}:${dns.port}`, pingCount: 0, mtrCycles: 2 };
+    const report = await check({ ...options, owners: true }, deps);
+    const found = report.facts.flatMap(({ fact }) => (isFactOf(PATH_ORIGIN, fact) ? [`${fact.value.address} ${fact.value.outcome}`] : []));
+    expect(found).toEqual(["10.0.0.1 special", `${PUBLIC_HOP} found`, `${SERVER} special`]);
+    expect(queries).toEqual([`4.4.8.8.origin.asn.cymru.com ${RESOLVER}:${dns.port}`]);
+    expect(formatReport(report)).toContain(`  ${PUBLIC_HOP}: the registry has no network for this address, AS64500`);
+    // Without the option owners, the check sends no TXT query, also with a port.
+    const plain = await check(options, deps);
+    expect(plain.facts.some(({ fact }) => isFactOf(PATH_ORIGIN, fact))).toBe(false);
+    expect(queries).toHaveLength(1);
   });
 
   it("probes only the named hosts, the resolver, the gateway and the addresses of the named hosts", async () => {

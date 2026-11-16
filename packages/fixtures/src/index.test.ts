@@ -44,6 +44,17 @@ describe("startDnsServer", () => {
       await server.close();
     }
   });
+
+  it("answers TXT records with each string of a record", async () => {
+    const server = await startDnsServer({ zone: { "t.example": { rcode: 0, txt: [["64500 | 8.8.8.0/24 ", "| US | arin | 2000-01-01"], ["second"]] } } });
+    try {
+      const resolver = new Resolver({ timeout: 1000, tries: 1 });
+      resolver.setServers([`127.0.0.1:${server.port}`]);
+      expect(await resolver.resolveTxt("t.example")).toEqual([["64500 | 8.8.8.0/24 ", "| US | arin | 2000-01-01"], ["second"]]);
+    } finally {
+      await server.close();
+    }
+  });
 });
 
 describe("the certificates", () => {

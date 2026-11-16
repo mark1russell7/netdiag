@@ -1,4 +1,5 @@
 import {
+  CYMRU_ZONES,
   DEFAULT_MTR_CYCLES,
   DEFAULT_PING_COUNT,
   MAX_MTR_CYCLES,
@@ -51,8 +52,8 @@ export interface CheckOptions {
   /** The number of cycles of `mtr` to each address. The default is 0, or `DEFAULT_MTR_CYCLES` with `owners`. 0 starts no `mtr`. */
   readonly mtrCycles?: number | undefined;
   /**
-   * `true` looks up the owner network of each hop of `mtr` in the public registries of RDAP. The check then grants the
-   * bootstrap host of IANA and each registry of `RDAP_REGISTRIES`.
+   * `true` looks up the owner network of each hop of `mtr` in the public registries of RDAP, and its origin AS in the DNS
+   * of Team Cymru. The check then grants the bootstrap host of IANA, each registry of `RDAP_REGISTRIES` and each zone of `CYMRU_ZONES`.
    */
   readonly owners?: boolean | undefined;
 }
@@ -72,7 +73,7 @@ export interface CheckPlan {
   readonly pingCount: number;
   /** The number of cycles of `mtr` to each address. 0 starts no `mtr`. */
   readonly mtrCycles: number;
-  /** `true` looks up the owner of each hop in RDAP. */
+  /** `true` looks up the owner of each hop in RDAP and its origin AS in the DNS of Team Cymru. */
   readonly owners: boolean;
   /** When the visit searches the MTU of the path to an address. The default is `auto`. */
   readonly mtu?: MtuSearch | undefined;
@@ -122,7 +123,7 @@ function whole(value: number, low: number, high: number): boolean {
  * - the DNS resolver, with the basis `named` from `--resolver`, or `configured` from the computer
  * - the gateway, when the user gives it, with the basis `named`
  * - each range of `--grant`, with the basis `owned`
- * - with `--owners`, the bootstrap host of IANA and each registry of RDAP, with the basis `named`
+ * - with `--owners`, the bootstrap host of IANA, each registry of RDAP and each zone of Team Cymru, with the basis `named`
  *
  * The visit also puts in the scope the addresses that the resolver gives for a named host.
  */
@@ -183,6 +184,7 @@ export function planCheck(options: CheckOptions, system: PlanSystem): Result<Che
 
   if (owners) {
     for (const host of [new URL(RDAP_BOOTSTRAP.ipv4).hostname, ...RDAP_REGISTRIES]) grants.push({ kind: "host", host, basis: "named", note: "a registry of RDAP for --owners" });
+    for (const host of Object.values(CYMRU_ZONES)) grants.push({ kind: "host", host, basis: "named", note: "a DNS zone of Team Cymru for --owners" });
   }
 
   for (const cidr of options.grant ?? []) grants.push({ kind: "range", cidr: cidr.trim(), basis: "owned", note: "a range of --grant" });

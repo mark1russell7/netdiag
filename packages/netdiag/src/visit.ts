@@ -1,6 +1,7 @@
 import type { Clock } from "@mark1russell7/algebra/clock";
 import { factsOf, type Fact } from "./fact.ts";
 import { DNS_ANSWER, HTTP_RESPONSE, PATH_REPORT, TCP_CONNECT, TLS_HANDSHAKE, type RecordType } from "./kinds.ts";
+import { originProbe, type TxtResolve } from "./lookups/origin.ts";
 import { MAX_OWNER_ADDRESSES, ownerProbe, type OwnerProbeOptions, type RdapGet } from "./lookups/owner.ts";
 import { LINK_SUBJECT, linkProbe, type InterfaceTable } from "./probes/link.ts";
 import { DNS_PROBE, httpProbe, type TlsProbeOptions } from "./probes/native.ts";
@@ -51,6 +52,11 @@ export interface VisitOptions {
   readonly owners?: RdapGet | undefined;
   /** The options of the probe of the owners. */
   readonly ownerOptions?: OwnerProbeOptions | undefined;
+  /**
+   * The port of the lookups of the origin AS of the hops in the DNS of Team Cymru. Without it, the visit looks up no
+   * origin. The lookups need `mtr` and the resolver of the input. The scope must have a host grant of each zone of `CYMRU_ZONES`.
+   */
+  readonly origins?: TxtResolve | undefined;
   /** When the visit searches the MTU of the path to an address. The default is `auto`. The search needs `tools`. */
   readonly mtu?: MtuSearch | undefined;
   /** The default is `https`. */
@@ -114,6 +120,7 @@ function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutc
  * - When a host grant puts a name in the scope, the addresses of its answers go into the scope.
  * - For each address, it starts `ping`, then `mtr`, then one HTTP request. A probe of an address out of the scope gives a problem.
  * - After `mtr`, it looks up the owner of each new hop in RDAP, when the options have `owners`. It looks up each hop one time.
+ * - Then it looks up the origin AS of these hops in the DNS of Team Cymru, when the options have `origins`.
  * - After the HTTP request, it searches the MTU of the path to the address when the option `mtu` tells it to.
  * - For the gateway, it starts `ping` only.
  *
@@ -130,6 +137,7 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
   const ping = options.tools === undefined || pingCount === 0 ? undefined : pingProbe(options.tools);
   const mtr = options.tools === undefined || mtrCycles === 0 ? undefined : mtrProbe(options.tools);
   const owner = mtr === undefined || options.owners === undefined ? undefined : ownerProbe(options.owners, options.ownerOptions);
+  const origin = mtr === undefined || options.origins === undefined ? undefined : originProbe(options.origins);
   const looked = new Set<string>();
   const mtuSearch = options.mtu ?? "auto";
   const mtu = options.tools === undefined || mtuSearch === "never" ? undefined : mtuProbe(options.tools);
@@ -171,9 +179,15 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
         const report = await run(mtr, { address, cycles: mtrCycles });
         yield* stepsOf(role, host.host, `mtr of ${address}`, report);
         const hops = report.status === "done" ? hopAddresses(report.facts).filter((hop) => !looked.has(hop)).slice(0, MAX_OWNER_ADDRESSES) : [];
-        if (owner !== undefined && hops.length > 0) {
+        if ((owner !== undefined || origin !== undefined) && hops.length > 0) {
           for (const hop of hops) looked.add(hop);
-          yield* stepsOf(role, host.host, `lookup of the owners of the hops to ${address}`, await run(owner, { addresses: hops }));
+          if (owner !== undefined) yield* stepsOf(role, host.host, `lookup of the owners of the hops to ${address}`, await run(owner, { addresses: hops }));
+          if (origin !== undefined && input.resolver === undefined) {
+            yield { kind: "problem", role, host: host.host, problem: `The visit has no DNS resolver for the lookups of the origin AS of the hops to ${address}.` };
+          } else if (origin !== undefined && input.resolver !== undefined) {
+            const query = { addresses: hops, resolver: input.resolver.address, port: input.resolver.port, timeoutMs: options.dnsTimeoutMs };
+            yield* stepsOf(role, host.host, `lookup of the origin AS of the hops to ${address}`, await run(origin, query));
+          }
         }
       }
       const request = { address, scheme, port: host.port, host: name, path: options.path, timeoutMs: options.httpTimeoutMs };

@@ -16,6 +16,7 @@ CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/counts.chunk.d.ts#CONNECT_OUTCOMES
+CYMRU_ZONES: build/core.chunk.d.ts#CYMRU_ZONES
 type Candidate: build/index.chunk2.d.ts#Candidate
 CaptureOutcome: build/counts.chunk.d.ts#CaptureOutcome
 CaptureProtocol: build/counts.chunk.d.ts#CaptureProtocol
@@ -30,9 +31,11 @@ type ClockOrigin: build/core.chunk.d.ts#ClockOrigin
 type ConnectOptions: build/index.d.ts#ConnectOptions
 ConnectOutcome: build/counts.chunk.d.ts#ConnectOutcome
 type Contribution: build/index.chunk2.d.ts#Contribution
+type CymruOrigin: build/core.chunk.d.ts#CymruOrigin
 DEFAULT_MAX_BYTES: build/index.d.ts#DEFAULT_MAX_BYTES
 DEFAULT_MAX_PORTS_PER_HOST: build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
 DEFAULT_MTR_CYCLES: build/counts.chunk.d.ts#DEFAULT_MTR_CYCLES
+DEFAULT_ORIGIN_TIMEOUT_MS: build/index.d.ts#DEFAULT_ORIGIN_TIMEOUT_MS
 DEFAULT_OWNER_REDIRECTS: build/index.d.ts#DEFAULT_OWNER_REDIRECTS
 DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
 DEFAULT_RDAP_BODY: build/index.d.ts#DEFAULT_RDAP_BODY
@@ -142,10 +145,17 @@ MtuTry: build/counts.chunk.d.ts#MtuTry
 MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
 NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk2.d.ts#NONE
+ORIGIN_CONCURRENCY: build/index.d.ts#ORIGIN_CONCURRENCY
+ORIGIN_OUTCOMES: build/counts.chunk.d.ts#ORIGIN_OUTCOMES
+ORIGIN_PROBE_ID: build/index.d.ts#ORIGIN_PROBE_ID
 OWNER_OUTCOMES: build/counts.chunk.d.ts#OWNER_OUTCOMES
 OWNER_PROBE_ID: build/index.d.ts#OWNER_PROBE_ID
 type Observable: build/index.chunk2.d.ts#Observable
 type Observation: build/counts.chunk.d.ts#Observation
+type OriginInput: build/index.d.ts#OriginInput
+type OriginLookup: build/index.d.ts#OriginLookup
+OriginOutcome: build/counts.chunk.d.ts#OriginOutcome
+type OriginRaw: build/index.d.ts#OriginRaw
 type OwnerExchange: build/index.d.ts#OwnerExchange
 type OwnerInput: build/index.d.ts#OwnerInput
 OwnerNetwork: build/counts.chunk.d.ts#OwnerNetwork
@@ -159,6 +169,7 @@ PATH_CAPTURE: build/counts.chunk.d.ts#PATH_CAPTURE
 PATH_LOSS_BINS: build/core.chunk.d.ts#PATH_LOSS_BINS
 PATH_MTU: build/counts.chunk.d.ts#PATH_MTU
 PATH_MTU_VALUES: build/core.chunk.d.ts#PATH_MTU_VALUES
+PATH_ORIGIN: build/counts.chunk.d.ts#PATH_ORIGIN
 PATH_OWNER: build/counts.chunk.d.ts#PATH_OWNER
 PATH_REPORT: build/counts.chunk.d.ts#PATH_REPORT
 PATH_THROUGHPUT: build/counts.chunk.d.ts#PATH_THROUGHPUT
@@ -168,6 +179,7 @@ PacketProtocol: build/counts.chunk.d.ts#PacketProtocol
 type Part: build/index.chunk2.d.ts#Part
 PathCapture: build/counts.chunk.d.ts#PathCapture
 PathMtu: build/counts.chunk.d.ts#PathMtu
+PathOrigin: build/counts.chunk.d.ts#PathOrigin
 PathOwner: build/counts.chunk.d.ts#PathOwner
 PathReport: build/counts.chunk.d.ts#PathReport
 PathThroughput: build/counts.chunk.d.ts#PathThroughput
@@ -241,6 +253,9 @@ type TlsRaw: build/index.d.ts#TlsRaw
 TraceHop: build/counts.chunk.d.ts#TraceHop
 TraceOutcome: build/counts.chunk.d.ts#TraceOutcome
 Trust: build/counts.chunk.d.ts#Trust
+type TxtAnswer: build/index.d.ts#TxtAnswer
+type TxtQuery: build/index.d.ts#TxtQuery
+type TxtResolve: build/index.d.ts#TxtResolve
 UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
 VISIT_RECORDS: build/index.d.ts#VISIT_RECORDS
 VISIT_ROLES: build/core.chunk.d.ts#VISIT_ROLES
@@ -266,6 +281,7 @@ WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
 ackSamples: build/core.chunk.d.ts#ackSamples
+addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
@@ -318,7 +334,10 @@ mtuOf: build/counts.chunk.d.ts#mtuOf
 namedGrant: build/core.chunk.d.ts#namedGrant
 networkQuery: build/core.chunk.d.ts#networkQuery
 nextMtuSize: build/counts.chunk.d.ts#nextMtuSize
+nodeResolveTxt: build/index.d.ts#nodeResolveTxt
 observe: build/counts.chunk.d.ts#observe
+originProbe: build/index.d.ts#originProbe
+originQuery: build/core.chunk.d.ts#originQuery
 ownerProbe: build/index.d.ts#ownerProbe
 packetPairs: build/core.chunk.d.ts#packetPairs
 parseCidr: build/index.chunk.d.ts#parseCidr
@@ -330,6 +349,7 @@ readBootstrap: build/core.chunk.d.ts#readBootstrap
 readEvidence: build/core.chunk.d.ts#readEvidence
 readFact: build/counts.chunk.d.ts#readFact
 readNetwork: build/core.chunk.d.ts#readNetwork
+readOrigin: build/core.chunk.d.ts#readOrigin
 resolvedGrant: build/core.chunk.d.ts#resolvedGrant
 rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
 rtoOf: build/core.chunk.d.ts#rtoOf
@@ -359,6 +379,7 @@ CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/counts.chunk.d.ts#CONNECT_OUTCOMES
+CYMRU_ZONES: build/core.chunk.d.ts#CYMRU_ZONES
 type Candidate: build/index.chunk2.d.ts#Candidate
 CaptureOutcome: build/counts.chunk.d.ts#CaptureOutcome
 CaptureProtocol: build/counts.chunk.d.ts#CaptureProtocol
@@ -372,6 +393,7 @@ CidrSet: build/index.chunk.d.ts#CidrSet
 type ClockOrigin: build/core.chunk.d.ts#ClockOrigin
 ConnectOutcome: build/counts.chunk.d.ts#ConnectOutcome
 type Contribution: build/index.chunk2.d.ts#Contribution
+type CymruOrigin: build/core.chunk.d.ts#CymruOrigin
 DEFAULT_MAX_PORTS_PER_HOST: build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
 DEFAULT_MTR_CYCLES: build/counts.chunk.d.ts#DEFAULT_MTR_CYCLES
 DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
@@ -464,9 +486,11 @@ MtuTry: build/counts.chunk.d.ts#MtuTry
 MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
 NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk2.d.ts#NONE
+ORIGIN_OUTCOMES: build/counts.chunk.d.ts#ORIGIN_OUTCOMES
 OWNER_OUTCOMES: build/counts.chunk.d.ts#OWNER_OUTCOMES
 type Observable: build/index.chunk2.d.ts#Observable
 type Observation: build/counts.chunk.d.ts#Observation
+OriginOutcome: build/counts.chunk.d.ts#OriginOutcome
 OwnerNetwork: build/counts.chunk.d.ts#OwnerNetwork
 OwnerOutcome: build/counts.chunk.d.ts#OwnerOutcome
 PACKET_PROTOCOLS: build/counts.chunk.d.ts#PACKET_PROTOCOLS
@@ -476,6 +500,7 @@ PATH_CAPTURE: build/counts.chunk.d.ts#PATH_CAPTURE
 PATH_LOSS_BINS: build/core.chunk.d.ts#PATH_LOSS_BINS
 PATH_MTU: build/counts.chunk.d.ts#PATH_MTU
 PATH_MTU_VALUES: build/core.chunk.d.ts#PATH_MTU_VALUES
+PATH_ORIGIN: build/counts.chunk.d.ts#PATH_ORIGIN
 PATH_OWNER: build/counts.chunk.d.ts#PATH_OWNER
 PATH_REPORT: build/counts.chunk.d.ts#PATH_REPORT
 PATH_THROUGHPUT: build/counts.chunk.d.ts#PATH_THROUGHPUT
@@ -485,6 +510,7 @@ PacketProtocol: build/counts.chunk.d.ts#PacketProtocol
 type Part: build/index.chunk2.d.ts#Part
 PathCapture: build/counts.chunk.d.ts#PathCapture
 PathMtu: build/counts.chunk.d.ts#PathMtu
+PathOrigin: build/counts.chunk.d.ts#PathOrigin
 PathOwner: build/counts.chunk.d.ts#PathOwner
 PathReport: build/counts.chunk.d.ts#PathReport
 PathThroughput: build/counts.chunk.d.ts#PathThroughput
@@ -569,6 +595,7 @@ WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
 ackSamples: build/core.chunk.d.ts#ackSamples
+addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
@@ -612,6 +639,7 @@ namedGrant: build/core.chunk.d.ts#namedGrant
 networkQuery: build/core.chunk.d.ts#networkQuery
 nextMtuSize: build/counts.chunk.d.ts#nextMtuSize
 observe: build/counts.chunk.d.ts#observe
+originQuery: build/core.chunk.d.ts#originQuery
 packetPairs: build/core.chunk.d.ts#packetPairs
 parseCidr: build/index.chunk.d.ts#parseCidr
 parseTarget: build/counts.chunk.d.ts#parseTarget
@@ -622,6 +650,7 @@ readBootstrap: build/core.chunk.d.ts#readBootstrap
 readEvidence: build/core.chunk.d.ts#readEvidence
 readFact: build/counts.chunk.d.ts#readFact
 readNetwork: build/core.chunk.d.ts#readNetwork
+readOrigin: build/core.chunk.d.ts#readOrigin
 resolvedGrant: build/core.chunk.d.ts#resolvedGrant
 rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
 rtoOf: build/core.chunk.d.ts#rtoOf
@@ -642,6 +671,7 @@ AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
 Cidr: build/index.chunk.d.ts#Cidr
 CidrSet: build/index.chunk.d.ts#CidrSet
+addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
@@ -820,10 +850,22 @@ interface Bin {
   readonly value: string;
 }
 
+### build/core.chunk.d.ts#CYMRU_ZONES
+declare const CYMRU_ZONES: Readonly<Record<AddressFamily, string>>;
+
 ### build/core.chunk.d.ts#ClockOrigin
 interface ClockOrigin {
   readonly wall: string;
   readonly monotonic: number;
+}
+
+### build/core.chunk.d.ts#CymruOrigin
+interface CymruOrigin {
+  readonly originAs: readonly number[];
+  readonly prefix: string;
+  readonly registry?: string | undefined;
+  readonly country?: string | undefined;
+  readonly allocated?: string | undefined;
 }
 
 ### build/core.chunk.d.ts#DEFAULT_MAX_PORTS_PER_HOST
@@ -918,6 +960,7 @@ interface LossHop {
 ### build/core.chunk.d.ts#LossNetwork
 interface LossNetwork {
   readonly owner?: PathOwner | undefined;
+  readonly origin?: PathOrigin | undefined;
   readonly hops: readonly LossHop[];
 }
 
@@ -1209,7 +1252,7 @@ declare function ipdv(delaysMs: readonly number[]): number[];
 declare function isLocalName(name: string): boolean;
 
 ### build/core.chunk.d.ts#lossNetworks
-declare function lossNetworks(start: LossStart, owners: readonly PathOwner[]): LossNetwork[];
+declare function lossNetworks(start: LossStart, owners: readonly PathOwner[], origins?: readonly PathOrigin[]): LossNetwork[];
 
 ### build/core.chunk.d.ts#lossOf
 declare function lossOf(sent: number, received: number): LossEstimate | undefined;
@@ -1226,6 +1269,9 @@ declare function namedGrant(t: Target, note?: string): Grant;
 ### build/core.chunk.d.ts#networkQuery
 declare function networkQuery(base: URL, address: string): URL;
 
+### build/core.chunk.d.ts#originQuery
+declare function originQuery(address: string): string;
+
 ### build/core.chunk.d.ts#packetPairs
 declare function packetPairs(capture: PathCapture): number[];
 
@@ -1240,6 +1286,9 @@ declare function readEvidence(facts: readonly Fact[], options?: ReadOptions): Re
 
 ### build/core.chunk.d.ts#readNetwork
 declare function readNetwork(text: string): Result<OwnerNetwork, string>;
+
+### build/core.chunk.d.ts#readOrigin
+declare function readOrigin(records: readonly (readonly string[])[], address: string): Result<CymruOrigin, string>;
 
 ### build/core.chunk.d.ts#resolvedGrant
 declare function resolvedGrant(name: string, address: string, factId?: string): RangeGrant;
@@ -1514,6 +1563,9 @@ type MtuTryResult = (typeof MTU_TRY_RESULTS)[number];
 ### build/counts.chunk.d.ts#NATIVE_KINDS
 declare const NATIVE_KINDS: readonly FactKind<unknown>[];
 
+### build/counts.chunk.d.ts#ORIGIN_OUTCOMES
+declare const ORIGIN_OUTCOMES: readonly ["found", "unrouted", "special", "failed"];
+
 ### build/counts.chunk.d.ts#OWNER_OUTCOMES
 declare const OWNER_OUTCOMES: readonly ["found", "unregistered", "special", "unlisted", "failed"];
 
@@ -1524,6 +1576,9 @@ interface Observation<V = unknown> {
   readonly value: V;
   readonly time?: FactTime | undefined;
 }
+
+### build/counts.chunk.d.ts#OriginOutcome
+type OriginOutcome = (typeof ORIGIN_OUTCOMES)[number];
 
 ### build/counts.chunk.d.ts#OwnerNetwork
 interface OwnerNetwork {
@@ -1549,6 +1604,9 @@ declare const PATH_CAPTURE: FactKind<PathCapture>;
 
 ### build/counts.chunk.d.ts#PATH_MTU
 declare const PATH_MTU: FactKind<PathMtu>;
+
+### build/counts.chunk.d.ts#PATH_ORIGIN
+declare const PATH_ORIGIN: FactKind<PathOrigin>;
 
 ### build/counts.chunk.d.ts#PATH_OWNER
 declare const PATH_OWNER: FactKind<PathOwner>;
@@ -1587,6 +1645,19 @@ interface PathMtu {
   readonly mtu?: number | undefined;
   readonly stop?: MtuStop | undefined;
   readonly tries: readonly MtuTry[];
+  readonly detail?: string | undefined;
+}
+
+### build/counts.chunk.d.ts#PathOrigin
+interface PathOrigin {
+  readonly address: string;
+  readonly outcome: OriginOutcome;
+  readonly class?: string | undefined;
+  readonly originAs?: readonly number[] | undefined;
+  readonly prefix?: string | undefined;
+  readonly registry?: string | undefined;
+  readonly country?: string | undefined;
+  readonly allocated?: string | undefined;
   readonly detail?: string | undefined;
 }
 
@@ -1953,6 +2024,9 @@ interface CidrSet {
   has(address: string): boolean;
 }
 
+### build/index.chunk.d.ts#addressBytes
+declare function addressBytes(address: string): number[] | undefined;
+
 ### build/index.chunk.d.ts#addressClass
 declare function addressClass(address: string): AddressClass | undefined;
 
@@ -2247,6 +2321,9 @@ interface ConnectOptions {
 ### build/index.d.ts#DEFAULT_MAX_BYTES
 export declare const DEFAULT_MAX_BYTES = 65536;
 
+### build/index.d.ts#DEFAULT_ORIGIN_TIMEOUT_MS
+export declare const DEFAULT_ORIGIN_TIMEOUT_MS = 5e3;
+
 ### build/index.d.ts#DEFAULT_OWNER_REDIRECTS
 export declare const DEFAULT_OWNER_REDIRECTS = 2;
 
@@ -2359,8 +2436,36 @@ interface LinkRaw {
 ### build/index.d.ts#MAX_OWNER_ADDRESSES
 export declare const MAX_OWNER_ADDRESSES = 64;
 
+### build/index.d.ts#ORIGIN_CONCURRENCY
+export declare const ORIGIN_CONCURRENCY = 4;
+
+### build/index.d.ts#ORIGIN_PROBE_ID
+export declare const ORIGIN_PROBE_ID = "dns.origin";
+
 ### build/index.d.ts#OWNER_PROBE_ID
 export declare const OWNER_PROBE_ID = "rdap.owner";
+
+### build/index.d.ts#OriginInput
+interface OriginInput {
+  readonly addresses: readonly string[];
+  readonly resolver: string;
+  readonly port?: number | undefined;
+  readonly timeoutMs?: number | undefined;
+}
+
+### build/index.d.ts#OriginLookup
+interface OriginLookup {
+  readonly address: string;
+  readonly name: string;
+  readonly answer?: TxtAnswer | undefined;
+  readonly error?: string | undefined;
+}
+
+### build/index.d.ts#OriginRaw
+interface OriginRaw {
+  readonly resolver: string;
+  readonly lookups: readonly OriginLookup[];
+}
 
 ### build/index.d.ts#OwnerExchange
 interface OwnerExchange {
@@ -2476,6 +2581,24 @@ interface TlsRaw {
   readonly tls?: TlsPhase | undefined;
 }
 
+### build/index.d.ts#TxtAnswer
+interface TxtAnswer {
+  readonly outcome: DnsOutcome;
+  readonly records: readonly (readonly string[])[];
+  readonly code?: string | undefined;
+}
+
+### build/index.d.ts#TxtQuery
+interface TxtQuery {
+  readonly name: string;
+  readonly resolver: string;
+  readonly port: number;
+  readonly timeoutMs: number;
+}
+
+### build/index.d.ts#TxtResolve
+type TxtResolve = (query: TxtQuery, signal: AbortSignal) => Promise<TxtAnswer>;
+
 ### build/index.d.ts#VISIT_RECORDS
 export declare const VISIT_RECORDS: readonly RecordType[];
 
@@ -2489,6 +2612,7 @@ interface VisitOptions {
   readonly mtrCycles?: number | undefined;
   readonly owners?: RdapGet | undefined;
   readonly ownerOptions?: OwnerProbeOptions | undefined;
+  readonly origins?: TxtResolve | undefined;
   readonly mtu?: MtuSearch | undefined;
   readonly scheme?: "http" | "https" | undefined;
   readonly path?: string | undefined;
@@ -2528,6 +2652,12 @@ export declare function linkProbe(read?: () => InterfaceTable): Probe<LinkInput,
 
 ### build/index.d.ts#linkStateOf
 export declare function linkStateOf(interfaces: readonly LinkInterface[], gateway?: string): LinkState;
+
+### build/index.d.ts#nodeResolveTxt
+export declare const nodeResolveTxt: TxtResolve;
+
+### build/index.d.ts#originProbe
+export declare function originProbe(resolve: TxtResolve): Probe<OriginInput, OriginRaw>;
 
 ### build/index.d.ts#ownerProbe
 export declare function ownerProbe(get: RdapGet, options?: OwnerProbeOptions): Probe<OwnerInput, OwnerRaw>;
