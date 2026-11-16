@@ -53,16 +53,49 @@ The score is the hit rate of each fault class, from a confusion matrix. A gate i
 ND-7 has four steps:
 
 1. **The score.** A lab record has the true hypothesis and the diagnosis. `scoreLab` gives the confusion table, the recall of each hypothesis with its Wilson interval, and the Brier score. `labGate` holds the lower end of each recall. The table and the intervals come from `@mark1russell7/rigor-statistics`.
-2. **The loopback lab.** The package `@netdiag/lab` starts real servers on lab addresses of `lo`: a resolver, the target, a reference host and a captive portal. `@mark1russell7/rigor-proxy` holds the first reply of a TLS proxy. Its 13 cases make the 11 classes of the loopback row. The workflow `lab.yml` runs 5 rounds in CI, because the times are part of the evidence. A case that does not show the signs of its fault gives no read.
+2. **The loopback lab.** The package `@netdiag/lab` starts real servers on lab addresses of `lo`: a resolver, the target, a reference host and a captive portal. `@mark1russell7/rigor-proxy` holds the first reply of a TLS proxy. Its 13 cases make the 10 fault classes of the loopback column and the control `none`. The workflow `lab.yml` runs 5 rounds in CI, because the times are part of the evidence. A case that does not show the signs of its fault gives no read.
 3. **The kernel lab.** The command `packages/lab/src/kernel/main.ts` makes faults with real kernels in Docker, through `@mark1russell7/harness`. Each round has one world: a client, the router `gw`, the target, a reference host and a resolver. The agent in the client starts `visitTarget` of netdiag and writes one JSON line for each fact. The first slice has the cases `none`, `filter.drop`, `filter.icmp`, `path.loss` and `path.mtu`. The second slice adds `host.down`, `filter.reset` and `gateway.down`, with the faults of harness 0.16.2 and the passive probe `link.state`. The gate lists `ipv6.broken` with no bar, until the harness has IPv6. The workflow `lab-kernel.yml` starts 5 rounds in CI.
 4. **The bars.** The bar of each class is the worst of 5 or more CI runs, minus their spread. `labBars` of netdiag gives them: the least lower end of the recall interval, minus 2 standard deviations of the lower ends (`noiseFloor` of `rigor-statistics`). A dispatch of a lab workflow with the inputs `runs` and `bars` starts the runs in a matrix, and its job `bars` computes the bars. Each lab job passes its file of `packages/lab/bars/` with `--bars`, and the lab checks are necessary for a merge.
 
-| Lab | Fault classes |
-| --- | --- |
-| Loopback | `none`, `resolver.down`, `resolver.failing`, `name.missing`, `port.closed`, `tls.cert-invalid`, `tls.mismatch`, `tls.proxy`, `server.slow`, `server.error`, `captive.portal` |
-| Kernel | `none`, `filter.drop`, `filter.icmp`, `path.loss`, `path.mtu`, `host.down`, `filter.reset`, `gateway.down` |
-| Kernel, later | `ipv6.broken`. The networks of the harness have no IPv6 yet. The gate lists it with no bar. |
-| None yet | `interface.down`, `wifi.weak`. The gate lists them with no bar. |
+### The coverage of the fault classes
+
+The table of the coverage comes from the data of the labs. `coverage` of `@netdiag/lab` joins the classes of the catalog with the cases of each world (ND-17).
+
+- A cell of a world gives the number of cases of the class, and tells if the world has a bar for it. A dash tells that the world has no case.
+- The column Coverage names each gap as a gap. A class with no case does not show as covered.
+- The command `pnpm --filter @netdiag/lab roadmap` writes the table. A unit test fails when the table is not current.
+
+<!-- coverage:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
+
+| Class | Layer | Loopback | Kernel | Kernel, where cases | Coverage |
+| --- | --- | --- | --- | --- | --- |
+| `interface.down` | `link` | – | – | – | Gap: no case. No world has a link that a case can take down. |
+| `wifi.weak` | `wifi` | – | – | – | Gap: no case. No world has a Wi-Fi link. |
+| `host.down` | `ip` | – | 1 case, a bar | – | Covered |
+| `filter.icmp` | `ip` | – | 1 case, a bar | – | Covered |
+| `ipv6.broken` | `ip` | – | – | – | Gap: no case. No world has IPv6. |
+| `gateway.down` | `route` | – | 1 case, a bar | – | Covered |
+| `path.loss` | `path` | – | 1 case, a bar | 2 cases, no bar | Covered |
+| `path.mtu` | `path` | – | 1 case, a bar | – | Covered |
+| `resolver.down` | `dns` | 2 cases, a bar | – | – | Covered |
+| `resolver.failing` | `dns` | 1 case, a bar | – | – | Covered |
+| `name.missing` | `dns` | 1 case, a bar | – | – | Covered |
+| `port.closed` | `tcp` | 1 case, a bar | – | – | Covered |
+| `filter.drop` | `tcp` | – | 1 case, a bar | – | Covered |
+| `filter.reset` | `tcp` | – | 1 case, a bar | – | Covered |
+| `tls.proxy` | `tls` | 1 case, a bar | – | – | Covered |
+| `tls.cert-invalid` | `tls` | 2 cases, a bar | – | – | Covered |
+| `tls.mismatch` | `tls` | 1 case, a bar | – | – | Covered |
+| `captive.portal` | `http` | 1 case, a bar | – | – | Covered |
+| `server.slow` | `http` | 1 case, a bar | – | – | Covered |
+| `server.error` | `http` | 1 case, a bar | – | – | Covered |
+
+- The catalog has 20 fault classes. 17 are covered, 0 have a case and no bar, and 3 have no case.
+- The classes with no case: `interface.down`, `wifi.weak`, `ipv6.broken`.
+- The layers with no case: `link`, `wifi`.
+- The control `none`. Loopback: 1 case, a bar. Kernel: 1 case, a bar. Kernel, where cases: 1 case, no bar.
+
+<!-- coverage:end -->
 
 ### The licenses of the outside tools
 
@@ -117,3 +150,4 @@ The status words are `active`, `waiting`, `blocked`, `later`, `done` and `droppe
 | ND-14 | The start of a loss on the site | done | P3 | S | site | ND-9, ND-11, ND-15 | Demo 4 of the site shows where the loss of each path starts, and the networks of those hops. The data comes from the facts of a report, with `lossOrigins`. The sample report with a loss comes from the where cases of the kernel lab. The job `where` writes these samples, with the lookups of the owners and the origins. `lookupGrants` gives the grants of the lookups (netdiag 0.5.6, #51). |
 | ND-15 | The lab gate of the start of a loss | active | P2 | M | ground truth | ND-11 | The where cases of the kernel lab put a loss on one link of the path, or no loss. Then `lossStart` must give the part of the path where the loss starts. Step 1 (#47): the cases and their records, with no bar. Step 2 (#48): the gate of the where cases. Step 3: the bars from 5 runs in CI, in `packages/lab/bars/where.json`. |
 | ND-16 | The origin AS of each hop | done | P3 | S | probes | ND-11 | The AS number of each hop. In RDAP, only ARIN gives it. The second source is the DNS of Team Cymru, the source of `mtr -z`: a TXT query under `origin.asn.cymru.com` or `origin6.asn.cymru.com` gives the BGP prefix and its origin AS. `netdiag check --owners` shows the AS of each hop, and the two values when RDAP and the DNS do not agree (netdiag 0.5.5, #49). |
+| ND-17 | netdiag learns on simulated networks | active | P2 | L | ground truth | ND-15 | The labs make each fault class of real networks in seeded worlds. A gap is not a pass. Step 1: the coverage query and the fault atlas. Step 2: one PR for each new class, with its features, its case and its bar. Step 3: seeded worlds of 3, 30 and 300 nodes in containerlab and in VMs of the harness (SYS-77), with fault plans of `rigor-chaos`. Step 4: a gate on the recall, the precision and the count of next probes, with a demo of each world on the site. |
