@@ -25,7 +25,7 @@ export function toneOf(feature: string, value: string): Tone {
   return healthy >= 0.5 ? "usual" : "unusual";
 }
 
-/** An observation of a layer: the evidence, its tone, and whether the diagnosis used it. */
+/** An observation of a layer: the evidence, its tone, and if the diagnosis used it. */
 export interface FlowItem {
   readonly evidence: Evidence;
   readonly tone: Tone;

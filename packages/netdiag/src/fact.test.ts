@@ -13,7 +13,7 @@ const connect: Fact = {
   subject: { host: "192.0.2.10", kind: "ipv4", port: 443 },
   time: { start: 1025, end: 1031.5 },
   source: { probe: "tcp.connect", version: "1" },
-  value: { address: "192.0.2.10", port: 443, outcome: "connected", ms: 6.5 },
+  value: { address: "192.0.2.10", port: 443, family: 4, outcome: "connected", ms: 6.5 },
 };
 
 /** This function gives a copy of the fact through JSON, with the fields of `change`. */

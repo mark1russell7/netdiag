@@ -143,6 +143,6 @@ export function readFact(value: unknown, kinds: readonly FactKind<unknown>[]): R
   if (problems.length > 0) return err(problems);
   const fact = value as unknown as Fact;
   const kind = kinds.find((each) => each.kind === fact.kind);
-  if (kind !== undefined && !isFactOf(kind, fact)) return err([`${name} has a layer or a value that the kind ${fact.kind} does not accept.`]);
+  if (kind !== undefined && !isFactOf(kind, fact)) return err([`${name} has a layer or a value that the kind ${kind.kind} does not accept.`]);
   return ok(fact);
 }
