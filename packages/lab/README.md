@@ -99,3 +99,11 @@ node packages/lab/src/bars-main.ts --out bars-out/kernel.json runs/*
 - Each argument is the folder of one run, or its file `score.json`.
 - A run with a case with no read gives no bars. The exit code is then 2.
 - The options `--k` and `--minimum` set the number of standard deviations (2) and the fewest runs (5).
+
+### The bars in the repository
+
+The files `bars/loopback.json` and `bars/kernel.json` keep the bars of the two labs. Each file comes from 5 runs in CI: the runs [43773608651](https://github.com/mark1russell7/netdiag/actions/runs/43773608651) (loopback) and [43773578029](https://github.com/mark1russell7/netdiag/actions/runs/43773578029) (kernel).
+
+- Each lab job passes its file with `--bars`. A recall below its bar fails the job, and thus the pull request.
+- The bars hold for 5 rounds. A job with a different number of rounds gets no file, and thus no gate.
+- To change the bars, start a new dispatch with `bars` set to `true`. Then commit its files in a pull request.
