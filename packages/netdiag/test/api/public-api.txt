@@ -220,6 +220,20 @@ type VisitOptions: build/index.d.ts#VisitOptions
 type VisitResolver: build/core.chunk.d.ts#VisitResolver
 type VisitRole: build/core.chunk.d.ts#VisitRole
 type VisitStep: build/core.chunk.d.ts#VisitStep
+WIFI_BANDS: build/counts.chunk.d.ts#WIFI_BANDS
+WIFI_CHANGE_KINDS: build/core.chunk.d.ts#WIFI_CHANGE_KINDS
+WIFI_FLOOR_DBM: build/counts.chunk.d.ts#WIFI_FLOOR_DBM
+WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
+WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
+WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
+WIFI_WIDTHS: build/counts.chunk.d.ts#WIFI_WIDTHS
+WifiBand: build/counts.chunk.d.ts#WifiBand
+type WifiChange: build/core.chunk.d.ts#WifiChange
+type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
+type WifiChanges: build/core.chunk.d.ts#WifiChanges
+WifiLink: build/counts.chunk.d.ts#WifiLink
+type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
+WifiState: build/counts.chunk.d.ts#WifiState
 ackSamples: build/core.chunk.d.ts#ackSamples
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
@@ -290,6 +304,8 @@ tlsProbe: build/index.d.ts#tlsProbe
 upInterfaces: build/index.d.ts#upInterfaces
 visitTarget: build/index.d.ts#visitTarget
 widen: build/core.chunk.d.ts#widen
+wifiChanges: build/core.chunk.d.ts#wifiChanges
+wifiSignalOf: build/core.chunk.d.ts#wifiSignalOf
 
 ## ./core (build/core.d.ts): names
 
@@ -478,6 +494,20 @@ type VisitInput: build/core.chunk.d.ts#VisitInput
 type VisitResolver: build/core.chunk.d.ts#VisitResolver
 type VisitRole: build/core.chunk.d.ts#VisitRole
 type VisitStep: build/core.chunk.d.ts#VisitStep
+WIFI_BANDS: build/counts.chunk.d.ts#WIFI_BANDS
+WIFI_CHANGE_KINDS: build/core.chunk.d.ts#WIFI_CHANGE_KINDS
+WIFI_FLOOR_DBM: build/counts.chunk.d.ts#WIFI_FLOOR_DBM
+WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
+WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
+WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
+WIFI_WIDTHS: build/counts.chunk.d.ts#WIFI_WIDTHS
+WifiBand: build/counts.chunk.d.ts#WifiBand
+type WifiChange: build/core.chunk.d.ts#WifiChange
+type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
+type WifiChanges: build/core.chunk.d.ts#WifiChanges
+WifiLink: build/counts.chunk.d.ts#WifiLink
+type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
+WifiState: build/counts.chunk.d.ts#WifiState
 ackSamples: build/core.chunk.d.ts#ackSamples
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
@@ -534,6 +564,8 @@ scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
 target: build/counts.chunk.d.ts#target
 widen: build/core.chunk.d.ts#widen
+wifiChanges: build/core.chunk.d.ts#wifiChanges
+wifiSignalOf: build/core.chunk.d.ts#wifiSignalOf
 
 ## ./address (build/address.d.ts): names
 
@@ -632,6 +664,7 @@ DEFAULT_UDP_BITS_PER_SECOND: build/tools.d.ts#DEFAULT_UDP_BITS_PER_SECOND
 ECHO_HEADER_BYTES: build/tools.d.ts#ECHO_HEADER_BYTES
 IPERF3_MIN_VERSION: build/tools.d.ts#IPERF3_MIN_VERSION
 IPERF3_SETUP_MS: build/tools.d.ts#IPERF3_SETUP_MS
+IW_TIMEOUT_MS: build/tools.d.ts#IW_TIMEOUT_MS
 type Iperf3Input: build/tools.d.ts#Iperf3Input
 MAX_CAPTURE_PACKETS: build/tools.d.ts#MAX_CAPTURE_PACKETS
 MAX_CAPTURE_SECONDS: build/tools.d.ts#MAX_CAPTURE_SECONDS
@@ -647,9 +680,11 @@ MTR_GRACE_MS: build/tools.d.ts#MTR_GRACE_MS
 type MtrInput: build/tools.d.ts#MtrInput
 type MtuInput: build/tools.d.ts#MtuInput
 type MtuRaw: build/tools.d.ts#MtuRaw
+NETSH_TIMEOUT_MS: build/tools.d.ts#NETSH_TIMEOUT_MS
 PING6_LAST_WAIT_MS: build/tools.d.ts#PING6_LAST_WAIT_MS
 PING_INTERVAL_MS: build/tools.d.ts#PING_INTERVAL_MS
 type PingInput: build/tools.d.ts#PingInput
+SYSTEM_PROFILER_TIMEOUT_MS: build/tools.d.ts#SYSTEM_PROFILER_TIMEOUT_MS
 TOOL_LICENSES: build/tools.d.ts#TOOL_LICENSES
 TOOL_MARGIN_MS: build/host.chunk.d.ts#TOOL_MARGIN_MS
 TRACE_QUERIES: build/tools.d.ts#TRACE_QUERIES
@@ -661,6 +696,10 @@ type ToolRaw: build/host.chunk.d.ts#ToolRaw
 type ToolRunOptions: build/host.chunk.d.ts#ToolRunOptions
 type ToolUse: build/tools.d.ts#ToolUse
 type TraceInput: build/tools.d.ts#TraceInput
+WIFI_TOOLS: build/tools.d.ts#WIFI_TOOLS
+type WifiChannel: build/tools.d.ts#WifiChannel
+type WifiInput: build/tools.d.ts#WifiInput
+type WifiRaw: build/tools.d.ts#WifiRaw
 availabilityOf: build/host.chunk.d.ts#availabilityOf
 captureAvailability: build/tools.d.ts#captureAvailability
 captureCommand: build/tools.d.ts#captureCommand
@@ -684,11 +723,15 @@ readMtr: build/tools.d.ts#readMtr
 readMtuTry: build/tools.d.ts#readMtuTry
 readPing: build/tools.d.ts#readPing
 readTraceroute: build/tools.d.ts#readTraceroute
+readWifi: build/tools.d.ts#readWifi
 runTool: build/host.chunk.d.ts#runTool
 toolLicense: build/tools.d.ts#toolLicense
 tracerouteAvailability: build/tools.d.ts#tracerouteAvailability
 tracerouteCommand: build/tools.d.ts#tracerouteCommand
 tracerouteProbe: build/tools.d.ts#tracerouteProbe
+wifiAvailability: build/tools.d.ts#wifiAvailability
+wifiChannelOf: build/tools.d.ts#wifiChannelOf
+wifiProbe: build/tools.d.ts#wifiProbe
 
 ## Declarations
 
@@ -975,6 +1018,40 @@ type VisitStep = {
   readonly problem: string;
 };
 
+### build/core.chunk.d.ts#WIFI_CHANGE_KINDS
+declare const WIFI_CHANGE_KINDS: readonly ["roam", "network", "channel", "drop", "join"];
+
+### build/core.chunk.d.ts#WIFI_SIGNAL_BINS
+declare const WIFI_SIGNAL_BINS: readonly Bin[];
+
+### build/core.chunk.d.ts#WifiChange
+interface WifiChange {
+  readonly kind: WifiChangeKind;
+  readonly at: number;
+  readonly fact: string;
+}
+
+### build/core.chunk.d.ts#WifiChangeKind
+type WifiChangeKind = (typeof WIFI_CHANGE_KINDS)[number];
+
+### build/core.chunk.d.ts#WifiChanges
+interface WifiChanges {
+  readonly interface: string;
+  readonly samples: number;
+  readonly changes: readonly WifiChange[];
+  readonly counts: Readonly<Record<WifiChangeKind, number>>;
+  readonly signal?: WifiSignalSummary | undefined;
+}
+
+### build/core.chunk.d.ts#WifiSignalSummary
+interface WifiSignalSummary {
+  readonly samples: number;
+  readonly minDbm: number;
+  readonly medianDbm: number;
+  readonly maxDbm: number;
+  readonly snrDb?: number | undefined;
+}
+
 ### build/core.chunk.d.ts#ackSamples
 declare function ackSamples(capture: PathCapture): number[];
 
@@ -1039,6 +1116,12 @@ declare function scopeOf(grants: readonly Grant[], options?: {
 
 ### build/core.chunk.d.ts#widen
 declare function widen(scope: Scope, grants: readonly Grant[]): Result<Scope, string[]>;
+
+### build/core.chunk.d.ts#wifiChanges
+declare function wifiChanges(facts: readonly Fact<WifiLink>[]): WifiChanges[];
+
+### build/core.chunk.d.ts#wifiSignalOf
+declare function wifiSignalOf(link: WifiLink): number | undefined;
 
 ### build/counts.chunk.d.ts#Availability
 type Availability = {
@@ -1511,6 +1594,44 @@ type Trust = (typeof TRUSTS)[number];
 
 ### build/counts.chunk.d.ts#ValueOf
 type ValueOf<K> = K extends FactKind<infer V> ? V : never;
+
+### build/counts.chunk.d.ts#WIFI_BANDS
+declare const WIFI_BANDS: readonly ["2.4", "5", "6"];
+
+### build/counts.chunk.d.ts#WIFI_FLOOR_DBM
+declare const WIFI_FLOOR_DBM = -120;
+
+### build/counts.chunk.d.ts#WIFI_LINK
+declare const WIFI_LINK: FactKind<WifiLink>;
+
+### build/counts.chunk.d.ts#WIFI_STATES
+declare const WIFI_STATES: readonly ["connected", "disconnected", "off"];
+
+### build/counts.chunk.d.ts#WIFI_WIDTHS
+declare const WIFI_WIDTHS: readonly [20, 40, 80, 160, 320];
+
+### build/counts.chunk.d.ts#WifiBand
+type WifiBand = (typeof WIFI_BANDS)[number];
+
+### build/counts.chunk.d.ts#WifiLink
+interface WifiLink {
+  readonly interface: string;
+  readonly state: WifiState;
+  readonly ssid?: string | undefined;
+  readonly bssid?: string | undefined;
+  readonly signalDbm?: number | undefined;
+  readonly quality?: number | undefined;
+  readonly noiseDbm?: number | undefined;
+  readonly channel?: number | undefined;
+  readonly band?: WifiBand | undefined;
+  readonly widthMhz?: number | undefined;
+  readonly txMbps?: number | undefined;
+  readonly rxMbps?: number | undefined;
+  readonly standard?: string | undefined;
+}
+
+### build/counts.chunk.d.ts#WifiState
+type WifiState = (typeof WIFI_STATES)[number];
 
 ### build/counts.chunk.d.ts#canonicalHost
 declare function canonicalHost(host: string): string;
@@ -2227,6 +2348,9 @@ export declare const IPERF3_MIN_VERSION: readonly [number, number];
 ### build/tools.d.ts#IPERF3_SETUP_MS
 export declare const IPERF3_SETUP_MS = 5e3;
 
+### build/tools.d.ts#IW_TIMEOUT_MS
+export declare const IW_TIMEOUT_MS = 5e3;
+
 ### build/tools.d.ts#Iperf3Input
 interface Iperf3Input {
   readonly address: string;
@@ -2295,6 +2419,9 @@ interface MtuRaw {
   readonly end: number;
 }
 
+### build/tools.d.ts#NETSH_TIMEOUT_MS
+export declare const NETSH_TIMEOUT_MS = 1e4;
+
 ### build/tools.d.ts#PING6_LAST_WAIT_MS
 export declare const PING6_LAST_WAIT_MS = 1e4;
 
@@ -2307,6 +2434,9 @@ interface PingInput {
   readonly count?: number | undefined;
   readonly waitMs?: number | undefined;
 }
+
+### build/tools.d.ts#SYSTEM_PROFILER_TIMEOUT_MS
+export declare const SYSTEM_PROFILER_TIMEOUT_MS = 3e4;
 
 ### build/tools.d.ts#TOOL_LICENSES
 export declare const TOOL_LICENSES: readonly ToolLicense[];
@@ -2330,6 +2460,26 @@ interface TraceInput {
   readonly address: string;
   readonly maxHops?: number | undefined;
   readonly waitMs?: number | undefined;
+}
+
+### build/tools.d.ts#WIFI_TOOLS
+export declare const WIFI_TOOLS: Readonly<Record<string, string>>;
+
+### build/tools.d.ts#WifiChannel
+interface WifiChannel {
+  readonly channel: number;
+  readonly band: WifiBand;
+}
+
+### build/tools.d.ts#WifiInput
+interface WifiInput {
+  readonly interface?: string | undefined;
+}
+
+### build/tools.d.ts#WifiRaw
+interface WifiRaw {
+  readonly platform: string;
+  readonly runs: readonly ToolRaw[];
 }
 
 ### build/tools.d.ts#captureAvailability
@@ -2401,6 +2551,9 @@ export declare function readTraceroute(raw: ToolRaw, input: {
   readonly maxHops?: number | undefined;
 }): PathTrace;
 
+### build/tools.d.ts#readWifi
+export declare function readWifi(raw: WifiRaw, input?: WifiInput): WifiLink[];
+
 ### build/tools.d.ts#toolLicense
 export declare function toolLicense(tool: string): ToolLicense | undefined;
 
@@ -2412,3 +2565,12 @@ export declare function tracerouteCommand(platform: string, input: TraceInput): 
 
 ### build/tools.d.ts#tracerouteProbe
 export declare function tracerouteProbe(host: ToolHost): Probe<TraceInput, ToolRaw>;
+
+### build/tools.d.ts#wifiAvailability
+export declare function wifiAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/tools.d.ts#wifiChannelOf
+export declare function wifiChannelOf(mhz: number): WifiChannel | undefined;
+
+### build/tools.d.ts#wifiProbe
+export declare function wifiProbe(host: ToolHost): Probe<WifiInput, WifiRaw>;
