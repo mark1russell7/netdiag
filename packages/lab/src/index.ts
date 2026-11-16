@@ -34,6 +34,7 @@ export {
   runLab,
   runRounds,
   visitLoopback,
+  visitRounds,
   type CaseBase,
   type CaseRun,
   type LabRound,

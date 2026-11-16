@@ -28,7 +28,8 @@ export function labReport(catalog: Catalog, runs: readonly CaseRun[], rounds: nu
     : { rounds, cases, records, noReads, score: undefined, problems: score.error };
 }
 
-const percent = (x: number | undefined): string => (x === undefined ? "–" : `${(100 * x).toFixed(0)}%`);
+/** This function gives a part from 0 to 1 as a whole percent, or a dash for no value. */
+export const percent = (x: number | undefined): string => (x === undefined ? "–" : `${(100 * x).toFixed(0)}%`);
 
 /** A class of the catalog that a lab cannot make yet, and the change that it waits for. */
 export interface LaterClass {

@@ -263,6 +263,9 @@ importers:
       '@mark1russell7/rigor-proxy':
         specifier: ^0.2.1
         version: 0.2.1(zod@4.6.7)
+      '@mark1russell7/rigor-statistics':
+        specifier: ^0.2.3
+        version: 0.2.3
       '@mark1russell7/text':
         specifier: ^0.0.6
         version: 0.0.6

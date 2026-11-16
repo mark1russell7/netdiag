@@ -91,6 +91,28 @@ node packages/lab/src/kernel/main.ts --rounds 5 --out lab-kernel-out
 
 The outputs, the option `--bars` and the exit codes are the same as the outputs of the loopback lab.
 
+### The where cases
+
+The where cases examine `lossStart` of netdiag: the part of a path where a loss starts (ND-15). The job `where` of `lab-kernel.yml` starts them in their own worlds.
+
+| Case | Fault | The part that `lossStart` must give |
+| --- | --- | --- |
+| `loss.last-link` | `netem` drops 30% of the packets of the target. | After the router: the target only. |
+| `loss.first-link` | `netem` drops 30% of the packets that the router sends to the client. | The full path, from the first link. |
+| `none` | No fault. | No part, because the path has no loss. |
+
+- The agent visits the address of the target, with no reference host and no ping. It starts 60 cycles of `mtr` (`WHERE_CYCLES`).
+- A run has a read only when each probe ended and the visit has one report of `mtr` that reached the target.
+- With a loss of 30% and 60 cycles, `lossStart` misses the start after the router in approximately 2 of 10000 runs.
+- On the first link, it puts a false start after the router in approximately 5 of 1000 runs.
+- The cases have no bar yet. Their bars come from 5 runs in CI, as the bars of the gate do.
+
+```sh
+node packages/lab/src/kernel/where-main.ts --rounds 5 --out lab-where-out
+```
+
+The command writes `where.ndjson`, `score.json` and `summary.md`. The exit code is 2 when a run has no read. Each other result gives 0.
+
 ## The bars of the gate
 
 The bar of each hypothesis comes from 5 or more runs of one lab in CI. Each run is one job on its own runner.

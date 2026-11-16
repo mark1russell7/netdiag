@@ -121,21 +121,21 @@ export function roundOrder<T>(cases: readonly T[], round: number): T[] {
 }
 
 /**
- * This function is the case loop of each lab. It starts each round, visits each case once in the order of the round,
- * and stops the round. It gives the runs in the order of their start.
+ * This function is the loop of the rounds of each lab. It starts each round, visits each case once in the order of the
+ * round, and stops the round. `read` changes each visit into a run. The function gives the runs in the order of their start.
  *
- * A round that does not start gives a run with no read for each of its cases. A visit that throws gives a run with no read.
+ * A round that does not start gives a visit `no-visit` for each of its cases. A visit that throws gives a visit `no-visit`.
  */
-export async function runRounds<C extends CaseBase>(
+export async function visitRounds<C, R>(
   cases: readonly C[],
   rounds: number,
   startRound: (round: number) => Promise<LabRound<C>>,
-  catalog: Catalog,
-  onRun?: (run: CaseRun) => void,
-): Promise<CaseRun[]> {
+  read: (labCase: C, round: number, visit: Visit) => R,
+  onRun?: (run: R) => void,
+): Promise<R[]> {
   if (!Number.isInteger(rounds) || rounds < 1) throw new RangeError(`The number of rounds ${rounds} is not a positive integer.`);
-  const runs: CaseRun[] = [];
-  const keep = (run: CaseRun): void => {
+  const runs: R[] = [];
+  const keep = (run: R): void => {
     runs.push(run);
     onRun?.(run);
   };
@@ -145,7 +145,7 @@ export async function runRounds<C extends CaseBase>(
     try {
       labRound = await startRound(round);
     } catch (thrown) {
-      for (const labCase of order) keep(readVisit(labCase, round, { status: "no-visit", reason: `The round did not start: ${errorMessage(thrown)}` }, catalog));
+      for (const labCase of order) keep(read(labCase, round, { status: "no-visit", reason: `The round did not start: ${errorMessage(thrown)}` }));
       continue;
     }
     try {
@@ -156,13 +156,27 @@ export async function runRounds<C extends CaseBase>(
         } catch (thrown) {
           visit = { status: "no-visit", reason: `The visit did not end: ${errorMessage(thrown)}` };
         }
-        keep(readVisit(labCase, round, visit, catalog));
+        keep(read(labCase, round, visit));
       }
     } finally {
       await labRound.close();
     }
   }
   return runs;
+}
+
+/**
+ * This function is the case loop of the labs that diagnose each case. It is `visitRounds` with `readVisit` of the
+ * catalog, so each run has the diagnosis of its case, or no read.
+ */
+export function runRounds<C extends CaseBase>(
+  cases: readonly C[],
+  rounds: number,
+  startRound: (round: number) => Promise<LabRound<C>>,
+  catalog: Catalog,
+  onRun?: (run: CaseRun) => void,
+): Promise<CaseRun[]> {
+  return visitRounds(cases, rounds, startRound, (labCase, round, visit) => readVisit(labCase, round, visit, catalog), onRun);
 }
 
 /**

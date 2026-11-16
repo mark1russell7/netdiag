@@ -9,6 +9,7 @@ import { KERNEL_HOP, KERNEL_PORT, KERNEL_REFERENCE_NAME, KERNEL_TARGET_NAME, app
 import { HTTPS_READY, httpsArgs } from "./https.ts";
 import { agentArgs, visitOf, type AgentPlan } from "./protocol.ts";
 import { RESOLVER_READY, zoneArg } from "./resolver.ts";
+import { WHERE_CYCLES } from "./where.ts";
 
 // The world of the kernel lab: the harness of systems with real kernels. The client container is the netdiag image
 // and starts the agent. The router `gw` joins the network of the client to the network of the target. The target, the
@@ -90,6 +91,14 @@ export function kernelPlan(addresses: KernelAddresses): AgentPlan {
   };
 }
 
+/**
+ * This function gives the plan of the agent for a where case. The target is its address, so a lost DNS answer does not
+ * stop the visit. The plan has no reference host and no ping. It has `WHERE_CYCLES` cycles of `mtr`.
+ */
+export function wherePlan(addresses: KernelAddresses): AgentPlan {
+  return { ...kernelPlan(addresses), target: addresses.target, references: [], pingCount: 0, mtrCycles: WHERE_CYCLES };
+}
+
 /** The HTTPS host of the target on the stock Node image, with its script as a file. */
 export function kernelTarget(script: string, pems: Pems): Target {
   return {
@@ -128,15 +137,23 @@ export async function openKernelWorld(trust: KernelTrust, image: BuildImage = la
   }
 }
 
+/** The part of a case that a kernel world uses: its fault, or none. */
+export type KernelFaulted = Pick<KernelCase, "fault">;
+
 /**
- * This function adds the fault of a case to a world, starts the agent and waits for its last line. Then it removes the
- * fault. A wait that ends with no last line gives a problem, not a throw.
+ * This function adds the fault of a case to a world, starts the agent with the plan of `agent` and waits for its last
+ * line. Then it removes the fault. A wait that ends with no last line gives a problem, not a throw.
  */
-export async function visitKernel(world: KernelWorld, labCase: KernelCase, trust: KernelTrust): Promise<Visit> {
+export async function visitKernel(
+  world: KernelWorld,
+  labCase: KernelFaulted,
+  trust: KernelTrust,
+  agent: (addresses: KernelAddresses) => AgentPlan = kernelPlan,
+): Promise<Visit> {
   const plan = faultPlan(labCase.fault, world.addresses);
   try {
     await applySteps(world.lab, plan.apply);
-    const probe = await world.lab.probe(agentArgs(kernelPlan(world.addresses)), [{ content: trust.root, target: KERNEL_ROOT_PATH }]);
+    const probe = await world.lab.probe(agentArgs(agent(world.addresses)), [{ content: trust.root, target: KERNEL_ROOT_PATH }]);
     let ended: string | undefined;
     try {
       await probe.until(["done", "fail"], AGENT_LIMIT_MS);
@@ -151,8 +168,15 @@ export async function visitKernel(world: KernelWorld, labCase: KernelCase, trust
   }
 }
 
-/** This function starts the world of a round. Each case of the round uses it, and the round closes it. */
-export async function startKernelRound(trust: KernelTrust, image: BuildImage = labImage()): Promise<LabRound<KernelCase>> {
+/**
+ * This function starts the world of a round. Each case of the round uses it, and the round closes it. `agent` gives
+ * the plan of the agent in the world.
+ */
+export async function startKernelRound<C extends KernelFaulted = KernelCase>(
+  trust: KernelTrust,
+  image: BuildImage = labImage(),
+  agent: (addresses: KernelAddresses) => AgentPlan = kernelPlan,
+): Promise<LabRound<C>> {
   const world = await openKernelWorld(trust, image);
-  return { visit: (labCase) => visitKernel(world, labCase, trust), close: () => world.lab.close() };
+  return { visit: (labCase) => visitKernel(world, labCase, trust, agent), close: () => world.lab.close() };
 }
