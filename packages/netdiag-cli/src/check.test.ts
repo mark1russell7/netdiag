@@ -82,8 +82,10 @@ describe("a check from end to end", () => {
     );
     expect(report.problems.filter((item) => ROLES.includes(item.role))).toEqual([]);
     expect([...new Set(dns.asked)].sort()).toEqual([NAME, REFERENCE].sort());
-    const pinged = tools.calls.filter((call) => call.args[0] !== "-V").map((call) => call.args.at(-1));
+    const pinged = tools.calls.filter((call) => call.command === "ping" && call.args[0] !== "-V").map((call) => call.args.at(-1));
     expect([...new Set(pinged)].sort()).toEqual([RESOLVER, SERVER].sort());
+    // The check also reads the Wi-Fi link of this computer. The fake iw gives no interface.
+    expect(tools.calls.filter((call) => call.command === "iw").map((call) => call.args.join(" "))).toEqual(["--version", "dev"]);
     // The scope rule holds the probes that send packets. A passive read of this computer has no remote subject.
     const active = new Set(["dns.answer", "icmp.echo", "tcp.connect", "tls.handshake", "http.response"]);
     const subjects = new Set(report.facts.filter((item) => active.has(item.fact.kind)).map((item) => item.fact.subject.host));

@@ -22,11 +22,12 @@ The target is a DNS name, an IP address, `host:port` or a URL. A URL also gives 
 
 The check has these steps:
 
-1. It asks the DNS resolver for the IPv4 and IPv6 addresses of each name.
-2. It pings each address, connects to it, does the TLS handshake and sends one HTTP request.
-3. It searches the MTU of the path to an address when the TLS handshake or the HTTP response times out after a TCP connect.
-4. It reads the facts into evidence. The catalog of faults gives the probability of each cause.
-5. It finds the probe with the largest information gain over the 3 most probable causes. This probe is the next step.
+1. It reads the link and the Wi-Fi link of this computer. These reads send no packet. The Wi-Fi read uses `iw` on Linux, `system_profiler` on macOS and `netsh` on Windows.
+2. It asks the DNS resolver for the IPv4 and IPv6 addresses of each name.
+3. It pings each address, connects to it, does the TLS handshake and sends one HTTP request.
+4. It searches the MTU of the path to an address when the TLS handshake or the HTTP response times out after a TCP connect.
+5. It reads the facts into evidence. The catalog of faults gives the probability of each cause.
+6. It finds the probe with the largest information gain over the 3 most probable causes. This probe is the next step.
 
 ## The options
 
