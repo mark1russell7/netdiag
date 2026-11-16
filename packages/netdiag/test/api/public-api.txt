@@ -6,9 +6,9 @@
 
 ## . (build/index.d.ts): names
 
-ADDRESS_CLASSES: build/address.d.ts#ADDRESS_CLASSES
-AddressClass: build/address.d.ts#AddressClass
-AddressFamily: build/address.d.ts#AddressFamily
+ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
+AddressClass: build/index.chunk.d.ts#AddressClass
+AddressFamily: build/index.chunk.d.ts#AddressFamily
 type Availability: build/host.chunk.d.ts#Availability
 type BandwidthEstimate: build/index.d.ts#BandwidthEstimate
 Bin: build/index.d.ts#Bin
@@ -16,20 +16,20 @@ CAPTURE_OUTCOMES: build/host.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/host.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/host.chunk.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/host.chunk.d.ts#CONNECT_OUTCOMES
-type Candidate: build/index.chunk.d.ts#Candidate
+type Candidate: build/index.chunk2.d.ts#Candidate
 CaptureOutcome: build/host.chunk.d.ts#CaptureOutcome
 CaptureProtocol: build/host.chunk.d.ts#CaptureProtocol
 CapturedPacket: build/host.chunk.d.ts#CapturedPacket
-type Catalog: build/index.chunk.d.ts#Catalog
-type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
-type Cause: build/index.chunk.d.ts#Cause
+type Catalog: build/index.chunk2.d.ts#Catalog
+type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
+type Cause: build/index.chunk2.d.ts#Cause
 CertProblem: build/host.chunk.d.ts#CertProblem
-Cidr: build/address.d.ts#Cidr
-CidrSet: build/address.d.ts#CidrSet
+Cidr: build/index.chunk.d.ts#Cidr
+CidrSet: build/index.chunk.d.ts#CidrSet
 type ClockOrigin: build/index.d.ts#ClockOrigin
 type ConnectOptions: build/index.d.ts#ConnectOptions
 ConnectOutcome: build/host.chunk.d.ts#ConnectOutcome
-type Contribution: build/index.chunk.d.ts#Contribution
+type Contribution: build/index.chunk2.d.ts#Contribution
 DEFAULT_MAX_BYTES: build/index.d.ts#DEFAULT_MAX_BYTES
 DEFAULT_MAX_PORTS_PER_HOST: build/index.d.ts#DEFAULT_MAX_PORTS_PER_HOST
 DEFAULT_TIMEOUT_MS: build/index.d.ts#DEFAULT_TIMEOUT_MS
@@ -38,28 +38,29 @@ DNS_ANSWER_VALUES: build/index.d.ts#DNS_ANSWER_VALUES
 DNS_OUTCOMES: build/host.chunk.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
 type DelayMetrics: build/index.d.ts#DelayMetrics
-type Diagnosis: build/index.chunk.d.ts#Diagnosis
+type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Dial: build/index.d.ts#Dial
-type Distribution: build/index.chunk.d.ts#Distribution
+type Distribution: build/index.chunk2.d.ts#Distribution
 DnsAnswer: build/host.chunk.d.ts#DnsAnswer
 type DnsInput: build/index.d.ts#DnsInput
 DnsOutcome: build/host.chunk.d.ts#DnsOutcome
 type DnsRaw: build/index.d.ts#DnsRaw
 ECHO_OUTCOMES: build/host.chunk.d.ts#ECHO_OUTCOMES
+ETHERNET_MTU: build/host.chunk.d.ts#ETHERNET_MTU
 type EchoMetrics: build/index.d.ts#EchoMetrics
 EchoOutcome: build/host.chunk.d.ts#EchoOutcome
-type Evidence: build/index.chunk.d.ts#Evidence
-type Expectation: build/index.chunk.d.ts#Expectation
+type Evidence: build/index.chunk2.d.ts#Evidence
+type Expectation: build/index.chunk2.d.ts#Expectation
 FEATURE_SOURCES: build/index.d.ts#FEATURE_SOURCES
-FLOOR: build/index.chunk.d.ts#FLOOR
+FLOOR: build/index.chunk2.d.ts#FLOOR
 type Fact: build/host.chunk.d.ts#Fact
 type FactKind: build/host.chunk.d.ts#FactKind
 type FactSource: build/host.chunk.d.ts#FactSource
 type FactTime: build/host.chunk.d.ts#FactTime
-type Fault: build/index.chunk.d.ts#Fault
-type Feature: build/index.chunk.d.ts#Feature
+type Fault: build/index.chunk2.d.ts#Fault
+type Feature: build/index.chunk2.d.ts#Feature
 FeaturesOptions: build/index.d.ts#FeaturesOptions
-GAIN_RESOLUTION: build/index.chunk.d.ts#GAIN_RESOLUTION
+GAIN_RESOLUTION: build/index.chunk2.d.ts#GAIN_RESOLUTION
 GATEWAY_REPLY_VALUES: build/index.d.ts#GATEWAY_REPLY_VALUES
 type Grant: build/index.d.ts#Grant
 type GrantBasis: build/index.d.ts#GrantBasis
@@ -76,16 +77,18 @@ HttpOutcome: build/host.chunk.d.ts#HttpOutcome
 type HttpPhase: build/index.d.ts#HttpPhase
 type HttpRaw: build/index.d.ts#HttpRaw
 HttpResponse: build/host.chunk.d.ts#HttpResponse
-type Hypothesis: build/index.chunk.d.ts#Hypothesis
+type Hypothesis: build/index.chunk2.d.ts#Hypothesis
 ICMP_ECHO: build/host.chunk.d.ts#ICMP_ECHO
 ICMP_REPLY_VALUES: build/index.d.ts#ICMP_REPLY_VALUES
+IPV4_MIN_MTU: build/host.chunk.d.ts#IPV4_MIN_MTU
+IPV6_MIN_MTU: build/host.chunk.d.ts#IPV6_MIN_MTU
 IcmpEcho: build/host.chunk.d.ts#IcmpEcho
 type InterfaceAddress: build/index.d.ts#InterfaceAddress
 type InterfaceTable: build/index.d.ts#InterfaceTable
 JITTER_GAIN: build/index.d.ts#JITTER_GAIN
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
-LAB_BAR_STEP: build/index.chunk.d.ts#LAB_BAR_STEP
-LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
+LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
+LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
 LINK_PROBE: build/index.d.ts#LINK_PROBE
 LINK_STATE: build/host.chunk.d.ts#LINK_STATE
@@ -94,14 +97,14 @@ LINK_STATE_VALUES: build/index.d.ts#LINK_STATE_VALUES
 LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
 LOCAL_SUFFIXES: build/index.d.ts#LOCAL_SUFFIXES
 LOSS_MIN_SENT: build/index.d.ts#LOSS_MIN_SENT
-type LabBars: build/index.chunk.d.ts#LabBars
-type LabBarsOptions: build/index.chunk.d.ts#LabBarsOptions
-type LabCause: build/index.chunk.d.ts#LabCause
-type LabGate: build/index.chunk.d.ts#LabGate
-type LabRecord: build/index.chunk.d.ts#LabRecord
-type LabScore: build/index.chunk.d.ts#LabScore
-type LabStatus: build/index.chunk.d.ts#LabStatus
-type LabVerdict: build/index.chunk.d.ts#LabVerdict
+type LabBars: build/index.chunk2.d.ts#LabBars
+type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
+type LabCause: build/index.chunk2.d.ts#LabCause
+type LabGate: build/index.chunk2.d.ts#LabGate
+type LabRecord: build/index.chunk2.d.ts#LabRecord
+type LabScore: build/index.chunk2.d.ts#LabScore
+type LabStatus: build/index.chunk2.d.ts#LabStatus
+type LabVerdict: build/index.chunk2.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
 type LinkInput: build/index.d.ts#LinkInput
 LinkInterface: build/host.chunk.d.ts#LinkInterface
@@ -109,31 +112,42 @@ type LinkRaw: build/index.d.ts#LinkRaw
 LinkState: build/host.chunk.d.ts#LinkState
 LinkStateValue: build/host.chunk.d.ts#LinkStateValue
 type LossEstimate: build/index.d.ts#LossEstimate
-MAX_JOINT_VALUES: build/index.chunk.d.ts#MAX_JOINT_VALUES
+MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MIN_CONNECT_MS: build/index.d.ts#MIN_CONNECT_MS
+MTU_OUTCOMES: build/host.chunk.d.ts#MTU_OUTCOMES
+MTU_STOPS: build/host.chunk.d.ts#MTU_STOPS
+MTU_TRY_RESULTS: build/host.chunk.d.ts#MTU_TRY_RESULTS
+type MtuBounds: build/host.chunk.d.ts#MtuBounds
+MtuOutcome: build/host.chunk.d.ts#MtuOutcome
+MtuStop: build/host.chunk.d.ts#MtuStop
+MtuTry: build/host.chunk.d.ts#MtuTry
+MtuTryResult: build/host.chunk.d.ts#MtuTryResult
 NATIVE_KINDS: build/host.chunk.d.ts#NATIVE_KINDS
-NONE: build/index.chunk.d.ts#NONE
-type Observable: build/index.chunk.d.ts#Observable
+NONE: build/index.chunk2.d.ts#NONE
+type Observable: build/index.chunk2.d.ts#Observable
 type Observation: build/host.chunk.d.ts#Observation
 PACKET_PROTOCOLS: build/host.chunk.d.ts#PACKET_PROTOCOLS
 PAIR_LEVEL: build/index.d.ts#PAIR_LEVEL
-PARTS: build/index.chunk.d.ts#PARTS
+PARTS: build/index.chunk2.d.ts#PARTS
 PATH_CAPTURE: build/host.chunk.d.ts#PATH_CAPTURE
 PATH_LOSS_BINS: build/index.d.ts#PATH_LOSS_BINS
+PATH_MTU: build/host.chunk.d.ts#PATH_MTU
+PATH_MTU_VALUES: build/index.d.ts#PATH_MTU_VALUES
 PATH_REPORT: build/host.chunk.d.ts#PATH_REPORT
 PATH_THROUGHPUT: build/host.chunk.d.ts#PATH_THROUGHPUT
 PATH_TRACE: build/host.chunk.d.ts#PATH_TRACE
 PDV_QUANTILE: build/index.d.ts#PDV_QUANTILE
 PacketProtocol: build/host.chunk.d.ts#PacketProtocol
-type Part: build/index.chunk.d.ts#Part
+type Part: build/index.chunk2.d.ts#Part
 PathCapture: build/host.chunk.d.ts#PathCapture
+PathMtu: build/host.chunk.d.ts#PathMtu
 PathReport: build/host.chunk.d.ts#PathReport
 PathThroughput: build/host.chunk.d.ts#PathThroughput
 PathTrace: build/host.chunk.d.ts#PathTrace
 type PortLedger: build/index.d.ts#PortLedger
-type Prediction: build/index.chunk.d.ts#Prediction
+type Prediction: build/index.chunk2.d.ts#Prediction
 type Probe: build/host.chunk.d.ts#Probe
-type ProbeChoice: build/index.chunk.d.ts#ProbeChoice
+type ProbeChoice: build/index.chunk2.d.ts#ProbeChoice
 type ProbeContext: build/host.chunk.d.ts#ProbeContext
 type ProbeMode: build/host.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/index.d.ts#ProbeOutcome
@@ -142,8 +156,8 @@ RTO_ALPHA: build/index.d.ts#RTO_ALPHA
 RTO_BETA: build/index.d.ts#RTO_BETA
 RTO_K: build/index.d.ts#RTO_K
 type RangeGrant: build/index.d.ts#RangeGrant
-type RankOptions: build/index.chunk.d.ts#RankOptions
-type Reach: build/index.chunk.d.ts#Reach
+type RankOptions: build/index.chunk2.d.ts#RankOptions
+type Reach: build/index.chunk2.d.ts#Reach
 ReadOptions: build/index.d.ts#ReadOptions
 Reading: build/index.d.ts#Reading
 RecordType: build/host.chunk.d.ts#RecordType
@@ -152,15 +166,15 @@ type RtoEstimate: build/index.d.ts#RtoEstimate
 type RtoOptions: build/index.d.ts#RtoOptions
 type Runner: build/index.d.ts#Runner
 type RunnerOptions: build/index.d.ts#RunnerOptions
-STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
-STANDARD_CATALOG_SPEC: build/index.chunk.d.ts#STANDARD_CATALOG_SPEC
-STANDARD_FAULTS: build/index.chunk.d.ts#STANDARD_FAULTS
-STANDARD_FEATURES: build/index.chunk.d.ts#STANDARD_FEATURES
-STRENGTHS: build/index.chunk.d.ts#STRENGTHS
+STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
+STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
+STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
+STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Scope: build/index.d.ts#Scope
 type ScopeDecision: build/index.d.ts#ScopeDecision
 Skipped: build/index.d.ts#Skipped
-type Strength: build/index.chunk.d.ts#Strength
+type Strength: build/index.chunk2.d.ts#Strength
 TCP_CONNECT: build/host.chunk.d.ts#TCP_CONNECT
 TCP_CONNECT_VALUES: build/index.d.ts#TCP_CONNECT_VALUES
 TCP_PROBE: build/index.d.ts#TCP_PROBE
@@ -192,7 +206,7 @@ type TlsRaw: build/index.d.ts#TlsRaw
 TraceHop: build/host.chunk.d.ts#TraceHop
 TraceOutcome: build/host.chunk.d.ts#TraceOutcome
 Trust: build/host.chunk.d.ts#Trust
-UNKNOWN: build/index.chunk.d.ts#UNKNOWN
+UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
 VISIT_RECORDS: build/index.d.ts#VISIT_RECORDS
 type ValueOf: build/host.chunk.d.ts#ValueOf
 type VisitHost: build/index.d.ts#VisitHost
@@ -202,17 +216,17 @@ type VisitResolver: build/index.d.ts#VisitResolver
 type VisitRole: build/index.d.ts#VisitRole
 type VisitStep: build/index.d.ts#VisitStep
 ackSamples: build/index.d.ts#ackSamples
-addressClass: build/address.d.ts#addressClass
-addressFamily: build/address.d.ts#addressFamily
-addressKind: build/address.d.ts#addressKind
+addressClass: build/index.chunk.d.ts#addressClass
+addressFamily: build/index.chunk.d.ts#addressFamily
+addressKind: build/index.chunk.d.ts#addressKind
 bandwidthOf: build/index.d.ts#bandwidthOf
 binOf: build/index.d.ts#binOf
-canonicalAddress: build/address.d.ts#canonicalAddress
+canonicalAddress: build/index.chunk.d.ts#canonicalAddress
 canonicalHost: build/host.chunk.d.ts#canonicalHost
 certProblem: build/index.d.ts#certProblem
-cidrContains: build/address.d.ts#cidrContains
-cidrSet: build/address.d.ts#cidrSet
-compileCatalog: build/index.chunk.d.ts#compileCatalog
+cidrContains: build/index.chunk.d.ts#cidrContains
+cidrSet: build/index.chunk.d.ts#cidrSet
+compileCatalog: build/index.chunk2.d.ts#compileCatalog
 connectOutcome: build/index.d.ts#connectOutcome
 createRunner: build/index.d.ts#createRunner
 decideScope: build/index.d.ts#decideScope
@@ -220,14 +234,14 @@ defineFactKind: build/host.chunk.d.ts#defineFactKind
 defineProbe: build/host.chunk.d.ts#defineProbe
 delayMetrics: build/index.d.ts#delayMetrics
 describeOutcome: build/index.d.ts#describeOutcome
-diagnose: build/index.chunk.d.ts#diagnose
+diagnose: build/index.chunk2.d.ts#diagnose
 dnsOutcome: build/index.d.ts#dnsOutcome
 echoMetrics: build/index.d.ts#echoMetrics
-expand: build/index.chunk.d.ts#expand
-explain: build/index.chunk.d.ts#explain
+expand: build/index.chunk2.d.ts#expand
+explain: build/index.chunk2.d.ts#explain
 factsOf: build/host.chunk.d.ts#factsOf
 featuresOf: build/index.d.ts#featuresOf
-formatCidr: build/address.d.ts#formatCidr
+formatCidr: build/index.chunk.d.ts#formatCidr
 formatTarget: build/host.chunk.d.ts#formatTarget
 grantProblems: build/index.d.ts#grantProblems
 handshakeOutcome: build/index.d.ts#handshakeOutcome
@@ -238,28 +252,30 @@ ipdv: build/index.d.ts#ipdv
 isFactOf: build/host.chunk.d.ts#isFactOf
 isLayer: build/layer.chunk.d.ts#isLayer
 isLocalName: build/index.d.ts#isLocalName
-labBars: build/index.chunk.d.ts#labBars
-labGate: build/index.chunk.d.ts#labGate
-labRecordOf: build/index.chunk.d.ts#labRecordOf
+labBars: build/index.chunk2.d.ts#labBars
+labGate: build/index.chunk2.d.ts#labGate
+labRecordOf: build/index.chunk2.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
 linkProbe: build/index.d.ts#linkProbe
 linkStateOf: build/index.d.ts#linkStateOf
 lossOf: build/index.d.ts#lossOf
+mtuOf: build/host.chunk.d.ts#mtuOf
 namedGrant: build/index.d.ts#namedGrant
+nextMtuSize: build/host.chunk.d.ts#nextMtuSize
 observe: build/host.chunk.d.ts#observe
 packetPairs: build/index.d.ts#packetPairs
-parseCidr: build/address.d.ts#parseCidr
+parseCidr: build/index.chunk.d.ts#parseCidr
 parseTarget: build/host.chunk.d.ts#parseTarget
 pdv: build/index.d.ts#pdv
-predictive: build/index.chunk.d.ts#predictive
-rankProbes: build/index.chunk.d.ts#rankProbes
+predictive: build/index.chunk2.d.ts#predictive
+rankProbes: build/index.chunk2.d.ts#rankProbes
 readEvidence: build/index.d.ts#readEvidence
 resolvedGrant: build/index.d.ts#resolvedGrant
 rfc3550Jitter: build/index.d.ts#rfc3550Jitter
 rtoOf: build/index.d.ts#rtoOf
 sameTarget: build/host.chunk.d.ts#sameTarget
 scopeOf: build/index.d.ts#scopeOf
-scoreLab: build/index.chunk.d.ts#scoreLab
+scoreLab: build/index.chunk2.d.ts#scoreLab
 target: build/host.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
@@ -269,76 +285,76 @@ widen: build/index.d.ts#widen
 
 ## ./address (build/address.d.ts): names
 
-ADDRESS_CLASSES: build/address.d.ts#ADDRESS_CLASSES
-AddressClass: build/address.d.ts#AddressClass
-AddressFamily: build/address.d.ts#AddressFamily
-Cidr: build/address.d.ts#Cidr
-CidrSet: build/address.d.ts#CidrSet
-addressClass: build/address.d.ts#addressClass
-addressFamily: build/address.d.ts#addressFamily
-addressKind: build/address.d.ts#addressKind
-canonicalAddress: build/address.d.ts#canonicalAddress
-cidrContains: build/address.d.ts#cidrContains
-cidrSet: build/address.d.ts#cidrSet
-formatCidr: build/address.d.ts#formatCidr
-parseCidr: build/address.d.ts#parseCidr
+ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
+AddressClass: build/index.chunk.d.ts#AddressClass
+AddressFamily: build/index.chunk.d.ts#AddressFamily
+Cidr: build/index.chunk.d.ts#Cidr
+CidrSet: build/index.chunk.d.ts#CidrSet
+addressClass: build/index.chunk.d.ts#addressClass
+addressFamily: build/index.chunk.d.ts#addressFamily
+addressKind: build/index.chunk.d.ts#addressKind
+canonicalAddress: build/index.chunk.d.ts#canonicalAddress
+cidrContains: build/index.chunk.d.ts#cidrContains
+cidrSet: build/index.chunk.d.ts#cidrSet
+formatCidr: build/index.chunk.d.ts#formatCidr
+parseCidr: build/index.chunk.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
 
-type Candidate: build/index.chunk.d.ts#Candidate
-type Catalog: build/index.chunk.d.ts#Catalog
-type CatalogSpec: build/index.chunk.d.ts#CatalogSpec
-type Cause: build/index.chunk.d.ts#Cause
-type Contribution: build/index.chunk.d.ts#Contribution
-type Diagnosis: build/index.chunk.d.ts#Diagnosis
-type Distribution: build/index.chunk.d.ts#Distribution
-type Evidence: build/index.chunk.d.ts#Evidence
-type Expectation: build/index.chunk.d.ts#Expectation
-FLOOR: build/index.chunk.d.ts#FLOOR
-type Fault: build/index.chunk.d.ts#Fault
-type Feature: build/index.chunk.d.ts#Feature
-GAIN_RESOLUTION: build/index.chunk.d.ts#GAIN_RESOLUTION
-type Hypothesis: build/index.chunk.d.ts#Hypothesis
-LAB_BAR_STEP: build/index.chunk.d.ts#LAB_BAR_STEP
-LAB_RECORD_FORMAT: build/index.chunk.d.ts#LAB_RECORD_FORMAT
+type Candidate: build/index.chunk2.d.ts#Candidate
+type Catalog: build/index.chunk2.d.ts#Catalog
+type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
+type Cause: build/index.chunk2.d.ts#Cause
+type Contribution: build/index.chunk2.d.ts#Contribution
+type Diagnosis: build/index.chunk2.d.ts#Diagnosis
+type Distribution: build/index.chunk2.d.ts#Distribution
+type Evidence: build/index.chunk2.d.ts#Evidence
+type Expectation: build/index.chunk2.d.ts#Expectation
+FLOOR: build/index.chunk2.d.ts#FLOOR
+type Fault: build/index.chunk2.d.ts#Fault
+type Feature: build/index.chunk2.d.ts#Feature
+GAIN_RESOLUTION: build/index.chunk2.d.ts#GAIN_RESOLUTION
+type Hypothesis: build/index.chunk2.d.ts#Hypothesis
+LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
+LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
-type LabBars: build/index.chunk.d.ts#LabBars
-type LabBarsOptions: build/index.chunk.d.ts#LabBarsOptions
-type LabCause: build/index.chunk.d.ts#LabCause
-type LabGate: build/index.chunk.d.ts#LabGate
-type LabRecord: build/index.chunk.d.ts#LabRecord
-type LabScore: build/index.chunk.d.ts#LabScore
-type LabStatus: build/index.chunk.d.ts#LabStatus
-type LabVerdict: build/index.chunk.d.ts#LabVerdict
+type LabBars: build/index.chunk2.d.ts#LabBars
+type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
+type LabCause: build/index.chunk2.d.ts#LabCause
+type LabGate: build/index.chunk2.d.ts#LabGate
+type LabRecord: build/index.chunk2.d.ts#LabRecord
+type LabScore: build/index.chunk2.d.ts#LabScore
+type LabStatus: build/index.chunk2.d.ts#LabStatus
+type LabVerdict: build/index.chunk2.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
-MAX_JOINT_VALUES: build/index.chunk.d.ts#MAX_JOINT_VALUES
-NONE: build/index.chunk.d.ts#NONE
-type Observable: build/index.chunk.d.ts#Observable
-PARTS: build/index.chunk.d.ts#PARTS
-type Part: build/index.chunk.d.ts#Part
-type Prediction: build/index.chunk.d.ts#Prediction
-type ProbeChoice: build/index.chunk.d.ts#ProbeChoice
-type RankOptions: build/index.chunk.d.ts#RankOptions
-type Reach: build/index.chunk.d.ts#Reach
-STANDARD_CATALOG: build/index.chunk.d.ts#STANDARD_CATALOG
-STANDARD_CATALOG_SPEC: build/index.chunk.d.ts#STANDARD_CATALOG_SPEC
-STANDARD_FAULTS: build/index.chunk.d.ts#STANDARD_FAULTS
-STANDARD_FEATURES: build/index.chunk.d.ts#STANDARD_FEATURES
-STRENGTHS: build/index.chunk.d.ts#STRENGTHS
-type Strength: build/index.chunk.d.ts#Strength
-UNKNOWN: build/index.chunk.d.ts#UNKNOWN
-compileCatalog: build/index.chunk.d.ts#compileCatalog
-diagnose: build/index.chunk.d.ts#diagnose
-expand: build/index.chunk.d.ts#expand
-explain: build/index.chunk.d.ts#explain
+MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
+NONE: build/index.chunk2.d.ts#NONE
+type Observable: build/index.chunk2.d.ts#Observable
+PARTS: build/index.chunk2.d.ts#PARTS
+type Part: build/index.chunk2.d.ts#Part
+type Prediction: build/index.chunk2.d.ts#Prediction
+type ProbeChoice: build/index.chunk2.d.ts#ProbeChoice
+type RankOptions: build/index.chunk2.d.ts#RankOptions
+type Reach: build/index.chunk2.d.ts#Reach
+STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
+STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
+STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
+STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
+type Strength: build/index.chunk2.d.ts#Strength
+UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
+compileCatalog: build/index.chunk2.d.ts#compileCatalog
+diagnose: build/index.chunk2.d.ts#diagnose
+expand: build/index.chunk2.d.ts#expand
+explain: build/index.chunk2.d.ts#explain
 isLayer: build/layer.chunk.d.ts#isLayer
-labBars: build/index.chunk.d.ts#labBars
-labGate: build/index.chunk.d.ts#labGate
-labRecordOf: build/index.chunk.d.ts#labRecordOf
+labBars: build/index.chunk2.d.ts#labBars
+labGate: build/index.chunk2.d.ts#labGate
+labRecordOf: build/index.chunk2.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
-predictive: build/index.chunk.d.ts#predictive
-rankProbes: build/index.chunk.d.ts#rankProbes
-scoreLab: build/index.chunk.d.ts#scoreLab
+predictive: build/index.chunk2.d.ts#predictive
+rankProbes: build/index.chunk2.d.ts#rankProbes
+scoreLab: build/index.chunk2.d.ts#scoreLab
 
 ## ./tools (build/tools.d.ts): names
 
@@ -353,11 +369,14 @@ DEFAULT_CAPTURE_SECONDS: build/tools.d.ts#DEFAULT_CAPTURE_SECONDS
 DEFAULT_IPERF3_PORT: build/tools.d.ts#DEFAULT_IPERF3_PORT
 DEFAULT_IPERF3_SECONDS: build/tools.d.ts#DEFAULT_IPERF3_SECONDS
 DEFAULT_MTR_CYCLES: build/tools.d.ts#DEFAULT_MTR_CYCLES
+DEFAULT_MTU_COUNT: build/tools.d.ts#DEFAULT_MTU_COUNT
+DEFAULT_MTU_WAIT_MS: build/tools.d.ts#DEFAULT_MTU_WAIT_MS
 DEFAULT_PING_COUNT: build/tools.d.ts#DEFAULT_PING_COUNT
 DEFAULT_PING_WAIT_MS: build/tools.d.ts#DEFAULT_PING_WAIT_MS
 DEFAULT_TRACE_HOPS: build/tools.d.ts#DEFAULT_TRACE_HOPS
 DEFAULT_TRACE_WAIT_MS: build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
 DEFAULT_UDP_BITS_PER_SECOND: build/tools.d.ts#DEFAULT_UDP_BITS_PER_SECOND
+ECHO_HEADER_BYTES: build/tools.d.ts#ECHO_HEADER_BYTES
 IPERF3_MIN_VERSION: build/tools.d.ts#IPERF3_MIN_VERSION
 IPERF3_SETUP_MS: build/tools.d.ts#IPERF3_SETUP_MS
 type Iperf3Input: build/tools.d.ts#Iperf3Input
@@ -367,10 +386,14 @@ MAX_IPERF3_BITS_PER_SECOND: build/tools.d.ts#MAX_IPERF3_BITS_PER_SECOND
 MAX_IPERF3_SECONDS: build/tools.d.ts#MAX_IPERF3_SECONDS
 MAX_IPERF3_STREAMS: build/tools.d.ts#MAX_IPERF3_STREAMS
 MAX_MTR_CYCLES: build/tools.d.ts#MAX_MTR_CYCLES
+MAX_MTU_CEILING: build/tools.d.ts#MAX_MTU_CEILING
+MAX_MTU_COUNT: build/tools.d.ts#MAX_MTU_COUNT
 MAX_PING_COUNT: build/tools.d.ts#MAX_PING_COUNT
 MAX_TRACE_HOPS: build/tools.d.ts#MAX_TRACE_HOPS
 MTR_GRACE_MS: build/tools.d.ts#MTR_GRACE_MS
 type MtrInput: build/tools.d.ts#MtrInput
+type MtuInput: build/tools.d.ts#MtuInput
+type MtuRaw: build/tools.d.ts#MtuRaw
 PING6_LAST_WAIT_MS: build/tools.d.ts#PING6_LAST_WAIT_MS
 PING_INTERVAL_MS: build/tools.d.ts#PING_INTERVAL_MS
 type PingInput: build/tools.d.ts#PingInput
@@ -397,12 +420,15 @@ iperf3Probe: build/tools.d.ts#iperf3Probe
 mtrAvailability: build/tools.d.ts#mtrAvailability
 mtrCommand: build/tools.d.ts#mtrCommand
 mtrProbe: build/tools.d.ts#mtrProbe
+mtuCommand: build/tools.d.ts#mtuCommand
+mtuProbe: build/tools.d.ts#mtuProbe
 pingAvailability: build/tools.d.ts#pingAvailability
 pingCommand: build/tools.d.ts#pingCommand
 pingProbe: build/tools.d.ts#pingProbe
 readCapture: build/tools.d.ts#readCapture
 readIperf3: build/tools.d.ts#readIperf3
 readMtr: build/tools.d.ts#readMtr
+readMtuTry: build/tools.d.ts#readMtuTry
 readPing: build/tools.d.ts#readPing
 readTraceroute: build/tools.d.ts#readTraceroute
 runTool: build/host.chunk.d.ts#runTool
@@ -412,55 +438,6 @@ tracerouteCommand: build/tools.d.ts#tracerouteCommand
 tracerouteProbe: build/tools.d.ts#tracerouteProbe
 
 ## Declarations
-
-### build/address.d.ts#ADDRESS_CLASSES
-export declare const ADDRESS_CLASSES: readonly {
-  readonly cidr: string;
-  readonly class: Exclude<AddressClass, "public">;
-}[];
-
-### build/address.d.ts#AddressClass
-export type AddressClass = "unspecified" | "loopback" | "private" | "shared" | "link-local" | "unique-local" | "documentation" | "benchmarking" | "multicast" | "reserved" | "public";
-
-### build/address.d.ts#AddressFamily
-export type AddressFamily = "ipv4" | "ipv6";
-
-### build/address.d.ts#Cidr
-export interface Cidr {
-  readonly address: string;
-  readonly prefix: number;
-  readonly family: AddressFamily;
-}
-
-### build/address.d.ts#CidrSet
-export interface CidrSet {
-  readonly ranges: readonly Cidr[];
-  has(address: string): boolean;
-}
-
-### build/address.d.ts#addressClass
-export declare function addressClass(address: string): AddressClass | undefined;
-
-### build/address.d.ts#addressFamily
-export declare function addressFamily(address: string): AddressFamily | undefined;
-
-### build/address.d.ts#addressKind
-export declare function addressKind(address: string): "public" | "private" | undefined;
-
-### build/address.d.ts#canonicalAddress
-export declare function canonicalAddress(address: string): string;
-
-### build/address.d.ts#cidrContains
-export declare function cidrContains(cidr: Cidr, address: string): boolean;
-
-### build/address.d.ts#cidrSet
-export declare function cidrSet(ranges: readonly Cidr[]): CidrSet;
-
-### build/address.d.ts#formatCidr
-export declare function formatCidr(cidr: Cidr): string;
-
-### build/address.d.ts#parseCidr
-export declare function parseCidr(text: string): Result<Cidr, string>;
 
 ### build/host.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
 declare const AVAILABILITY_TIMEOUT_MS = 5e3;
@@ -550,6 +527,9 @@ type DnsOutcome = (typeof DNS_OUTCOMES)[number];
 ### build/host.chunk.d.ts#ECHO_OUTCOMES
 declare const ECHO_OUTCOMES: readonly ["reply", "none", "unreachable", "error"];
 
+### build/host.chunk.d.ts#ETHERNET_MTU
+declare const ETHERNET_MTU = 1500;
+
 ### build/host.chunk.d.ts#EchoOutcome
 type EchoOutcome = (typeof ECHO_OUTCOMES)[number];
 
@@ -625,6 +605,12 @@ interface HttpResponse {
 ### build/host.chunk.d.ts#ICMP_ECHO
 declare const ICMP_ECHO: FactKind<IcmpEcho>;
 
+### build/host.chunk.d.ts#IPV4_MIN_MTU
+declare const IPV4_MIN_MTU = 68;
+
+### build/host.chunk.d.ts#IPV6_MIN_MTU
+declare const IPV6_MIN_MTU = 1280;
+
 ### build/host.chunk.d.ts#IcmpEcho
 interface IcmpEcho {
   readonly address: string;
@@ -660,6 +646,39 @@ interface LinkState {
 ### build/host.chunk.d.ts#LinkStateValue
 type LinkStateValue = (typeof LINK_STATES)[number];
 
+### build/host.chunk.d.ts#MTU_OUTCOMES
+declare const MTU_OUTCOMES: readonly ["measured", "none", "error"];
+
+### build/host.chunk.d.ts#MTU_STOPS
+declare const MTU_STOPS: readonly ["message", "silent"];
+
+### build/host.chunk.d.ts#MTU_TRY_RESULTS
+declare const MTU_TRY_RESULTS: readonly ["reply", "too-big", "none", "error"];
+
+### build/host.chunk.d.ts#MtuBounds
+interface MtuBounds {
+  readonly floor: number;
+  readonly ceiling: number;
+}
+
+### build/host.chunk.d.ts#MtuOutcome
+type MtuOutcome = (typeof MTU_OUTCOMES)[number];
+
+### build/host.chunk.d.ts#MtuStop
+type MtuStop = (typeof MTU_STOPS)[number];
+
+### build/host.chunk.d.ts#MtuTry
+interface MtuTry {
+  readonly size: number;
+  readonly result: MtuTryResult;
+  readonly mtu?: number | undefined;
+  readonly from?: string | undefined;
+  readonly detail?: string | undefined;
+}
+
+### build/host.chunk.d.ts#MtuTryResult
+type MtuTryResult = (typeof MTU_TRY_RESULTS)[number];
+
 ### build/host.chunk.d.ts#NATIVE_KINDS
 declare const NATIVE_KINDS: readonly FactKind<unknown>[];
 
@@ -676,6 +695,9 @@ declare const PACKET_PROTOCOLS: readonly ["tcp", "udp", "other"];
 
 ### build/host.chunk.d.ts#PATH_CAPTURE
 declare const PATH_CAPTURE: FactKind<PathCapture>;
+
+### build/host.chunk.d.ts#PATH_MTU
+declare const PATH_MTU: FactKind<PathMtu>;
 
 ### build/host.chunk.d.ts#PATH_REPORT
 declare const PATH_REPORT: FactKind<PathReport>;
@@ -700,6 +722,17 @@ interface PathCapture {
   readonly epoch?: string | undefined;
   readonly packets: readonly CapturedPacket[];
   readonly dropped?: number | undefined;
+  readonly detail?: string | undefined;
+}
+
+### build/host.chunk.d.ts#PathMtu
+interface PathMtu {
+  readonly address: string;
+  readonly outcome: MtuOutcome;
+  readonly ceiling: number;
+  readonly mtu?: number | undefined;
+  readonly stop?: MtuStop | undefined;
+  readonly tries: readonly MtuTry[];
   readonly detail?: string | undefined;
 }
 
@@ -955,6 +988,12 @@ declare function hostKind(host: string): HostKind;
 ### build/host.chunk.d.ts#isFactOf
 declare function isFactOf<V>(kind: FactKind<V>, fact: Fact): fact is Fact<V>;
 
+### build/host.chunk.d.ts#mtuOf
+declare function mtuOf(address: string, tries: readonly MtuTry[], bounds: MtuBounds): PathMtu;
+
+### build/host.chunk.d.ts#nextMtuSize
+declare function nextMtuSize(tries: readonly MtuTry[], bounds: MtuBounds): number | undefined;
+
 ### build/host.chunk.d.ts#observe
 declare function observe<V>(kind: FactKind<V>, subject: Target, value: V, time?: FactTime): Observation<V>;
 
@@ -970,14 +1009,63 @@ declare function sameTarget(a: Target, b: Target): boolean;
 ### build/host.chunk.d.ts#target
 declare function target(host: string, port?: number): Target;
 
-### build/index.chunk.d.ts#Candidate
+### build/index.chunk.d.ts#ADDRESS_CLASSES
+declare const ADDRESS_CLASSES: readonly {
+  readonly cidr: string;
+  readonly class: Exclude<AddressClass, "public">;
+}[];
+
+### build/index.chunk.d.ts#AddressClass
+type AddressClass = "unspecified" | "loopback" | "private" | "shared" | "link-local" | "unique-local" | "documentation" | "benchmarking" | "multicast" | "reserved" | "public";
+
+### build/index.chunk.d.ts#AddressFamily
+type AddressFamily = "ipv4" | "ipv6";
+
+### build/index.chunk.d.ts#Cidr
+interface Cidr {
+  readonly address: string;
+  readonly prefix: number;
+  readonly family: AddressFamily;
+}
+
+### build/index.chunk.d.ts#CidrSet
+interface CidrSet {
+  readonly ranges: readonly Cidr[];
+  has(address: string): boolean;
+}
+
+### build/index.chunk.d.ts#addressClass
+declare function addressClass(address: string): AddressClass | undefined;
+
+### build/index.chunk.d.ts#addressFamily
+declare function addressFamily(address: string): AddressFamily | undefined;
+
+### build/index.chunk.d.ts#addressKind
+declare function addressKind(address: string): "public" | "private" | undefined;
+
+### build/index.chunk.d.ts#canonicalAddress
+declare function canonicalAddress(address: string): string;
+
+### build/index.chunk.d.ts#cidrContains
+declare function cidrContains(cidr: Cidr, address: string): boolean;
+
+### build/index.chunk.d.ts#cidrSet
+declare function cidrSet(ranges: readonly Cidr[]): CidrSet;
+
+### build/index.chunk.d.ts#formatCidr
+declare function formatCidr(cidr: Cidr): string;
+
+### build/index.chunk.d.ts#parseCidr
+declare function parseCidr(text: string): Result<Cidr, string>;
+
+### build/index.chunk2.d.ts#Candidate
 interface Candidate {
   readonly id: string;
   readonly observes: readonly Observable[];
   readonly cost?: number | undefined;
 }
 
-### build/index.chunk.d.ts#Catalog
+### build/index.chunk2.d.ts#Catalog
 interface Catalog {
   readonly version: string;
   readonly features: ReadonlyMap<string, Feature>;
@@ -986,7 +1074,7 @@ interface Catalog {
   prior(hypothesis: string): number;
 }
 
-### build/index.chunk.d.ts#CatalogSpec
+### build/index.chunk2.d.ts#CatalogSpec
 interface CatalogSpec {
   readonly version: string;
   readonly features: readonly Feature[];
@@ -997,18 +1085,18 @@ interface CatalogSpec {
   } | undefined;
 }
 
-### build/index.chunk.d.ts#Cause
+### build/index.chunk2.d.ts#Cause
 interface Cause extends Hypothesis {
   readonly probability: number;
 }
 
-### build/index.chunk.d.ts#Contribution
+### build/index.chunk2.d.ts#Contribution
 interface Contribution {
   readonly evidence: Evidence;
   readonly weight: number;
 }
 
-### build/index.chunk.d.ts#Diagnosis
+### build/index.chunk2.d.ts#Diagnosis
 interface Diagnosis {
   readonly causes: readonly Cause[];
   readonly used: readonly Evidence[];
@@ -1018,10 +1106,10 @@ interface Diagnosis {
   }[];
 }
 
-### build/index.chunk.d.ts#Distribution
+### build/index.chunk2.d.ts#Distribution
 type Distribution = Readonly<Record<string, number>>;
 
-### build/index.chunk.d.ts#Evidence
+### build/index.chunk2.d.ts#Evidence
 interface Evidence {
   readonly feature: string;
   readonly value: string;
@@ -1029,16 +1117,16 @@ interface Evidence {
   readonly facts?: readonly string[] | undefined;
 }
 
-### build/index.chunk.d.ts#Expectation
+### build/index.chunk2.d.ts#Expectation
 interface Expectation {
   readonly expect: string | readonly string[];
   readonly strength: Strength;
 }
 
-### build/index.chunk.d.ts#FLOOR
+### build/index.chunk2.d.ts#FLOOR
 declare const FLOOR = .001;
 
-### build/index.chunk.d.ts#Fault
+### build/index.chunk2.d.ts#Fault
 interface Fault {
   readonly id: string;
   readonly part: Part;
@@ -1049,7 +1137,7 @@ interface Fault {
   readonly predicts: Readonly<Record<string, Prediction>>;
 }
 
-### build/index.chunk.d.ts#Feature
+### build/index.chunk2.d.ts#Feature
 interface Feature {
   readonly id: string;
   readonly layer: Layer;
@@ -1058,10 +1146,10 @@ interface Feature {
   readonly healthy: Distribution;
 }
 
-### build/index.chunk.d.ts#GAIN_RESOLUTION
+### build/index.chunk2.d.ts#GAIN_RESOLUTION
 declare const GAIN_RESOLUTION = 1e-9;
 
-### build/index.chunk.d.ts#Hypothesis
+### build/index.chunk2.d.ts#Hypothesis
 interface Hypothesis {
   readonly id: string;
   readonly kind: "none" | "fault" | "unknown";
@@ -1071,35 +1159,35 @@ interface Hypothesis {
   readonly reach?: Reach | undefined;
 }
 
-### build/index.chunk.d.ts#LAB_BAR_STEP
+### build/index.chunk2.d.ts#LAB_BAR_STEP
 declare const LAB_BAR_STEP = .001;
 
-### build/index.chunk.d.ts#LAB_RECORD_FORMAT
+### build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 declare const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
 
-### build/index.chunk.d.ts#LabBars
+### build/index.chunk2.d.ts#LabBars
 type LabBars = Readonly<Record<string, number>>;
 
-### build/index.chunk.d.ts#LabBarsOptions
+### build/index.chunk2.d.ts#LabBarsOptions
 interface LabBarsOptions {
   readonly k?: number | undefined;
   readonly minimum?: number | undefined;
 }
 
-### build/index.chunk.d.ts#LabCause
+### build/index.chunk2.d.ts#LabCause
 interface LabCause {
   readonly id: string;
   readonly probability: number;
 }
 
-### build/index.chunk.d.ts#LabGate
+### build/index.chunk2.d.ts#LabGate
 interface LabGate {
   readonly pass: boolean;
   readonly verdicts: readonly LabVerdict[];
   readonly unbarred: readonly string[];
 }
 
-### build/index.chunk.d.ts#LabRecord
+### build/index.chunk2.d.ts#LabRecord
 interface LabRecord {
   readonly format: typeof LAB_RECORD_FORMAT;
   readonly case: string;
@@ -1110,7 +1198,7 @@ interface LabRecord {
   readonly causes: readonly LabCause[];
 }
 
-### build/index.chunk.d.ts#LabScore
+### build/index.chunk2.d.ts#LabScore
 interface LabScore {
   readonly catalog: string;
   readonly n: number;
@@ -1121,10 +1209,10 @@ interface LabScore {
   readonly brier: number | undefined;
 }
 
-### build/index.chunk.d.ts#LabStatus
+### build/index.chunk2.d.ts#LabStatus
 type LabStatus = "pass" | "fail" | "no-read";
 
-### build/index.chunk.d.ts#LabVerdict
+### build/index.chunk2.d.ts#LabVerdict
 interface LabVerdict {
   readonly hypothesis: string;
   readonly status: LabStatus;
@@ -1133,91 +1221,91 @@ interface LabVerdict {
   readonly support: number;
 }
 
-### build/index.chunk.d.ts#MAX_JOINT_VALUES
+### build/index.chunk2.d.ts#MAX_JOINT_VALUES
 declare const MAX_JOINT_VALUES = 65536;
 
-### build/index.chunk.d.ts#NONE
+### build/index.chunk2.d.ts#NONE
 declare const NONE = "none";
 
-### build/index.chunk.d.ts#Observable
+### build/index.chunk2.d.ts#Observable
 interface Observable {
   readonly feature: string;
   readonly primary: boolean;
 }
 
-### build/index.chunk.d.ts#PARTS
+### build/index.chunk2.d.ts#PARTS
 declare const PARTS: readonly ["interface", "wifi", "gateway", "resolver", "path", "service"];
 
-### build/index.chunk.d.ts#Part
+### build/index.chunk2.d.ts#Part
 type Part = (typeof PARTS)[number];
 
-### build/index.chunk.d.ts#Prediction
+### build/index.chunk2.d.ts#Prediction
 type Prediction = Distribution | Expectation;
 
-### build/index.chunk.d.ts#ProbeChoice
+### build/index.chunk2.d.ts#ProbeChoice
 interface ProbeChoice {
   readonly candidate: Candidate;
   readonly gain: number;
   readonly counted: readonly Observable[];
 }
 
-### build/index.chunk.d.ts#RankOptions
+### build/index.chunk2.d.ts#RankOptions
 interface RankOptions {
   readonly top?: number | undefined;
 }
 
-### build/index.chunk.d.ts#Reach
+### build/index.chunk2.d.ts#Reach
 type Reach = "shared" | "target";
 
-### build/index.chunk.d.ts#STANDARD_CATALOG
+### build/index.chunk2.d.ts#STANDARD_CATALOG
 declare const STANDARD_CATALOG: Catalog;
 
-### build/index.chunk.d.ts#STANDARD_CATALOG_SPEC
+### build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
 declare const STANDARD_CATALOG_SPEC: CatalogSpec;
 
-### build/index.chunk.d.ts#STANDARD_FAULTS
+### build/index.chunk2.d.ts#STANDARD_FAULTS
 declare const STANDARD_FAULTS: readonly Fault[];
 
-### build/index.chunk.d.ts#STANDARD_FEATURES
+### build/index.chunk2.d.ts#STANDARD_FEATURES
 declare const STANDARD_FEATURES: readonly Feature[];
 
-### build/index.chunk.d.ts#STRENGTHS
+### build/index.chunk2.d.ts#STRENGTHS
 declare const STRENGTHS: Readonly<Record<Strength, number>>;
 
-### build/index.chunk.d.ts#Strength
+### build/index.chunk2.d.ts#Strength
 type Strength = "sure" | "strong" | "usual" | "weak";
 
-### build/index.chunk.d.ts#UNKNOWN
+### build/index.chunk2.d.ts#UNKNOWN
 declare const UNKNOWN = "unknown";
 
-### build/index.chunk.d.ts#compileCatalog
+### build/index.chunk2.d.ts#compileCatalog
 declare function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]>;
 
-### build/index.chunk.d.ts#diagnose
+### build/index.chunk2.d.ts#diagnose
 declare function diagnose(catalog: Catalog, evidence: readonly Evidence[]): Diagnosis;
 
-### build/index.chunk.d.ts#expand
+### build/index.chunk2.d.ts#expand
 declare function expand(feature: Feature, prediction: Prediction): Result<Distribution, string[]>;
 
-### build/index.chunk.d.ts#explain
+### build/index.chunk2.d.ts#explain
 declare function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus?: string): Contribution[];
 
-### build/index.chunk.d.ts#labBars
+### build/index.chunk2.d.ts#labBars
 declare function labBars(scores: readonly LabScore[], options?: LabBarsOptions): Result<LabBars, string[]>;
 
-### build/index.chunk.d.ts#labGate
+### build/index.chunk2.d.ts#labGate
 declare function labGate(score: LabScore, bars: LabBars): Result<LabGate, string[]>;
 
-### build/index.chunk.d.ts#labRecordOf
+### build/index.chunk2.d.ts#labRecordOf
 declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis): Result<LabRecord, string>;
 
-### build/index.chunk.d.ts#predictive
+### build/index.chunk2.d.ts#predictive
 declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;
 
-### build/index.chunk.d.ts#rankProbes
+### build/index.chunk2.d.ts#rankProbes
 declare function rankProbes(catalog: Catalog, diagnosis: Diagnosis, candidates: readonly Candidate[], options?: RankOptions): ProbeChoice[];
 
-### build/index.chunk.d.ts#scoreLab
+### build/index.chunk2.d.ts#scoreLab
 declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
 
 ### build/index.d.ts#BandwidthEstimate
@@ -1439,6 +1527,9 @@ export declare const PAIR_LEVEL = .95;
 
 ### build/index.d.ts#PATH_LOSS_BINS
 export declare const PATH_LOSS_BINS: readonly Bin[];
+
+### build/index.d.ts#PATH_MTU_VALUES
+export declare const PATH_MTU_VALUES: Readonly<Record<MtuStop | "full", string>>;
 
 ### build/index.d.ts#PDV_QUANTILE
 export declare const PDV_QUANTILE = .99;
@@ -1831,6 +1922,12 @@ export declare const DEFAULT_IPERF3_SECONDS = 10;
 ### build/tools.d.ts#DEFAULT_MTR_CYCLES
 export declare const DEFAULT_MTR_CYCLES = 20;
 
+### build/tools.d.ts#DEFAULT_MTU_COUNT
+export declare const DEFAULT_MTU_COUNT = 3;
+
+### build/tools.d.ts#DEFAULT_MTU_WAIT_MS
+export declare const DEFAULT_MTU_WAIT_MS = 1e3;
+
 ### build/tools.d.ts#DEFAULT_PING_COUNT
 export declare const DEFAULT_PING_COUNT = 4;
 
@@ -1845,6 +1942,9 @@ export declare const DEFAULT_TRACE_WAIT_MS = 1e3;
 
 ### build/tools.d.ts#DEFAULT_UDP_BITS_PER_SECOND
 export declare const DEFAULT_UDP_BITS_PER_SECOND = 1e6;
+
+### build/tools.d.ts#ECHO_HEADER_BYTES
+export declare const ECHO_HEADER_BYTES: Readonly<Record<AddressFamily, number>>;
 
 ### build/tools.d.ts#IPERF3_MIN_VERSION
 export declare const IPERF3_MIN_VERSION: readonly [number, number];
@@ -1881,6 +1981,12 @@ export declare const MAX_IPERF3_STREAMS = 16;
 ### build/tools.d.ts#MAX_MTR_CYCLES
 export declare const MAX_MTR_CYCLES = 100;
 
+### build/tools.d.ts#MAX_MTU_CEILING
+export declare const MAX_MTU_CEILING = 9216;
+
+### build/tools.d.ts#MAX_MTU_COUNT
+export declare const MAX_MTU_COUNT = 10;
+
 ### build/tools.d.ts#MAX_PING_COUNT
 export declare const MAX_PING_COUNT = 100;
 
@@ -1895,6 +2001,26 @@ interface MtrInput {
   readonly address: string;
   readonly cycles?: number | undefined;
   readonly maxHops?: number | undefined;
+}
+
+### build/tools.d.ts#MtuInput
+interface MtuInput {
+  readonly address: string;
+  readonly ceiling?: number | undefined;
+  readonly count?: number | undefined;
+  readonly waitMs?: number | undefined;
+}
+
+### build/tools.d.ts#MtuRaw
+interface MtuRaw {
+  readonly platform: string;
+  readonly bounds: MtuBounds;
+  readonly steps: readonly {
+    readonly size: number;
+    readonly raw: ToolRaw;
+  }[];
+  readonly start: number;
+  readonly end: number;
 }
 
 ### build/tools.d.ts#PING6_LAST_WAIT_MS
@@ -1921,7 +2047,7 @@ interface ToolLicense {
   readonly tool: string;
   readonly license: string;
   readonly use: ToolUse;
-  readonly probe?: string | undefined;
+  readonly probes: readonly string[];
 }
 
 ### build/tools.d.ts#ToolUse
@@ -1964,6 +2090,12 @@ export declare function mtrCommand(platform: string, input: MtrInput): ToolComma
 ### build/tools.d.ts#mtrProbe
 export declare function mtrProbe(host: ToolHost): Probe<MtrInput, ToolRaw>;
 
+### build/tools.d.ts#mtuCommand
+export declare function mtuCommand(platform: string, input: MtuInput, size: number): ToolCommand | undefined;
+
+### build/tools.d.ts#mtuProbe
+export declare function mtuProbe(host: ToolHost): Probe<MtuInput, MtuRaw>;
+
 ### build/tools.d.ts#pingAvailability
 export declare function pingAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
 
@@ -1984,6 +2116,9 @@ export declare function readMtr(raw: ToolRaw, input: {
   readonly address: string;
   readonly cycles?: number | undefined;
 }): PathReport;
+
+### build/tools.d.ts#readMtuTry
+export declare function readMtuTry(raw: ToolRaw, size: number): MtuTry;
 
 ### build/tools.d.ts#readPing
 export declare function readPing(raw: ToolRaw, address: string): IcmpEcho;
