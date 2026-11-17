@@ -263,6 +263,7 @@ type ValueOf: build/counts.chunk.d.ts#ValueOf
 type VisitHost: build/core.chunk.d.ts#VisitHost
 type VisitInput: build/core.chunk.d.ts#VisitInput
 type VisitOptions: build/index.d.ts#VisitOptions
+type VisitProbes: build/index.d.ts#VisitProbes
 type VisitResolver: build/core.chunk.d.ts#VisitResolver
 type VisitRole: build/core.chunk.d.ts#VisitRole
 type VisitStep: build/core.chunk.d.ts#VisitStep
@@ -745,28 +746,28 @@ scoreLab: build/index.chunk2.d.ts#scoreLab
 
 ## ./tools (build/tools.d.ts): names
 
-AVAILABILITY_TIMEOUT_MS: build/host.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
+AVAILABILITY_TIMEOUT_MS: build/wifi.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
 CAPTURE_FIELDS: build/tools.d.ts#CAPTURE_FIELDS
 CAPTURE_SETUP_MS: build/tools.d.ts#CAPTURE_SETUP_MS
 type CaptureInput: build/tools.d.ts#CaptureInput
-type CommandRunOptions: build/host.chunk.d.ts#CommandRunOptions
-type CommandRunner: build/host.chunk.d.ts#CommandRunner
+type CommandRunOptions: build/wifi.chunk.d.ts#CommandRunOptions
+type CommandRunner: build/wifi.chunk.d.ts#CommandRunner
 DEFAULT_CAPTURE_PACKETS: build/tools.d.ts#DEFAULT_CAPTURE_PACKETS
 DEFAULT_CAPTURE_SECONDS: build/tools.d.ts#DEFAULT_CAPTURE_SECONDS
 DEFAULT_IPERF3_PORT: build/tools.d.ts#DEFAULT_IPERF3_PORT
 DEFAULT_IPERF3_SECONDS: build/tools.d.ts#DEFAULT_IPERF3_SECONDS
 DEFAULT_MTR_CYCLES: build/counts.chunk.d.ts#DEFAULT_MTR_CYCLES
-DEFAULT_MTU_COUNT: build/tools.d.ts#DEFAULT_MTU_COUNT
-DEFAULT_MTU_WAIT_MS: build/tools.d.ts#DEFAULT_MTU_WAIT_MS
+DEFAULT_MTU_COUNT: build/wifi.chunk.d.ts#DEFAULT_MTU_COUNT
+DEFAULT_MTU_WAIT_MS: build/wifi.chunk.d.ts#DEFAULT_MTU_WAIT_MS
 DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
-DEFAULT_PING_WAIT_MS: build/tools.d.ts#DEFAULT_PING_WAIT_MS
+DEFAULT_PING_WAIT_MS: build/wifi.chunk.d.ts#DEFAULT_PING_WAIT_MS
 DEFAULT_TRACE_HOPS: build/tools.d.ts#DEFAULT_TRACE_HOPS
 DEFAULT_TRACE_WAIT_MS: build/tools.d.ts#DEFAULT_TRACE_WAIT_MS
 DEFAULT_UDP_BITS_PER_SECOND: build/tools.d.ts#DEFAULT_UDP_BITS_PER_SECOND
-ECHO_HEADER_BYTES: build/tools.d.ts#ECHO_HEADER_BYTES
+ECHO_HEADER_BYTES: build/wifi.chunk.d.ts#ECHO_HEADER_BYTES
 IPERF3_MIN_VERSION: build/tools.d.ts#IPERF3_MIN_VERSION
 IPERF3_SETUP_MS: build/tools.d.ts#IPERF3_SETUP_MS
-IW_TIMEOUT_MS: build/tools.d.ts#IW_TIMEOUT_MS
+IW_TIMEOUT_MS: build/wifi.chunk.d.ts#IW_TIMEOUT_MS
 type Iperf3Input: build/tools.d.ts#Iperf3Input
 MAX_CAPTURE_PACKETS: build/tools.d.ts#MAX_CAPTURE_PACKETS
 MAX_CAPTURE_SECONDS: build/tools.d.ts#MAX_CAPTURE_SECONDS
@@ -774,66 +775,66 @@ MAX_IPERF3_BITS_PER_SECOND: build/tools.d.ts#MAX_IPERF3_BITS_PER_SECOND
 MAX_IPERF3_SECONDS: build/tools.d.ts#MAX_IPERF3_SECONDS
 MAX_IPERF3_STREAMS: build/tools.d.ts#MAX_IPERF3_STREAMS
 MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
-MAX_MTU_CEILING: build/tools.d.ts#MAX_MTU_CEILING
-MAX_MTU_COUNT: build/tools.d.ts#MAX_MTU_COUNT
+MAX_MTU_CEILING: build/wifi.chunk.d.ts#MAX_MTU_CEILING
+MAX_MTU_COUNT: build/wifi.chunk.d.ts#MAX_MTU_COUNT
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
 MAX_TRACE_HOPS: build/tools.d.ts#MAX_TRACE_HOPS
-MTR_GRACE_MS: build/tools.d.ts#MTR_GRACE_MS
-type MtrInput: build/tools.d.ts#MtrInput
-type MtuInput: build/tools.d.ts#MtuInput
-type MtuRaw: build/tools.d.ts#MtuRaw
-NETSH_TIMEOUT_MS: build/tools.d.ts#NETSH_TIMEOUT_MS
-PING6_LAST_WAIT_MS: build/tools.d.ts#PING6_LAST_WAIT_MS
-PING_INTERVAL_MS: build/tools.d.ts#PING_INTERVAL_MS
-type PingInput: build/tools.d.ts#PingInput
-SYSTEM_PROFILER_TIMEOUT_MS: build/tools.d.ts#SYSTEM_PROFILER_TIMEOUT_MS
+MTR_GRACE_MS: build/wifi.chunk.d.ts#MTR_GRACE_MS
+type MtrInput: build/wifi.chunk.d.ts#MtrInput
+type MtuInput: build/wifi.chunk.d.ts#MtuInput
+type MtuRaw: build/wifi.chunk.d.ts#MtuRaw
+NETSH_TIMEOUT_MS: build/wifi.chunk.d.ts#NETSH_TIMEOUT_MS
+PING6_LAST_WAIT_MS: build/wifi.chunk.d.ts#PING6_LAST_WAIT_MS
+PING_INTERVAL_MS: build/wifi.chunk.d.ts#PING_INTERVAL_MS
+type PingInput: build/wifi.chunk.d.ts#PingInput
+SYSTEM_PROFILER_TIMEOUT_MS: build/wifi.chunk.d.ts#SYSTEM_PROFILER_TIMEOUT_MS
 TOOL_LICENSES: build/tools.d.ts#TOOL_LICENSES
-TOOL_MARGIN_MS: build/host.chunk.d.ts#TOOL_MARGIN_MS
+TOOL_MARGIN_MS: build/wifi.chunk.d.ts#TOOL_MARGIN_MS
 TRACE_QUERIES: build/tools.d.ts#TRACE_QUERIES
-type ToolCommand: build/host.chunk.d.ts#ToolCommand
-type ToolHost: build/host.chunk.d.ts#ToolHost
+type ToolCommand: build/wifi.chunk.d.ts#ToolCommand
+type ToolHost: build/wifi.chunk.d.ts#ToolHost
 type ToolLicense: build/tools.d.ts#ToolLicense
-type ToolOutput: build/host.chunk.d.ts#ToolOutput
-type ToolRaw: build/host.chunk.d.ts#ToolRaw
-type ToolRunOptions: build/host.chunk.d.ts#ToolRunOptions
+type ToolOutput: build/wifi.chunk.d.ts#ToolOutput
+type ToolRaw: build/wifi.chunk.d.ts#ToolRaw
+type ToolRunOptions: build/wifi.chunk.d.ts#ToolRunOptions
 type ToolUse: build/tools.d.ts#ToolUse
 type TraceInput: build/tools.d.ts#TraceInput
-WIFI_TOOLS: build/tools.d.ts#WIFI_TOOLS
-type WifiChannel: build/tools.d.ts#WifiChannel
-type WifiInput: build/tools.d.ts#WifiInput
-type WifiRaw: build/tools.d.ts#WifiRaw
-availabilityOf: build/host.chunk.d.ts#availabilityOf
+WIFI_TOOLS: build/wifi.chunk.d.ts#WIFI_TOOLS
+type WifiChannel: build/wifi.chunk.d.ts#WifiChannel
+type WifiInput: build/wifi.chunk.d.ts#WifiInput
+type WifiRaw: build/wifi.chunk.d.ts#WifiRaw
+availabilityOf: build/wifi.chunk.d.ts#availabilityOf
 captureAvailability: build/tools.d.ts#captureAvailability
 captureCommand: build/tools.d.ts#captureCommand
 captureFilter: build/tools.d.ts#captureFilter
 captureProbe: build/tools.d.ts#captureProbe
-commandHost: build/host.chunk.d.ts#commandHost
+commandHost: build/wifi.chunk.d.ts#commandHost
 iperf3Availability: build/tools.d.ts#iperf3Availability
 iperf3Command: build/tools.d.ts#iperf3Command
 iperf3Probe: build/tools.d.ts#iperf3Probe
-mtrAvailability: build/tools.d.ts#mtrAvailability
-mtrCommand: build/tools.d.ts#mtrCommand
-mtrProbe: build/tools.d.ts#mtrProbe
-mtuCommand: build/tools.d.ts#mtuCommand
-mtuProbe: build/tools.d.ts#mtuProbe
-pingAvailability: build/tools.d.ts#pingAvailability
-pingCommand: build/tools.d.ts#pingCommand
-pingProbe: build/tools.d.ts#pingProbe
+mtrAvailability: build/wifi.chunk.d.ts#mtrAvailability
+mtrCommand: build/wifi.chunk.d.ts#mtrCommand
+mtrProbe: build/wifi.chunk.d.ts#mtrProbe
+mtuCommand: build/wifi.chunk.d.ts#mtuCommand
+mtuProbe: build/wifi.chunk.d.ts#mtuProbe
+pingAvailability: build/wifi.chunk.d.ts#pingAvailability
+pingCommand: build/wifi.chunk.d.ts#pingCommand
+pingProbe: build/wifi.chunk.d.ts#pingProbe
 readCapture: build/tools.d.ts#readCapture
 readIperf3: build/tools.d.ts#readIperf3
-readMtr: build/tools.d.ts#readMtr
-readMtuTry: build/tools.d.ts#readMtuTry
-readPing: build/tools.d.ts#readPing
+readMtr: build/wifi.chunk.d.ts#readMtr
+readMtuTry: build/wifi.chunk.d.ts#readMtuTry
+readPing: build/wifi.chunk.d.ts#readPing
 readTraceroute: build/tools.d.ts#readTraceroute
-readWifi: build/tools.d.ts#readWifi
-runTool: build/host.chunk.d.ts#runTool
+readWifi: build/wifi.chunk.d.ts#readWifi
+runTool: build/wifi.chunk.d.ts#runTool
 toolLicense: build/tools.d.ts#toolLicense
 tracerouteAvailability: build/tools.d.ts#tracerouteAvailability
 tracerouteCommand: build/tools.d.ts#tracerouteCommand
 tracerouteProbe: build/tools.d.ts#tracerouteProbe
-wifiAvailability: build/tools.d.ts#wifiAvailability
-wifiChannelOf: build/tools.d.ts#wifiChannelOf
-wifiProbe: build/tools.d.ts#wifiProbe
+wifiAvailability: build/wifi.chunk.d.ts#wifiAvailability
+wifiChannelOf: build/wifi.chunk.d.ts#wifiChannelOf
+wifiProbe: build/wifi.chunk.d.ts#wifiProbe
 
 ## Declarations
 
@@ -1939,71 +1940,6 @@ declare function sameTarget(a: Target, b: Target): boolean;
 ### build/counts.chunk.d.ts#target
 declare function target(host: string, port?: number): Target;
 
-### build/host.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
-declare const AVAILABILITY_TIMEOUT_MS = 5e3;
-
-### build/host.chunk.d.ts#CommandRunOptions
-interface CommandRunOptions {
-  readonly args: readonly string[];
-  readonly timeout: number;
-  readonly signal: AbortSignal;
-  readonly env?: Readonly<Record<string, string>> | undefined;
-}
-
-### build/host.chunk.d.ts#CommandRunner
-type CommandRunner = (command: string, options: CommandRunOptions) => Promise<ToolOutput>;
-
-### build/host.chunk.d.ts#TOOL_MARGIN_MS
-declare const TOOL_MARGIN_MS = 3e3;
-
-### build/host.chunk.d.ts#ToolCommand
-interface ToolCommand {
-  readonly command: string;
-  readonly args: readonly string[];
-  readonly timeoutMs: number;
-  readonly env?: Readonly<Record<string, string>> | undefined;
-}
-
-### build/host.chunk.d.ts#ToolHost
-interface ToolHost {
-  readonly platform: string;
-  run(command: string, args: readonly string[], options: ToolRunOptions): Promise<ToolOutput>;
-}
-
-### build/host.chunk.d.ts#ToolOutput
-interface ToolOutput {
-  readonly exitCode: number;
-  readonly stdout: string;
-  readonly stderr: string;
-  readonly timedOut?: boolean | undefined;
-  readonly error?: string | undefined;
-}
-
-### build/host.chunk.d.ts#ToolRaw
-interface ToolRaw extends ToolOutput {
-  readonly platform: string;
-  readonly command: string;
-  readonly args: readonly string[];
-  readonly start: number;
-  readonly end: number;
-}
-
-### build/host.chunk.d.ts#ToolRunOptions
-interface ToolRunOptions {
-  readonly timeoutMs: number;
-  readonly signal: AbortSignal;
-  readonly env?: Readonly<Record<string, string>> | undefined;
-}
-
-### build/host.chunk.d.ts#availabilityOf
-declare function availabilityOf(tool: string, output: ToolOutput, version?: RegExp): Availability;
-
-### build/host.chunk.d.ts#commandHost
-declare function commandHost(runner: CommandRunner, platform: string): ToolHost;
-
-### build/host.chunk.d.ts#runTool
-declare function runTool(host: ToolHost, tool: ToolCommand, context: ProbeContext): Promise<ToolRaw>;
-
 ### build/index.chunk.d.ts#ADDRESS_CLASSES
 declare const ADDRESS_CLASSES: readonly {
   readonly cidr: string;
@@ -2612,6 +2548,7 @@ export declare const VISIT_RECORDS: readonly RecordType[];
 ### build/index.d.ts#VisitOptions
 interface VisitOptions {
   readonly clock: Clock;
+  readonly probes?: Partial<VisitProbes> | undefined;
   readonly tools?: ToolHost | undefined;
   readonly wifi?: boolean | undefined;
   readonly interfaces?: (() => InterfaceTable) | undefined;
@@ -2628,6 +2565,19 @@ interface VisitOptions {
   readonly httpTimeoutMs?: number | undefined;
   readonly wall?: string | undefined;
   readonly signal?: AbortSignal | undefined;
+}
+
+### build/index.d.ts#VisitProbes
+interface VisitProbes {
+  readonly link: Probe<LinkInput, LinkRaw>;
+  readonly wifi: Probe<WifiInput, WifiRaw>;
+  readonly dns: Probe<DnsInput, DnsRaw>;
+  readonly ping: Probe<PingInput, ToolRaw>;
+  readonly mtr: Probe<MtrInput, ToolRaw>;
+  readonly mtu: Probe<MtuInput, MtuRaw>;
+  readonly http: Probe<HttpInput, HttpRaw>;
+  readonly owner: Probe<OwnerInput, OwnerRaw>;
+  readonly origin: Probe<OriginInput, OriginRaw>;
 }
 
 ### build/index.d.ts#certProblem
@@ -2721,15 +2671,6 @@ export declare const DEFAULT_IPERF3_PORT = 5201;
 ### build/tools.d.ts#DEFAULT_IPERF3_SECONDS
 export declare const DEFAULT_IPERF3_SECONDS = 10;
 
-### build/tools.d.ts#DEFAULT_MTU_COUNT
-export declare const DEFAULT_MTU_COUNT = 3;
-
-### build/tools.d.ts#DEFAULT_MTU_WAIT_MS
-export declare const DEFAULT_MTU_WAIT_MS = 1e3;
-
-### build/tools.d.ts#DEFAULT_PING_WAIT_MS
-export declare const DEFAULT_PING_WAIT_MS = 1e3;
-
 ### build/tools.d.ts#DEFAULT_TRACE_HOPS
 export declare const DEFAULT_TRACE_HOPS = 30;
 
@@ -2739,17 +2680,11 @@ export declare const DEFAULT_TRACE_WAIT_MS = 1e3;
 ### build/tools.d.ts#DEFAULT_UDP_BITS_PER_SECOND
 export declare const DEFAULT_UDP_BITS_PER_SECOND = 1e6;
 
-### build/tools.d.ts#ECHO_HEADER_BYTES
-export declare const ECHO_HEADER_BYTES: Readonly<Record<AddressFamily, number>>;
-
 ### build/tools.d.ts#IPERF3_MIN_VERSION
 export declare const IPERF3_MIN_VERSION: readonly [number, number];
 
 ### build/tools.d.ts#IPERF3_SETUP_MS
 export declare const IPERF3_SETUP_MS = 5e3;
-
-### build/tools.d.ts#IW_TIMEOUT_MS
-export declare const IW_TIMEOUT_MS = 5e3;
 
 ### build/tools.d.ts#Iperf3Input
 interface Iperf3Input {
@@ -2777,63 +2712,8 @@ export declare const MAX_IPERF3_SECONDS = 60;
 ### build/tools.d.ts#MAX_IPERF3_STREAMS
 export declare const MAX_IPERF3_STREAMS = 16;
 
-### build/tools.d.ts#MAX_MTU_CEILING
-export declare const MAX_MTU_CEILING = 9216;
-
-### build/tools.d.ts#MAX_MTU_COUNT
-export declare const MAX_MTU_COUNT = 10;
-
 ### build/tools.d.ts#MAX_TRACE_HOPS
 export declare const MAX_TRACE_HOPS = 64;
-
-### build/tools.d.ts#MTR_GRACE_MS
-export declare const MTR_GRACE_MS = 5e3;
-
-### build/tools.d.ts#MtrInput
-interface MtrInput {
-  readonly address: string;
-  readonly cycles?: number | undefined;
-  readonly maxHops?: number | undefined;
-}
-
-### build/tools.d.ts#MtuInput
-interface MtuInput {
-  readonly address: string;
-  readonly ceiling?: number | undefined;
-  readonly count?: number | undefined;
-  readonly waitMs?: number | undefined;
-}
-
-### build/tools.d.ts#MtuRaw
-interface MtuRaw {
-  readonly platform: string;
-  readonly bounds: MtuBounds;
-  readonly steps: readonly {
-    readonly size: number;
-    readonly raw: ToolRaw;
-  }[];
-  readonly start: number;
-  readonly end: number;
-}
-
-### build/tools.d.ts#NETSH_TIMEOUT_MS
-export declare const NETSH_TIMEOUT_MS = 1e4;
-
-### build/tools.d.ts#PING6_LAST_WAIT_MS
-export declare const PING6_LAST_WAIT_MS = 1e4;
-
-### build/tools.d.ts#PING_INTERVAL_MS
-export declare const PING_INTERVAL_MS = 200;
-
-### build/tools.d.ts#PingInput
-interface PingInput {
-  readonly address: string;
-  readonly count?: number | undefined;
-  readonly waitMs?: number | undefined;
-}
-
-### build/tools.d.ts#SYSTEM_PROFILER_TIMEOUT_MS
-export declare const SYSTEM_PROFILER_TIMEOUT_MS = 3e4;
 
 ### build/tools.d.ts#TOOL_LICENSES
 export declare const TOOL_LICENSES: readonly ToolLicense[];
@@ -2859,26 +2739,6 @@ interface TraceInput {
   readonly waitMs?: number | undefined;
 }
 
-### build/tools.d.ts#WIFI_TOOLS
-export declare const WIFI_TOOLS: Readonly<Record<string, string>>;
-
-### build/tools.d.ts#WifiChannel
-interface WifiChannel {
-  readonly channel: number;
-  readonly band: WifiBand;
-}
-
-### build/tools.d.ts#WifiInput
-interface WifiInput {
-  readonly interface?: string | undefined;
-}
-
-### build/tools.d.ts#WifiRaw
-interface WifiRaw {
-  readonly platform: string;
-  readonly runs: readonly ToolRaw[];
-}
-
 ### build/tools.d.ts#captureAvailability
 export declare function captureAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
 
@@ -2900,56 +2760,17 @@ export declare function iperf3Command(input: Iperf3Input): ToolCommand;
 ### build/tools.d.ts#iperf3Probe
 export declare function iperf3Probe(host: ToolHost): Probe<Iperf3Input, ToolRaw>;
 
-### build/tools.d.ts#mtrAvailability
-export declare function mtrAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
-
-### build/tools.d.ts#mtrCommand
-export declare function mtrCommand(platform: string, input: MtrInput): ToolCommand | undefined;
-
-### build/tools.d.ts#mtrProbe
-export declare function mtrProbe(host: ToolHost): Probe<MtrInput, ToolRaw>;
-
-### build/tools.d.ts#mtuCommand
-export declare function mtuCommand(platform: string, input: MtuInput, size: number): ToolCommand | undefined;
-
-### build/tools.d.ts#mtuProbe
-export declare function mtuProbe(host: ToolHost): Probe<MtuInput, MtuRaw>;
-
-### build/tools.d.ts#pingAvailability
-export declare function pingAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
-
-### build/tools.d.ts#pingCommand
-export declare function pingCommand(platform: string, input: PingInput): ToolCommand | undefined;
-
-### build/tools.d.ts#pingProbe
-export declare function pingProbe(host: ToolHost): Probe<PingInput, ToolRaw>;
-
 ### build/tools.d.ts#readCapture
 export declare function readCapture(raw: ToolRaw, input: CaptureInput): PathCapture;
 
 ### build/tools.d.ts#readIperf3
 export declare function readIperf3(raw: ToolRaw, input: Iperf3Input): PathThroughput;
 
-### build/tools.d.ts#readMtr
-export declare function readMtr(raw: ToolRaw, input: {
-  readonly address: string;
-  readonly cycles?: number | undefined;
-}): PathReport;
-
-### build/tools.d.ts#readMtuTry
-export declare function readMtuTry(raw: ToolRaw, size: number): MtuTry;
-
-### build/tools.d.ts#readPing
-export declare function readPing(raw: ToolRaw, address: string): IcmpEcho;
-
 ### build/tools.d.ts#readTraceroute
 export declare function readTraceroute(raw: ToolRaw, input: {
   readonly address: string;
   readonly maxHops?: number | undefined;
 }): PathTrace;
-
-### build/tools.d.ts#readWifi
-export declare function readWifi(raw: WifiRaw, input?: WifiInput): WifiLink[];
 
 ### build/tools.d.ts#toolLicense
 export declare function toolLicense(tool: string): ToolLicense | undefined;
@@ -2963,11 +2784,205 @@ export declare function tracerouteCommand(platform: string, input: TraceInput): 
 ### build/tools.d.ts#tracerouteProbe
 export declare function tracerouteProbe(host: ToolHost): Probe<TraceInput, ToolRaw>;
 
-### build/tools.d.ts#wifiAvailability
-export declare function wifiAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+### build/wifi.chunk.d.ts#AVAILABILITY_TIMEOUT_MS
+declare const AVAILABILITY_TIMEOUT_MS = 5e3;
 
-### build/tools.d.ts#wifiChannelOf
-export declare function wifiChannelOf(mhz: number): WifiChannel | undefined;
+### build/wifi.chunk.d.ts#CommandRunOptions
+interface CommandRunOptions {
+  readonly args: readonly string[];
+  readonly timeout: number;
+  readonly signal: AbortSignal;
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
 
-### build/tools.d.ts#wifiProbe
-export declare function wifiProbe(host: ToolHost): Probe<WifiInput, WifiRaw>;
+### build/wifi.chunk.d.ts#CommandRunner
+type CommandRunner = (command: string, options: CommandRunOptions) => Promise<ToolOutput>;
+
+### build/wifi.chunk.d.ts#DEFAULT_MTU_COUNT
+declare const DEFAULT_MTU_COUNT = 3;
+
+### build/wifi.chunk.d.ts#DEFAULT_MTU_WAIT_MS
+declare const DEFAULT_MTU_WAIT_MS = 1e3;
+
+### build/wifi.chunk.d.ts#DEFAULT_PING_WAIT_MS
+declare const DEFAULT_PING_WAIT_MS = 1e3;
+
+### build/wifi.chunk.d.ts#ECHO_HEADER_BYTES
+declare const ECHO_HEADER_BYTES: Readonly<Record<AddressFamily, number>>;
+
+### build/wifi.chunk.d.ts#IW_TIMEOUT_MS
+declare const IW_TIMEOUT_MS = 5e3;
+
+### build/wifi.chunk.d.ts#MAX_MTU_CEILING
+declare const MAX_MTU_CEILING = 9216;
+
+### build/wifi.chunk.d.ts#MAX_MTU_COUNT
+declare const MAX_MTU_COUNT = 10;
+
+### build/wifi.chunk.d.ts#MTR_GRACE_MS
+declare const MTR_GRACE_MS = 5e3;
+
+### build/wifi.chunk.d.ts#MtrInput
+interface MtrInput {
+  readonly address: string;
+  readonly cycles?: number | undefined;
+  readonly maxHops?: number | undefined;
+}
+
+### build/wifi.chunk.d.ts#MtuInput
+interface MtuInput {
+  readonly address: string;
+  readonly ceiling?: number | undefined;
+  readonly count?: number | undefined;
+  readonly waitMs?: number | undefined;
+}
+
+### build/wifi.chunk.d.ts#MtuRaw
+interface MtuRaw {
+  readonly platform: string;
+  readonly bounds: MtuBounds;
+  readonly steps: readonly {
+    readonly size: number;
+    readonly raw: ToolRaw;
+  }[];
+  readonly start: number;
+  readonly end: number;
+}
+
+### build/wifi.chunk.d.ts#NETSH_TIMEOUT_MS
+declare const NETSH_TIMEOUT_MS = 1e4;
+
+### build/wifi.chunk.d.ts#PING6_LAST_WAIT_MS
+declare const PING6_LAST_WAIT_MS = 1e4;
+
+### build/wifi.chunk.d.ts#PING_INTERVAL_MS
+declare const PING_INTERVAL_MS = 200;
+
+### build/wifi.chunk.d.ts#PingInput
+interface PingInput {
+  readonly address: string;
+  readonly count?: number | undefined;
+  readonly waitMs?: number | undefined;
+}
+
+### build/wifi.chunk.d.ts#SYSTEM_PROFILER_TIMEOUT_MS
+declare const SYSTEM_PROFILER_TIMEOUT_MS = 3e4;
+
+### build/wifi.chunk.d.ts#TOOL_MARGIN_MS
+declare const TOOL_MARGIN_MS = 3e3;
+
+### build/wifi.chunk.d.ts#ToolCommand
+interface ToolCommand {
+  readonly command: string;
+  readonly args: readonly string[];
+  readonly timeoutMs: number;
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
+
+### build/wifi.chunk.d.ts#ToolHost
+interface ToolHost {
+  readonly platform: string;
+  run(command: string, args: readonly string[], options: ToolRunOptions): Promise<ToolOutput>;
+}
+
+### build/wifi.chunk.d.ts#ToolOutput
+interface ToolOutput {
+  readonly exitCode: number;
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly timedOut?: boolean | undefined;
+  readonly error?: string | undefined;
+}
+
+### build/wifi.chunk.d.ts#ToolRaw
+interface ToolRaw extends ToolOutput {
+  readonly platform: string;
+  readonly command: string;
+  readonly args: readonly string[];
+  readonly start: number;
+  readonly end: number;
+}
+
+### build/wifi.chunk.d.ts#ToolRunOptions
+interface ToolRunOptions {
+  readonly timeoutMs: number;
+  readonly signal: AbortSignal;
+  readonly env?: Readonly<Record<string, string>> | undefined;
+}
+
+### build/wifi.chunk.d.ts#WIFI_TOOLS
+declare const WIFI_TOOLS: Readonly<Record<string, string>>;
+
+### build/wifi.chunk.d.ts#WifiChannel
+interface WifiChannel {
+  readonly channel: number;
+  readonly band: WifiBand;
+}
+
+### build/wifi.chunk.d.ts#WifiInput
+interface WifiInput {
+  readonly interface?: string | undefined;
+}
+
+### build/wifi.chunk.d.ts#WifiRaw
+interface WifiRaw {
+  readonly platform: string;
+  readonly runs: readonly ToolRaw[];
+}
+
+### build/wifi.chunk.d.ts#availabilityOf
+declare function availabilityOf(tool: string, output: ToolOutput, version?: RegExp): Availability;
+
+### build/wifi.chunk.d.ts#commandHost
+declare function commandHost(runner: CommandRunner, platform: string): ToolHost;
+
+### build/wifi.chunk.d.ts#mtrAvailability
+declare function mtrAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/wifi.chunk.d.ts#mtrCommand
+declare function mtrCommand(platform: string, input: MtrInput): ToolCommand | undefined;
+
+### build/wifi.chunk.d.ts#mtrProbe
+declare function mtrProbe(host: ToolHost): Probe<MtrInput, ToolRaw>;
+
+### build/wifi.chunk.d.ts#mtuCommand
+declare function mtuCommand(platform: string, input: MtuInput, size: number): ToolCommand | undefined;
+
+### build/wifi.chunk.d.ts#mtuProbe
+declare function mtuProbe(host: ToolHost): Probe<MtuInput, MtuRaw>;
+
+### build/wifi.chunk.d.ts#pingAvailability
+declare function pingAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/wifi.chunk.d.ts#pingCommand
+declare function pingCommand(platform: string, input: PingInput): ToolCommand | undefined;
+
+### build/wifi.chunk.d.ts#pingProbe
+declare function pingProbe(host: ToolHost): Probe<PingInput, ToolRaw>;
+
+### build/wifi.chunk.d.ts#readMtr
+declare function readMtr(raw: ToolRaw, input: {
+  readonly address: string;
+  readonly cycles?: number | undefined;
+}): PathReport;
+
+### build/wifi.chunk.d.ts#readMtuTry
+declare function readMtuTry(raw: ToolRaw, size: number): MtuTry;
+
+### build/wifi.chunk.d.ts#readPing
+declare function readPing(raw: ToolRaw, address: string): IcmpEcho;
+
+### build/wifi.chunk.d.ts#readWifi
+declare function readWifi(raw: WifiRaw, input?: WifiInput): WifiLink[];
+
+### build/wifi.chunk.d.ts#runTool
+declare function runTool(host: ToolHost, tool: ToolCommand, context: ProbeContext): Promise<ToolRaw>;
+
+### build/wifi.chunk.d.ts#wifiAvailability
+declare function wifiAvailability(host: ToolHost, context: ProbeContext): Promise<Availability>;
+
+### build/wifi.chunk.d.ts#wifiChannelOf
+declare function wifiChannelOf(mhz: number): WifiChannel | undefined;
+
+### build/wifi.chunk.d.ts#wifiProbe
+declare function wifiProbe(host: ToolHost): Probe<WifiInput, WifiRaw>;

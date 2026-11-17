@@ -1,19 +1,19 @@
 import type { Clock } from "@mark1russell7/algebra/clock";
 import { factsOf, type Fact } from "./fact.ts";
 import { DNS_ANSWER, HTTP_RESPONSE, PATH_REPORT, TCP_CONNECT, TLS_HANDSHAKE, type RecordType } from "./kinds.ts";
-import { originProbe, type TxtResolve } from "./lookups/origin.ts";
-import { MAX_OWNER_ADDRESSES, ownerProbe, type OwnerProbeOptions, type RdapGet } from "./lookups/owner.ts";
-import { LINK_SUBJECT, linkProbe, type InterfaceTable } from "./probes/link.ts";
-import { DNS_PROBE, httpProbe, type TlsProbeOptions } from "./probes/native.ts";
+import { originProbe, type OriginInput, type OriginRaw, type TxtResolve } from "./lookups/origin.ts";
+import { MAX_OWNER_ADDRESSES, ownerProbe, type OwnerInput, type OwnerProbeOptions, type OwnerRaw, type RdapGet } from "./lookups/owner.ts";
+import { LINK_SUBJECT, linkProbe, type InterfaceTable, type LinkInput, type LinkRaw } from "./probes/link.ts";
+import { DNS_PROBE, httpProbe, type DnsInput, type DnsRaw, type HttpInput, type HttpRaw, type TlsProbeOptions } from "./probes/native.ts";
 import type { Probe } from "./probe.ts";
 import { createRunner, type ProbeOutcome } from "./run.ts";
 import { decideScope, resolvedGrant, scopeOf } from "./scope.ts";
 import { hostKind, target } from "./target.ts";
-import type { ToolHost } from "./tools/host.ts";
-import { mtrProbe } from "./tools/mtr.ts";
-import { mtuProbe } from "./tools/mtu.ts";
-import { DEFAULT_PING_COUNT, pingProbe } from "./tools/ping.ts";
-import { wifiProbe } from "./tools/wifi.ts";
+import type { ToolHost, ToolRaw } from "./tools/host.ts";
+import { mtrProbe, type MtrInput } from "./tools/mtr.ts";
+import { mtuProbe, type MtuInput, type MtuRaw } from "./tools/mtu.ts";
+import { DEFAULT_PING_COUNT, pingProbe, type PingInput } from "./tools/ping.ts";
+import { wifiProbe, type WifiInput, type WifiRaw } from "./tools/wifi.ts";
 import type { MtuSearch, VisitHost, VisitInput, VisitRole, VisitStep } from "./visit-types.ts";
 
 export {
@@ -29,9 +29,30 @@ export {
 
 // A visit is the standard set of probes of one target. The lab agent (ND-7) and the command-line tool (ND-8) use it.
 
+/**
+ * The probes of a visit. A simulated world gives its own probes: each has the parse of the real probe and a run of the
+ * world. The visit uses the real probe for each probe that the options do not give.
+ */
+export interface VisitProbes {
+  readonly link: Probe<LinkInput, LinkRaw>;
+  readonly wifi: Probe<WifiInput, WifiRaw>;
+  readonly dns: Probe<DnsInput, DnsRaw>;
+  readonly ping: Probe<PingInput, ToolRaw>;
+  readonly mtr: Probe<MtrInput, ToolRaw>;
+  readonly mtu: Probe<MtuInput, MtuRaw>;
+  readonly http: Probe<HttpInput, HttpRaw>;
+  readonly owner: Probe<OwnerInput, OwnerRaw>;
+  readonly origin: Probe<OriginInput, OriginRaw>;
+}
+
 /** The options of a visit. */
 export interface VisitOptions {
   readonly clock: Clock;
+  /**
+   * The probes that replace the real probes of the visit. A probe here needs no port: for example, `ping` needs no
+   * `tools`. The options `pingCount`, `mtrCycles`, `mtu` and `wifi` still start or stop each probe.
+   */
+  readonly probes?: Partial<VisitProbes> | undefined;
   /** The host of the outside tools. Without a host, the visit starts no `ping`, no `mtr`, no MTU search and no read of the Wi-Fi link. */
   readonly tools?: ToolHost | undefined;
   /**
@@ -134,20 +155,22 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
   const run = <I, R>(probe: Probe<I, R>, probeInput: I): Promise<ProbeOutcome<R>> => runner.run(probe, probeInput, options.signal);
   const pingCount = options.pingCount ?? DEFAULT_PING_COUNT;
   const mtrCycles = options.mtrCycles ?? 0;
-  const ping = options.tools === undefined || pingCount === 0 ? undefined : pingProbe(options.tools);
-  const mtr = options.tools === undefined || mtrCycles === 0 ? undefined : mtrProbe(options.tools);
-  const owner = mtr === undefined || options.owners === undefined ? undefined : ownerProbe(options.owners, options.ownerOptions);
-  const origin = mtr === undefined || options.origins === undefined ? undefined : originProbe(options.origins);
+  const given = options.probes ?? {};
+  const tools = options.tools;
+  const ping = pingCount === 0 ? undefined : (given.ping ?? (tools === undefined ? undefined : pingProbe(tools)));
+  const mtr = mtrCycles === 0 ? undefined : (given.mtr ?? (tools === undefined ? undefined : mtrProbe(tools)));
+  const owner = mtr === undefined ? undefined : (given.owner ?? (options.owners === undefined ? undefined : ownerProbe(options.owners, options.ownerOptions)));
+  const origin = mtr === undefined ? undefined : (given.origin ?? (options.origins === undefined ? undefined : originProbe(options.origins)));
   const looked = new Set<string>();
   const mtuSearch = options.mtu ?? "auto";
-  const mtu = options.tools === undefined || mtuSearch === "never" ? undefined : mtuProbe(options.tools);
-  const http = httpProbe(options.tls);
+  const mtu = mtuSearch === "never" ? undefined : (given.mtu ?? (tools === undefined ? undefined : mtuProbe(tools)));
+  const http = given.http ?? httpProbe(options.tls);
+  const dns = given.dns ?? DNS_PROBE;
   const scheme = options.scheme ?? "https";
-  const link = linkProbe(options.interfaces);
+  const link = given.link ?? linkProbe(options.interfaces);
+  const wifi = options.wifi === false ? undefined : (given.wifi ?? (tools === undefined ? undefined : wifiProbe(tools)));
   yield* stepsOf("local", input.gateway ?? LINK_SUBJECT, "read of the link", await run(link, { gateway: input.gateway }));
-  if (options.tools !== undefined && options.wifi !== false) {
-    yield* stepsOf("local", LINK_SUBJECT, "read of the Wi-Fi link", await run(wifiProbe(options.tools), {}));
-  }
+  if (wifi !== undefined) yield* stepsOf("local", LINK_SUBJECT, "read of the Wi-Fi link", await run(wifi, {}));
   const hosts: readonly { readonly role: VisitRole; readonly host: VisitHost }[] = [
     { role: "target", host: input.target },
     ...(input.references ?? []).map((host) => ({ role: "reference" as const, host })),
@@ -163,7 +186,7 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
       const granted = decideScope(runner.scope(), target(name));
       for (const record of VISIT_RECORDS) {
         const query = { name, record, resolver: input.resolver.address, port: input.resolver.port, timeoutMs: options.dnsTimeoutMs };
-        const outcome = await run(DNS_PROBE, query);
+        const outcome = await run(dns, query);
         yield* stepsOf(role, host.host, `DNS query ${record} of ${name}`, outcome);
         if (outcome.status !== "done") continue;
         for (const fact of factsOf(DNS_ANSWER, outcome.facts)) {

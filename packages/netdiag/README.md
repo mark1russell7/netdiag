@@ -44,6 +44,8 @@ A probe is an adapter. It tells if it is available, it does its work, and it par
 
 A network failure is a fact, not an error. For example, a TCP connect that times out gives the outcome `timeout`.
 
+`visitTarget` starts the standard probes of one target. Its option `probes` replaces each real probe that it names, with the keys of `VisitProbes`. A simulated world keeps the `parse` of the real probe and gives its own `run`. A probe of `probes` needs no port, but `pingCount`, `mtrCycles`, `mtu` and `wifi` still start or stop it.
+
 ## The scope rule
 
 An active probe sends packets only to a peer that the user owns or names. The runner examines each peer before the probe starts.

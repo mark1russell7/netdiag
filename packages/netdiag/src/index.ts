@@ -76,4 +76,5 @@ export {
   largePacketsLost,
   visitTarget,
   type VisitOptions,
+  type VisitProbes,
 } from "./visit.ts";
