@@ -1,5 +1,5 @@
 import { observe, type Observation } from "../fact.ts";
-import { WIFI_FLOOR_DBM, WIFI_LINK, WIFI_WIDTHS, type WifiBand, type WifiLink, type WifiState } from "../kinds.ts";
+import { WIFI_FLOOR_DBM, WIFI_INTERFACES, WIFI_LINK, WIFI_WIDTHS, type WifiBand, type WifiLink, type WifiState } from "../kinds.ts";
 import { LINK_SUBJECT } from "../probes/link.ts";
 import { defineProbe, type Availability, type Probe, type ProbeContext } from "../probe.ts";
 import { target } from "../target.ts";
@@ -444,15 +444,19 @@ async function runWifi(host: ToolHost, input: WifiInput, context: ProbeContext):
 /**
  * This function makes the probe `wifi.link`: the Wi-Fi link of each interface, from the tool of the operating system. The
  * probe sends no packet, so it needs no grant. Its subject is this computer. Each fact has the name of its interface.
+ *
+ * - The probe also gives one fact `wifi.interfaces` with the names of all the Wi-Fi interfaces, possibly none. Thus a
+ *   computer with no Wi-Fi interface also gives a fact.
+ * - An input with an `interface` gives no fact `wifi.interfaces`, because it does not read the other interfaces.
  */
 export function wifiProbe(host: ToolHost): Probe<WifiInput, WifiRaw> {
   return defineProbe<WifiInput, WifiRaw>({
     id: "wifi.link",
-    version: "1",
-    summary: "The Wi-Fi link of each interface: the access point, the signal, the noise, the channel and the rates.",
+    version: "2",
+    summary: "The Wi-Fi link of each interface: the access point, the signal, the noise, the channel and the rates. A list of the interfaces, possibly empty.",
     layer: "wifi",
     mode: "passive",
-    kinds: [WIFI_LINK],
+    kinds: [WIFI_LINK, WIFI_INTERFACES],
     tool: WIFI_TOOLS[host.platform],
     peers: () => [],
     available: (context) => wifiAvailability(host, context),
@@ -461,7 +465,12 @@ export function wifiProbe(host: ToolHost): Probe<WifiInput, WifiRaw> {
       const first = raw.runs[0];
       const last = raw.runs.at(-1);
       const time = first === undefined || last === undefined ? undefined : { start: first.start, end: last.end };
-      return readWifi(raw, input).map((link) => observe(WIFI_LINK, target(LINK_SUBJECT), link, time));
+      const links = readWifi(raw);
+      const chosen = input.interface === undefined ? links : links.filter((link) => link.interface === input.interface);
+      const facts = chosen.map((link) => observe(WIFI_LINK, target(LINK_SUBJECT), link, time));
+      if (input.interface !== undefined) return facts;
+      const interfaces = [...new Set(links.map((link) => link.interface))];
+      return [observe(WIFI_INTERFACES, target(LINK_SUBJECT), { interfaces }, time), ...facts];
     },
   });
 }

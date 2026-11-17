@@ -275,6 +275,7 @@ type VisitStep: build/core.chunk.d.ts#VisitStep
 WIFI_BANDS: build/counts.chunk.d.ts#WIFI_BANDS
 WIFI_CHANGE_KINDS: build/core.chunk.d.ts#WIFI_CHANGE_KINDS
 WIFI_FLOOR_DBM: build/counts.chunk.d.ts#WIFI_FLOOR_DBM
+WIFI_INTERFACES: build/counts.chunk.d.ts#WIFI_INTERFACES
 WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
 WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
 WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
@@ -283,6 +284,7 @@ WifiBand: build/counts.chunk.d.ts#WifiBand
 type WifiChange: build/core.chunk.d.ts#WifiChange
 type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
 type WifiChanges: build/core.chunk.d.ts#WifiChanges
+WifiInterfaces: build/counts.chunk.d.ts#WifiInterfaces
 WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
@@ -596,6 +598,7 @@ type VisitStep: build/core.chunk.d.ts#VisitStep
 WIFI_BANDS: build/counts.chunk.d.ts#WIFI_BANDS
 WIFI_CHANGE_KINDS: build/core.chunk.d.ts#WIFI_CHANGE_KINDS
 WIFI_FLOOR_DBM: build/counts.chunk.d.ts#WIFI_FLOOR_DBM
+WIFI_INTERFACES: build/counts.chunk.d.ts#WIFI_INTERFACES
 WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
 WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
 WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
@@ -604,6 +607,7 @@ WifiBand: build/counts.chunk.d.ts#WifiBand
 type WifiChange: build/core.chunk.d.ts#WifiChange
 type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
 type WifiChanges: build/core.chunk.d.ts#WifiChanges
+WifiInterfaces: build/counts.chunk.d.ts#WifiInterfaces
 WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
@@ -1883,6 +1887,9 @@ declare const WIFI_BANDS: readonly ["2.4", "5", "6"];
 ### build/counts.chunk.d.ts#WIFI_FLOOR_DBM
 declare const WIFI_FLOOR_DBM = -120;
 
+### build/counts.chunk.d.ts#WIFI_INTERFACES
+declare const WIFI_INTERFACES: FactKind<WifiInterfaces>;
+
 ### build/counts.chunk.d.ts#WIFI_LINK
 declare const WIFI_LINK: FactKind<WifiLink>;
 
@@ -1894,6 +1901,11 @@ declare const WIFI_WIDTHS: readonly [20, 40, 80, 160, 320];
 
 ### build/counts.chunk.d.ts#WifiBand
 type WifiBand = (typeof WIFI_BANDS)[number];
+
+### build/counts.chunk.d.ts#WifiInterfaces
+interface WifiInterfaces {
+  readonly interfaces: readonly string[];
+}
 
 ### build/counts.chunk.d.ts#WifiLink
 interface WifiLink {

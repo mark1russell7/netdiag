@@ -22,6 +22,13 @@ export const STANDARD_FEATURES: readonly Feature[] = [
     healthy: { strong: 0.7, fair: 0.25, weak: 0.05 },
   },
   {
+    id: "wifi.state",
+    layer: "wifi",
+    summary: "The Wi-Fi of this computer: connected when a Wi-Fi interface is connected, none when the Wi-Fi tool finds no connected interface.",
+    values: ["connected", "none"],
+    healthy: { connected: 0.6, none: 0.4 },
+  },
+  {
     id: "gateway.reply",
     layer: "route",
     summary: "The gateway answers an ICMP echo request.",
@@ -150,6 +157,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Move nearer to the access point, or use a cable.",
     predicts: {
       "wifi.signal": { expect: "weak", strength: "strong" },
+      "wifi.state": { expect: "connected", strength: "sure" },
       "path.loss": { expect: ["some", "high"], strength: "usual" },
       "tcp.time": { expect: ["long", "retry"], strength: "usual" },
     },

@@ -35,6 +35,7 @@ import {
   TLS_RATIO_BINS,
   TLS_TRUST_VALUES,
   TRUSTS,
+  WIFI_INTERFACES,
   WIFI_LINK,
   WIFI_SIGNAL_BINS,
   binOf,
@@ -208,7 +209,7 @@ describe("the tables of the readers", () => {
   });
 
   it("name only features of the catalog, with the fact kinds of the readers", () => {
-    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE, PATH_MTU, WIFI_LINK].map((kind) => kind.kind);
+    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE, PATH_MTU, WIFI_LINK, WIFI_INTERFACES].map((kind) => kind.kind);
     for (const [feature, sources] of Object.entries(FEATURE_SOURCES)) {
       expect(STANDARD_FEATURES.map((f) => f.id)).toContain(feature);
       for (const source of sources) for (const kind of source) expect(kinds).toContain(kind);
@@ -224,7 +225,8 @@ describe("the tables of the readers", () => {
     expect(featuresOf([PATH_REPORT.kind, PATH_TRACE.kind])).toEqual(["path.loss"]);
     expect(featuresOf([LINK_STATE.kind])).toEqual(["link.state"]);
     expect(featuresOf([PATH_MTU.kind])).toEqual(["path.mtu"]);
-    expect(featuresOf([WIFI_LINK.kind])).toEqual(["wifi.signal"]);
+    expect(featuresOf([WIFI_LINK.kind])).toEqual(["wifi.signal", "wifi.state"]);
+    expect(featuresOf([WIFI_INTERFACES.kind])).toEqual(["wifi.state"]);
     expect(featuresOf([])).toEqual([]);
   });
 
@@ -506,6 +508,10 @@ function wifi(link: WifiLink): Entry {
   return [WIFI_LINK, link, 1];
 }
 
+function radios(...interfaces: string[]): Entry {
+  return [WIFI_INTERFACES, { interfaces }, 1];
+}
+
 describe("the reader of the Wi-Fi link", () => {
   it("gives wifi.signal for each connected interface, from the level or from the quality of Windows", () => {
     const { evidence, skipped } = readEvidence(
@@ -519,20 +525,36 @@ describe("the reader of the Wi-Fi link", () => {
       { feature: "wifi.signal", value: "strong", primary: true, facts: ["f0"] },
       { feature: "wifi.signal", value: "weak", primary: true, facts: ["f1"] },
       { feature: "wifi.signal", value: "fair", primary: true, facts: ["f2"] },
+      { feature: "wifi.state", value: "connected", primary: true, facts: ["f0", "f1", "f2"] },
     ]);
     expect(skipped).toEqual([]);
   });
 
   it("lets the last fact of an interface decide", () => {
     const facts = factsOf([wifi({ interface: "wlan0", state: "connected", signalDbm: -50 }), wifi({ interface: "wlan0", state: "connected", signalDbm: -80 })]);
-    expect(readEvidence(facts).evidence).toEqual([{ feature: "wifi.signal", value: "weak", primary: true, facts: ["f0", "f1"] }]);
+    expect(readEvidence(facts).evidence).toEqual([
+      { feature: "wifi.signal", value: "weak", primary: true, facts: ["f0", "f1"] },
+      { feature: "wifi.state", value: "connected", primary: true, facts: ["f0", "f1"] },
+    ]);
   });
 
-  it("gives no evidence for an interface with no link, or with no level and no quality", () => {
+  it("gives no signal for an interface with no link, or with no level and no quality", () => {
     const { evidence, skipped } = readEvidence(factsOf([wifi({ interface: "wlan1", state: "off" }), wifi({ interface: "wlan0", state: "connected", channel: 6 })]));
-    expect(evidence).toEqual([]);
+    expect(evidence).toEqual([{ feature: "wifi.state", value: "connected", primary: true, facts: ["f1"] }]);
     expect(skipped.map((item) => item.fact)).toEqual(["f0", "f1"]);
     expect(skipped[0]?.reason).toContain("off");
+  });
+
+  it("gives the state none only from a list of the interfaces, and connected from one connected interface in each order", () => {
+    const state = (...entries: Entry[]) => readEvidence(factsOf(entries)).evidence.filter((each) => each.feature === "wifi.state");
+    expect(state(radios())).toEqual([{ feature: "wifi.state", value: "none", primary: true, facts: ["f0"] }]);
+    expect(state(radios("wlan0"), wifi({ interface: "wlan0", state: "off" })).map((each) => each.value)).toEqual(["none"]);
+    expect(state(radios("wlan0", "wlan1"), wifi({ interface: "wlan0", state: "connected", signalDbm: -50 }), wifi({ interface: "wlan1", state: "off" }))).toEqual([
+      { feature: "wifi.state", value: "connected", primary: true, facts: ["f0", "f1"] },
+    ]);
+    expect(state(wifi({ interface: "wlan0", state: "connected", signalDbm: -50 }), radios("wlan0")).map((each) => each.value)).toEqual(["connected"]);
+    // With no list, a link that is not connected does not tell that the computer has no Wi-Fi link.
+    expect(state(wifi({ interface: "wlan0", state: "off" }))).toEqual([]);
   });
 
   it("gives a value of the feature for each level and quality in the range of the kind", () => {
