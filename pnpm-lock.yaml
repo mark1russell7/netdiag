@@ -266,6 +266,9 @@ importers:
       '@mark1russell7/rigor-statistics':
         specifier: ^0.2.3
         version: 0.2.3
+      '@mark1russell7/strategy-space':
+        specifier: ^0.1.0
+        version: 0.1.1
       '@mark1russell7/text':
         specifier: ^0.0.6
         version: 0.0.6
@@ -904,6 +907,10 @@ packages:
     resolution: {integrity: sha512-0WRNon1oYKX1mmTP/AhrPnpoGAGolmpkJWHaTkHXc4SKe1tQhUvPrY/0TQ4gvu7aN+TEPpypiZDIkOjYZG8qBA==}
     engines: {node: '>=22'}
     hasBin: true
+
+  '@mark1russell7/strategy-space@0.1.1':
+    resolution: {integrity: sha512-6AP7wcNFOepPp+/w0Z/b8+a5CKjCP9nmUeGflgWtNvGlzBogVhPQMLM417gqzARTCMH4gc6WtNaIYEhkjkefYA==}
+    engines: {node: '>=22'}
 
   '@mark1russell7/template-cli@0.1.9':
     resolution: {integrity: sha512-7ebtLlCmT6KYhbpoI2SZHXCQC6/7Rc660SvKwQvfslseSQrXMRlmBj+1/F5KOCep6aB+LtvGWg+HmTKi6uZjyQ==}
@@ -3068,6 +3075,11 @@ snapshots:
   '@mark1russell7/ste-lint@0.3.2':
     dependencies:
       typescript: 6.0.3
+
+  '@mark1russell7/strategy-space@0.1.1':
+    dependencies:
+      '@mark1russell7/rigor-generators': 0.2.0
+      '@mark1russell7/rigor-statistics': 0.2.3
 
   '@mark1russell7/template-cli@0.1.9':
     dependencies:

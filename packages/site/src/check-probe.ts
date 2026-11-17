@@ -74,7 +74,7 @@ check("the ladder names its gaps first", /^\d+ gaps? in \d+ cells?$/.test(text("
 const ladderRows = (): number => $$("#coverage-matrix tbody tr:not(.ladder-group)").length;
 check("the matrix has a row for each class and a column for each layer", ladderRows() === 20 && $$("#coverage-matrix thead th").length === 8, ladderRows());
 click("#coverage-proposals");
-check("the toggle adds the proposed classes", await until(() => $$("#coverage-matrix tbody tr.proposal").length === 25), ladderRows());
+check("the toggle adds the proposed classes", await until(() => $$("#coverage-matrix tbody tr.proposal").length === 73), ladderRows());
 click('#coverage-matrix button[data-row="path.loss"][data-layer="E1"]');
 check("a click on a covered cell shows its cases and its worlds", await until(() => text("#coverage-detail").includes("loss.last-link") && text("#coverage-detail").includes("Kernel (E1)")), text("#coverage-detail"));
 click('#coverage-filter [data-filter="gaps"]');

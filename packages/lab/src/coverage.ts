@@ -1,6 +1,20 @@
-import { LAYERS, layerRank, type Catalog, type LabBars, type Layer } from "@mark1russell7/netdiag";
+import { LAYERS, STANDARD_FAULTS, layerRank, type Catalog, type LabBars, type Layer } from "@mark1russell7/netdiag";
 import { countOf } from "@mark1russell7/text";
 import { ATLAS_WORLDS, ATLAS_WORLD_NAMES, type AtlasEntry, type AtlasWorld } from "./atlas.ts";
+import {
+  GRAMMAR_CLASSES,
+  GRAMMAR_END,
+  GRAMMAR_OPTIONS,
+  GRAMMAR_START,
+  grammarNeeds,
+  grammarPart,
+  optionId,
+  sharedNeeds,
+  termClasses,
+  termNeeds,
+  termProblems,
+  type GrammarClass,
+} from "./grammar.ts";
 import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, S7_LAYERS_URL, type LabLayer, type LayerFacts, type LayerLimit } from "./ladder.ts";
 
 // The coverage of the fault classes (ND-17). The query joins the classes of a catalog with the cases of each world.
@@ -41,12 +55,11 @@ export const TRAIT_NAMES: Readonly<Record<WorldTrait, string>> = {
   forwarding: "the forwarding hardware of a router",
 };
 
-/** The traits that a world needs for a case of each fault class. A class with no entry needs no trait. */
-export const STANDARD_CLASS_NEEDS: Readonly<Record<string, readonly WorldTrait[]>> = {
-  "interface.down": ["link"],
-  "wifi.weak": ["wifi"],
-  "ipv6.broken": ["ipv6"],
-};
+/**
+ * The traits that a world needs for a case of each fault class of the standard catalog. The fault grammar gives them:
+ * a class needs each trait that each of its terms needs. A class with no entry needs no trait.
+ */
+export const STANDARD_CLASS_NEEDS: Readonly<Record<string, readonly WorldTrait[]>> = grammarNeeds(STANDARD_FAULTS.map((each) => each.id));
 
 /** A case of a world, as the coverage reads it: its id and the id of its true hypothesis. */
 export interface CoverageCase {
@@ -176,7 +189,7 @@ export interface LadderCell {
   readonly limits: readonly LayerLimit[];
 }
 
-/** The kind of a row of the ladder: a fault class of the catalog, or a class that the atlas proposes. */
+/** The kind of a row of the ladder: a fault class of the catalog, or a class that the grammar or the atlas proposes. */
 export type LadderKind = "class" | "proposal";
 
 /** A row of the ladder: one class, and its cell on each layer. */
@@ -186,8 +199,10 @@ export interface LadderRow {
   /** The layer of netdiag of the class. It is absent when the catalog gives no layer for the class. */
   readonly layer: Layer | undefined;
   readonly needs: readonly WorldTrait[];
-  /** For a proposed class: the ids of the atlas entries that propose it. For a class of the catalog, the list is empty. */
+  /** For a proposed class: the ids of the atlas entries that propose it, or none. For a class of the catalog, the list is empty. */
   readonly entries: readonly string[];
+  /** The ids of the options of the fault grammar that give the class. The list is empty when the grammar does not give the class. */
+  readonly options: readonly string[];
   /** One cell for each layer of `LAB_LAYERS`, in its order. */
   readonly cells: readonly LadderCell[];
 }
@@ -235,8 +250,10 @@ export interface Coverage {
 export interface CoverageInput {
   readonly catalog: Catalog;
   readonly worlds: readonly CoverageWorld[];
-  /** The traits that a world needs for a case of each class. The default is `STANDARD_CLASS_NEEDS`. */
+  /** The traits that a world needs for a case of each class. The default comes from the classes of the grammar. */
   readonly needs?: Readonly<Record<string, readonly WorldTrait[]>> | undefined;
+  /** The classes of the fault grammar. The ladder proposes each class that the catalog does not have. The default is `GRAMMAR_CLASSES`. */
+  readonly classes?: readonly GrammarClass[] | undefined;
   /** The entries of the fault atlas, for example `FAULT_ATLAS`. With no atlas, the result has no atlas part. */
   readonly atlas?: readonly AtlasEntry[] | undefined;
   /** The traits that each layer cannot ever have. The default is `LAYER_LIMITS`. */
@@ -272,11 +289,12 @@ function cellOf(world: CoverageWorld, hypothesis: string, needs: readonly WorldT
  */
 export function coverage(input: CoverageInput): Coverage {
   const { catalog, worlds } = input;
-  const needsOf = input.needs ?? STANDARD_CLASS_NEEDS;
+  const classes = input.classes ?? GRAMMAR_CLASSES;
   const layers = layersOf(catalog);
   const problems: string[] = [];
   const hypotheses = new Set(catalog.hypotheses.map((each) => each.id));
   const faults = catalog.hypotheses.filter((each) => each.kind === "fault").map((each) => each.id);
+  const needsOf = input.needs ?? grammarNeeds(faults, classes);
   for (const world of worlds) {
     for (const each of world.cases) {
       if (!hypotheses.has(each.truth)) problems.push(`The case ${each.id} of the world ${world.id} has the truth ${each.truth}, and the catalog has no such hypothesis.`);
@@ -306,7 +324,7 @@ export function coverage(input: CoverageInput): Coverage {
       able: worlds.filter((world) => row.needs.every((trait) => world.traits.includes(trait))).map((world) => world.id),
     }));
   const caseLayers = new Set(rows.filter((row) => row.state !== "no-case").map((row) => row.layer));
-  const atlas = input.atlas === undefined ? undefined : atlasCoverage(input.atlas, { catalog, worlds, needs: needsOf, layers, rows, problems });
+  const atlas = input.atlas === undefined ? undefined : atlasCoverage(input.atlas, { catalog, worlds, needs: needsOf, classes, layers, rows, problems });
   const limits = input.limits ?? LAYER_LIMITS;
   ladderProblems(worlds, limits, problems);
   return {
@@ -319,7 +337,7 @@ export function coverage(input: CoverageInput): Coverage {
       layers: LAYERS.filter((layer) => !caseLayers.has(layer)),
     },
     atlas,
-    ladder: ladderOf(rows, atlas, worlds, limits),
+    ladder: ladderOf(rows, proposalsOf(classes, faults, atlas, problems), classes, worlds, limits),
     problems,
   };
 }
@@ -350,18 +368,54 @@ function ladderCounts(rows: readonly LadderRow[]): LadderCounts {
   return { cells: cells.length, ...counts, gaps: counts.noBar + counts.gap + counts.noClass };
 }
 
+/** A class that the ladder proposes for the catalog: a class of the grammar, or a proposal of the atlas. */
+interface LadderProposal {
+  readonly id: string;
+  readonly layer: Layer;
+  readonly needs: readonly WorldTrait[];
+  readonly entries: readonly string[];
+  readonly options: readonly string[];
+}
+
+/**
+ * This function gives the classes that the ladder proposes. They are the classes of the grammar that the catalog does
+ * not have, in the order of the grammar. A proposal of the atlas that the grammar does not give comes after them, with a problem.
+ * The needs of such a proposal are the traits that each of its entries needs.
+ */
+function proposalsOf(classes: readonly GrammarClass[], faults: readonly string[], atlas: AtlasCoverage | undefined, problems: string[]): readonly LadderProposal[] {
+  const entriesOf = (id: string): readonly string[] => atlas?.proposals.find((each) => each.proposal === id)?.entries ?? [];
+  const proposals: LadderProposal[] = classes
+    .filter((each) => !faults.includes(each.id))
+    .map((each) => ({ id: each.id, layer: each.layer, needs: each.needs, entries: entriesOf(each.id), options: each.options }));
+  for (const each of atlas?.proposals ?? []) {
+    // A proposal of a class of the catalog is a problem of the atlas, and the ladder has its row of the class.
+    if (faults.includes(each.proposal) || proposals.some((proposal) => proposal.id === each.proposal)) continue;
+    problems.push(`The atlas proposes ${each.proposal}, and the fault grammar gives no such class.`);
+    const needs = sharedNeeds(atlas?.rows.filter((row) => each.entries.includes(row.id)).map((row) => row.needs) ?? []);
+    proposals.push({ id: each.proposal, layer: each.layer, needs, entries: each.entries, options: [] });
+  }
+  return proposals;
+}
+
 /**
  * This function gives the ladder: a cell for each class on each layer of `LAB_LAYERS`. A cell is impossible when the
  * class needs a trait that the layer cannot have. Else the worlds of the layer give its state. A proposed class has no
  * case, so each cell of it that is not impossible is a gap of the catalog.
  */
-function ladderOf(rows: readonly CoverageRow[], atlas: AtlasCoverage | undefined, worlds: readonly CoverageWorld[], limits: Readonly<Record<LabLayer, readonly LayerLimit[]>>): Ladder {
+function ladderOf(
+  rows: readonly CoverageRow[],
+  proposed: readonly LadderProposal[],
+  grammar: readonly GrammarClass[],
+  worlds: readonly CoverageWorld[],
+  limits: Readonly<Record<LabLayer, readonly LayerLimit[]>>,
+): Ladder {
   const classes: LadderRow[] = rows.map((row) => ({
     id: row.hypothesis,
     kind: "class",
     layer: row.layer,
     needs: row.needs,
     entries: [],
+    options: grammar.find((each) => each.id === row.hypothesis)?.options ?? [],
     cells: LAB_LAYERS.map((layer): LadderCell => {
       const hits = limitsOf(layer, row.needs, limits);
       if (hits.length > 0) return { layer, state: "impossible", worlds: [], limits: hits };
@@ -370,20 +424,18 @@ function ladderOf(rows: readonly CoverageRow[], atlas: AtlasCoverage | undefined
       return { layer, state, worlds: cells, limits: [] };
     }),
   }));
-  const proposals: LadderRow[] = (atlas?.proposals ?? []).map((proposal) => {
-    const needs = [...new Set(atlas?.rows.filter((row) => proposal.entries.includes(row.id)).flatMap((row) => row.needs) ?? [])];
-    return {
-      id: proposal.proposal,
-      kind: "proposal",
-      layer: proposal.layer,
-      needs,
-      entries: proposal.entries,
-      cells: LAB_LAYERS.map((layer): LadderCell => {
-        const hits = limitsOf(layer, needs, limits);
-        return { layer, state: hits.length > 0 ? "impossible" : "no-class", worlds: [], limits: hits };
-      }),
-    };
-  });
+  const proposals: LadderRow[] = proposed.map((proposal) => ({
+    id: proposal.id,
+    kind: "proposal",
+    layer: proposal.layer,
+    needs: proposal.needs,
+    entries: proposal.entries,
+    options: proposal.options,
+    cells: LAB_LAYERS.map((layer): LadderCell => {
+      const hits = limitsOf(layer, proposal.needs, limits);
+      return { layer, state: hits.length > 0 ? "impossible" : "no-class", worlds: [], limits: hits };
+    }),
+  }));
   return {
     layers: LAB_LAYERS,
     rows: [...classes, ...proposals],
@@ -407,7 +459,7 @@ export interface AtlasRow {
   readonly layer: Layer;
   readonly hypothesis: string | null;
   readonly proposal: string | undefined;
-  /** The traits of the entry and of its class. */
+  /** The traits of the term of the entry and of its class, in their sorted order. */
   readonly needs: readonly WorldTrait[];
   readonly world: AtlasWorld;
   readonly state: AtlasState;
@@ -460,6 +512,7 @@ interface AtlasContext {
   readonly catalog: Catalog;
   readonly worlds: readonly CoverageWorld[];
   readonly needs: Readonly<Record<string, readonly WorldTrait[]>>;
+  readonly classes: readonly GrammarClass[];
   readonly layers: ReadonlyMap<string, Layer>;
   readonly rows: readonly CoverageRow[];
   readonly problems: string[];
@@ -467,13 +520,22 @@ interface AtlasContext {
 
 /** This function tells the problems of the entries of an atlas: for example a class that is not in the catalog. */
 function atlasProblems(atlas: readonly AtlasEntry[], context: AtlasContext): void {
-  const { catalog, layers, rows, problems } = context;
+  const { catalog, classes, layers, rows, problems } = context;
   const hypotheses = new Set(catalog.hypotheses.map((each) => each.id));
   const faults = new Set(rows.map((row) => row.hypothesis));
   const seen = new Set<string>();
   for (const entry of atlas) {
     if (seen.has(entry.id)) problems.push(`The atlas has the entry ${entry.id} more than once.`);
     seen.add(entry.id);
+    const broken = termProblems(entry.term);
+    for (const problem of broken) problems.push(`The term of the atlas entry ${entry.id} breaks the grammar: ${problem}`);
+    const label = entry.hypothesis ?? entry.proposal;
+    const labels = broken.length === 0 ? termClasses(entry.term) : [];
+    if (broken.length === 0 && label !== undefined && !labels.includes(label)) problems.push(`The term of the atlas entry ${entry.id} gives ${labels.join(", ")}, not ${label}.`);
+    const grammarLayer = classes.find((each) => each.id === label)?.layer;
+    if (grammarLayer !== undefined && grammarLayer !== entry.layer) {
+      problems.push(`The atlas entry ${entry.id} has the layer ${entry.layer}, and the grammar gives its class the layer ${grammarLayer}.`);
+    }
     if (hypotheses.has(entry.id)) problems.push(`The atlas entry ${entry.id} has the id of a hypothesis of the catalog.`);
     if (entry.signs.length === 0) problems.push(`The atlas entry ${entry.id} has no sign.`);
     if (entry.sources.length === 0) problems.push(`The atlas entry ${entry.id} has no source.`);
@@ -510,7 +572,7 @@ function atlasCoverage(atlas: readonly AtlasEntry[], context: AtlasContext): Atl
     .sort((a, b) => layerRank(a.entry.layer) - layerRank(b.entry.layer) || a.order - b.order)
     .map(({ entry }) => {
       const hypothesis = entry.hypothesis;
-      const needs = [...new Set([...(hypothesis === null ? [] : (needsOf[hypothesis] ?? [])), ...(entry.needs ?? [])])];
+      const needs = [...new Set([...(hypothesis === null ? [] : (needsOf[hypothesis] ?? [])), ...(termProblems(entry.term).length === 0 ? termNeeds(entry.term) : [])])].sort();
       const state: AtlasState = hypothesis === null || !faults.has(hypothesis) ? "no-class" : stateOf(worlds.map((world) => cellOf(world, hypothesis, needs)));
       return { id: entry.id, layer: entry.layer, hypothesis, proposal: entry.proposal, needs, world: entry.world, state };
     });
@@ -683,13 +745,13 @@ export function atlasPart(atlas: AtlasCoverage): string {
 }
 
 /**
- * This function puts the table of the coverage, and the tables of the atlas when the result has an atlas, between
- * their marker lines. It gives `undefined` when the file has no pair of marker lines for a part.
+ * This function puts the table of the coverage and the table of the grammar between their marker lines. It also puts
+ * the tables of the atlas between their marker lines when the result has an atlas. It gives `undefined` when the file has no pair of marker lines for a part.
  */
 export function withRoadmapParts(text: string, result: Coverage): string | undefined {
   const next = withMarkedPart(text, roadmapPart(result));
-  if (next === undefined || result.atlas === undefined) return next;
-  return withMarkedPart(next, atlasPart(result.atlas), ATLAS_START, ATLAS_END);
+  const atlas = next === undefined || result.atlas === undefined ? next : withMarkedPart(next, atlasPart(result.atlas), ATLAS_START, ATLAS_END);
+  return atlas === undefined ? undefined : withMarkedPart(atlas, grammarPart(), GRAMMAR_START, GRAMMAR_END);
 }
 
 /** The counts of the gate of the coverage, in the file `bars/coverage.json`. A unit test fails when the query gives other counts. */
@@ -727,6 +789,8 @@ export interface SiteLadder {
   readonly traits: Readonly<Record<WorldTrait, string>>;
   readonly worlds: readonly CoverageWorldName[];
   readonly rows: readonly LadderRow[];
+  /** The summary of each option of the fault grammar that a row names, by the id of the option. */
+  readonly options: Readonly<Record<string, string>>;
   readonly problems: readonly string[];
 }
 
@@ -742,6 +806,9 @@ export function siteLadder(result: Coverage, limits: Readonly<Record<LabLayer, r
     traits: TRAIT_NAMES,
     worlds: result.worlds,
     rows: ladder.rows,
+    options: Object.fromEntries(
+      GRAMMAR_OPTIONS.filter((option) => ladder.rows.some((row) => row.options.includes(optionId(option)))).map((option) => [optionId(option), option.summary]),
+    ),
     problems: result.problems,
   };
 }

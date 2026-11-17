@@ -2,6 +2,7 @@ import { LAYERS, STANDARD_CATALOG } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { ATLAS_WORLDS, FAULT_ATLAS, isRfcSource, type AtlasEntry } from "./atlas.ts";
 import { atlasMarkdown, coverage, type AtlasCoverage } from "./coverage.ts";
+import { fault } from "./grammar.ts";
 import { labWorlds } from "./worlds.ts";
 
 const FAULTS = STANDARD_CATALOG.hypotheses.filter((each) => each.kind === "fault").map((each) => each.id);
@@ -16,6 +17,7 @@ const ENTRY: AtlasEntry = {
   summary: "A test entry.",
   layer: "dns",
   hypothesis: "name.missing",
+  term: fault("dns/missing", { place: "authority" }),
   signs: ["A sign."],
   world: "loopback",
   sources: [{ rfc: 2308, section: "2.1", title: "Negative Caching of DNS Queries (DNS NCACHE)" }],
@@ -149,18 +151,29 @@ describe("the coverage of the atlas", () => {
       { ...ENTRY, id: "test.none", hypothesis: null },
       { ...ENTRY, id: "test.both", proposal: "dns.other" },
       { ...ENTRY, id: "test.both" },
+      { ...ENTRY, id: "test.term", term: fault("dns/nothing") },
+      { ...ENTRY, id: "test.class", term: fault("dns/missing", { place: "server" }) },
+      { ...ENTRY, id: "test.other", term: fault("dns/down", { place: "authority" }) },
+      { ...ENTRY, id: "test.grammar", hypothesis: null, proposal: "dns.other", term: fault("dns/loop") },
     ];
     expect(coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, atlas }).problems).toEqual([
       "The atlas entry name.missing has the id of a hypothesis of the catalog.",
+      "The term of the atlas entry test.entry gives name.missing, not dns.lame.",
       "The atlas entry test.entry has no sign.",
       "The atlas entry test.entry has no source.",
       "The atlas entry test.entry names dns.lame, and the catalog has no such fault class.",
+      "The atlas entry test.layer has the layer tcp, and the grammar gives its class the layer dns.",
       "The atlas entry test.layer has the layer tcp, and its class name.missing has the layer dns.",
       "The atlas entry test.proposal proposes name.missing, and the catalog has it. Name it as the class of the entry.",
       "The atlas entry test.none has no class and no proposal.",
       "The atlas entry test.both has a class and a proposal.",
       "The atlas has the entry test.both more than once.",
+      "The term of the atlas entry test.term breaks the grammar: unknown: the stage fault has no option dns/nothing",
+      'The term of the atlas entry test.class breaks the grammar: param: the param place of the option fault.dns/missing is not in its range: "server" is not one of "authority"',
+      "The term of the atlas entry test.other gives zone.unreachable, not name.missing.",
+      "The term of the atlas entry test.grammar gives dns.loop, not dns.other.",
       "The class server.slow has no entry in the atlas.",
+      "The atlas proposes dns.other, and the fault grammar gives no such class.",
     ]);
   });
 });
