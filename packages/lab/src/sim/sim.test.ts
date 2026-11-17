@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import { STANDARD_CATALOG, type Fact } from "@mark1russell7/netdiag";
+import { DNS_TRIES, STANDARD_CATALOG, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
-import { readVisit, type Visit } from "../run.ts";
+import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
 import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
 import { baseRtt, type Medium } from "./network.ts";
@@ -61,6 +61,15 @@ describe("the visits of the simulated world", () => {
     expect(values(admin, "icmp.echo")[0]).toMatchObject({ outcome: "unreachable", detail: "Network is unreachable" });
     const carrier = await visitSim(simCase(fault("link/down", { place: "link" })));
     expect(new Set(values(carrier, "dns.answer").map((each) => each["outcome"]))).toEqual(new Set(["timeout"]));
+  });
+
+  it("send each DNS query again after a loss, as c-ares does, and keep the time limit of the query", async () => {
+    const each = tryTimeoutOf(DNS_TIMEOUT_MS, DNS_TRIES);
+    const healthy = values(await visitSim(simCase(HEALTHY)), "dns.answer");
+    expect(healthy.every((answer) => answer["tries"] === DNS_TRIES && Number(answer["ms"]) < each)).toBe(true);
+    const down = values(await visitSim(simCase(fault("dns/down", { place: "resolver" }))), "dns.answer");
+    expect(down.map((answer) => [answer["outcome"], answer["ms"]])).toEqual(down.map(() => ["timeout", DNS_TRIES * each]));
+    expect(DNS_TRIES * each).toBeLessThanOrEqual(DNS_TIMEOUT_MS);
   });
 
   it("find an MTU black hole with the search of netdiag, after the TLS handshake times out", async () => {

@@ -17,6 +17,7 @@ import { defineProbe, type Probe } from "../probe.ts";
 import { formatTarget, target, type Target } from "../target.ts";
 import { CYMRU_ZONES, originQuery, readOrigin } from "./cymru.ts";
 import { MAX_OWNER_ADDRESSES } from "./owner.ts";
+import { triesOf } from "../probes/tries.ts";
 
 /** One TXT query of the probe of the origins. */
 export interface TxtQuery {
@@ -26,8 +27,10 @@ export interface TxtQuery {
   readonly resolver: string;
   /** The port of the resolver. */
   readonly port: number;
-  /** The time limit of the query, in milliseconds. */
+  /** The time limit of the query, in milliseconds. The tries share it. */
   readonly timeoutMs: number;
+  /** The count of tries of the query. Only a loss starts a new try. The default is `DNS_TRIES`. */
+  readonly tries?: number | undefined;
 }
 
 /** The answer of a resolver to one TXT query. */
@@ -56,6 +59,8 @@ export interface OriginInput {
   readonly port?: number | undefined;
   /** The time limit of each query, in milliseconds. The default is `DEFAULT_ORIGIN_TIMEOUT_MS`. */
   readonly timeoutMs?: number | undefined;
+  /** The count of tries of each query. The default is `DNS_TRIES`. */
+  readonly tries?: number | undefined;
 }
 
 /** One lookup of the probe: the query of an address and its answer. */
@@ -148,6 +153,7 @@ export function originProbe(resolve: TxtResolve): Probe<OriginInput, OriginRaw> 
     kinds: [PATH_ORIGIN],
     peers(input): readonly Target[] {
       timeoutOf(input);
+      triesOf(input.tries);
       const families = new Set<AddressFamily>();
       for (const address of addressesOf(input)) {
         const family = addressFamily(address);
@@ -160,11 +166,12 @@ export function originProbe(resolve: TxtResolve): Probe<OriginInput, OriginRaw> 
     async run(input, context): Promise<OriginRaw> {
       const resolver = resolverOf(input);
       const timeoutMs = timeoutOf(input);
+      const tries = triesOf(input.tries);
       const port = resolver.port ?? 53;
       const lookup = async (address: string): Promise<OriginLookup> => {
         const name = originQuery(address);
         try {
-          const answer = await resolve({ name, resolver: resolver.host, port, timeoutMs }, context.signal);
+          const answer = await resolve({ name, resolver: resolver.host, port, timeoutMs, tries }, context.signal);
           const length = answer.records.reduce((sum, record) => sum + record.reduce((total, part) => total + part.length, 0), 0);
           if (length > MAX_ANSWER) return { address, name, error: `The answer has ${length} code units, more than the limit of ${MAX_ANSWER}.` };
           return { address, name, answer };

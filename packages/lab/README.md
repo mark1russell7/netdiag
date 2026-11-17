@@ -345,13 +345,14 @@ The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
 | Class | Hits | The other answers | The cause |
 | --- | --- | --- | --- |
 | `path.mtu` | 58 % | `none` | The catalog has no evidence for each address family. A black hole of IPv4 with a good IPv6 reads as `none`. Each miss is a case with IPv6. |
-| `path.loss` | 68 % | `wifi.weak`, `resolver.down` | The catalog has no evidence of a wired link. The DNS probe tries one time, so a large loss looks like a resolver that is down. |
-| `wifi.weak` | 69 % | `unknown` | A radio loss above 25 % also makes the DNS probe time out, because it tries one time. |
+| `path.loss` | 79 % | `wifi.weak`, `resolver.down` | The catalog has no evidence of a wired link. In 9 of 10 answers `resolver.down`, the loss is 48 % or more, so each DNS try fails. |
 | `interface.down` | 70 % | `unknown` | When an interface is down, c-ares gives `ECONNREFUSED`. The catalog expects a DNS timeout. |
+| `wifi.weak` | 85 % | `unknown` | In 9 of 10 misses, the radio loss is 33 % or more. The cause of each miss is a later step. |
 | `server.error` | 98 % | `tls.proxy` | A proxy at the gateway that refuses the request also ends the TLS session with its own certificate. |
 
-Three changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the third with 80:
+Four changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last two with 80:
 
 - A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
 - When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.
 - A loss does not slow a TCP connect: each SYN passes at once, or the client sends it again after 1 s. Thus `path.loss` expects `tcp.time` `short` or `retry`, not `long` or `retry`. `path.loss` went from 59 % to 68 %. The kernel lab read 5 of its 70 recorded loss cases as `server.slow`, and with the new rule it reads all 70 correctly.
+- The DNS probe sends a query again after a loss, 3 times or fewer. The DNS of the simulated world does the same. `wifi.weak` went from 69 % to 85 %, and `path.loss` from 68 % to 79 %.

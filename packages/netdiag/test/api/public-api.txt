@@ -45,6 +45,7 @@ DNS_ANSWER: build/counts.chunk.d.ts#DNS_ANSWER
 DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
 DNS_OUTCOMES: build/counts.chunk.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
+DNS_TRIES: build/index.d.ts#DNS_TRIES
 type DelayMetrics: build/core.chunk.d.ts#DelayMetrics
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Dial: build/index.d.ts#Dial
@@ -128,6 +129,7 @@ type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
 type LossOrigin: build/core.chunk.d.ts#LossOrigin
 type LossStart: build/core.chunk.d.ts#LossStart
+MAX_DNS_TRIES: build/index.d.ts#MAX_DNS_TRIES
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_OWNER_ADDRESSES: build/index.d.ts#MAX_OWNER_ADDRESSES
@@ -367,6 +369,8 @@ serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
+triesOf: build/index.d.ts#triesOf
+tryTimeoutOf: build/index.d.ts#tryTimeoutOf
 upInterfaces: build/index.d.ts#upInterfaces
 visitTarget: build/index.d.ts#visitTarget
 widen: build/core.chunk.d.ts#widen
@@ -1409,6 +1413,7 @@ interface DnsAnswer {
   readonly ttl?: number | undefined;
   readonly ms: number;
   readonly code?: string | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/counts.chunk.d.ts#DnsOutcome
@@ -2310,6 +2315,9 @@ export declare const DEFAULT_TIMEOUT_MS = 5e3;
 ### build/index.d.ts#DNS_PROBE
 export declare const DNS_PROBE: Probe<DnsInput, DnsRaw>;
 
+### build/index.d.ts#DNS_TRIES
+export declare const DNS_TRIES = 3;
+
 ### build/index.d.ts#Dial
 type Dial = (options: TcpNetConnectOpts) => Socket;
 
@@ -2320,6 +2328,7 @@ interface DnsInput {
   readonly resolver: string;
   readonly port?: number | undefined;
   readonly timeoutMs?: number | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#DnsRaw
@@ -2333,6 +2342,7 @@ interface DnsRaw {
   readonly addresses: readonly string[];
   readonly ttl?: number | undefined;
   readonly code?: string | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#HTTP_PROBE
@@ -2407,6 +2417,9 @@ interface LinkRaw {
   readonly end: number;
 }
 
+### build/index.d.ts#MAX_DNS_TRIES
+export declare const MAX_DNS_TRIES = 10;
+
 ### build/index.d.ts#MAX_OWNER_ADDRESSES
 export declare const MAX_OWNER_ADDRESSES = 64;
 
@@ -2425,6 +2438,7 @@ interface OriginInput {
   readonly resolver: string;
   readonly port?: number | undefined;
   readonly timeoutMs?: number | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#OriginLookup
@@ -2568,6 +2582,7 @@ interface TxtQuery {
   readonly resolver: string;
   readonly port: number;
   readonly timeoutMs: number;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#TxtResolve
@@ -2593,6 +2608,7 @@ interface VisitOptions {
   readonly path?: string | undefined;
   readonly tls?: TlsProbeOptions | undefined;
   readonly dnsTimeoutMs?: number | undefined;
+  readonly dnsTries?: number | undefined;
   readonly httpTimeoutMs?: number | undefined;
   readonly wall?: string | undefined;
   readonly signal?: AbortSignal | undefined;
@@ -2655,6 +2671,12 @@ export declare function tcpProbe(options?: ConnectOptions): Probe<TcpInput, TcpR
 
 ### build/index.d.ts#tlsProbe
 export declare function tlsProbe(options?: TlsProbeOptions): Probe<TlsInput, TlsRaw>;
+
+### build/index.d.ts#triesOf
+export declare function triesOf(tries: number | undefined): number;
+
+### build/index.d.ts#tryTimeoutOf
+export declare function tryTimeoutOf(limitMs: number, tries: number): number;
 
 ### build/index.d.ts#upInterfaces
 export declare function upInterfaces(table: InterfaceTable): LinkInterface[];

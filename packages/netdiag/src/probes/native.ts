@@ -24,10 +24,22 @@ import {
   type TlsPhase,
   type TrustStore,
 } from "./socket.ts";
+import { triesOf, tryTimeoutOf } from "./tries.ts";
 
 // The native probes use only the `node:` modules. Each network failure is an outcome in the raw output, not an error.
 
 const NATIVE: Availability = { available: true, version: process.versions.node };
+
+/**
+ * This function gives a resolver of `node:dns` for one server. The tries share the time limit: each try waits the same
+ * time, and the wait does not double.
+ */
+function resolverFor(server: string, limitMs: number, tries: number): Resolver {
+  const each = tryTimeoutOf(limitMs, tries);
+  const resolver = new Resolver({ timeout: each, tries, maxTimeout: each });
+  resolver.setServers([server]);
+  return resolver;
+}
 
 function native(): Promise<Availability> {
   return Promise.resolve(NATIVE);
@@ -42,7 +54,10 @@ export interface DnsInput {
   readonly resolver: string;
   /** The port of the resolver. The default is 53. */
   readonly port?: number | undefined;
+  /** The time limit of the query, in milliseconds. The tries share it. */
   readonly timeoutMs?: number | undefined;
+  /** The count of tries of the query. The default is `DNS_TRIES`. Only a lost query or a lost answer starts the next try. */
+  readonly tries?: number | undefined;
 }
 
 /** The raw output of the DNS probe. The times are readings of the clock of the runner. */
@@ -56,6 +71,8 @@ export interface DnsRaw {
   readonly addresses: readonly string[];
   readonly ttl?: number | undefined;
   readonly code?: string | undefined;
+  /** The most tries of the query. A port that does not know it gives no value. */
+  readonly tries?: number | undefined;
 }
 
 /** This function maps an error code of a DNS query to its outcome. */
@@ -81,25 +98,29 @@ export function dnsOutcome(code: string | undefined): DnsOutcome {
 /**
  * The DNS probe sends one query for the addresses of a name to one resolver. Its peer is the resolver, not the name.
  * The query uses no search domain.
+ *
+ * - The probe sends the query again after a loss, `DNS_TRIES` times or fewer. The tries share the time limit.
+ * - An answer ends the query, also an error answer. For example, `SERVFAIL` starts no second try.
  */
 export const DNS_PROBE: Probe<DnsInput, DnsRaw> = defineProbe<DnsInput, DnsRaw>({
   id: "dns.query",
-  version: "1",
-  summary: "One DNS query for the A or AAAA records of a name, to one resolver.",
+  version: "2",
+  summary: "One DNS query for the A or AAAA records of a name, to one resolver, with a new try after a loss.",
   layer: "dns",
   mode: "active",
   kinds: [DNS_ANSWER],
   peers(input) {
     if (isIP(input.name) !== 0) throw new TypeError(`"${input.name}" is an address, not a name.`);
+    triesOf(input.tries);
     return [peerOf(input.resolver, input.port ?? 53)];
   },
   available: native,
   async run(input, context) {
     const record = input.record ?? "A";
     const limit = timeoutOf(input.timeoutMs);
+    const tries = triesOf(input.tries);
     const server = formatTarget(target(input.resolver, input.port ?? 53));
-    const resolver = new Resolver({ timeout: limit, tries: 1 });
-    resolver.setServers([server]);
+    const resolver = resolverFor(server, limit, tries);
     let expired = false;
     const stop = (): void => resolver.cancel();
     const cancel = context.clock.after(limit, () => {
@@ -108,7 +129,7 @@ export const DNS_PROBE: Probe<DnsInput, DnsRaw> = defineProbe<DnsInput, DnsRaw>(
     });
     context.signal.addEventListener("abort", stop, { once: true });
     const start = context.clock.now();
-    const base = { name: input.name, record, resolver: server, start };
+    const base = { name: input.name, record, resolver: server, start, tries };
     try {
       const answers = record === "A" ? await resolver.resolve4(input.name, { ttl: true }) : await resolver.resolve6(input.name, { ttl: true });
       const raw: DnsRaw = {
@@ -136,13 +157,13 @@ export const DNS_PROBE: Probe<DnsInput, DnsRaw> = defineProbe<DnsInput, DnsRaw>(
 });
 
 /**
- * This port of the probe of the origins sends one TXT query with `node:dns`, with one try and no search domain. It
- * gives each failure of the query as an outcome. It throws only when the signal stops the query.
+ * This port of the probe of the origins sends one TXT query with `node:dns`, with no search domain. It sends the query
+ * again after a loss, `query.tries` times or fewer. It gives each failure of the query as an outcome. It throws only
+ * when the signal stops the query.
  */
 export const nodeResolveTxt: TxtResolve = async (query, signal) => {
   signal.throwIfAborted();
-  const resolver = new Resolver({ timeout: query.timeoutMs, tries: 1 });
-  resolver.setServers([formatTarget(target(query.resolver, query.port))]);
+  const resolver = resolverFor(formatTarget(target(query.resolver, query.port)), query.timeoutMs, triesOf(query.tries));
   const stop = (): void => resolver.cancel();
   signal.addEventListener("abort", stop, { once: true });
   try {

@@ -88,6 +88,8 @@ export interface VisitOptions {
   readonly tls?: TlsProbeOptions | undefined;
   /** The time limit of each DNS query, in milliseconds. The default is the default of the DNS probe. */
   readonly dnsTimeoutMs?: number | undefined;
+  /** The count of tries of each DNS query. The default is `DNS_TRIES`. */
+  readonly dnsTries?: number | undefined;
   /** The time limit of each HTTP request, in milliseconds. The default is the default of the HTTP probe. */
   readonly httpTimeoutMs?: number | undefined;
   /** The wall-clock time of the start of the runner, as an ISO 8601 text. */
@@ -185,7 +187,7 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
     } else {
       const granted = decideScope(runner.scope(), target(name));
       for (const record of VISIT_RECORDS) {
-        const query = { name, record, resolver: input.resolver.address, port: input.resolver.port, timeoutMs: options.dnsTimeoutMs };
+        const query = { name, record, resolver: input.resolver.address, port: input.resolver.port, timeoutMs: options.dnsTimeoutMs, tries: options.dnsTries };
         const outcome = await run(dns, query);
         yield* stepsOf(role, host.host, `DNS query ${record} of ${name}`, outcome);
         if (outcome.status !== "done") continue;
@@ -208,7 +210,7 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
           if (origin !== undefined && input.resolver === undefined) {
             yield { kind: "problem", role, host: host.host, problem: `The visit has no DNS resolver for the lookups of the origin AS of the hops to ${address}.` };
           } else if (origin !== undefined && input.resolver !== undefined) {
-            const query = { addresses: hops, resolver: input.resolver.address, port: input.resolver.port, timeoutMs: options.dnsTimeoutMs };
+            const query = { addresses: hops, resolver: input.resolver.address, port: input.resolver.port, timeoutMs: options.dnsTimeoutMs, tries: options.dnsTries };
             yield* stepsOf(role, host.host, `lookup of the origin AS of the hops to ${address}`, await run(origin, query));
           }
         }

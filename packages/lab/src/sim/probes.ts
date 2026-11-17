@@ -1,5 +1,5 @@
 import type { FakeClock } from "@mark1russell7/algebra/clock";
-import { DNS_PROBE, dnsOutcome, formatTarget, httpProbe, target, type HttpInput, type HttpPhase, type HttpRaw, type InterfaceTable, type Probe, type TcpPhase, type TlsCertificate, type TlsPhase } from "@mark1russell7/netdiag";
+import { DEFAULT_TIMEOUT_MS, DNS_PROBE, dnsOutcome, formatTarget, triesOf, tryTimeoutOf, httpProbe, target, type HttpInput, type HttpPhase, type HttpRaw, type InterfaceTable, type Probe, type TcpPhase, type TlsCertificate, type TlsPhase } from "@mark1russell7/netdiag";
 import { SERVER_HTTP_MS, SERVER_TLS_MS, SIM_ADDRESSES, type End, type Family, type Fate, type Hop, type Packet, type SimNetwork } from "./network.ts";
 import { WIFI_INTERFACE, WIRED_INTERFACE } from "./tools.ts";
 
@@ -34,9 +34,10 @@ export function simDnsProbe(net: SimNetwork, clock: FakeClock): typeof DNS_PROBE
     run(input) {
       const record = input.record ?? "A";
       const start = clock.now();
-      const answer = net.dns(input.name, record, input.timeoutMs ?? 5000);
+      const tries = triesOf(input.tries);
+      const answer = net.dns(input.name, record, tryTimeoutOf(input.timeoutMs ?? DEFAULT_TIMEOUT_MS, tries), tries);
       clock.block(answer.ms);
-      const base = { name: input.name, record, resolver: formatTarget(target(input.resolver, input.port ?? 53)), start, end: clock.now() };
+      const base = { name: input.name, record, resolver: formatTarget(target(input.resolver, input.port ?? 53)), start, end: clock.now(), tries };
       if (answer.code !== undefined) return Promise.resolve({ ...base, outcome: answer.code === "ETIMEOUT" ? "timeout" : dnsOutcome(answer.code), addresses: [], code: answer.code });
       return Promise.resolve({ ...base, outcome: "ok", addresses: [...answer.addresses], ...(answer.ttl === undefined ? {} : { ttl: answer.ttl }) });
     },
