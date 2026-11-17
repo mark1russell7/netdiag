@@ -1,10 +1,31 @@
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { LAYERS, STANDARD_CATALOG } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { FAULT_ATLAS } from "./atlas.ts";
-import { ATLAS_END, ATLAS_START, STANDARD_CLASS_NEEDS, atlasPart, coverage, coverageMarkdown, markedPart, roadmapPart, withMarkedPart, withRoadmapParts, type CoverageWorld } from "./coverage.ts";
+import {
+  ATLAS_END,
+  ATLAS_START,
+  STANDARD_CLASS_NEEDS,
+  STATE_KEYS,
+  atlasPart,
+  coverage,
+  coverageMarkdown,
+  gateCounts,
+  markedPart,
+  roadmapPart,
+  siteLadderText,
+  withMarkedPart,
+  withRoadmapParts,
+  type Coverage,
+  type CoverageGate,
+  type CoverageWorld,
+  type LadderCell,
+} from "./coverage.ts";
 import { KERNEL_LATER } from "./kernel/cases.ts";
-import { ROADMAP_FILE, labWorlds, readBars } from "./worlds.ts";
+import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, type LabLayer } from "./ladder.ts";
+import { GATE_FILE, ROADMAP_FILE, SITE_FILE, labWorlds, readBars } from "./worlds.ts";
 
 const WORLDS = labWorlds();
 const TODAY = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, atlas: FAULT_ATLAS });
@@ -14,6 +35,7 @@ const FAULTS = STANDARD_CATALOG.hypotheses.filter((each) => each.kind === "fault
 const IPV6_WORLD: CoverageWorld = {
   id: "ipv6",
   name: "IPv6",
+  layer: "E1",
   scores: "class",
   traits: ["ipv6"],
   cases: [{ id: "ipv6.broken/no-route", truth: "ipv6.broken" }],
@@ -93,33 +115,143 @@ describe("coverage", () => {
   });
 });
 
-describe("coverageMarkdown", () => {
-  it("names each gap as a gap, and never shows a class with no case as covered", () => {
-    const lines = coverageMarkdown(TODAY).split("\n");
-    for (const row of TODAY.rows) {
-      const line = lines.find((each) => each.startsWith(`| \`${row.hypothesis}\` |`));
-      expect(line, row.hypothesis).toBeDefined();
-      if (row.state === "covered") expect(line).toMatch(/\| Covered \|$/);
-      else expect(line).toMatch(/\| Gap: [^|]+\|$/);
+describe("the ladder", () => {
+  const { ladder } = TODAY;
+  const cellOf = (result: Coverage, id: string, layer: LabLayer): LadderCell | undefined =>
+    result.ladder.rows.find((row) => row.id === id)?.cells.find((cell) => cell.layer === layer);
+
+  it("has the layers of the harness, with the facts of S7 for each layer", () => {
+    expect(ladder.layers).toEqual(LAB_LAYERS);
+    expect(Object.keys(LAYER_FACTS)).toEqual([...LAB_LAYERS]);
+    for (const layer of LAB_LAYERS) {
+      for (const each of LAYER_LIMITS[layer]) {
+        expect(each.layer).toBe(layer);
+        expect(LAYER_FACTS[layer].cannot, each.reason).toContain(each.reason);
+        expect(each.source).toContain(`row ${layer}`);
+      }
     }
-    expect(lines).toContain("| `ipv6.broken` | `ip` | – | – | – | Gap: no case. No world has IPv6. |");
-    expect(lines).toContain("- The layers with no case: `link`, `wifi`.");
+    expect(LAYER_LIMITS.E0).toEqual([]);
+    expect(LAYER_LIMITS.E6).toEqual([]);
+    expect(LAYER_FACTS.E6.cannot).toEqual([]);
   });
 
-  it("gives one cell for each column in each line of the table", () => {
-    const table = coverageMarkdown(TODAY).split("\n").filter((line) => line.startsWith("|"));
-    const columns = (line: string): number => line.split("|").length - 2;
-    for (const line of table) expect(columns(line), line).toBe(2 + WORLDS.length + 1);
+  it("has a row for each class of the catalog and each proposed class, with a cell for each layer", () => {
+    expect(ladder.rows.filter((row) => row.kind === "class").map((row) => row.id)).toEqual(TODAY.rows.map((row) => row.hypothesis));
+    expect(ladder.rows.filter((row) => row.kind === "proposal").map((row) => row.id)).toEqual(TODAY.atlas!.proposals.map((each) => each.proposal));
+    for (const row of ladder.rows) expect(row.cells.map((cell) => cell.layer), row.id).toEqual(LAB_LAYERS);
+    expect(coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS }).ladder.rows.every((row) => row.kind === "class")).toBe(true);
+  });
+
+  it("gives the counts of today: each covered cell is on E1, and no cell is impossible", () => {
+    expect(ladder.classes).toEqual({ cells: 140, covered: 17, noBar: 0, gap: 123, noClass: 0, impossible: 0, gaps: 123 });
+    expect(ladder.proposals).toEqual({ cells: 175, covered: 0, noBar: 0, gap: 0, noClass: 175, impossible: 0, gaps: 175 });
+    expect(ladder.total).toEqual({ cells: 315, covered: 17, noBar: 0, gap: 123, noClass: 175, impossible: 0, gaps: 298 });
+    const covered = ladder.rows.flatMap((row) => row.cells).filter((cell) => cell.state === "covered");
+    expect(new Set(covered.map((cell) => cell.layer))).toEqual(new Set(["E1"]));
+    expect(cellOf(TODAY, "path.loss", "E1")).toEqual({
+      layer: "E1",
+      state: "covered",
+      worlds: [
+        { world: "kernel", cases: ["path.loss"], bar: true },
+        { world: "where", cases: ["loss.last-link", "loss.first-link"], bar: false },
+      ],
+      limits: [],
+    });
+    expect(cellOf(TODAY, "path.loss", "E3")).toEqual({ layer: "E3", state: "gap", worlds: [], limits: [] });
+    expect(ladder.rows.find((row) => row.id === "path.leak")).toMatchObject({ kind: "proposal", layer: "path", needs: ["routing"], entries: ["path.bgp-leak"] });
+  });
+
+  it("counts a case only on the layer of its world, and a case with no bar as a gap", () => {
+    const later = coverage({ catalog: STANDARD_CATALOG, worlds: [...WORLDS, { ...IPV6_WORLD, layer: "E3" }] });
+    expect(cellOf(later, "ipv6.broken", "E3")?.state).toBe("covered");
+    expect(cellOf(later, "ipv6.broken", "E1")?.state).toBe("gap");
+    const noBar = coverage({ catalog: STANDARD_CATALOG, worlds: [...WORLDS, { ...IPV6_WORLD, bars: {} }] });
+    expect(cellOf(noBar, "ipv6.broken", "E1")?.state).toBe("no-bar");
+    expect(noBar.ladder.classes.gaps).toBe(TODAY.ladder.classes.gaps);
+    expect(later.ladder.classes.gaps).toBe(TODAY.ladder.classes.gaps - 1);
+  });
+
+  it("makes a cell impossible only when the class needs a trait that the layer cannot have", () => {
+    const needs = { ...STANDARD_CLASS_NEEDS, "wifi.weak": ["wifi", "nic"] as const };
+    const atlas = FAULT_ATLAS.map((entry) => (entry.id === "path.bgp-leak" ? { ...entry, needs: ["forwarding" as const] } : entry));
+    const result = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, needs, atlas });
+    expect(cellOf(result, "wifi.weak", "E4")).toEqual({ layer: "E4", state: "impossible", worlds: [], limits: [LAYER_LIMITS.E4[0]] });
+    expect(LAB_LAYERS.filter((layer) => cellOf(result, "wifi.weak", layer)?.state === "impossible")).toEqual(["E4"]);
+    expect(LAB_LAYERS.filter((layer) => cellOf(result, "path.leak", layer)?.state === "impossible")).toEqual(["E3", "E5"]);
+    expect(result.ladder.total.impossible).toBe(3);
+    expect(result.ladder.total.gaps).toBe(TODAY.ladder.total.gaps - 3);
+    for (const row of result.ladder.rows) expect(row.cells[0]?.state, row.id).not.toBe("impossible");
+  });
+
+  it("tells a world with a trait that its layer cannot have, and a world on no layer of the ladder", () => {
+    const nic = coverage({ catalog: STANDARD_CATALOG, worlds: [{ ...IPV6_WORLD, layer: "E4", traits: ["ipv6", "nic"] }] });
+    expect(nic.problems).toEqual(["The world ipv6 has a physical NIC or its firmware, and its layer E4 cannot have it: A physical NIC."]);
+    const none = coverage({ catalog: STANDARD_CATALOG, worlds: [{ ...IPV6_WORLD, layer: "E9" as LabLayer }] });
+    expect(none.problems).toEqual(["The world ipv6 has the layer E9, and the ladder has no such layer."]);
   });
 });
 
-describe("the table of the roadmap", () => {
-  it("is the rendering of the query. To correct it, start pnpm --filter @netdiag/lab roadmap", () => {
+describe("the gate of the coverage", () => {
+  it("has the counts of the query in bars/coverage.json. To change them, change the file and tell the reason in its note", () => {
+    const gate = JSON.parse(readFileSync(GATE_FILE, "utf8")) as CoverageGate;
+    expect(gate.note.length).toBeGreaterThan(0);
+    const { note: _, ...counts } = gate;
+    expect(gateCounts(TODAY.ladder)).toEqual(counts);
+  });
+});
+
+describe("coverageMarkdown", () => {
+  const lines = coverageMarkdown(TODAY).split("\n");
+  const table = lines.filter((line) => line.startsWith("|"));
+
+  it("gives the line of the counts first, with the gaps of the classes and of the proposed classes", () => {
+    expect(lines[0]).toBe(
+      "- **298 gaps** in 315 cells: 45 classes on 7 layers. The classes of the catalog have 123 gaps, and the proposed classes have 175 gaps. 17 cells covered, and 0 cells impossible. The work ends only at zero gaps.",
+    );
+  });
+
+  it("gives a line for each row of the ladder, with a column for each layer", () => {
+    expect(table).toHaveLength(2 + 20 + 2 + 25);
+    for (const line of table) expect(line.split("|").length - 2, line).toBe(2 + LAB_LAYERS.length);
+    expect(table[0]).toBe("| Class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |");
+  });
+
+  it("gives the mark of the state of each cell, and the cases of a covered cell", () => {
+    for (const row of TODAY.ladder.rows) {
+      const line = table.find((each) => each.startsWith(`| \`${row.id}\` |`));
+      expect(line, row.id).toBeDefined();
+      const cells = line!.split("|").slice(3, -1).map((each) => each.trim());
+      row.cells.forEach((cell, at) => expect(cells[at]?.startsWith(STATE_KEYS[cell.state].mark), `${row.id} ${cell.layer}`).toBe(true));
+    }
+    expect(table).toContain("| `ipv6.broken` | `ip` | ○ | ○ | ○ | ○ | ○ | ○ | ○ |");
+    expect(table).toContain("| `path.loss` | `path` | ○ | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |");
+    expect(lines).toContain("- The impossible cells: none. No class needs a trait that a layer cannot have.");
+  });
+
+  it("gives the reason and the source of each impossible cell in a numbered list", () => {
+    const result = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, needs: { ...STANDARD_CLASS_NEEDS, "wifi.weak": ["wifi", "nic"] } });
+    const text = coverageMarkdown(result).split("\n");
+    expect(text).toContain("| `wifi.weak` | `wifi` | ○ | ○ | ○ | ○ | ⊘ [1] | ○ | ○ |");
+    expect(text).toContain(`  1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: ${LAYER_LIMITS.E4[0]!.source}.`);
+  });
+});
+
+describe("the files of the roadmap and of the site", () => {
+  it("are the rendering of the query. To correct them, start pnpm --filter @netdiag/lab roadmap", () => {
     const text = readFileSync(ROADMAP_FILE, "utf8");
     expect(markedPart(text)).toBe(roadmapPart(TODAY));
     expect(TODAY.atlas).toBeDefined();
     expect(markedPart(text, ATLAS_START, ATLAS_END)).toBe(atlasPart(TODAY.atlas!));
     expect(withRoadmapParts(text, TODAY)).toBe(text);
+    expect(readFileSync(SITE_FILE, "utf8")).toBe(siteLadderText(TODAY));
+  });
+
+  it("are current for the command with --check", () => {
+    const main = fileURLToPath(new URL("./coverage-main.ts", import.meta.url));
+    const run = spawnSync(process.execPath, [main, "--check"], { encoding: "utf8" });
+    expect(run.stderr).toBe("");
+    expect(run.stdout).toBe("The coverage files are current.\n");
+    expect(run.status).toBe(0);
   });
 });
 

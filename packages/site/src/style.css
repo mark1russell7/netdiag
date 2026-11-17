@@ -1024,3 +1024,211 @@ button.cause-box[aria-pressed="true"] {
     margin-left: 0;
   }
 }
+
+/* 5. The ladder: each fault class on each layer of the lab. The headline names the gaps first. */
+.ladder-head {
+  margin: 0.75rem 0;
+}
+
+.ladder-head p {
+  margin: 0.125rem 0;
+}
+
+.ladder-total {
+  font-size: 1.1rem;
+}
+
+.ladder-gaps {
+  color: var(--sp-fail);
+  font-size: 2.25rem;
+  line-height: 1.1;
+}
+
+.ladder-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.ladder-toggle {
+  display: inline-flex;
+  margin: 0 0 0.5rem;
+}
+
+/* The mark of a state: a text mark on the color of the state, so a color alone does not tell the state. */
+.ladder-mark,
+.ladder-cell {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  font-weight: 700;
+}
+
+.ladder-mark {
+  min-width: 1.5rem;
+  padding: 0 0.25rem;
+}
+
+.ladder-mark.covered,
+.ladder-cell.covered {
+  background: var(--sp-pass-bg);
+  color: var(--sp-pass);
+}
+
+.ladder-mark.no-bar,
+.ladder-cell.no-bar {
+  background: var(--sp-hit);
+  color: var(--ink);
+}
+
+.ladder-mark.gap,
+.ladder-cell.gap {
+  background: var(--sp-fail-bg);
+  color: var(--sp-fail);
+}
+
+.ladder-mark.no-class,
+.ladder-cell.no-class {
+  border: 1px dashed var(--sp-fail);
+  background: transparent;
+  color: var(--sp-fail);
+}
+
+.ladder-mark.impossible,
+.ladder-cell.impossible {
+  background: repeating-linear-gradient(135deg, var(--panel) 0 0.25rem, var(--line) 0.25rem 0.375rem);
+  color: var(--quiet);
+}
+
+/* The matrix scrolls on its own, and the column of the classes stays in view. */
+.ladder-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+
+.ladder {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+
+.ladder th,
+.ladder td {
+  padding: 0.2rem;
+  text-align: center;
+}
+
+.ladder thead th {
+  border-bottom: 1px solid var(--line);
+  color: var(--quiet);
+  font-weight: 600;
+}
+
+.ladder .ladder-class {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding: 0.2rem 0.5rem;
+  border-right: 1px solid var(--line);
+  background: var(--sp-demo-surface, var(--page));
+  text-align: left;
+  font-weight: 400;
+}
+
+.ladder .ladder-class code {
+  white-space: nowrap;
+}
+
+.ladder .ladder-class .tag {
+  margin-left: 0.25rem;
+}
+
+.ladder-group th {
+  padding: 0.5rem 0.5rem 0.125rem;
+  color: var(--quiet);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.ladder-group th span {
+  position: sticky;
+  left: 0.5rem;
+}
+
+.ladder-cell {
+  width: 2.5rem;
+  min-height: 2rem;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.ladder-cell[aria-pressed="true"] {
+  outline: 2px solid var(--link);
+  outline-offset: 1px;
+}
+
+.ladder td.dim .ladder-cell {
+  opacity: 0.2;
+}
+
+.ladder-detail {
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--link);
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}
+
+.ladder-detail p {
+  margin: 0.25rem 0;
+}
+
+.ladder-detail-title {
+  font-weight: 600;
+}
+
+.ladder-worlds {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+
+.ladder-layers {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ladder-layer {
+  display: grid;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+}
+
+.ladder-layer-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  align-items: baseline;
+}
+
+.ladder-layer-head .tag {
+  margin-left: auto;
+}
+
+/* On a phone, the tag of a proposed class goes under its name, so the column of the classes stays narrow. */
+@media (max-width: 30rem) {
+  .ladder .ladder-class .tag {
+    display: block;
+    width: max-content;
+    margin-left: 0;
+  }
+}

@@ -1,0 +1,2776 @@
+{
+  "source": "https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers",
+  "counts": {
+    "total": {
+      "cells": 315,
+      "covered": 17,
+      "noBar": 0,
+      "gap": 123,
+      "noClass": 175,
+      "impossible": 0,
+      "gaps": 298
+    },
+    "classes": {
+      "cells": 140,
+      "covered": 17,
+      "noBar": 0,
+      "gap": 123,
+      "noClass": 0,
+      "impossible": 0,
+      "gaps": 123
+    },
+    "proposals": {
+      "cells": 175,
+      "covered": 0,
+      "noBar": 0,
+      "gap": 0,
+      "noClass": 175,
+      "impossible": 0,
+      "gaps": 175
+    }
+  },
+  "layers": [
+    {
+      "id": "E0",
+      "name": "Code on a false clock",
+      "proves": "The logic of a state machine and each order of its events",
+      "cannot": [
+        "Any real time"
+      ],
+      "tools": [
+        "algebra",
+        "the service conformance kit"
+      ],
+      "state": "Today",
+      "limits": []
+    },
+    {
+      "id": "E1",
+      "name": "Processes and containers on one kernel",
+      "proves": "Linux TCP timers, stock servers and their clients, proxies, conntrack",
+      "cannot": [
+        "A second kernel",
+        "A separate clock",
+        "A reboot",
+        "A loss of power"
+      ],
+      "tools": [
+        "The harness"
+      ],
+      "state": "Today",
+      "limits": [
+        {
+          "layer": "E1",
+          "trait": "kernel",
+          "reason": "A second kernel",
+          "source": "S7, the table \"The layers\", row E1, column \"What it cannot prove\""
+        },
+        {
+          "layer": "E1",
+          "trait": "clock",
+          "reason": "A separate clock",
+          "source": "S7, the table \"The layers\", row E1, column \"What it cannot prove\""
+        },
+        {
+          "layer": "E1",
+          "trait": "power",
+          "reason": "A reboot",
+          "source": "S7, the table \"The layers\", row E1, column \"What it cannot prove\""
+        },
+        {
+          "layer": "E1",
+          "trait": "power",
+          "reason": "A loss of power",
+          "source": "S7, the table \"The layers\", row E1, column \"What it cannot prove\""
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "name": "A cluster of containers on one kernel",
+      "proves": "The control plane, Service rules, CNI and the lifecycle of a pod",
+      "cannot": [
+        "A kernel for each node",
+        "A loss of a node with no signal"
+      ],
+      "tools": [
+        "kind",
+        "k3d"
+      ],
+      "state": "Today, with kind",
+      "limits": [
+        {
+          "layer": "E2",
+          "trait": "kernel",
+          "reason": "A kernel for each node",
+          "source": "S7, the table \"The layers\", row E2, column \"What it cannot prove\""
+        },
+        {
+          "layer": "E2",
+          "trait": "power",
+          "reason": "A loss of a node with no signal",
+          "source": "S7, the table \"The layers\", row E2, column \"What it cannot prove\""
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "name": "A routed fabric of containers on one kernel",
+      "proves": "Routing protocol timers, equal-cost paths, a change of route, sites with real delay",
+      "cannot": [
+        "The kernel or the forwarding hardware of a router"
+      ],
+      "tools": [
+        "containerlab with FRR"
+      ],
+      "state": "New",
+      "limits": [
+        {
+          "layer": "E3",
+          "trait": "kernel",
+          "reason": "The kernel or the forwarding hardware of a router",
+          "source": "S7, the table \"The layers\", row E3, column \"What it cannot prove\""
+        },
+        {
+          "layer": "E3",
+          "trait": "forwarding",
+          "reason": "The kernel or the forwarding hardware of a router",
+          "source": "S7, the table \"The layers\", row E3, column \"What it cannot prove\""
+        }
+      ]
+    },
+    {
+      "id": "E4",
+      "name": "Virtual machines, each with its own kernel",
+      "proves": "A chosen kernel and HZ, a clock for each node, a loss of power, a disk, a reboot",
+      "cannot": [
+        "A physical NIC",
+        "Real zones"
+      ],
+      "tools": [
+        "QEMU",
+        "k3s in a VM"
+      ],
+      "state": "New, the VM tier of S4",
+      "limits": [
+        {
+          "layer": "E4",
+          "trait": "nic",
+          "reason": "A physical NIC",
+          "source": "S7, the table \"The layers\", row E4, column \"What it cannot prove\""
+        },
+        {
+          "layer": "E4",
+          "trait": "zones",
+          "reason": "Real zones",
+          "source": "S7, the table \"The layers\", row E4, column \"What it cannot prove\""
+        }
+      ]
+    },
+    {
+      "id": "E5",
+      "name": "Images of vendor routers in virtual machines",
+      "proves": "The defaults and the state machines of a vendor's control plane",
+      "cannot": [
+        "The forwarding chip of the router"
+      ],
+      "tools": [
+        "vrnetlab"
+      ],
+      "state": "Later",
+      "limits": [
+        {
+          "layer": "E5",
+          "trait": "forwarding",
+          "reason": "The forwarding chip of the router",
+          "source": "S7, the table \"The layers\", row E5, column \"What it cannot prove\""
+        }
+      ]
+    },
+    {
+      "id": "E6",
+      "name": "Real hardware and clouds",
+      "proves": "A physical NIC, firmware, managed load balancers, real zones",
+      "cannot": [],
+      "tools": [
+        "HW-1"
+      ],
+      "state": "Waits on the owner",
+      "limits": []
+    }
+  ],
+  "states": {
+    "covered": {
+      "mark": "✓",
+      "name": "Covered"
+    },
+    "no-bar": {
+      "mark": "◐",
+      "name": "A gap: a case and no bar"
+    },
+    "gap": {
+      "mark": "○",
+      "name": "A gap: no case"
+    },
+    "no-class": {
+      "mark": "◌",
+      "name": "A gap: no class in the catalog"
+    },
+    "impossible": {
+      "mark": "⊘",
+      "name": "Impossible on the layer"
+    }
+  },
+  "gapStates": [
+    "no-bar",
+    "gap",
+    "no-class"
+  ],
+  "traits": {
+    "ipv6": "IPv6",
+    "wifi": "a Wi-Fi link",
+    "link": "a link that a case can take down",
+    "routing": "a routing protocol between routers",
+    "kernel": "a kernel of its own for each node",
+    "clock": "a clock of its own for each node",
+    "power": "a loss of power or a reboot",
+    "nic": "a physical NIC or its firmware",
+    "zones": "the real zones of a cloud",
+    "forwarding": "the forwarding hardware of a router"
+  },
+  "worlds": [
+    {
+      "id": "loopback",
+      "name": "Loopback",
+      "layer": "E1",
+      "scores": "class"
+    },
+    {
+      "id": "kernel",
+      "name": "Kernel",
+      "layer": "E1",
+      "scores": "class"
+    },
+    {
+      "id": "where",
+      "name": "Kernel, where cases",
+      "layer": "E1",
+      "scores": "loss-start"
+    }
+  ],
+  "rows": [
+    {
+      "id": "interface.down",
+      "kind": "class",
+      "layer": "link",
+      "needs": [
+        "link"
+      ],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "wifi.weak",
+      "kind": "class",
+      "layer": "wifi",
+      "needs": [
+        "wifi"
+      ],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "host.down",
+      "kind": "class",
+      "layer": "ip",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "kernel",
+              "cases": [
+                "host.down"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "filter.icmp",
+      "kind": "class",
+      "layer": "ip",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "kernel",
+              "cases": [
+                "filter.icmp"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "ipv6.broken",
+      "kind": "class",
+      "layer": "ip",
+      "needs": [
+        "ipv6"
+      ],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "gateway.down",
+      "kind": "class",
+      "layer": "route",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "kernel",
+              "cases": [
+                "gateway.down"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.loss",
+      "kind": "class",
+      "layer": "path",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "kernel",
+              "cases": [
+                "path.loss"
+              ],
+              "bar": true
+            },
+            {
+              "world": "where",
+              "cases": [
+                "loss.last-link",
+                "loss.first-link"
+              ],
+              "bar": false
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.mtu",
+      "kind": "class",
+      "layer": "path",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "kernel",
+              "cases": [
+                "path.mtu"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "resolver.down",
+      "kind": "class",
+      "layer": "dns",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "resolver.down/silent",
+                "resolver.down/absent"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "resolver.failing",
+      "kind": "class",
+      "layer": "dns",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "resolver.failing"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "name.missing",
+      "kind": "class",
+      "layer": "dns",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "name.missing"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "port.closed",
+      "kind": "class",
+      "layer": "tcp",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "port.closed"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "filter.drop",
+      "kind": "class",
+      "layer": "tcp",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "kernel",
+              "cases": [
+                "filter.drop"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "filter.reset",
+      "kind": "class",
+      "layer": "tcp",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "kernel",
+              "cases": [
+                "filter.reset"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "tls.proxy",
+      "kind": "class",
+      "layer": "tls",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "tls.proxy"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "tls.cert-invalid",
+      "kind": "class",
+      "layer": "tls",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "tls.cert-invalid/expired",
+                "tls.cert-invalid/wrong-name"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "tls.mismatch",
+      "kind": "class",
+      "layer": "tls",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "tls.mismatch"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "captive.portal",
+      "kind": "class",
+      "layer": "http",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "captive.portal"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "server.slow",
+      "kind": "class",
+      "layer": "http",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "server.slow"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "server.error",
+      "kind": "class",
+      "layer": "http",
+      "needs": [],
+      "entries": [],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "server.error"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "link.storm",
+      "kind": "proposal",
+      "layer": "link",
+      "needs": [],
+      "entries": [
+        "link.switching-loop"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "wifi.busy",
+      "kind": "proposal",
+      "layer": "wifi",
+      "needs": [
+        "wifi"
+      ],
+      "entries": [
+        "wifi.interference"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "wifi.multicast",
+      "kind": "proposal",
+      "layer": "wifi",
+      "needs": [
+        "wifi"
+      ],
+      "entries": [
+        "wifi.multicast-loss"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "dhcp.none",
+      "kind": "proposal",
+      "layer": "ip",
+      "needs": [],
+      "entries": [
+        "ip.dhcp-no-lease"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "dhcp.rogue",
+      "kind": "proposal",
+      "layer": "ip",
+      "needs": [],
+      "entries": [
+        "ip.dhcp-rogue"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "address.conflict",
+      "kind": "proposal",
+      "layer": "ip",
+      "needs": [],
+      "entries": [
+        "ip.address-conflict"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "ipv6.no-router",
+      "kind": "proposal",
+      "layer": "route",
+      "needs": [
+        "ipv6"
+      ],
+      "entries": [
+        "route.ipv6-no-advert"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "ipv6.rogue-router",
+      "kind": "proposal",
+      "layer": "route",
+      "needs": [
+        "ipv6"
+      ],
+      "entries": [
+        "route.ipv6-rogue-advert"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "nat.full",
+      "kind": "proposal",
+      "layer": "route",
+      "needs": [],
+      "entries": [
+        "route.nat-exhaustion"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "nat.hairpin",
+      "kind": "proposal",
+      "layer": "route",
+      "needs": [],
+      "entries": [
+        "route.nat-no-hairpin"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.black-hole",
+      "kind": "proposal",
+      "layer": "path",
+      "needs": [],
+      "entries": [
+        "path.dropped-prefix"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.loop",
+      "kind": "proposal",
+      "layer": "path",
+      "needs": [
+        "routing"
+      ],
+      "entries": [
+        "path.routing-loop"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.asymmetric",
+      "kind": "proposal",
+      "layer": "path",
+      "needs": [],
+      "entries": [
+        "path.asymmetric-filter"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.hijack",
+      "kind": "proposal",
+      "layer": "path",
+      "needs": [
+        "routing"
+      ],
+      "entries": [
+        "path.bgp-hijack"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.leak",
+      "kind": "proposal",
+      "layer": "path",
+      "needs": [
+        "routing"
+      ],
+      "entries": [
+        "path.bgp-leak"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "path.queue",
+      "kind": "proposal",
+      "layer": "path",
+      "needs": [],
+      "entries": [
+        "path.full-queue"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "zone.lame",
+      "kind": "proposal",
+      "layer": "dns",
+      "needs": [],
+      "entries": [
+        "dns.lame-delegation"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "dnssec.bogus",
+      "kind": "proposal",
+      "layer": "dns",
+      "needs": [],
+      "entries": [
+        "dns.dnssec-bogus",
+        "dns.dnssec-expired"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "cache.stale",
+      "kind": "proposal",
+      "layer": "dns",
+      "needs": [],
+      "entries": [
+        "dns.stale-cache"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "zone.unreachable",
+      "kind": "proposal",
+      "layer": "dns",
+      "needs": [],
+      "entries": [
+        "dns.authority-unreachable"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "dns.fragments",
+      "kind": "proposal",
+      "layer": "dns",
+      "needs": [],
+      "entries": [
+        "dns.fragments-dropped"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "filter.ecn",
+      "kind": "proposal",
+      "layer": "tcp",
+      "needs": [],
+      "entries": [
+        "tcp.ecn-blocked"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "nat.timeout",
+      "kind": "proposal",
+      "layer": "tcp",
+      "needs": [],
+      "entries": [
+        "tcp.nat-idle-timeout"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "clock.wrong",
+      "kind": "proposal",
+      "layer": "tls",
+      "needs": [],
+      "entries": [
+        "tls.wrong-clock"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "proxy.auth",
+      "kind": "proposal",
+      "layer": "http",
+      "needs": [],
+      "entries": [
+        "http.proxy-authentication"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "no-class",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    }
+  ],
+  "problems": []
+}

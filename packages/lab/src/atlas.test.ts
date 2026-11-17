@@ -117,7 +117,7 @@ describe("the coverage of the atlas", () => {
   it("counts an entry with IPv6 only in a world with IPv6, while its class is covered in IPv4", () => {
     expect(TODAY.rows.find((row) => row.hypothesis === "path.mtu")?.state).toBe("covered");
     expect(ATLAS.rows.find((row) => row.id === "path.ipv6-too-big-filtered")).toMatchObject({ needs: ["ipv6"], state: "no-case" });
-    const ipv6: (typeof WORLDS)[number] = { id: "ipv6", name: "IPv6", scores: "class", traits: ["ipv6"], cases: [{ id: "mtu", truth: "path.mtu" }], bars: { "path.mtu": 0.5 } };
+    const ipv6: (typeof WORLDS)[number] = { id: "ipv6", name: "IPv6", layer: "E1", scores: "class", traits: ["ipv6"], cases: [{ id: "mtu", truth: "path.mtu" }], bars: { "path.mtu": 0.5 } };
     const later = coverage({ catalog: STANDARD_CATALOG, worlds: [...WORLDS, ipv6], atlas: FAULT_ATLAS });
     expect(later.atlas?.rows.find((row) => row.id === "path.ipv6-too-big-filtered")?.state).toBe("covered");
   });

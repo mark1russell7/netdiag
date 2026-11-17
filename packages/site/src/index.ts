@@ -5,8 +5,9 @@
  */
 import { byId, copyText, h, setupTheme } from "@mark1russell7/site-pages/chrome";
 import { examples, verdict } from "@mark1russell7/site-pages/demo";
-import { GAIN_RESOLUTION, NONE, UNKNOWN, type Diagnosis, type Evidence } from "@mark1russell7/netdiag/diagnosis";
+import { GAIN_RESOLUTION, LAYERS, NONE, UNKNOWN, type Diagnosis, type Evidence } from "@mark1russell7/netdiag/diagnosis";
 import { readCheckReport, type CheckReport } from "@mark1russell7/netdiag-cli/report";
+import type { LadderCell, LadderRow, LadderState, SiteLadder } from "@netdiag/lab/coverage";
 import { readSamples, type CheckSample } from "@netdiag/lab/samples";
 import {
   CATALOG,
@@ -30,6 +31,7 @@ import {
   searchDone,
 } from "./model.ts";
 import { flowOf, pathsOf, ringsOf, timelineOf, type FlowItem, type PathHop, type PathView, type RingId } from "./report-views.ts";
+import coverageJson from "./coverage.json";
 import samplesJson from "./samples.json";
 import whereSamplesJson from "./where-samples.json";
 
@@ -766,3 +768,190 @@ reportSection.addEventListener("drop", (event) => {
   if (file !== undefined) void readReportFile(file);
 });
 showSample();
+
+// 5. Where each fault class is tested
+
+/** The filters of the matrix: all cells, or only the cells of some states. */
+type LadderFilter = "all" | "gaps" | "covered" | "impossible";
+
+/** The ladder of the lab. The command `pnpm --filter @netdiag/lab roadmap` writes the file, and a test of the lab keeps it current. */
+const LADDER = coverageJson as unknown as SiteLadder;
+
+/** The states that each filter shows. */
+const FILTER_STATES: Readonly<Record<LadderFilter, readonly LadderState[]>> = {
+  all: ["covered", "no-bar", "gap", "no-class", "impossible"],
+  gaps: LADDER.gapStates,
+  covered: ["covered"],
+  impossible: ["impossible"],
+};
+
+/** The text of a filter that shows no cell. */
+const FILTER_EMPTY: Readonly<Record<LadderFilter, string>> = {
+  all: "The ladder has no cell.",
+  gaps: "No cell is a gap. The work of the ladder is done.",
+  covered: "No cell is covered yet.",
+  impossible: "No cell is impossible: no class needs a thing that a layer cannot prove. Thus each cell that is not covered is a gap.",
+};
+
+const coverageFilters = [...byId("coverage-filter").querySelectorAll<HTMLButtonElement>("[data-filter]")];
+const coverageProposals = byId<HTMLInputElement>("coverage-proposals");
+let ladderFilter: LadderFilter = "all";
+/** The selected cell: the id of its row and its layer. */
+let ladderPick: { readonly row: string; readonly layer: string } | undefined;
+
+/** This function gives a count with its noun, for example "1 cell" or "17 cells". */
+const counted = (count: number, one: string, many = `${one}s`): string => `${String(count)} ${count === 1 ? one : many}`;
+
+/** This function gives the mark of a state, as text. A color alone does not tell the state. */
+const markOf = (state: LadderState): string => LADDER.states[state].mark;
+
+/** This function shows the headline of the ladder: the gaps first, then the covered and the impossible cells, of all cells. */
+function showLadderHead(): void {
+  const { total, classes, proposals } = LADDER.counts;
+  const classRows = LADDER.rows.filter((row) => row.kind === "class").length;
+  byId("coverage-head").replaceChildren(
+    h("p", { class: "ladder-total" }, h("b", { class: "ladder-gaps" }, counted(total.gaps, "gap")), h("span", {}, ` in ${counted(total.cells, "cell")}`)),
+    h(
+      "p",
+      { class: "ladder-counts" },
+      h("span", { class: "ladder-count" }, h("span", { class: "ladder-mark covered", "aria-hidden": "true" }, markOf("covered")), ` ${counted(total.covered, "cell")} covered`),
+      h("span", { class: "ladder-count" }, h("span", { class: "ladder-mark impossible", "aria-hidden": "true" }, markOf("impossible")), ` ${counted(total.impossible, "cell")} impossible`),
+    ),
+    h(
+      "p",
+      { class: "note small" },
+      `The ${String(classRows)} classes of the catalog have ${counted(classes.gaps, "gap")}. The ${String(LADDER.rows.length - classRows)} classes that the atlas proposes have ${counted(proposals.gaps, "gap")}.`,
+    ),
+  );
+}
+
+/** This function shows the key of the marks. */
+function showLadderKey(): void {
+  byId("coverage-key").replaceChildren(
+    ...FILTER_STATES.all.map((state) => h("li", {}, h("span", { class: `ladder-mark ${state}`, "aria-hidden": "true" }, markOf(state)), ` ${LADDER.states[state].name}`)),
+  );
+}
+
+/** This function gives the label of a cell for a screen reader. */
+function cellLabel(row: LadderRow, cell: LadderCell): string {
+  const cases = cell.worlds.flatMap((each) => each.cases);
+  const more = cell.state === "covered" ? `, ${counted(cases.length, "case")}` : "";
+  return `${row.id} on ${cell.layer}: ${LADDER.states[cell.state].name}${more}`;
+}
+
+/** This function gives the button of a cell. A click selects the cell and shows its details. */
+function cellButton(row: LadderRow, cell: LadderCell, shown: boolean): HTMLElement {
+  const picked = ladderPick?.row === row.id && ladderPick.layer === cell.layer;
+  const button = h(
+    "button",
+    { type: "button", class: `ladder-cell ${cell.state}`, "aria-label": cellLabel(row, cell), "aria-pressed": String(picked), "data-row": row.id, "data-layer": cell.layer },
+    markOf(cell.state),
+  );
+  button.addEventListener("click", () => {
+    ladderPick = { row: row.id, layer: cell.layer };
+    showLadder();
+  });
+  return h("td", { class: shown ? undefined : "dim" }, button);
+}
+
+/** This function shows the matrix: a group of rows for each layer of netdiag, and a cell for each layer of the lab. */
+function showLadder(): void {
+  for (const button of coverageFilters) button.setAttribute("aria-checked", String(button.dataset["filter"] === ladderFilter));
+  const states = FILTER_STATES[ladderFilter];
+  const rows = LADDER.rows.filter((row) => (coverageProposals.checked || row.kind === "class") && row.cells.some((cell) => states.includes(cell.state)));
+  const head = h(
+    "thead",
+    {},
+    h("tr", {}, h("th", { scope: "col", class: "ladder-class" }, "Class"), ...LADDER.layers.map((layer) => h("th", { scope: "col", title: layer.name }, layer.id))),
+  );
+  const groups = LAYERS.flatMap((layer) => {
+    const members = rows.filter((row) => row.layer === layer);
+    if (members.length === 0) return [];
+    return [
+      h("tr", { class: "ladder-group" }, h("th", { scope: "colgroup", colspan: LADDER.layers.length + 1 }, h("span", {}, LAYER_NAMES[layer]))),
+      ...members.map((row) =>
+        h(
+          "tr",
+          { class: row.kind === "proposal" ? "proposal" : undefined },
+          h("th", { scope: "row", class: "ladder-class" }, h("code", {}, row.id), row.kind === "proposal" ? h("span", { class: "tag" }, "proposed") : null),
+          ...row.cells.map((cell) => cellButton(row, cell, states.includes(cell.state))),
+        ),
+      ),
+    ];
+  });
+  byId("coverage-matrix").replaceChildren(head, h("tbody", {}, ...groups));
+  const empty = byId("coverage-empty");
+  empty.hidden = rows.length > 0;
+  empty.textContent = rows.length > 0 ? "" : FILTER_EMPTY[ladderFilter];
+  showLadderDetail();
+}
+
+/** This function gives the name and the layer of a world of the ladder. */
+function worldName(id: string): string {
+  const world = LADDER.worlds.find((each) => each.id === id);
+  return world === undefined ? id : `${world.name} (${world.layer})`;
+}
+
+/** This function shows the details of the selected cell. A covered cell gives its cases, an impossible cell its reason, and a gap its needs. */
+function showLadderDetail(): void {
+  const box = byId("coverage-detail");
+  const row = LADDER.rows.find((each) => each.id === ladderPick?.row);
+  const cell = row?.cells.find((each) => each.layer === ladderPick?.layer);
+  if (row === undefined || cell === undefined) {
+    box.replaceChildren(h("p", { class: "sp-empty" }, "Pick a cell to see its cases, its reason or what it needs."));
+    return;
+  }
+  const layer = LADDER.layers.find((each) => each.id === cell.layer);
+  const parts: HTMLElement[] = [
+    h("p", { class: "ladder-detail-title" }, h("code", {}, row.id), ` on ${cell.layer}`, layer === undefined ? "" : `: ${layer.name}`),
+    h("p", {}, h("span", { class: `ladder-mark ${cell.state}`, "aria-hidden": "true" }, markOf(cell.state)), " ", h("b", {}, LADDER.states[cell.state].name), "."),
+  ];
+  if (cell.state === "covered" || cell.state === "no-bar") {
+    const worlds = cell.worlds.map((each) => h("li", {}, `${worldName(each.world)}: `, ...codeList(each.cases), each.bar ? ", with a bar." : ", with no bar."));
+    parts.push(h("ul", { class: "ladder-worlds" }, ...worlds));
+  } else if (cell.state === "impossible") {
+    const limits = cell.limits.map((each) =>
+      h("li", {}, `${each.layer} cannot prove "${each.reason}". Thus it cannot have ${LADDER.traits[each.trait]}. Source: `, h("a", { href: LADDER.source }, each.source), "."),
+    );
+    parts.push(h("ul", { class: "ladder-worlds" }, ...limits));
+  } else {
+    const needs = row.needs.map((trait) => LADDER.traits[trait]);
+    const what = cell.state === "no-class" ? "The catalog has no class for it yet, so no world has a case of it." : "No world of the layer has a case of the class.";
+    parts.push(h("p", {}, `${what} `, needs.length > 0 ? `A world for it needs ${needs.join(" and ")}.` : "A world for it needs no special trait."));
+    if (row.entries.length > 0) parts.push(h("p", { class: "note small" }, "The entries of the atlas that propose it: ", ...codeList(row.entries), "."));
+  }
+  box.replaceChildren(...parts);
+}
+
+/** This function shows the key of the layers: the name, the state and the limits of each layer, with the counts of its cells. */
+function showLadderLayers(): void {
+  byId("coverage-layers").replaceChildren(
+    ...LADDER.layers.map((layer, at) => {
+      const cells = LADDER.rows.flatMap((row) => row.cells.slice(at, at + 1));
+      const covered = cells.filter((cell) => cell.state === "covered").length;
+      const gaps = cells.filter((cell) => LADDER.gapStates.includes(cell.state)).length;
+      const cannot = layer.cannot.map((each) => each.charAt(0).toLowerCase() + each.slice(1)).join(", ");
+      const limits = layer.cannot.length > 0 ? `It cannot prove ${cannot}.` : "The plan names no thing that it cannot prove.";
+      return h(
+        "li",
+        { class: "ladder-layer" },
+        h("span", { class: "ladder-layer-head" }, h("b", {}, layer.id), h("span", {}, layer.name), h("span", { class: covered > 0 ? "tag pass" : "tag" }, layer.state)),
+        h("span", { class: "note small" }, `${counted(covered, "cell")} covered, ${counted(gaps, "gap")}. ${limits}`),
+      );
+    }),
+  );
+}
+
+for (const button of coverageFilters) {
+  button.addEventListener("click", () => {
+    const filter = button.dataset["filter"];
+    if (filter === "all" || filter === "gaps" || filter === "covered" || filter === "impossible") ladderFilter = filter;
+    showLadder();
+  });
+}
+coverageProposals.addEventListener("change", showLadder);
+byId<HTMLAnchorElement>("coverage-source").href = LADDER.source;
+showLadderHead();
+showLadderKey();
+showLadderLayers();
+showLadder();

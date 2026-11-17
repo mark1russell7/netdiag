@@ -59,40 +59,80 @@ ND-7 has four steps:
 
 ### The coverage of the fault classes
 
-The table of the coverage comes from the data of the labs. `coverage` of `@netdiag/lab` joins the classes of the catalog with the cases of each world (ND-17).
+The ladder of the coverage comes from the data of the labs. `coverage` of `@netdiag/lab` gives a cell for each fault class on each layer E0 to E6 of the lab (ND-17).
 
-- A cell of a world gives the number of cases of the class, and tells if the world has a bar for it. A dash tells that the world has no case.
-- The column Coverage names each gap as a gap. A class with no case does not show as covered.
-- The command `pnpm --filter @netdiag/lab roadmap` writes the table. A unit test fails when the table is not current.
+- Each fault class must have a test on each layer. The work ends only at zero gaps.
+- A covered cell names its cases. A cell with a case and no bar is a gap. A proposed class of the atlas is a gap in each cell.
+- A cell is impossible only when its class needs a trait that its layer cannot have. Each limit comes from the column "What it cannot prove" of S7.
+- The file `packages/lab/bars/coverage.json` keeps the counts. A unit test fails when the counts change, so a rise of the gaps stops CI.
+- The command `pnpm --filter @netdiag/lab roadmap` writes this part and the data of the site. A unit test fails when a file is not current.
 
 <!-- coverage:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
 
-| Class | Layer | Loopback | Kernel | Kernel, where cases | Coverage |
-| --- | --- | --- | --- | --- | --- |
-| `interface.down` | `link` | – | – | – | Gap: no case. No world has a link that a case can take down. |
-| `wifi.weak` | `wifi` | – | – | – | Gap: no case. No world has a Wi-Fi link. |
-| `host.down` | `ip` | – | 1 case, a bar | – | Covered |
-| `filter.icmp` | `ip` | – | 1 case, a bar | – | Covered |
-| `ipv6.broken` | `ip` | – | – | – | Gap: no case. No world has IPv6. |
-| `gateway.down` | `route` | – | 1 case, a bar | – | Covered |
-| `path.loss` | `path` | – | 1 case, a bar | 2 cases, no bar | Covered |
-| `path.mtu` | `path` | – | 1 case, a bar | – | Covered |
-| `resolver.down` | `dns` | 2 cases, a bar | – | – | Covered |
-| `resolver.failing` | `dns` | 1 case, a bar | – | – | Covered |
-| `name.missing` | `dns` | 1 case, a bar | – | – | Covered |
-| `port.closed` | `tcp` | 1 case, a bar | – | – | Covered |
-| `filter.drop` | `tcp` | – | 1 case, a bar | – | Covered |
-| `filter.reset` | `tcp` | – | 1 case, a bar | – | Covered |
-| `tls.proxy` | `tls` | 1 case, a bar | – | – | Covered |
-| `tls.cert-invalid` | `tls` | 2 cases, a bar | – | – | Covered |
-| `tls.mismatch` | `tls` | 1 case, a bar | – | – | Covered |
-| `captive.portal` | `http` | 1 case, a bar | – | – | Covered |
-| `server.slow` | `http` | 1 case, a bar | – | – | Covered |
-| `server.error` | `http` | 1 case, a bar | – | – | Covered |
+- **298 gaps** in 315 cells: 45 classes on 7 layers. The classes of the catalog have 123 gaps, and the proposed classes have 175 gaps. 17 cells covered, and 0 cells impossible. The work ends only at zero gaps.
 
-- The catalog has 20 fault classes. 17 are covered, 0 have a case and no bar, and 3 have no case.
-- The classes with no case: `interface.down`, `wifi.weak`, `ipv6.broken`.
-- The layers with no case: `link`, `wifi`.
+| Class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `interface.down` | `link` | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| `wifi.weak` | `wifi` | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| `host.down` | `ip` | ○ | ✓ `host.down` | ○ | ○ | ○ | ○ | ○ |
+| `filter.icmp` | `ip` | ○ | ✓ `filter.icmp` | ○ | ○ | ○ | ○ | ○ |
+| `ipv6.broken` | `ip` | ○ | ○ | ○ | ○ | ○ | ○ | ○ |
+| `gateway.down` | `route` | ○ | ✓ `gateway.down` | ○ | ○ | ○ | ○ | ○ |
+| `path.loss` | `path` | ○ | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |
+| `path.mtu` | `path` | ○ | ✓ `path.mtu` | ○ | ○ | ○ | ○ | ○ |
+| `resolver.down` | `dns` | ○ | ✓ `resolver.down/silent`, `resolver.down/absent` | ○ | ○ | ○ | ○ | ○ |
+| `resolver.failing` | `dns` | ○ | ✓ `resolver.failing` | ○ | ○ | ○ | ○ | ○ |
+| `name.missing` | `dns` | ○ | ✓ `name.missing` | ○ | ○ | ○ | ○ | ○ |
+| `port.closed` | `tcp` | ○ | ✓ `port.closed` | ○ | ○ | ○ | ○ | ○ |
+| `filter.drop` | `tcp` | ○ | ✓ `filter.drop` | ○ | ○ | ○ | ○ | ○ |
+| `filter.reset` | `tcp` | ○ | ✓ `filter.reset` | ○ | ○ | ○ | ○ | ○ |
+| `tls.proxy` | `tls` | ○ | ✓ `tls.proxy` | ○ | ○ | ○ | ○ | ○ |
+| `tls.cert-invalid` | `tls` | ○ | ✓ `tls.cert-invalid/expired`, `tls.cert-invalid/wrong-name` | ○ | ○ | ○ | ○ | ○ |
+| `tls.mismatch` | `tls` | ○ | ✓ `tls.mismatch` | ○ | ○ | ○ | ○ | ○ |
+| `captive.portal` | `http` | ○ | ✓ `captive.portal` | ○ | ○ | ○ | ○ | ○ |
+| `server.slow` | `http` | ○ | ✓ `server.slow` | ○ | ○ | ○ | ○ | ○ |
+| `server.error` | `http` | ○ | ✓ `server.error` | ○ | ○ | ○ | ○ | ○ |
+
+| Proposed class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `link.storm` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `wifi.busy` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `wifi.multicast` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dhcp.none` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dhcp.rogue` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `address.conflict` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `ipv6.no-router` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `ipv6.rogue-router` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `nat.full` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `nat.hairpin` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.black-hole` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.loop` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.asymmetric` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.hijack` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.leak` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.queue` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `zone.lame` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dnssec.bogus` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `cache.stale` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `zone.unreachable` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dns.fragments` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `filter.ecn` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `nat.timeout` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `clock.wrong` | `tls` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `proxy.auth` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+
+- The key: ✓ covered. ◐ a gap: a case and no bar. ○ a gap: no case. ◌ a gap: no class in the catalog. ⊘ impossible on the layer. A covered cell names its cases.
+- The layers, from [the table of S7](https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers):
+  - E0: Code on a false clock. State: Today. It cannot prove: any real time.
+  - E1: Processes and containers on one kernel. State: Today. It cannot prove: a second kernel, a separate clock, a reboot, a loss of power.
+  - E2: A cluster of containers on one kernel. State: Today, with kind. It cannot prove: a kernel for each node, a loss of a node with no signal.
+  - E3: A routed fabric of containers on one kernel. State: New. It cannot prove: the kernel or the forwarding hardware of a router.
+  - E4: Virtual machines, each with its own kernel. State: New, the VM tier of S4. It cannot prove: a physical NIC, real zones.
+  - E5: Images of vendor routers in virtual machines. State: Later. It cannot prove: the forwarding chip of the router.
+  - E6: Real hardware and clouds. State: Waits on the owner. It cannot prove: nothing that the plan covers.
+- The impossible cells: none. No class needs a trait that a layer cannot have.
+- The worlds: Loopback (E1), Kernel (E1), Kernel, where cases (E1).
 - The control `none`. Loopback: 1 case, a bar. Kernel: 1 case, a bar. Kernel, where cases: 1 case, no bar.
 
 <!-- coverage:end -->
@@ -211,4 +251,4 @@ The status words are `active`, `waiting`, `blocked`, `later`, `done` and `droppe
 | ND-14 | The start of a loss on the site | done | P3 | S | site | ND-9, ND-11, ND-15 | Demo 4 of the site shows where the loss of each path starts, and the networks of those hops. The data comes from the facts of a report, with `lossOrigins`. The sample report with a loss comes from the where cases of the kernel lab. The job `where` writes these samples, with the lookups of the owners and the origins. `lookupGrants` gives the grants of the lookups (netdiag 0.5.6, #51). |
 | ND-15 | The lab gate of the start of a loss | active | P2 | M | ground truth | ND-11 | The where cases of the kernel lab put a loss on one link of the path, or no loss. Then `lossStart` must give the part of the path where the loss starts. Step 1 (#47): the cases and their records, with no bar. Step 2 (#48): the gate of the where cases. Step 3: the bars from 5 runs in CI, in `packages/lab/bars/where.json`. |
 | ND-16 | The origin AS of each hop | done | P3 | S | probes | ND-11 | The AS number of each hop. In RDAP, only ARIN gives it. The second source is the DNS of Team Cymru, the source of `mtr -z`: a TXT query under `origin.asn.cymru.com` or `origin6.asn.cymru.com` gives the BGP prefix and its origin AS. `netdiag check --owners` shows the AS of each hop, and the two values when RDAP and the DNS do not agree (netdiag 0.5.5, #49). |
-| ND-17 | netdiag learns on simulated networks | active | P2 | L | ground truth | ND-15 | The labs make each fault class of real networks in seeded worlds. A gap is not a pass. Step 1: the coverage query and the fault atlas. Step 2: one PR for each new class, with its features, its case and its bar. Step 3: seeded worlds of 3, 30 and 300 nodes in containerlab and in VMs of the harness (SYS-77), with fault plans of `rigor-chaos`. Step 4: a gate on the recall, the precision and the count of next probes, with a demo of each world on the site. |
+| ND-17 | netdiag learns on simulated networks | active | P2 | L | ground truth | ND-15 | The labs make each fault class of real networks in seeded worlds. A gap is not a pass. Each class must have a test on each layer E0 to E6 of the lab. The item is done only at zero gaps. Step 1: the coverage query and the fault atlas. Step 2: one PR for each new class, with its features, its case and its bar. Step 3: seeded worlds of 3, 30 and 300 nodes in containerlab and in VMs of the harness (SYS-77), with fault plans of `rigor-chaos`. Step 4: a gate on the recall, the precision and the count of next probes, with a demo of each world on the site. |

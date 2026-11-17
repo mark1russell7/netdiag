@@ -69,4 +69,15 @@ click("#report-read");
 check("a file of another format gives its problem", await until(() => text("#report-problems").includes("netdiag-check/1")), text("#report-problems"));
 check("a file that is not a report removes the views", $$("#report-flow .flow-layer").length === 0, $$("#report-flow .flow-layer").length);
 
+// 5. Where each fault class is tested
+check("the ladder names its gaps first", /^\d+ gaps? in \d+ cells?$/.test(text("#coverage-head .ladder-total")), text("#coverage-head"));
+const ladderRows = (): number => $$("#coverage-matrix tbody tr:not(.ladder-group)").length;
+check("the matrix has a row for each class and a column for each layer", ladderRows() === 20 && $$("#coverage-matrix thead th").length === 8, ladderRows());
+click("#coverage-proposals");
+check("the toggle adds the proposed classes", await until(() => $$("#coverage-matrix tbody tr.proposal").length === 25), ladderRows());
+click('#coverage-matrix button[data-row="path.loss"][data-layer="E1"]');
+check("a click on a covered cell shows its cases and its worlds", await until(() => text("#coverage-detail").includes("loss.last-link") && text("#coverage-detail").includes("Kernel (E1)")), text("#coverage-detail"));
+click('#coverage-filter [data-filter="gaps"]');
+check("the filter of the gaps dims each covered cell", await until(() => $$("#coverage-matrix td:not(.dim) .covered").length === 0 && $$("#coverage-matrix td:not(.dim) .gap").length > 0), text("#coverage-empty"));
+
 export {};
