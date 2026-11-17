@@ -254,7 +254,7 @@ const result = diagnose(STANDARD_CATALOG, [
 
 | Feature | The source of the value |
 | --- | --- |
-| `dns.answer` | The outcome of each DNS query. One answer `ok` for a name and a resolver decides. `nodata` gives `ok`, because the name exists. |
+| `dns.answer` | The outcome of each DNS query. One answer `ok` for a name and a resolver decides. `nodata` gives `ok`, because the name exists. c-ares gives `unreachable` when it cannot send the query, or when no DNS service listens on the resolver. |
 | `dns.address` | The addresses of a public name. One private address decides. A local name, for example `nas.local`, gives no value. |
 | `ip.family` | The TCP connects to the IPv4 and the IPv6 addresses of one name. When one family is broken, the other facts of its addresses give no second feature. |
 | `tcp.connect`, `tcp.time` | The outcome and the time of each TCP connect. A time of 900 ms or more tells that the SYN went again. |
