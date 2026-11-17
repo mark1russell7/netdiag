@@ -33,6 +33,7 @@
     <li><a href="#search-title"><b>Find a hidden fault</b> Run the best probe until one cause is clear.</a></li>
     <li><a href="#lab-title"><b>Score the catalog</b> Make each fault many times, and hold each recall with a bar.</a></li>
     <li><a href="#report-title"><b>Read a check report</b> See the layers, the causes and the next step of a real check.</a></li>
+    <li><a href="#coverage-title"><b>See where each fault is tested</b> Each fault class on each layer of the lab, from a false clock to real hardware.</a></li>
   </ul>
 
   <section class="sp-demo" aria-labelledby="board-title">
@@ -126,6 +127,28 @@
     <div id="report-next"></div>
     <h3>The probes in time</h3>
     <div id="report-timeline" class="timeline"></div>
+  </section>
+
+  <section class="sp-demo" aria-labelledby="coverage-title" id="coverage-section">
+    <h2 id="coverage-title">5. Where each fault class is tested</h2>
+    <p>Each fault class must have a test on each layer of the lab, from code on a false clock (E0) to real hardware (E6). A cell is one class on one layer. The work ends only at zero gaps, and a gate in CI stops a rise of the count of gaps.</p>
+    <div id="coverage-head" class="ladder-head"></div>
+    <div id="coverage-filter" class="sp-choices" role="radiogroup" aria-label="The cells to show">
+      <button type="button" role="radio" data-filter="all">All</button>
+      <button type="button" role="radio" data-filter="gaps">Gaps</button>
+      <button type="button" role="radio" data-filter="covered">Covered</button>
+      <button type="button" role="radio" data-filter="impossible">Impossible</button>
+    </div>
+    <label class="check ladder-toggle"><input id="coverage-proposals" type="checkbox"> Show the classes that the fault atlas proposes</label>
+    <ul id="coverage-key" class="legend" aria-label="The key of the cells"></ul>
+    <p id="coverage-empty" class="sp-empty" hidden></p>
+    <div class="ladder-scroll scroll-cue" role="region" aria-label="The fault classes and the layers of the lab" tabindex="0">
+      <table id="coverage-matrix" class="ladder"></table>
+    </div>
+    <div id="coverage-detail" class="ladder-detail" aria-live="polite"></div>
+    <h3>The layers of the lab</h3>
+    <ol id="coverage-layers" class="ladder-layers"></ol>
+    <p class="note small">The layers and their limits come from <a id="coverage-source" href="https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers">the table of the plan S7</a>. A cell is impossible only when its class needs a thing that the layer cannot prove. The command <code>pnpm --filter @netdiag/lab roadmap</code> writes the data of this demo.</p>
   </section>
 
   <h2>Install</h2>

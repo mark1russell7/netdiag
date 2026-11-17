@@ -370,6 +370,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.loop",
+    needs: ["routing"],
     signs: ["A trace shows the same hops again and again.", "Time-exceeded messages come back, and the links of the loop congest."],
     world: "containerlab",
     sources: [{ rfc: 5715, section: "2", title: "A Framework for Loop-Free Convergence" }],
@@ -390,6 +391,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.hijack",
+    needs: ["routing"],
     signs: ["The trace ends in a network that is not the origin of the prefix.", "Connections time out, or a different server answers."],
     world: "containerlab",
     sources: [
@@ -405,6 +407,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.leak",
+    needs: ["routing"],
     signs: ["The trace goes through a network that is not on the usual path.", "The loss and the delay rise for many targets at the same time."],
     world: "containerlab",
     sources: [

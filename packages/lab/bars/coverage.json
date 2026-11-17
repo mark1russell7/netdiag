@@ -1,0 +1,9 @@
+{
+  "gaps": 298,
+  "classGaps": 123,
+  "proposalGaps": 175,
+  "cells": 315,
+  "covered": 17,
+  "impossible": 0,
+  "note": "ND-17 counts each class on each layer E0 to E6. Each covered cell is on E1, and no class needs a trait that a layer cannot have."
+}

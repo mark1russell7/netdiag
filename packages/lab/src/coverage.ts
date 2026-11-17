@@ -1,27 +1,44 @@
 import { LAYERS, layerRank, type Catalog, type LabBars, type Layer } from "@mark1russell7/netdiag";
 import { countOf } from "@mark1russell7/text";
 import { ATLAS_WORLDS, ATLAS_WORLD_NAMES, type AtlasEntry, type AtlasWorld } from "./atlas.ts";
+import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, S7_LAYERS_URL, type LabLayer, type LayerFacts, type LayerLimit } from "./ladder.ts";
 
-// The coverage of the fault classes (ND-17, step 1). The query joins the classes of a catalog with the cases of each
-// world. It gives the gaps as data: a class with no case, a class with a case and no bar, and a layer with no case.
-// A gap is not a pass. The query also joins the fault atlas (`atlas.ts`) with the rows: a fault with no class is a
-// gap of the catalog, and a class with no case is a gap of the labs. This module imports no `node:` module. The
-// module `worlds.ts` gives the worlds of the lab.
+// The coverage of the fault classes (ND-17). The query joins the classes of a catalog with the cases of each world.
+// It gives the gaps as data: a class with no case, a class with a case and no bar, and a layer with no case. A gap
+// is not a pass. The query also joins the fault atlas (`atlas.ts`) with the rows: a fault with no class is a gap of
+// the catalog, and a class with no case is a gap of the labs. The ladder of the query gives one cell for each class
+// on each layer E0 to E6 of the lab (`ladder.ts`). The work ends only at zero gaps. This module imports no `node:`
+// module itself, but the harness of `ladder.ts` does. The module `worlds.ts` gives the worlds of the lab.
 
 /**
- * A trait of the networks of a world. A case of some classes needs a trait.
+ * A trait of the networks of a world. A case of some classes needs a trait. A layer of the ladder cannot ever have
+ * some traits (`LAYER_LIMITS`).
  *
  * - `ipv6`: the networks of the world have IPv6.
  * - `wifi`: the client has a Wi-Fi link.
  * - `link`: a case can take the link of the client down.
+ * - `routing`: the routers of the world use a routing protocol between them.
+ * - `kernel`: each node of the world has a kernel of its own.
+ * - `clock`: each node of the world has a clock of its own.
+ * - `power`: a case can cut the power of a node, or reboot it.
+ * - `nic`: the world has a physical NIC and its firmware.
+ * - `zones`: the world has the real zones of a cloud.
+ * - `forwarding`: the routers of the world have their own forwarding hardware.
  */
-export type WorldTrait = "ipv6" | "wifi" | "link";
+export type WorldTrait = "ipv6" | "wifi" | "link" | "routing" | "kernel" | "clock" | "power" | "nic" | "zones" | "forwarding";
 
 /** The name of each trait, for a sentence of the table. */
 export const TRAIT_NAMES: Readonly<Record<WorldTrait, string>> = {
   ipv6: "IPv6",
   wifi: "a Wi-Fi link",
   link: "a link that a case can take down",
+  routing: "a routing protocol between routers",
+  kernel: "a kernel of its own for each node",
+  clock: "a clock of its own for each node",
+  power: "a loss of power or a reboot",
+  nic: "a physical NIC or its firmware",
+  zones: "the real zones of a cloud",
+  forwarding: "the forwarding hardware of a router",
 };
 
 /** The traits that a world needs for a case of each fault class. A class with no entry needs no trait. */
@@ -45,11 +62,13 @@ export interface CoverageCase {
  */
 export type WorldScore = "class" | "loss-start";
 
-/** A world of the lab, as data: its traits, its cases and the bars of its gate. A new world is one more entry. */
+/** A world of the lab, as data: its layer, its traits, its cases and the bars of its gate. A new world is one more entry. */
 export interface CoverageWorld {
   readonly id: string;
   /** The name of the world, for the heading of its column. */
   readonly name: string;
+  /** The layer of the ladder of the world, for example `E1` for processes and containers on one kernel. */
+  readonly layer: LabLayer;
   readonly scores: WorldScore;
   readonly traits: readonly WorldTrait[];
   readonly cases: readonly CoverageCase[];
@@ -109,7 +128,91 @@ export interface CoverageGaps {
 export interface CoverageWorldName {
   readonly id: string;
   readonly name: string;
+  readonly layer: LabLayer;
   readonly scores: WorldScore;
+}
+
+/**
+ * The state of a cell of the ladder: one class on one layer of the lab.
+ *
+ * - `covered`: a world of the layer has a case of the class, and a bar for it.
+ * - `no-bar`: a world of the layer has a case of the class, and no world of the layer has a bar for it.
+ * - `gap`: no world of the layer has a case of the class.
+ * - `impossible`: the class needs a trait that the layer cannot ever have.
+ * - `no-class`: the class is a proposal of the atlas, and the catalog does not have it.
+ *
+ * The states `no-bar`, `gap` and `no-class` are gaps. A case with no bar is a gap, because a gate holds each gain.
+ */
+export type LadderState = "covered" | "no-bar" | "gap" | "impossible" | "no-class";
+
+/** The states of the ladder, in the order of the key. */
+export const LADDER_STATES: readonly LadderState[] = ["covered", "no-bar", "gap", "no-class", "impossible"];
+
+/** The states of the ladder that are gaps. */
+export const GAP_STATES: readonly LadderState[] = ["no-bar", "gap", "no-class"];
+
+/** The mark and the name of a state of the ladder. The mark is text, because a color alone does not tell the state. */
+export interface StateKey {
+  readonly mark: string;
+  readonly name: string;
+}
+
+/** The mark and the name of each state of the ladder. */
+export const STATE_KEYS: Readonly<Record<LadderState, StateKey>> = {
+  covered: { mark: "✓", name: "Covered" },
+  "no-bar": { mark: "◐", name: "A gap: a case and no bar" },
+  gap: { mark: "○", name: "A gap: no case" },
+  "no-class": { mark: "◌", name: "A gap: no class in the catalog" },
+  impossible: { mark: "⊘", name: "Impossible on the layer" },
+};
+
+/** A cell of the ladder: one class on one layer. */
+export interface LadderCell {
+  readonly layer: LabLayer;
+  readonly state: LadderState;
+  /** The cells of the worlds of the layer with a case of the class, in the order of the worlds. */
+  readonly worlds: readonly WorldCell[];
+  /** For an impossible cell: each limit of the layer with a trait that the class needs. Else the list is empty. */
+  readonly limits: readonly LayerLimit[];
+}
+
+/** The kind of a row of the ladder: a fault class of the catalog, or a class that the atlas proposes. */
+export type LadderKind = "class" | "proposal";
+
+/** A row of the ladder: one class, and its cell on each layer. */
+export interface LadderRow {
+  readonly id: string;
+  readonly kind: LadderKind;
+  /** The layer of netdiag of the class. It is absent when the catalog gives no layer for the class. */
+  readonly layer: Layer | undefined;
+  readonly needs: readonly WorldTrait[];
+  /** For a proposed class: the ids of the atlas entries that propose it. For a class of the catalog, the list is empty. */
+  readonly entries: readonly string[];
+  /** One cell for each layer of `LAB_LAYERS`, in its order. */
+  readonly cells: readonly LadderCell[];
+}
+
+/** The counts of the cells of a part of the ladder, by state. */
+export interface LadderCounts {
+  readonly cells: number;
+  readonly covered: number;
+  readonly noBar: number;
+  readonly gap: number;
+  readonly noClass: number;
+  readonly impossible: number;
+  /** The cells that are gaps: `noBar`, `gap` and `noClass` together. */
+  readonly gaps: number;
+}
+
+/** The ladder: each class on each layer E0 to E6 of the lab. The work ends only at zero gaps. */
+export interface Ladder {
+  /** The layers of the columns: `LAB_LAYERS` of the harness. */
+  readonly layers: readonly LabLayer[];
+  /** The rows of the classes of the catalog, in the order of `rows`, then the rows of the proposed classes. */
+  readonly rows: readonly LadderRow[];
+  readonly classes: LadderCounts;
+  readonly proposals: LadderCounts;
+  readonly total: LadderCounts;
 }
 
 /** The result of the coverage query. */
@@ -122,6 +225,8 @@ export interface Coverage {
   readonly gaps: CoverageGaps;
   /** The join of the fault atlas with the rows. It is absent when the input has no atlas. */
   readonly atlas: AtlasCoverage | undefined;
+  /** Each class on each layer of the lab. With an atlas, it also has a row for each proposed class. */
+  readonly ladder: Ladder;
   /** The problems of the data: for example a case with a truth that is not in the catalog. */
   readonly problems: readonly string[];
 }
@@ -134,6 +239,8 @@ export interface CoverageInput {
   readonly needs?: Readonly<Record<string, readonly WorldTrait[]>> | undefined;
   /** The entries of the fault atlas, for example `FAULT_ATLAS`. With no atlas, the result has no atlas part. */
   readonly atlas?: readonly AtlasEntry[] | undefined;
+  /** The traits that each layer cannot ever have. The default is `LAYER_LIMITS`. */
+  readonly limits?: Readonly<Record<LabLayer, readonly LayerLimit[]>> | undefined;
 }
 
 const CONTROL = "none";
@@ -199,8 +306,11 @@ export function coverage(input: CoverageInput): Coverage {
       able: worlds.filter((world) => row.needs.every((trait) => world.traits.includes(trait))).map((world) => world.id),
     }));
   const caseLayers = new Set(rows.filter((row) => row.state !== "no-case").map((row) => row.layer));
+  const atlas = input.atlas === undefined ? undefined : atlasCoverage(input.atlas, { catalog, worlds, needs: needsOf, layers, rows, problems });
+  const limits = input.limits ?? LAYER_LIMITS;
+  ladderProblems(worlds, limits, problems);
   return {
-    worlds: worlds.map(({ id, name, scores }) => ({ id, name, scores })),
+    worlds: worlds.map(({ id, name, layer, scores }) => ({ id, name, layer, scores })),
     rows,
     controls: worlds.map((world) => cellOf(world, CONTROL, [])),
     gaps: {
@@ -208,8 +318,78 @@ export function coverage(input: CoverageInput): Coverage {
       noBar: rows.filter((row) => row.state === "no-bar").map((row) => row.hypothesis),
       layers: LAYERS.filter((layer) => !caseLayers.has(layer)),
     },
-    atlas: input.atlas === undefined ? undefined : atlasCoverage(input.atlas, { catalog, worlds, needs: needsOf, layers, rows, problems }),
+    atlas,
+    ladder: ladderOf(rows, atlas, worlds, limits),
     problems,
+  };
+}
+
+/** This function tells the problems of the layers of the worlds. A world must be on a layer of the ladder, with no trait that its layer cannot have. */
+function ladderProblems(worlds: readonly CoverageWorld[], limits: Readonly<Record<LabLayer, readonly LayerLimit[]>>, problems: string[]): void {
+  for (const world of worlds) {
+    if (!LAB_LAYERS.includes(world.layer)) {
+      problems.push(`The world ${world.id} has the layer ${world.layer}, and the ladder has no such layer.`);
+      continue;
+    }
+    for (const each of limits[world.layer]) {
+      if (world.traits.includes(each.trait)) problems.push(`The world ${world.id} has ${TRAIT_NAMES[each.trait]}, and its layer ${world.layer} cannot have it: ${each.reason}.`);
+    }
+  }
+}
+
+/** This function gives the limits of a layer that meet the needs of a class. A class with such a limit is impossible on the layer. */
+function limitsOf(layer: LabLayer, needs: readonly WorldTrait[], limits: Readonly<Record<LabLayer, readonly LayerLimit[]>>): readonly LayerLimit[] {
+  return limits[layer].filter((each) => needs.includes(each.trait));
+}
+
+/** This function counts the cells of some rows of the ladder by state. */
+function ladderCounts(rows: readonly LadderRow[]): LadderCounts {
+  const cells = rows.flatMap((row) => row.cells);
+  const of = (state: LadderState): number => cells.filter((cell) => cell.state === state).length;
+  const counts = { covered: of("covered"), noBar: of("no-bar"), gap: of("gap"), noClass: of("no-class"), impossible: of("impossible") };
+  return { cells: cells.length, ...counts, gaps: counts.noBar + counts.gap + counts.noClass };
+}
+
+/**
+ * This function gives the ladder: a cell for each class on each layer of `LAB_LAYERS`. A cell is impossible when the
+ * class needs a trait that the layer cannot have. Else the worlds of the layer give its state. A proposed class has no
+ * case, so each cell of it that is not impossible is a gap of the catalog.
+ */
+function ladderOf(rows: readonly CoverageRow[], atlas: AtlasCoverage | undefined, worlds: readonly CoverageWorld[], limits: Readonly<Record<LabLayer, readonly LayerLimit[]>>): Ladder {
+  const classes: LadderRow[] = rows.map((row) => ({
+    id: row.hypothesis,
+    kind: "class",
+    layer: row.layer,
+    needs: row.needs,
+    entries: [],
+    cells: LAB_LAYERS.map((layer): LadderCell => {
+      const hits = limitsOf(layer, row.needs, limits);
+      if (hits.length > 0) return { layer, state: "impossible", worlds: [], limits: hits };
+      const cells = row.worlds.filter((cell, at) => worlds[at]?.layer === layer && cell.cases.length > 0);
+      const state: LadderState = cells.some((cell) => cell.bar) ? "covered" : cells.length > 0 ? "no-bar" : "gap";
+      return { layer, state, worlds: cells, limits: [] };
+    }),
+  }));
+  const proposals: LadderRow[] = (atlas?.proposals ?? []).map((proposal) => {
+    const needs = [...new Set(atlas?.rows.filter((row) => proposal.entries.includes(row.id)).flatMap((row) => row.needs) ?? [])];
+    return {
+      id: proposal.proposal,
+      kind: "proposal",
+      layer: proposal.layer,
+      needs,
+      entries: proposal.entries,
+      cells: LAB_LAYERS.map((layer): LadderCell => {
+        const hits = limitsOf(layer, needs, limits);
+        return { layer, state: hits.length > 0 ? "impossible" : "no-class", worlds: [], limits: hits };
+      }),
+    };
+  });
+  return {
+    layers: LAB_LAYERS,
+    rows: [...classes, ...proposals],
+    classes: ladderCounts(classes),
+    proposals: ladderCounts(proposals),
+    total: ladderCounts([...classes, ...proposals]),
   };
 }
 
@@ -362,39 +542,67 @@ function cellText(cell: WorldCell): string {
   return `${countOf(cell.cases.length, "case")}, ${cell.bar ? "a bar" : "no bar"}`;
 }
 
-/** This function gives the text of the state of a row. A gap starts with the word "Gap". */
-function stateText(row: CoverageRow, gaps: CoverageGaps, worlds: readonly CoverageWorldName[]): string {
-  if (row.state === "covered") return "Covered";
-  if (row.state === "no-bar") return "Gap: no bar";
-  const gap = gaps.noCase.find((each) => each.hypothesis === row.hypothesis);
-  if (gap === undefined || gap.needs.length === 0) return "Gap: no case";
-  const needs = gap.needs.map((trait) => TRAIT_NAMES[trait]).join(" and ");
-  if (gap.able.length === 0) return `Gap: no case. No world has ${needs}.`;
-  const names = gap.able.map((id) => worlds.find((world) => world.id === id)?.name ?? id);
-  return `Gap: no case. ${names.join(", ")} ${gap.able.length === 1 ? "has" : "have"} ${needs}.`;
+/** This function gives the line of the counts of the ladder. It names the gaps first, because the work ends only at zero gaps. */
+export function ladderCountsLine(ladder: Ladder): string {
+  const { total, classes, proposals } = ladder;
+  const rows = ladder.rows.length;
+  return (
+    `**${countOf(total.gaps, "gap")}** in ${countOf(total.cells, "cell")}: ${countOf(rows, "class", "classes")} on ${countOf(ladder.layers.length, "layer")}. ` +
+    `The classes of the catalog have ${countOf(classes.gaps, "gap")}, and the proposed classes have ${countOf(proposals.gaps, "gap")}. ` +
+    `${countOf(total.covered, "cell")} covered, and ${countOf(total.impossible, "cell")} impossible. The work ends only at zero gaps.`
+  );
+}
+
+/** This function gives the text of a cell of the ladder: its mark, and its case ids or the number of each limit. */
+function ladderCellText(cell: LadderCell, footnote: (each: LayerLimit) => number): string {
+  const { mark } = STATE_KEYS[cell.state];
+  if (cell.state === "impossible") return `${mark} ${cell.limits.map((each) => `[${String(footnote(each))}]`).join(" ")}`;
+  const cases = cell.worlds.flatMap((each) => each.cases);
+  return cases.length > 0 ? `${mark} ${codes(cases)}` : mark;
+}
+
+/** This function gives the Markdown table of some rows of the ladder: one row for each class, and one column for each layer. */
+function ladderTable(head: string, rows: readonly LadderRow[], layers: readonly LabLayer[], footnote: (each: LayerLimit) => number): string[] {
+  const lines = [`| ${head} | Layer | ${layers.join(" | ")} |`, `| --- | --- | ${layers.map(() => "---").join(" | ")} |`];
+  for (const row of rows) {
+    const cells = row.cells.map((cell) => ladderCellText(cell, footnote));
+    lines.push(`| ${code(row.id)} | ${row.layer === undefined ? "–" : code(row.layer)} | ${cells.join(" | ")} |`);
+  }
+  return lines;
 }
 
 /**
- * This function gives the coverage as Markdown: a table with one row for each class, and a list of the counts and the
- * gaps. The table names each gap as a gap. A class with no case does not show as covered.
+ * This function gives the coverage as Markdown: the line of the counts, then the ladder. The ladder has a table of the
+ * classes of the catalog and a table of the proposed classes. Each table has a column for each layer E0 to E6. The
+ * lists below the tables give the key of the marks, the layers, the reasons of the impossible cells, the worlds and
+ * the control.
  */
 export function coverageMarkdown(result: Coverage): string {
-  const { worlds, rows, gaps } = result;
-  const lines = [
-    `| Class | Layer | ${worlds.map((world) => world.name).join(" | ")} | Coverage |`,
-    `| --- | --- | ${worlds.map(() => "---").join(" | ")} | --- |`,
-  ];
-  for (const row of rows) {
-    lines.push(`| ${code(row.hypothesis)} | ${row.layer === undefined ? "–" : code(row.layer)} | ${row.worlds.map(cellText).join(" | ")} | ${stateText(row, gaps, worlds)} |`);
+  const { worlds, ladder } = result;
+  const reasons: LayerLimit[] = [];
+  const footnote = (each: LayerLimit): number => {
+    const at = reasons.indexOf(each);
+    if (at >= 0) return at + 1;
+    reasons.push(each);
+    return reasons.length;
+  };
+  const lines = [`- ${ladderCountsLine(ladder)}`, "", ...ladderTable("Class", ladder.rows.filter((row) => row.kind === "class"), ladder.layers, footnote)];
+  const proposed = ladder.rows.filter((row) => row.kind === "proposal");
+  if (proposed.length > 0) lines.push("", ...ladderTable("Proposed class", proposed, ladder.layers, footnote));
+  const keys = LADDER_STATES.map((state) => `${STATE_KEYS[state].mark} ${STATE_KEYS[state].name.toLowerCase()}`);
+  lines.push("", `- The key: ${keys.join(". ")}. A covered cell names its cases.`);
+  lines.push(`- The layers, from [the table of S7](${S7_LAYERS_URL}):`);
+  for (const layer of ladder.layers) {
+    const facts: LayerFacts = LAYER_FACTS[layer];
+    const cannot = facts.cannot.length > 0 ? facts.cannot.map((each) => each.charAt(0).toLowerCase() + each.slice(1)).join(", ") : "nothing that the plan covers";
+    lines.push(`  - ${layer}: ${facts.name}. State: ${facts.state}. It cannot prove: ${cannot}.`);
   }
-  const covered = rows.filter((row) => row.state === "covered").length;
-  lines.push(
-    "",
-    `- The catalog has ${countOf(rows.length, "fault class", "fault classes")}. ${covered} are covered, ${gaps.noBar.length} have a case and no bar, and ${gaps.noCase.length} have no case.`,
-  );
-  if (gaps.noCase.length > 0) lines.push(`- The classes with no case: ${codes(gaps.noCase.map((gap) => gap.hypothesis))}.`);
-  if (gaps.noBar.length > 0) lines.push(`- The classes with a case and no bar: ${codes(gaps.noBar)}.`);
-  lines.push(gaps.layers.length > 0 ? `- The layers with no case: ${codes(gaps.layers)}.` : "- Each layer has a case.");
+  if (reasons.length === 0) lines.push("- The impossible cells: none. No class needs a trait that a layer cannot have.");
+  else {
+    lines.push("- The reasons of the impossible cells:");
+    reasons.forEach((each, at) => lines.push(`  ${String(at + 1)}. ${each.layer} cannot prove "${each.reason}". Thus it cannot have ${TRAIT_NAMES[each.trait]}. Source: ${each.source}.`));
+  }
+  lines.push(`- The worlds: ${worlds.map((world) => `${world.name} (${world.layer})`).join(", ")}.`);
   const controls = result.controls.map((cell, at) => `${worlds[at]?.name ?? cell.world}: ${cellText(cell)}`);
   lines.push(`- The control ${code(CONTROL)}. ${controls.join(". ")}.`);
   for (const problem of result.problems) lines.push(`- A problem of the data: ${problem}`);
@@ -482,4 +690,63 @@ export function withRoadmapParts(text: string, result: Coverage): string | undef
   const next = withMarkedPart(text, roadmapPart(result));
   if (next === undefined || result.atlas === undefined) return next;
   return withMarkedPart(next, atlasPart(result.atlas), ATLAS_START, ATLAS_END);
+}
+
+/** The counts of the gate of the coverage, in the file `bars/coverage.json`. A unit test fails when the query gives other counts. */
+export interface CoverageGate {
+  /** The cells that are gaps, of the classes and of the proposed classes. */
+  readonly gaps: number;
+  readonly classGaps: number;
+  readonly proposalGaps: number;
+  readonly cells: number;
+  readonly covered: number;
+  readonly impossible: number;
+  /** The reason of the last change of the counts. */
+  readonly note: string;
+}
+
+/** This function gives the counts of the gate from the ladder. The file of the gate adds a note to them. */
+export function gateCounts(ladder: Ladder): Omit<CoverageGate, "note"> {
+  const { total, classes, proposals } = ladder;
+  return { gaps: total.gaps, classGaps: classes.gaps, proposalGaps: proposals.gaps, cells: total.cells, covered: total.covered, impossible: total.impossible };
+}
+
+/** A layer of the ladder for the site: its id, its facts from S7, and the traits that it cannot have. */
+export interface SiteLayer extends LayerFacts {
+  readonly id: LabLayer;
+  readonly limits: readonly LayerLimit[];
+}
+
+/** The ladder for the site, in the file `packages/site/src/coverage.json`. The site reads this file and does not import the query. */
+export interface SiteLadder {
+  readonly source: string;
+  readonly counts: { readonly total: LadderCounts; readonly classes: LadderCounts; readonly proposals: LadderCounts };
+  readonly layers: readonly SiteLayer[];
+  readonly states: Readonly<Record<LadderState, StateKey>>;
+  readonly gapStates: readonly LadderState[];
+  readonly traits: Readonly<Record<WorldTrait, string>>;
+  readonly worlds: readonly CoverageWorldName[];
+  readonly rows: readonly LadderRow[];
+  readonly problems: readonly string[];
+}
+
+/** This function gives the ladder of a result for the site. */
+export function siteLadder(result: Coverage, limits: Readonly<Record<LabLayer, readonly LayerLimit[]>> = LAYER_LIMITS): SiteLadder {
+  const { ladder } = result;
+  return {
+    source: S7_LAYERS_URL,
+    counts: { total: ladder.total, classes: ladder.classes, proposals: ladder.proposals },
+    layers: ladder.layers.map((id) => ({ id, ...LAYER_FACTS[id], limits: limits[id] })),
+    states: STATE_KEYS,
+    gapStates: GAP_STATES,
+    traits: TRAIT_NAMES,
+    worlds: result.worlds,
+    rows: ladder.rows,
+    problems: result.problems,
+  };
+}
+
+/** This function gives the text of the file of the ladder for the site. */
+export function siteLadderText(result: Coverage): string {
+  return `${JSON.stringify(siteLadder(result), null, 2)}\n`;
 }

@@ -167,11 +167,11 @@ The files `bars/loopback.json` and `bars/kernel.json` keep the bars of the two l
 
 ## The coverage of the fault classes
 
-The coverage query tells which fault classes of the catalog have a case in which world (ND-17). A gap is not a pass.
+The coverage query tells which fault classes of the catalog have a case in which world, on each layer of the lab (ND-17). A gap is not a pass.
 
-- `coverage` of `src/coverage.ts` joins the classes of the catalog with the cases of each world. It imports no `node:` module.
+- `coverage` of `src/coverage.ts` joins the classes of the catalog with the cases of each world. It imports no `node:` module itself, but its ladder imports the harness.
 - `labWorlds` of `src/worlds.ts` gives the worlds of today: the loopback lab, the kernel lab and the where cases. It reads the bars of each world from `bars/`.
-- A world is data: its cases, the bars of its gate, its traits, and the thing that its gate holds. A new world is one more entry.
+- A world is data: its layer, its cases, the bars of its gate, its traits, and the thing that its gate holds. A new world is one more entry.
 - The catalog of netdiag gives the layer of each fault class. `STANDARD_CLASS_NEEDS` gives the traits that a world needs for a case of a class.
 
 The query gives a row for each class. The row has the layer of the class, and a cell for each world. A cell has the ids of the cases of the class, and tells if the world has a bar for it. The query also gives the gaps as data:
@@ -184,19 +184,61 @@ The query gives a row for each class. The row has the layer of the class, and a 
 
 A case of a class that needs a trait counts only in a world with that trait. For example, a case of `ipv6.broken` needs a world with IPv6. Today no world has IPv6. The field `problems` tells each case that does not count.
 
-### The table of the roadmap
+### The ladder: each class on each layer
 
-The table "The coverage of the fault classes" of `docs/ROADMAP.md` is the rendering of the query. It is between two marker lines.
+Each fault class must have a test on each layer E0 to E6 of the lab. The work of ND-17 ends only at zero gaps. The layers come from the table of [the plan S7](https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers). Their ids are `LAYERS` of `@mark1russell7/harness`.
+
+The field `ladder` of the result has one cell for each class and each layer. Each world of today is on E1. A cell has one of these states:
+
+| State | Mark | What it tells |
+| --- | --- | --- |
+| `covered` | ✓ | A world of the layer has a case of the class, and a bar for it. |
+| `no-bar` | ◐ | A world of the layer has a case of the class, and no bar. This is a gap. |
+| `gap` | ○ | No world of the layer has a case of the class. |
+| `no-class` | ◌ | The class is a proposal of the atlas, and the catalog does not have it. This is a gap. |
+| `impossible` | ⊘ | The class needs a trait that the layer cannot ever have. The cell gives the reason and the source. |
+
+The ladder also has a row for each class that the atlas proposes. The needs of a proposal come from its atlas entries. For example, `path.leak` needs `routing`.
+
+### The impossible rule
+
+A cell is impossible only by a query. Nobody marks a cell by hand.
+
+- `LAYER_FACTS` of `src/ladder.ts` keeps the name, the proofs, the limits, the tools and the state of each layer, from S7. This copy stays until harness 0.16.10 exports `LAYER_FACTS`.
+- `LAYER_LIMITS` gives the traits that each layer cannot have. Each limit is an item of the column "What it cannot prove" of S7, with its row as the source.
+- A cell is impossible when its class needs a trait of a limit of its layer.
+- When nobody verified a limit, the cell stays a gap. For example, Wi-Fi is not impossible on E1 to E3, because `mac80211_hwsim` can possibly make a Wi-Fi link.
+- E0 and E6 have no limit. Today no cell is impossible.
+
+| Layer | The traits that it cannot have |
+| --- | --- |
+| E1 | `kernel`, `clock` and `power` |
+| E2 | `kernel` and `power` |
+| E3 | `kernel` and `forwarding` |
+| E4 | `nic` and `zones` |
+| E5 | `forwarding` |
+
+### The gate of the coverage
+
+The file `bars/coverage.json` keeps the counts of the ladder: `gaps`, `classGaps`, `proposalGaps`, `cells`, `covered` and `impossible`. Its field `note` tells the reason of the last change.
+
+- A unit test of `src/coverage.test.ts` fails when the query gives other counts. Thus the job `ci / checks` stops a rise of the gaps.
+- After a change that closes a gap, write the new counts in the file. Tell the reason in `note`.
+
+### The files of the roadmap and of the site
+
+The part "The coverage of the fault classes" of `docs/ROADMAP.md` is the rendering of the query. It is between two marker lines. The file `packages/site/src/coverage.json` is the ladder for the demo of the site.
 
 ```sh
 pnpm --filter @netdiag/lab roadmap
 pnpm --filter @netdiag/lab roadmap --check
 ```
 
-- The command writes the table between the marker lines. It also writes the tables of the fault atlas between their marker lines.
-- With `--check`, it writes nothing. The exit code is then 1 when a table is not current.
-- A unit test of `src/coverage.test.ts` fails when a table is not current. Thus the job `ci / checks` holds the tables.
-- After a change of a case, a bar, the catalog or the atlas, start the command. Commit the roadmap with the change.
+- The command writes the ladder between the marker lines, and the tables of the fault atlas between their marker lines. It also writes `coverage.json` of the site.
+- The site reads the JSON file and does not import the query, because the harness imports `node:` modules.
+- With `--check`, it writes nothing. The exit code is then 1 when a file is not current.
+- A unit test of `src/coverage.test.ts` fails when a file is not current. Thus the job `ci / checks` holds the files.
+- After a change of a case, a bar, the catalog or the atlas, start the command. Commit the files with the change.
 
 ## The fault atlas
 

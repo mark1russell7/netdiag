@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./samples": "./src/samples.ts",
+    "./coverage": "./src/coverage.ts",
     "./where": "./src/kernel/where.ts",
     "./package.json": "./package.json"
   },
