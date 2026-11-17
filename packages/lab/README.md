@@ -164,3 +164,36 @@ The files `bars/loopback.json` and `bars/kernel.json` keep the bars of the two l
 - Each lab job passes its file with `--bars`. A recall below its bar fails the job, and thus the pull request.
 - The bars hold for 5 rounds. A job with a different number of rounds gets no file, and thus no gate.
 - To change the bars, start a new dispatch with `bars` set to `true`. Then commit its files in a pull request.
+
+## The coverage of the fault classes
+
+The coverage query tells which fault classes of the catalog have a case in which world (ND-17). A gap is not a pass.
+
+- `coverage` of `src/coverage.ts` joins the classes of the catalog with the cases of each world. It imports no `node:` module.
+- `labWorlds` of `src/worlds.ts` gives the worlds of today: the loopback lab, the kernel lab and the where cases. It reads the bars of each world from `bars/`.
+- A world is data: its cases, the bars of its gate, its traits, and the thing that its gate holds. A new world is one more entry.
+- `STANDARD_CLASS_PLACES` gives the layer of each class, and the traits that a case of the class needs. The catalog gives no layer for a fault.
+
+The query gives a row for each class. The row has the layer of the class, and a cell for each world. A cell has the ids of the cases of the class, and tells if the world has a bar for it. The query also gives the gaps as data:
+
+| Gap | What it tells |
+| --- | --- |
+| `noCase` | A class with no case in any world. The gap names the traits that the class needs, and the worlds that have them. |
+| `noBar` | A class with a case and no bar in any world. |
+| `layers` | A layer of `LAYERS` with no case of a class. |
+
+A case of a class that needs a trait counts only in a world with that trait. For example, a case of `ipv6.broken` needs a world with IPv6. Today no world has IPv6. The field `problems` tells each case that does not count.
+
+### The table of the roadmap
+
+The table "The coverage of the fault classes" of `docs/ROADMAP.md` is the rendering of the query. It is between two marker lines.
+
+```sh
+pnpm --filter @netdiag/lab roadmap
+pnpm --filter @netdiag/lab roadmap --check
+```
+
+- The command writes the table between the marker lines.
+- With `--check`, it writes nothing. The exit code is then 1 when the table is not current.
+- A unit test of `src/coverage.test.ts` fails when the table is not current. Thus the job `ci / checks` holds the table.
+- After a change of a case, a bar or the catalog, start the command. Commit the roadmap with the change.
