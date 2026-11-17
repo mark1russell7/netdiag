@@ -26,11 +26,14 @@ import {
   type RdapGet,
   type TxtResolve,
   type VisitInput,
+  DNS_PROBE,
+  HTTP_PROBE,
   type VisitOptions,
   type VisitStep,
 } from "./index.ts";
 import { LINK_SUBJECT, type InterfaceTable } from "./probes/link.ts";
 import type { ToolRunOptions } from "./tools/index.ts";
+import { pingProbe } from "./tools/ping.ts";
 
 // The visit operates on the loopback addresses: a DNS server of the fixtures on 127.0.0.1, an HTTPS server on
 // 127.0.0.2 and a fake host of ping. No assertion examines a time.
@@ -211,6 +214,36 @@ describe("the visit of a target", () => {
 
   it("refuses a grant with a problem before the first probe", async () => {
     await expect(visit({ target: { host: SERVER }, grants: [range("not a range")] })).rejects.toThrow(RangeError);
+  });
+
+  it("uses the probes of the options with the parse of the real probes, and needs no port for them", async () => {
+    const queries: string[] = [];
+    const dns: VisitOptions["probes"] = {
+      dns: {
+        ...DNS_PROBE,
+        available: () => Promise.resolve({ available: true }),
+        run: (input) => {
+          queries.push(`${input.record ?? "A"} ${input.name}`);
+          const base = { name: input.name, record: input.record ?? "A", resolver: `${input.resolver}:53`, start: 0, end: 4 };
+          return Promise.resolve(input.record === "AAAA" ? { ...base, outcome: "nodata" as const, addresses: [] } : { ...base, outcome: "ok" as const, addresses: [SERVER] });
+        },
+      },
+      http: {
+        ...HTTP_PROBE,
+        available: () => Promise.resolve({ available: true }),
+        run: (input) => Promise.resolve({ scheme: input.scheme, tcp: { address: input.address, port: 443, family: 4 as const, start: 0, end: 7, outcome: "refused" as const } }),
+      },
+    };
+    const ping = pingHost([SERVER]);
+    const grants = [range(`${SERVER}/32`), range(`${RESOLVER}/32`)];
+    const steps = await visit({ target: { host: NAME }, resolver: { address: RESOLVER }, grants }, { probes: { ...dns, ping: pingProbe(ping) }, pingCount: 2 });
+    expect(problems(steps)).toEqual([]);
+    expect(queries).toEqual([`A ${NAME}`, `AAAA ${NAME}`]);
+    expect(shape(steps)).toEqual([`local link.state ${LINK_SUBJECT}`, `target dns.answer ${NAME}`, `target dns.answer ${NAME}`, `target icmp.echo ${SERVER}`, `target tcp.connect ${SERVER}`]);
+    const connect = steps.flatMap((step) => (step.kind === "fact" && isFactOf(TCP_CONNECT, step.fact) ? [step.fact.value.outcome] : []));
+    expect(connect).toEqual(["refused"]);
+    const none = await visit({ target: { host: SERVER }, grants }, { probes: { ping: pingProbe(ping) }, pingCount: 0, mtu: "never" });
+    expect(shape(none).some((fact) => fact.includes(" icmp.echo "))).toBe(false);
   });
 });
 
