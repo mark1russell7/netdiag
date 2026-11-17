@@ -1109,6 +1109,11 @@ button.cause-box[aria-pressed="true"] {
   border-radius: 0.5rem;
 }
 
+/* The fade of the scroll cue of site-pages shows that the matrix has more columns. */
+.ladder-scroll.scroll-cue {
+  --scroll-cue-bg: var(--page);
+}
+
 .ladder {
   border-collapse: separate;
   border-spacing: 0;
