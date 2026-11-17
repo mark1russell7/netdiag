@@ -1,5 +1,5 @@
-// The command of the coverage (ND-17). It writes the ladder of the fault classes and the tables of the fault atlas
-// into docs/ROADMAP.md, each between its two marker lines. It also writes the ladder for the site into
+// The command of the coverage (ND-17). It writes the ladder of the fault classes, the tables of the fault atlas and the
+// table of the fault grammar into docs/ROADMAP.md, each between its two marker lines. It also writes the ladder for the site into
 // packages/site/src/coverage.json.
 //
 //   pnpm --filter @netdiag/lab roadmap            (node packages/lab/src/coverage-main.ts)
@@ -22,7 +22,7 @@ for (const problem of result.problems) process.stderr.write(`${problem}\n`);
 const text = readFileSync(ROADMAP_FILE, "utf8");
 const next = withRoadmapParts(text, result);
 if (next === undefined) {
-  process.stderr.write("docs/ROADMAP.md has no pair of marker lines for the coverage or for the atlas.\n");
+  process.stderr.write("docs/ROADMAP.md has no pair of marker lines for the coverage, the atlas or the grammar.\n");
   process.exit(2);
 }
 const site = existsSync(SITE_FILE) ? readFileSync(SITE_FILE, "utf8") : "";

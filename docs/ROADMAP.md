@@ -62,14 +62,14 @@ ND-7 has four steps:
 The ladder of the coverage comes from the data of the labs. `coverage` of `@netdiag/lab` gives a cell for each fault class on each layer E0 to E6 of the lab (ND-17).
 
 - Each fault class must have a test on each layer. The work ends only at zero gaps.
-- A covered cell names its cases. A cell with a case and no bar is a gap. A proposed class of the atlas is a gap in each cell.
+- A covered cell names its cases. A cell with a case and no bar is a gap. A proposed class of the fault grammar is a gap in each cell that is not impossible.
 - A cell is impossible only when its class needs a trait that its layer cannot have. Each limit comes from the column "What it cannot prove" of S7.
 - The file `packages/lab/bars/coverage.json` keeps the counts. A unit test fails when the counts change, so a rise of the gaps stops CI.
 - The command `pnpm --filter @netdiag/lab roadmap` writes this part and the data of the site. A unit test fails when a file is not current.
 
 <!-- coverage:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
 
-- **298 gaps** in 315 cells: 45 classes on 7 layers. The classes of the catalog have 123 gaps, and the proposed classes have 175 gaps. 17 cells covered, and 0 cells impossible. The work ends only at zero gaps.
+- **633 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 123 gaps, and the proposed classes have 510 gaps. 17 cells covered, and 1 cell impossible. The work ends only at zero gaps.
 
 | Class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -96,31 +96,79 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 
 | Proposed class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `link.flap` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `link.errors` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `link.slow` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `link.duplex` | `link` | ◌ | ◌ | ◌ | ◌ | ⊘ [1] | ◌ | ◌ |
 | `link.storm` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `link.vlan` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `link.mac-table` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `link.mtu` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `link.port-blocked` | `link` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `wifi.down` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `wifi.flap` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `wifi.busy` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `wifi.multicast` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `wifi.power-save` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `wifi.refused` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `wifi.rogue` | `wifi` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `dhcp.none` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `dhcp.rogue` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `arp.spoof` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `address.conflict` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dhcp.full` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `address.wrong` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `arp.stale` | `ip` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `ipv6.no-router` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `route.wrong` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `ipv6.rogue-router` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `nat.full` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `nat.hairpin` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `gateway.flap` | `route` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.delay` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.jitter` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.reorder` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.duplicate` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.corrupt` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.rate` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.queue` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.asymmetric` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `path.black-hole` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `path.loop` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
-| `path.asymmetric` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `path.hijack` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `path.leak` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
-| `path.queue` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
-| `zone.lame` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
-| `dnssec.bogus` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
-| `cache.stale` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.flap` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `path.no-route` | `path` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `zone.unreachable` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `zone.lame` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dns.wrong-record` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dns.intercept` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dns.poison` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `cache.stale` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dnssec.bogus` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dns.blocked` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dns.tcp-blocked` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `resolver.slow` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `resolver.lossy` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `resolver.limit` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `resolver.clock` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `dns.fragments` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `dns.loop` | `dns` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `filter.ecn` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `nat.timeout` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `server.backlog` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `server.stall` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `tcp.options` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `tcp.proxy` | `tcp` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `clock.wrong` | `tls` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `tls.blocked` | `tls` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `tls.large-hello` | `tls` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 | `proxy.auth` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `cdn.stale` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `http.redirect-loop` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `server.limit` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `http.version` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
+| `cdn.wrong-content` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 
 - The key: ✓ covered. ◐ a gap: a case and no bar. ○ a gap: no case. ◌ a gap: no class in the catalog. ⊘ impossible on the layer. A covered cell names its cases.
 - The layers, from [the table of S7](https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers):
@@ -131,7 +179,8 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
   - E4: Virtual machines, each with its own kernel. State: New, the VM tier of S4. It cannot prove: a physical NIC, real zones.
   - E5: Images of vendor routers in virtual machines. State: Later. It cannot prove: the forwarding chip of the router.
   - E6: Real hardware and clouds. State: Waits on the owner. It cannot prove: nothing that the plan covers.
-- The impossible cells: none. No class needs a trait that a layer cannot have.
+- The reasons of the impossible cells:
+  1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: S7, the table "The layers", row E4, column "What it cannot prove".
 - The worlds: Loopback (E1), Kernel (E1), Kernel, where cases (E1).
 - The control `none`. Loopback: 1 case, a bar. Kernel: 1 case, a bar. Kernel, where cases: 1 case, no bar.
 
@@ -197,6 +246,57 @@ The fault atlas is data: `FAULT_ATLAS` in `packages/lab/src/atlas.ts` (ND-17). E
   - `proxy.auth` (`http`, Loopback): `http.proxy-authentication`.
 
 <!-- atlas:end -->
+
+### The fault grammar
+
+The fault grammar is data: `FAULT_GRAMMAR` in `packages/lab/src/grammar.ts` (ND-17). Each fault is a term: a layer, a mode, a place, a severity and an optional second fault.
+
+- The grammar is a space of `@mark1russell7/strategy-space`. Thus each term has an id, and the space has counts and seeded samples.
+- Each pair of a layer and a mode is an option, an alias of an option, or a reason. A test checks that each pair has one decision.
+- The rules of the classes give each term its class. The class needs each trait that each of its terms needs.
+- Each entry of the atlas has its term. A test fails when the term does not give the class of the entry. Thus the atlas checks that the grammar misses no real fault.
+- The same command writes this table. The same unit test fails when it is not current.
+
+<!-- grammar:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
+
+- The grammar has 24 modes, 10 places and 87 options. Of the 216 pairs of a layer and a mode, 87 are options, 119 are aliases of an option, and 10 have a reason. The grammar gives 93 classes. The grid with 3 levels has 542 terms of one fault and 293,764 terms of two faults.
+
+| Mode | link | wifi | ip | route | path | dns | tcp | tls | http |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `down` | `interface.down` | `wifi.down` | `host.down`, `dhcp.none` | `gateway.down` | `path.black-hole` | `zone.unreachable`, `resolver.down` | → `tcp/missing` | → `tcp/missing` | → `http/refuse` |
+| `flap` | `link.flap` | `wifi.flap` | → `ip/rogue` | `gateway.flap` | `path.flap` | → `dns/loss` | → `tcp/missing` | → `tcp/missing` | → `http/refuse` |
+| `loss` | → `link/corrupt` | `wifi.multicast`, `wifi.weak`, `wifi.busy` | → `path/loss` | → `path/loss` | `path.loss` | `resolver.lossy` | → `path/loss` | → `path/loss` | → `path/loss` |
+| `corrupt` | `link.errors` | → `wifi/loss` | → `path/corrupt` | → `path/corrupt` | `path.corrupt` | → `dns/wrong` | → `path/corrupt` | → `path/corrupt` | → `http/wrong` |
+| `delay` | → `path/queue` | `wifi.power-save` | → `path/delay` | → `path/delay` | `path.delay` | `resolver.slow` | → `tcp/exhaust` | → `http/delay` | `server.slow` |
+| `jitter` | → `path/jitter` | → `wifi/loss` | → `path/jitter` | → `path/jitter` | `path.jitter` | → `path/jitter` | → `path/jitter` | → `path/jitter` | → `path/jitter` |
+| `reorder` | → `path/reorder` | → `path/reorder` | → `path/reorder` | → `path/reorder` | `path.reorder` | → `path/reorder` | → `path/reorder` | → `path/reorder` | → `path/reorder` |
+| `duplicate` | → `link/loop` | → `path/duplicate` | `address.conflict` | → `path/duplicate` | `path.duplicate` | → `path/duplicate` | → `path/duplicate` | → `path/duplicate` | → `path/duplicate` |
+| `rate` | `link.slow` | → `wifi/loss` | → `path/rate` | → `path/rate` | `path.rate` | → `dns/exhaust` | → `path/rate` | → `path/rate` | → `http/exhaust` |
+| `queue` | → `path/queue` | → `path/queue` | → `path/queue` | → `path/queue` | `path.queue` | → `path/queue` | → `path/queue` | → `path/queue` | → `path/queue` |
+| `size` | `link.mtu` | → `link/size` | → `path/size` | → `path/size` | `path.mtu` with `path/filter` (kind `icmp-too-big`) | `dns.fragments` | → `path/size` | `tls.large-hello` | → `http/refuse` |
+| `filter` | `link.port-blocked` | → `wifi/refuse` | `filter.icmp` | `nat.hairpin` | `path.asymmetric`, `path.mtu` with `path/size` | `dns.tcp-blocked`, `dns.blocked` | `filter.ecn`, `filter.drop` | `tls.blocked` | → `http/refuse` |
+| `refuse` | → `link/filter` | `wifi.refused` | → `path/missing` | → `path/missing` | → `path/missing` | `resolver.failing` | `filter.reset` | → `tls/mismatch` | `proxy.auth`, `server.error` |
+| `missing` | → `link/down` | → `wifi/down` | `ipv6.broken` | `ipv6.no-router` | `path.no-route` | `name.missing` | `port.closed` | → `tls/wrong` | ⊘ [1] |
+| `wrong` | `link.vlan` | → `link/wrong` | `address.wrong` | `route.wrong` | `path.leak` | `zone.lame`, `dns.wrong-record` | → `dns/wrong` | `tls.cert-invalid` | `cdn.wrong-content` |
+| `stale` | → `ip/stale` | → `ip/stale` | `arp.stale` | → `route/wrong` | → `path/down` | `cache.stale` | → `tcp/expire` | → `tls/expire` | `cdn.stale` |
+| `rogue` | → `ip/rogue` | `wifi.rogue` | `arp.spoof`, `dhcp.rogue` | `ipv6.rogue-router` | `path.hijack` | `dns.poison` | → `tcp/refuse` | → `tls/intercept` | → `http/intercept` |
+| `exhaust` | `link.mac-table` | → `wifi/refuse` | `dhcp.full` | `nat.full` | `path.black-hole` | `resolver.limit` | `server.backlog`, `nat.full` | → `http/exhaust` | `server.limit` |
+| `expire` | → `link/filter` | → `wifi/flap` | → `ip/down` | → `route/missing` | → `path/flap` | `dnssec.bogus` | `nat.timeout` | `tls.cert-invalid` | → `tcp/expire` |
+| `loop` | `link.storm` | → `link/loop` | → `path/loop` | → `path/loop` | `path.loop` | `dns.loop` | → `path/loop` | → `path/loop` | `http.redirect-loop` |
+| `intercept` | → `ip/rogue` | → `wifi/rogue` | → `ip/rogue` | → `route/rogue` | → `path/rogue` | `dns.intercept` | `tcp.proxy` | `tls.proxy` | `captive.portal` |
+| `mismatch` | `link.duplex` | → `wifi/refuse` | → `ip/wrong` | → `route/wrong` | → `path/size` | `dnssec.bogus` | `tcp.options` | `tls.mismatch` | `http.version` |
+| `skew` | ⊘ [2] | → `tls/skew` | ⊘ [2] | ⊘ [2] | ⊘ [2] | `resolver.clock` | ⊘ [2] | `clock.wrong` | → `tls/skew` |
+| `stall` | ⊘ [3] | → `wifi/loss` | ⊘ [3] | ⊘ [3] | ⊘ [3] | → `dns/down` | `server.stall` | → `tcp/stall` | → `tcp/stall` |
+
+- The key: a cell names the classes of its option. → names the option of an alias. ⊘ names the reason that the pair has no fault.
+- The reasons:
+  1. A missing page is a fault of the program of the server or of the address, not of the network.
+  2. The parts of this layer measure only intervals. They do not compare the time of a clock with a time in the data.
+  3. Only a connection can stall: a part accepts it and then sends nothing. This layer has no connection.
+- The rules of two faults:
+  - `path/size` and `path/filter` (kind `icmp-too-big`), with one family: `path.mtu`. A small MTU on the path and a filter of the ICMP message that tells the size make a black hole for large packets.
+
+<!-- grammar:end -->
 
 ### The licenses of the outside tools
 

@@ -172,7 +172,7 @@ The coverage query tells which fault classes of the catalog have a case in which
 - `coverage` of `src/coverage.ts` joins the classes of the catalog with the cases of each world. It imports no `node:` module itself, but its ladder imports the harness.
 - `labWorlds` of `src/worlds.ts` gives the worlds of today: the loopback lab, the kernel lab and the where cases. It reads the bars of each world from `bars/`.
 - A world is data: its layer, its cases, the bars of its gate, its traits, and the thing that its gate holds. A new world is one more entry.
-- The catalog of netdiag gives the layer of each fault class. `STANDARD_CLASS_NEEDS` gives the traits that a world needs for a case of a class.
+- The catalog of netdiag gives the layer of each fault class. `STANDARD_CLASS_NEEDS` gives the traits that a world needs for a case of a class. The fault grammar gives them.
 
 The query gives a row for each class. The row has the layer of the class, and a cell for each world. A cell has the ids of the cases of the class, and tells if the world has a bar for it. The query also gives the gaps as data:
 
@@ -195,10 +195,10 @@ The field `ladder` of the result has one cell for each class and each layer. Eac
 | `covered` | ✓ | A world of the layer has a case of the class, and a bar for it. |
 | `no-bar` | ◐ | A world of the layer has a case of the class, and no bar. This is a gap. |
 | `gap` | ○ | No world of the layer has a case of the class. |
-| `no-class` | ◌ | The class is a proposal of the atlas, and the catalog does not have it. This is a gap. |
+| `no-class` | ◌ | The fault grammar proposes the class, and the catalog does not have it. This is a gap. |
 | `impossible` | ⊘ | The class needs a trait that the layer cannot ever have. The cell gives the reason and the source. |
 
-The ladder also has a row for each class that the atlas proposes. The needs of a proposal come from its atlas entries. For example, `path.leak` needs `routing`.
+The ladder also has a row for each class that the fault grammar gives and the catalog does not have. The grammar gives the needs of a proposal. For example, `path.leak` needs `routing`. Each row names the options of the grammar that give its class.
 
 ### The impossible rule
 
@@ -208,7 +208,7 @@ A cell is impossible only by a query. Nobody marks a cell by hand.
 - `LAYER_LIMITS` gives the traits that each layer cannot have. Each limit is an item of the column "What it cannot prove" of S7, with its row as the source.
 - A cell is impossible when its class needs a trait of a limit of its layer.
 - When nobody verified a limit, the cell stays a gap. For example, Wi-Fi is not impossible on E1 to E3, because `mac80211_hwsim` can possibly make a Wi-Fi link.
-- E0 and E6 have no limit. Today no cell is impossible.
+- E0 and E6 have no limit. Today one cell is impossible: `link.duplex` on E4, because a VM has no physical NIC.
 
 | Layer | The traits that it cannot have |
 | --- | --- |
@@ -234,11 +234,11 @@ pnpm --filter @netdiag/lab roadmap
 pnpm --filter @netdiag/lab roadmap --check
 ```
 
-- The command writes the ladder between the marker lines, and the tables of the fault atlas between their marker lines. It also writes `coverage.json` of the site.
+- The command writes the ladder, the tables of the fault atlas and the table of the fault grammar, each between its marker lines. It also writes `coverage.json` of the site.
 - The site reads the JSON file and does not import the query, because the harness imports `node:` modules.
 - With `--check`, it writes nothing. The exit code is then 1 when a file is not current.
 - A unit test of `src/coverage.test.ts` fails when a file is not current. Thus the job `ci / checks` holds the files.
-- After a change of a case, a bar, the catalog or the atlas, start the command. Commit the files with the change.
+- After a change of a case, a bar, the catalog, the atlas or the grammar, start the command. Commit the files with the change.
 
 ## The fault atlas
 
@@ -253,7 +253,7 @@ Each entry has these fields:
 | `proposal` | For a fault with no class: the class that the atlas proposes for the catalog. |
 | `signs` | The signs of the fault that a probe can see. |
 | `world` | The world that can make the fault for a case: `loopback`, `kernel`, `containerlab` or `vm`. |
-| `needs` | The traits that a world needs for a case of the entry, with the traits of its class. |
+| `term` | The fault as a term of the fault grammar. The term gives the class and the traits that a world needs for a case of the entry. |
 | `sources` | An RFC with its number and section, or a public incident report with its address. |
 
 Each source was read before it was cited. The atlas has only the faults with a source that was read. Thus it has no duplex mismatch and no VLAN mismatch today.
@@ -264,11 +264,36 @@ Give the atlas to `coverage` with the field `atlas`. The result then has the fie
 
 - A row for each entry, with its state: `covered`, `no-bar`, `no-case` or `no-class`.
 - An entry with no class is a gap of the catalog. The field `proposals` gives each proposed class with its entries.
-- An entry of a class with no case is a gap of the labs. An entry with `needs` counts only the cases of a world with those traits.
+- An entry of a class with no case is a gap of the labs. An entry counts only the cases of a world with the traits that its term needs.
 - The counts of the states, for each layer and for each world.
 
-The field `problems` also tells the problems of the atlas. Examples are a class that is not in the catalog, an entry with no source, and a class of the catalog with no entry.
+The field `problems` also tells the problems of the atlas. Examples are a class that is not in the catalog, an entry with no source and a class of the catalog with no entry. A term that does not give the class of its entry is also a problem.
 
 The section "The fault atlas" of `docs/ROADMAP.md` has the tables of the gaps by layer and by world. The command `pnpm --filter @netdiag/lab roadmap` writes them.
 
 To add a fault, add an entry to `FAULT_ATLAS`, then start the command. A unit test of `src/atlas.test.ts` holds the gap counts of today.
+
+## The fault grammar
+
+The fault grammar gives each fault as a term (ND-17). It is data: `FAULT_GRAMMAR` of `src/grammar.ts`, a space of `@mark1russell7/strategy-space`.
+
+A term has two stages: `fault` and the optional stage `second`. The choice of a stage is an option of the grammar, with its params:
+
+| Part | What it tells |
+| --- | --- |
+| Option | A layer of `LAYERS` and a mode of `FAULT_MODES`, for example `path/loss`. |
+| `place` | The part of the network with the fault, from `FAULT_PLACES`: `host`, `gateway`, `transit` and others. |
+| Severity | The numeric params of the option, for example the rate of the loss or the size of the MTU. |
+| Kind | The enum params of the option, for example the address family or the kind of a filter. |
+| `second` | A second fault. A rule of `PAIR_RULES` gives a class to some pairs. For example, a small MTU and a filter of the ICMP message give `path.mtu`. |
+
+- The rules of an option give the class of a fault. The first rule that matches the values gives the class.
+- Each pair of a layer and a mode is an option, an alias of an option, or a reason in `GRAMMAR_REASONS`. `pairDecision` gives it.
+- `GRAMMAR_CLASSES` gives each class with its layer, its options and its needs. A class needs each trait that each of its terms needs.
+- `termClasses` and `termNeeds` give the classes and the needs of a term. `termProblems` gives the breaks of a term.
+- `sampleTerms` gives a seeded sample of terms. `grammarCounts` counts the options, the aliases, the reasons and the terms.
+- `grammarProblems` tells the problems of the grammar. A unit test of `src/grammar.test.ts` holds an empty list.
+
+Each class of the catalog and each entry of the atlas is a class of the grammar. A test fails when an atlas term does not give the class of its entry. Thus the atlas checks that the grammar misses no real fault.
+
+The section "The fault grammar" of `docs/ROADMAP.md` has the table of the modes and the layers. The command `pnpm --filter @netdiag/lab roadmap` writes it.

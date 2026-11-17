@@ -1,9 +1,9 @@
 {
-  "gaps": 298,
+  "gaps": 633,
   "classGaps": 123,
-  "proposalGaps": 175,
-  "cells": 315,
+  "proposalGaps": 510,
+  "cells": 651,
   "covered": 17,
-  "impossible": 0,
-  "note": "ND-17 counts each class on each layer E0 to E6. Each covered cell is on E1, and no class needs a trait that a layer cannot have."
+  "impossible": 1,
+  "note": "The fault grammar proposes 73 classes in place of the 25 classes of the atlas. Thus the gaps rise from 298 to 633: this is the true count. The class link.duplex needs a physical NIC, so E4 cannot have it."
 }

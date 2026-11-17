@@ -23,6 +23,7 @@ import {
   type CoverageWorld,
   type LadderCell,
 } from "./coverage.ts";
+import { GRAMMAR_CLASSES, GRAMMAR_END, GRAMMAR_START, grammarPart } from "./grammar.ts";
 import { KERNEL_LATER } from "./kernel/cases.ts";
 import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, type LabLayer } from "./ladder.ts";
 import { GATE_FILE, ROADMAP_FILE, SITE_FILE, labWorlds, readBars } from "./worlds.ts";
@@ -137,15 +138,19 @@ describe("the ladder", () => {
 
   it("has a row for each class of the catalog and each proposed class, with a cell for each layer", () => {
     expect(ladder.rows.filter((row) => row.kind === "class").map((row) => row.id)).toEqual(TODAY.rows.map((row) => row.hypothesis));
-    expect(ladder.rows.filter((row) => row.kind === "proposal").map((row) => row.id)).toEqual(TODAY.atlas!.proposals.map((each) => each.proposal));
+    const proposed = GRAMMAR_CLASSES.filter((each) => !FAULTS.includes(each.id)).map((each) => each.id);
+    expect(ladder.rows.filter((row) => row.kind === "proposal").map((row) => row.id)).toEqual(proposed);
+    for (const each of TODAY.atlas!.proposals) expect(proposed).toContain(each.proposal);
     for (const row of ladder.rows) expect(row.cells.map((cell) => cell.layer), row.id).toEqual(LAB_LAYERS);
-    expect(coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS }).ladder.rows.every((row) => row.kind === "class")).toBe(true);
+    expect(coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, classes: [] }).ladder.rows.every((row) => row.kind === "class")).toBe(true);
   });
 
-  it("gives the counts of today: each covered cell is on E1, and no cell is impossible", () => {
+  it("gives the counts of today: each covered cell is on E1, and only link.duplex on E4 is impossible", () => {
     expect(ladder.classes).toEqual({ cells: 140, covered: 17, noBar: 0, gap: 123, noClass: 0, impossible: 0, gaps: 123 });
-    expect(ladder.proposals).toEqual({ cells: 175, covered: 0, noBar: 0, gap: 0, noClass: 175, impossible: 0, gaps: 175 });
-    expect(ladder.total).toEqual({ cells: 315, covered: 17, noBar: 0, gap: 123, noClass: 175, impossible: 0, gaps: 298 });
+    expect(ladder.proposals).toEqual({ cells: 511, covered: 0, noBar: 0, gap: 0, noClass: 510, impossible: 1, gaps: 510 });
+    expect(ladder.total).toEqual({ cells: 651, covered: 17, noBar: 0, gap: 123, noClass: 510, impossible: 1, gaps: 633 });
+    const impossible = ladder.rows.flatMap((row) => row.cells.filter((cell) => cell.state === "impossible").map((cell) => [row.id, cell.layer]));
+    expect(impossible).toEqual([["link.duplex", "E4"]]);
     const covered = ladder.rows.flatMap((row) => row.cells).filter((cell) => cell.state === "covered");
     expect(new Set(covered.map((cell) => cell.layer))).toEqual(new Set(["E1"]));
     expect(cellOf(TODAY, "path.loss", "E1")).toEqual({
@@ -173,12 +178,12 @@ describe("the ladder", () => {
 
   it("makes a cell impossible only when the class needs a trait that the layer cannot have", () => {
     const needs = { ...STANDARD_CLASS_NEEDS, "wifi.weak": ["wifi", "nic"] as const };
-    const atlas = FAULT_ATLAS.map((entry) => (entry.id === "path.bgp-leak" ? { ...entry, needs: ["forwarding" as const] } : entry));
-    const result = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, needs, atlas });
+    const classes = GRAMMAR_CLASSES.map((each) => (each.id === "path.leak" ? { ...each, needs: ["forwarding" as const] } : each));
+    const result = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, needs, atlas: FAULT_ATLAS, classes });
     expect(cellOf(result, "wifi.weak", "E4")).toEqual({ layer: "E4", state: "impossible", worlds: [], limits: [LAYER_LIMITS.E4[0]] });
     expect(LAB_LAYERS.filter((layer) => cellOf(result, "wifi.weak", layer)?.state === "impossible")).toEqual(["E4"]);
     expect(LAB_LAYERS.filter((layer) => cellOf(result, "path.leak", layer)?.state === "impossible")).toEqual(["E3", "E5"]);
-    expect(result.ladder.total.impossible).toBe(3);
+    expect(result.ladder.total.impossible).toBe(TODAY.ladder.total.impossible + 3);
     expect(result.ladder.total.gaps).toBe(TODAY.ladder.total.gaps - 3);
     for (const row of result.ladder.rows) expect(row.cells[0]?.state, row.id).not.toBe("impossible");
   });
@@ -206,12 +211,12 @@ describe("coverageMarkdown", () => {
 
   it("gives the line of the counts first, with the gaps of the classes and of the proposed classes", () => {
     expect(lines[0]).toBe(
-      "- **298 gaps** in 315 cells: 45 classes on 7 layers. The classes of the catalog have 123 gaps, and the proposed classes have 175 gaps. 17 cells covered, and 0 cells impossible. The work ends only at zero gaps.",
+      "- **633 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 123 gaps, and the proposed classes have 510 gaps. 17 cells covered, and 1 cell impossible. The work ends only at zero gaps.",
     );
   });
 
   it("gives a line for each row of the ladder, with a column for each layer", () => {
-    expect(table).toHaveLength(2 + 20 + 2 + 25);
+    expect(table).toHaveLength(2 + 20 + 2 + 73);
     for (const line of table) expect(line.split("|").length - 2, line).toBe(2 + LAB_LAYERS.length);
     expect(table[0]).toBe("| Class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |");
   });
@@ -225,7 +230,8 @@ describe("coverageMarkdown", () => {
     }
     expect(table).toContain("| `ipv6.broken` | `ip` | ○ | ○ | ○ | ○ | ○ | ○ | ○ |");
     expect(table).toContain("| `path.loss` | `path` | ○ | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |");
-    expect(lines).toContain("- The impossible cells: none. No class needs a trait that a layer cannot have.");
+    expect(table).toContain("| `link.duplex` | `link` | ◌ | ◌ | ◌ | ◌ | ⊘ [1] | ◌ | ◌ |");
+    expect(lines).toContain(`  1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: ${LAYER_LIMITS.E4[0]!.source}.`);
   });
 
   it("gives the reason and the source of each impossible cell in a numbered list", () => {
@@ -242,6 +248,7 @@ describe("the files of the roadmap and of the site", () => {
     expect(markedPart(text)).toBe(roadmapPart(TODAY));
     expect(TODAY.atlas).toBeDefined();
     expect(markedPart(text, ATLAS_START, ATLAS_END)).toBe(atlasPart(TODAY.atlas!));
+    expect(markedPart(text, GRAMMAR_START, GRAMMAR_END)).toBe(grammarPart());
     expect(withRoadmapParts(text, TODAY)).toBe(text);
     expect(readFileSync(SITE_FILE, "utf8")).toBe(siteLadderText(TODAY));
   });

@@ -1,5 +1,5 @@
 import type { Layer } from "@mark1russell7/netdiag";
-import type { WorldTrait } from "./coverage.ts";
+import { fault, faults, type FaultTerm } from "./grammar.ts";
 
 // The fault atlas (ND-17, step 1): the faults of real networks, as data. Each entry has its layer, the class of the
 // catalog that names it (or none), the signs that a probe can see, the world that can make it, and its sources.
@@ -60,10 +60,10 @@ export interface AtlasEntry {
   /** For a fault with no class: the id of the class that the atlas proposes for the catalog. */
   readonly proposal?: string | undefined;
   /**
-   * The traits that a world needs for a case of the entry, with the traits that its class needs. For example, an entry
-   * of `path.mtu` on IPv6 needs IPv6, and the class `path.mtu` does not.
+   * The fault as a term of the fault grammar. The class of the term is the class of the entry. The term also gives the
+   * traits that a world needs for a case. For example, an entry of `path.mtu` on IPv6 needs IPv6, and the class does not.
    */
-  readonly needs?: readonly WorldTrait[] | undefined;
+  readonly term: FaultTerm;
   /** The signs of the fault that a probe can see. */
   readonly signs: readonly string[];
   /** The world that can make the fault for a case. */
@@ -113,6 +113,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The cable is out, or the port of the switch is down, so the interface has no link.",
     layer: "link",
     hypothesis: "interface.down",
+    term: fault("link/down", { place: "link" }),
     signs: ["The interface has no link (`link.state` down).", "Each probe past the interface fails at once."],
     world: "vm",
     sources: [
@@ -126,6 +127,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "link",
     hypothesis: null,
     proposal: "link.storm",
+    term: fault("link/loop", { place: "lan" }),
     signs: [
       "The link is up, and the loss to the gateway is high.",
       "The time to the gateway grows, or the gateway does not answer.",
@@ -141,6 +143,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The access point is far, or walls weaken the signal, so the radio link loses frames.",
     layer: "wifi",
     hypothesis: "wifi.weak",
+    term: fault("wifi/loss", { place: "link", kind: "all", signal: "weak" }),
     signs: ["The signal is below -75 dBm (`wifi.signal` weak).", "The loss to the gateway is some or high, and TCP is slow."],
     world: "vm",
     sources: [
@@ -154,7 +157,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "wifi",
     hypothesis: null,
     proposal: "wifi.busy",
-    needs: ["wifi"],
+    term: fault("wifi/loss", { place: "link", kind: "all", signal: "strong" }),
     signs: ["The signal is strong, and the loss to the gateway is some or high.", "The time to the gateway changes much from one ping to the next."],
     world: "vm",
     sources: [{ rfc: 3819, section: "8.5.3", title: RFC_3819 }],
@@ -165,7 +168,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "wifi",
     hypothesis: null,
     proposal: "wifi.multicast",
-    needs: ["wifi"],
+    term: fault("wifi/loss", { place: "lan", kind: "multicast" }),
     signs: ["Unicast traffic passes.", "Multicast lookups, for example mDNS, get few answers."],
     world: "vm",
     sources: [
@@ -181,6 +184,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "ip",
     hypothesis: null,
     proposal: "dhcp.none",
+    term: fault("ip/down", { place: "gateway" }),
     signs: [
       "The link is up, and the interface has no IPv4 address, or only a link-local address of 169.254.0.0/16.",
       "The client sends DHCPDISCOVER again, with a longer wait each time.",
@@ -198,6 +202,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "ip",
     hypothesis: null,
     proposal: "dhcp.rogue",
+    term: fault("ip/rogue", { place: "lan", kind: "dhcp" }),
     signs: ["The gateway or the resolver of the lease is not the one of the network.", "Some hosts of the link work, and others do not."],
     world: "containerlab",
     sources: [{ rfc: 2131, section: "7", title: RFC_2131 }],
@@ -208,6 +213,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "ip",
     hypothesis: null,
     proposal: "address.conflict",
+    term: fault("ip/duplicate", { place: "lan" }),
     signs: ["An ARP packet for the address of the interface comes from a different hardware address.", "Connections stop or reset at random."],
     world: "containerlab",
     sources: [
@@ -221,6 +227,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The host has IPv6, and a router on the path has no IPv6 route to the target.",
     layer: "ip",
     hypothesis: "ipv6.broken",
+    term: fault("ip/missing", { place: "provider" }),
     signs: ["IPv4 connects, and IPv6 does not (`ip.family` ipv4-only).", "A client that tries IPv6 first waits many seconds before it uses IPv4."],
     world: "containerlab",
     sources: [
@@ -234,6 +241,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A filter drops ICMP echo, and the host is up.",
     layer: "ip",
     hypothesis: "filter.icmp",
+    term: fault("ip/filter", { place: "remote" }),
     signs: ["The host does not answer the ping (`icmp.reply` none).", "TCP connects to the port."],
     world: "kernel",
     sources: [
@@ -246,6 +254,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The host is off, so nothing on it answers.",
     layer: "ip",
     hypothesis: "host.down",
+    term: fault("ip/down", { place: "server" }),
     signs: ["The router of the host tells host unreachable, or no answer comes (`icmp.reply`).", "The ping and the TCP connect fail."],
     world: "kernel",
     sources: [{ rfc: 1812, section: "5.2.7.1", title: "Requirements for IP Version 4 Routers" }],
@@ -257,6 +266,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The gateway does not forward packets, and the link stays up.",
     layer: "route",
     hypothesis: "gateway.down",
+    term: fault("route/down", { place: "gateway" }),
     signs: ["The gateway does not answer the ping (`gateway.reply` none).", "The DNS queries and the connections past the gateway time out."],
     world: "kernel",
     sources: [{ rfc: 1122, section: "3.3.1.4", title: RFC_1122 }],
@@ -267,7 +277,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "route",
     hypothesis: null,
     proposal: "ipv6.no-router",
-    needs: ["ipv6"],
+    term: fault("route/missing", { place: "gateway" }),
     signs: ["The interface has only a link-local IPv6 address.", "The router solicitations get no answer, and IPv4 works."],
     world: "vm",
     sources: [{ rfc: 4861, section: "6.3.7", title: "Neighbor Discovery for IP version 6 (IPv6)" }],
@@ -278,7 +288,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "route",
     hypothesis: null,
     proposal: "ipv6.rogue-router",
-    needs: ["ipv6"],
+    term: fault("route/rogue", { place: "lan" }),
     signs: ["The IPv6 default router is not the router of the network.", "The host has an address of a wrong prefix, and IPv6 fails while IPv4 works."],
     world: "vm",
     sources: [
@@ -292,6 +302,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "route",
     hypothesis: null,
     proposal: "nat.full",
+    term: fault("route/exhaust", { place: "provider" }),
     signs: ["The connections that are open keep working.", "New connections fail, and the NAT can send ICMP host unreachable."],
     world: "containerlab",
     sources: [{ rfc: 6888, section: "3", title: "Common Requirements for Carrier-Grade NATs (CGNs)" }],
@@ -302,6 +313,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "route",
     hypothesis: null,
     proposal: "nat.hairpin",
+    term: fault("route/filter", { place: "gateway" }),
     signs: ["Connections to the external address fail from inside the network, and pass from outside.", "Connections to the internal address pass."],
     world: "containerlab",
     sources: [
@@ -316,6 +328,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A congested or damaged link on the path drops a part of the packets.",
     layer: "path",
     hypothesis: "path.loss",
+    term: fault("path/loss", { place: "transit", share: 0.05 }),
     signs: ["The loss of the path is some or high (`path.loss`).", "TCP connects send the SYN again, and transfers are slow."],
     world: "kernel",
     sources: [
@@ -328,6 +341,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A link on the path has a small MTU, and a filter blocks the ICMP message that tells the size.",
     layer: "path",
     hypothesis: "path.mtu",
+    term: faults(fault("path/size", { place: "transit", mtu: 1400 }), fault("path/filter", { place: "transit", kind: "icmp-too-big" })),
     signs: [
       "Pings and small packets pass, and large packets with the DF bit are lost (`path.mtu` silent).",
       "A transfer stops at the first full packet.",
@@ -343,7 +357,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A filter drops the ICMPv6 Packet Too Big messages, so the Path MTU Discovery of IPv6 fails.",
     layer: "path",
     hypothesis: "path.mtu",
-    needs: ["ipv6"],
+    term: faults(fault("path/size", { place: "transit", family: "ipv6", mtu: 1280 }), fault("path/filter", { place: "transit", kind: "icmp-too-big", family: "ipv6" })),
     signs: ["Small IPv6 packets pass, and large IPv6 packets are lost.", "IPv4 transfers pass."],
     world: "containerlab",
     sources: [
@@ -357,6 +371,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.black-hole",
+    term: fault("path/down", { place: "transit" }),
     signs: ["Each probe to the prefix gets no answer, and other prefixes work.", "A trace stops in one network, with no unreachable message."],
     world: "containerlab",
     sources: [
@@ -370,7 +385,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.loop",
-    needs: ["routing"],
+    term: fault("path/loop", { place: "transit", kind: "converge" }),
     signs: ["A trace shows the same hops again and again.", "Time-exceeded messages come back, and the links of the loop congest."],
     world: "containerlab",
     sources: [{ rfc: 5715, section: "2", title: "A Framework for Loop-Free Convergence" }],
@@ -381,6 +396,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.asymmetric",
+    term: fault("path/filter", { place: "transit", kind: "reverse-path" }),
     signs: ["The requests leave, and no reply comes back.", "The same target works from a host on a different network."],
     world: "containerlab",
     sources: [{ rfc: 3704, section: "2.2", title: "Ingress Filtering for Multihomed Networks" }],
@@ -391,7 +407,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.hijack",
-    needs: ["routing"],
+    term: fault("path/rogue", { place: "transit" }),
     signs: ["The trace ends in a network that is not the origin of the prefix.", "Connections time out, or a different server answers."],
     world: "containerlab",
     sources: [
@@ -407,7 +423,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.leak",
-    needs: ["routing"],
+    term: fault("path/wrong", { place: "transit" }),
     signs: ["The trace goes through a network that is not on the usual path.", "The loss and the delay rise for many targets at the same time."],
     world: "containerlab",
     sources: [
@@ -424,6 +440,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "path",
     hypothesis: null,
     proposal: "path.queue",
+    term: fault("path/queue", { place: "provider" }),
     signs: ["The delay of the path rises by hundreds of milliseconds under load.", "With no load, the delay is short."],
     world: "kernel",
     sources: [
@@ -438,6 +455,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The resolver does not answer, for example when the routes to its address are withdrawn.",
     layer: "dns",
     hypothesis: "resolver.down",
+    term: fault("dns/down", { place: "resolver" }),
     signs: ["Each DNS query gets no answer (`dns.answer` timeout or unreachable).", "Connections to an address with no name pass."],
     world: "loopback",
     sources: [{ report: "https://blog.cloudflare.com/cloudflare-1-1-1-1-incident-on-july-14-2025/", title: "Cloudflare 1.1.1.1 Incident on July 14, 2025" }],
@@ -447,6 +465,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The resolver reaches no authoritative server, so it answers with an error for each name.",
     layer: "dns",
     hypothesis: "resolver.failing",
+    term: fault("dns/refuse", { place: "resolver" }),
     signs: ["Each name gets SERVFAIL (`dns.answer` servfail).", "A different resolver answers."],
     world: "loopback",
     sources: [
@@ -459,6 +478,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The name does not exist, for example after a typing error or a deleted record.",
     layer: "dns",
     hypothesis: "name.missing",
+    term: fault("dns/missing", { place: "authority" }),
     signs: ["The query gets NXDOMAIN (`dns.answer` nxdomain).", "Other names resolve."],
     world: "loopback",
     sources: [
@@ -472,6 +492,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "dns",
     hypothesis: null,
     proposal: "zone.lame",
+    term: fault("dns/wrong", { place: "authority", kind: "delegation" }),
     signs: ["The resolver answers SERVFAIL for the names of one zone, and other names resolve.", "A query with the CD bit also fails."],
     world: "containerlab",
     sources: [{ rfc: 1912, section: "2.8", title: "Common DNS Operational and Configuration Errors" }],
@@ -482,6 +503,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "dns",
     hypothesis: null,
     proposal: "dnssec.bogus",
+    term: fault("dns/mismatch", { place: "authority" }),
     signs: [
       "Validating resolvers answer SERVFAIL for the names of one zone, and a resolver that does not validate answers.",
       "A query with the CD bit gets the answer, and the extended error is DNSSEC Bogus (6).",
@@ -495,6 +517,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "dns",
     hypothesis: null,
     proposal: "dnssec.bogus",
+    term: fault("dns/expire", { place: "authority" }),
     signs: ["Validating resolvers answer SERVFAIL for the names of the zone.", "The extended error is Signature Expired (7)."],
     world: "containerlab",
     sources: [
@@ -508,6 +531,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "dns",
     hypothesis: null,
     proposal: "cache.stale",
+    term: fault("dns/stale", { place: "resolver" }),
     signs: ["The resolver gives an answer that the authority does not give.", "A different resolver gives the new answer."],
     world: "containerlab",
     sources: [
@@ -522,6 +546,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "dns",
     hypothesis: null,
     proposal: "zone.unreachable",
+    term: fault("dns/down", { place: "authority" }),
     signs: ["Each resolver answers SERVFAIL, or a stale answer, for the names of one zone.", "The extended error is No Reachable Authority (22)."],
     world: "containerlab",
     sources: [
@@ -535,6 +560,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "dns",
     hypothesis: null,
     proposal: "dns.fragments",
+    term: fault("dns/size", { place: "transit" }),
     signs: ["Small answers arrive, and large answers over UDP time out.", "The same query over TCP gets the answer."],
     world: "kernel",
     sources: [
@@ -549,6 +575,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "No program listens on the port, so the host resets the connect.",
     layer: "tcp",
     hypothesis: "port.closed",
+    term: fault("tcp/missing", { place: "server" }),
     signs: ["The connect gets a reset at once (`tcp.connect` refused).", "The host answers the ping."],
     world: "loopback",
     sources: [{ rfc: 9293, section: "3.10.7.1", title: RFC_9293 }],
@@ -558,6 +585,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A firewall drops the packets to the port, and sends no message.",
     layer: "tcp",
     hypothesis: "filter.drop",
+    term: fault("tcp/filter", { place: "remote", kind: "port" }),
     signs: ["The connect sends the SYN again and times out (`tcp.connect` timeout).", "The host answers the ping."],
     world: "kernel",
     sources: [
@@ -570,6 +598,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A firewall or a load balancer on the path resets connections that it does not accept.",
     layer: "tcp",
     hypothesis: "filter.reset",
+    term: fault("tcp/refuse", { place: "remote" }),
     signs: ["A reset ends the connect or the first data (`tcp.connect` reset).", "The host answers the ping."],
     world: "kernel",
     sources: [
@@ -583,6 +612,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "tcp",
     hypothesis: null,
     proposal: "filter.ecn",
+    term: fault("tcp/filter", { place: "transit", kind: "ecn" }),
     signs: ["A SYN with the ECN flags gets a reset or no answer, and a SYN with no ECN flags connects.", "The connect is late by a second or more."],
     world: "kernel",
     sources: [
@@ -596,6 +626,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "tcp",
     hypothesis: null,
     proposal: "nat.timeout",
+    term: fault("tcp/expire", { place: "gateway" }),
     signs: ["A connection that is idle for some minutes stops, with no reset or with a reset from the NAT.", "New connections work."],
     world: "containerlab",
     sources: [
@@ -610,6 +641,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The certificate of the server expired.",
     layer: "tls",
     hypothesis: "tls.cert-invalid",
+    term: fault("tls/expire", { place: "server", kind: "leaf" }),
     signs: ["The handshake fails with a certificate error (`tls.handshake` cert-error).", "The end of the validity of the certificate is in the past."],
     world: "loopback",
     sources: [{ rfc: 5280, section: "6.1.3", title: RFC_5280 }],
@@ -619,6 +651,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A root or a cross-sign of the chain expires, and old clients do not trust the new root.",
     layer: "tls",
     hypothesis: "tls.cert-invalid",
+    term: fault("tls/expire", { place: "host", kind: "root" }),
     signs: ["Old clients fail the handshake with a certificate error, and new clients pass.", "The certificate of the server is in its validity."],
     world: "loopback",
     sources: [{ report: "https://letsencrypt.org/docs/dst-root-ca-x3-expiration-september-2021/", title: "DST Root CA X3 Expiration (September 2021)" }],
@@ -628,6 +661,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The certificate of the server is for a different name.",
     layer: "tls",
     hypothesis: "tls.cert-invalid",
+    term: fault("tls/wrong", { place: "server", kind: "name" }),
     signs: ["The handshake fails with a certificate error (`tls.handshake` cert-error).", "No subject name of the certificate matches the name of the target."],
     world: "loopback",
     sources: [
@@ -640,6 +674,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The server offers only TLS 1.0 or TLS 1.1, and the client does not use them.",
     layer: "tls",
     hypothesis: "tls.mismatch",
+    term: fault("tls/mismatch", { place: "server" }),
     signs: ["The handshake ends with a protocol_version alert (`tls.handshake` alert)."],
     world: "loopback",
     sources: [
@@ -652,6 +687,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A device on the path ends the TLS connection and gives a certificate from a root that the clients were made to trust.",
     layer: "tls",
     hypothesis: "tls.proxy",
+    term: fault("tls/intercept", { place: "gateway" }),
     signs: ["The issuer of the certificate is a private root (`tls.trust` private).", "The handshake is slow for the time of the TCP connect (`tls.ratio` high)."],
     world: "loopback",
     sources: [{ report: "https://www.cisa.gov/news-events/alerts/2017/03/16/https-interception-weakens-tls-security", title: "HTTPS Interception Weakens TLS Security (TA17-075A)" }],
@@ -662,6 +698,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "tls",
     hypothesis: null,
     proposal: "clock.wrong",
+    term: fault("tls/skew", { place: "host" }),
     signs: ["The handshake fails with a certificate error for each server.", "The time of the client is far from the time in the Date header of a server."],
     world: "vm",
     sources: [{ rfc: 5280, section: "6.1.3", title: RFC_5280 }],
@@ -673,6 +710,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "A captive portal holds the traffic and changes the answers until the user signs in.",
     layer: "http",
     hypothesis: "captive.portal",
+    term: fault("http/intercept", { place: "gateway" }),
     signs: ["HTTP requests get a redirect or a 511 to a sign-in page.", "TLS handshakes fail with a name mismatch."],
     world: "loopback",
     sources: [
@@ -685,6 +723,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The server is slow, so the answer comes late, or a proxy before it times out.",
     layer: "http",
     hypothesis: "server.slow",
+    term: fault("http/delay", { place: "server" }),
     signs: ["The time to the first byte is long for the time of the TCP connect (`http.ttfb` high).", "A proxy answers with 504."],
     world: "loopback",
     sources: [{ rfc: 9110, section: "15.6.5", title: RFC_9110 }],
@@ -694,6 +733,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     summary: "The server or its CDN fails, for example with all its CPU in use, and answers with errors.",
     layer: "http",
     hypothesis: "server.error",
+    term: fault("http/refuse", { place: "server", kind: "error" }),
     signs: ["The status is 5xx (`http.status` server-error).", "The TCP connect and the TLS handshake pass."],
     world: "loopback",
     sources: [
@@ -709,6 +749,7 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     layer: "http",
     hypothesis: null,
     proposal: "proxy.auth",
+    term: fault("http/refuse", { place: "gateway", kind: "auth" }),
     signs: ["Each request through the proxy gets 407.", "Connections that do not use the proxy fail."],
     world: "loopback",
     sources: [{ rfc: 9110, section: "15.5.8", title: RFC_9110 }],

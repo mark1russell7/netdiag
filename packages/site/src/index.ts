@@ -820,7 +820,7 @@ function showLadderHead(): void {
     h(
       "p",
       { class: "note small" },
-      `The ${String(classRows)} classes of the catalog have ${counted(classes.gaps, "gap")}. The ${String(LADDER.rows.length - classRows)} classes that the atlas proposes have ${counted(proposals.gaps, "gap")}.`,
+      `The ${String(classRows)} classes of the catalog have ${counted(classes.gaps, "gap")}. The ${String(LADDER.rows.length - classRows)} classes that the fault grammar proposes have ${counted(proposals.gaps, "gap")}.`,
     ),
   );
 }
@@ -920,6 +920,8 @@ function showLadderDetail(): void {
     parts.push(h("p", {}, `${what} `, needs.length > 0 ? `A world for it needs ${needs.join(" and ")}.` : "A world for it needs no special trait."));
     if (row.entries.length > 0) parts.push(h("p", { class: "note small" }, "The entries of the atlas that propose it: ", ...codeList(row.entries), "."));
   }
+  const options = row.options.map((id) => h("li", {}, h("code", {}, id), `: ${LADDER.options[id] ?? ""}`));
+  if (options.length > 0) parts.push(h("p", { class: "note small" }, "The options of the fault grammar that give it:"), h("ul", { class: "ladder-worlds small" }, ...options));
   box.replaceChildren(...parts);
 }
 
