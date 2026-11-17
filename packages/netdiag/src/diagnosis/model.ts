@@ -1,5 +1,5 @@
 import { err, ok, type Result } from "@mark1russell7/optional";
-import type { Layer } from "../layer.ts";
+import { LAYERS, type Layer } from "../layer.ts";
 
 /** A probability for each value of a feature. The probabilities are more than 0, and their sum is 1. */
 export type Distribution = Readonly<Record<string, number>>;
@@ -66,6 +66,8 @@ function isExpectation(prediction: Prediction): prediction is Expectation {
 export interface Fault {
   readonly id: string;
   readonly part: Part;
+  /** The layer where the fault starts. The coverage of the lab and the views of a report read it. */
+  readonly layer: Layer;
   readonly reach: Reach;
   /** The cause in plain words, for example "No program listens on the port." */
   readonly summary: string;
@@ -96,6 +98,8 @@ export interface Hypothesis {
   readonly summary: string;
   readonly step: string;
   readonly part?: Part | undefined;
+  /** The layer where the fault starts. Only a hypothesis of the kind `fault` has a layer. */
+  readonly layer?: Layer | undefined;
   readonly reach?: Reach | undefined;
 }
 
@@ -152,7 +156,7 @@ const ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;
 /**
  * This function examines a catalog and makes its tables.
  *
- * It refuses a repeated id, an unknown feature or value, a probability below `FLOOR`, and a distribution with a sum that is not 1.
+ * It refuses a repeated id, an unknown layer, feature or value, a probability below `FLOOR`, and a distribution with a sum that is not 1.
  */
 export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
   const problems: string[] = [];
@@ -160,6 +164,7 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
   for (const feature of spec.features) {
     if (!ID.test(feature.id)) problems.push(`"${feature.id}" is not a valid feature id.`);
     if (features.has(feature.id)) problems.push(`The feature ${feature.id} is repeated.`);
+    if (!LAYERS.includes(feature.layer)) problems.push(`The feature ${feature.id} has the unknown layer ${String(feature.layer)}.`);
     if (feature.values.length < 2 || new Set(feature.values).size !== feature.values.length) {
       problems.push(`The feature ${feature.id} must have two or more different values.`);
     }
@@ -172,8 +177,9 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
   for (const fault of spec.faults) {
     if (!ID.test(fault.id) || fault.id === NONE || fault.id === UNKNOWN) problems.push(`"${fault.id}" is not a valid fault id.`);
     if (priors.has(fault.id)) problems.push(`The fault ${fault.id} is repeated.`);
+    if (!LAYERS.includes(fault.layer)) problems.push(`The fault ${fault.id} has the unknown layer ${String(fault.layer)}.`);
     priors.set(fault.id, fault.prior ?? 1);
-    hypotheses.push({ id: fault.id, kind: "fault", summary: fault.summary, step: fault.step, part: fault.part, reach: fault.reach });
+    hypotheses.push({ id: fault.id, kind: "fault", summary: fault.summary, step: fault.step, part: fault.part, layer: fault.layer, reach: fault.reach });
     const table = new Map<string, Distribution>();
     for (const [featureId, prediction] of Object.entries(fault.predicts)) {
       const feature = features.get(featureId);

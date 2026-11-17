@@ -24,39 +24,11 @@ export const TRAIT_NAMES: Readonly<Record<WorldTrait, string>> = {
   link: "a link that a case can take down",
 };
 
-/** The layer of a fault class, and the traits that a world needs for a case of the class. */
-export interface ClassPlace {
-  readonly layer: Layer;
-  readonly needs?: readonly WorldTrait[] | undefined;
-}
-
-/**
- * The place of each fault class of the standard catalog. The layer is the layer where the fault starts.
- *
- * The catalog gives the part of each fault, not its layer. Thus the lab keeps the layers. A test holds one place for
- * each class of the catalog.
- */
-export const STANDARD_CLASS_PLACES: Readonly<Record<string, ClassPlace>> = {
-  "interface.down": { layer: "link", needs: ["link"] },
-  "wifi.weak": { layer: "wifi", needs: ["wifi"] },
-  "ipv6.broken": { layer: "ip", needs: ["ipv6"] },
-  "filter.icmp": { layer: "ip" },
-  "host.down": { layer: "ip" },
-  "gateway.down": { layer: "route" },
-  "path.loss": { layer: "path" },
-  "path.mtu": { layer: "path" },
-  "resolver.down": { layer: "dns" },
-  "resolver.failing": { layer: "dns" },
-  "name.missing": { layer: "dns" },
-  "port.closed": { layer: "tcp" },
-  "filter.drop": { layer: "tcp" },
-  "filter.reset": { layer: "tcp" },
-  "tls.proxy": { layer: "tls" },
-  "tls.cert-invalid": { layer: "tls" },
-  "tls.mismatch": { layer: "tls" },
-  "captive.portal": { layer: "http" },
-  "server.slow": { layer: "http" },
-  "server.error": { layer: "http" },
+/** The traits that a world needs for a case of each fault class. A class with no entry needs no trait. */
+export const STANDARD_CLASS_NEEDS: Readonly<Record<string, readonly WorldTrait[]>> = {
+  "interface.down": ["link"],
+  "wifi.weak": ["wifi"],
+  "ipv6.broken": ["ipv6"],
 };
 
 /** A case of a world, as the coverage reads it: its id and the id of its true hypothesis. */
@@ -106,7 +78,7 @@ export type ClassState = "covered" | "no-bar" | "no-case";
 /** A row of the coverage: one fault class of the catalog, its layer, and its cell in each world. */
 export interface CoverageRow {
   readonly hypothesis: string;
-  /** The layer is absent when the places have no entry for the class. The problems then tell it. */
+  /** The layer is absent when the catalog gives no layer for the class. The problems then tell it. */
   readonly layer: Layer | undefined;
   readonly needs: readonly WorldTrait[];
   /** One cell for each world, in the order of the worlds. */
@@ -158,13 +130,18 @@ export interface Coverage {
 export interface CoverageInput {
   readonly catalog: Catalog;
   readonly worlds: readonly CoverageWorld[];
-  /** The place of each class. The default is `STANDARD_CLASS_PLACES`. */
-  readonly places?: Readonly<Record<string, ClassPlace>> | undefined;
+  /** The traits that a world needs for a case of each class. The default is `STANDARD_CLASS_NEEDS`. */
+  readonly needs?: Readonly<Record<string, readonly WorldTrait[]>> | undefined;
   /** The entries of the fault atlas, for example `FAULT_ATLAS`. With no atlas, the result has no atlas part. */
   readonly atlas?: readonly AtlasEntry[] | undefined;
 }
 
 const CONTROL = "none";
+
+/** This function gives the layer of each fault class of a catalog. */
+function layersOf(catalog: Catalog): ReadonlyMap<string, Layer> {
+  return new Map(catalog.hypotheses.flatMap((each) => (each.kind === "fault" && each.layer !== undefined ? [[each.id, each.layer] as const] : [])));
+}
 
 /** This function gives the state of a class from its cells. A cell with a bar gives covered. Else a cell with a case gives no-bar. */
 function stateOf(cells: readonly WorldCell[]): ClassState {
@@ -188,30 +165,30 @@ function cellOf(world: CoverageWorld, hypothesis: string, needs: readonly WorldT
  */
 export function coverage(input: CoverageInput): Coverage {
   const { catalog, worlds } = input;
-  const places = input.places ?? STANDARD_CLASS_PLACES;
+  const needsOf = input.needs ?? STANDARD_CLASS_NEEDS;
+  const layers = layersOf(catalog);
   const problems: string[] = [];
   const hypotheses = new Set(catalog.hypotheses.map((each) => each.id));
   const faults = catalog.hypotheses.filter((each) => each.kind === "fault").map((each) => each.id);
   for (const world of worlds) {
     for (const each of world.cases) {
       if (!hypotheses.has(each.truth)) problems.push(`The case ${each.id} of the world ${world.id} has the truth ${each.truth}, and the catalog has no such hypothesis.`);
-      const missing = (places[each.truth]?.needs ?? []).filter((trait) => !world.traits.includes(trait));
+      const missing = (needsOf[each.truth] ?? []).filter((trait) => !world.traits.includes(trait));
       if (missing.length > 0) problems.push(`The case ${each.id} of the world ${world.id} needs ${missing.map((trait) => TRAIT_NAMES[trait]).join(", ")}, and the world does not have it.`);
     }
   }
-  for (const id of faults) if (places[id] === undefined) problems.push(`The class ${id} has no place, so it has no layer.`);
-  for (const id of Object.keys(places)) if (!faults.includes(id)) problems.push(`The place of ${id} is not for a fault class of the catalog ${catalog.version}.`);
+  for (const id of faults) if (layers.get(id) === undefined) problems.push(`The class ${id} has no layer in the catalog.`);
+  for (const id of Object.keys(needsOf)) if (!faults.includes(id)) problems.push(`The needs of ${id} are not for a fault class of the catalog ${catalog.version}.`);
 
   const rank = (id: string): number => {
-    const layer = places[id]?.layer;
+    const layer = layers.get(id);
     return layer === undefined ? LAYERS.length : layerRank(layer);
   };
   const ordered = faults.map((id, order) => ({ id, order })).sort((a, b) => rank(a.id) - rank(b.id) || a.order - b.order);
   const rows: CoverageRow[] = ordered.map(({ id }) => {
-    const place = places[id];
-    const needs = place?.needs ?? [];
+    const needs = needsOf[id] ?? [];
     const cells = worlds.map((world) => cellOf(world, id, needs));
-    return { hypothesis: id, layer: place?.layer, needs, worlds: cells, state: stateOf(cells) };
+    return { hypothesis: id, layer: layers.get(id), needs, worlds: cells, state: stateOf(cells) };
   });
   const noCase: CaseGap[] = rows
     .filter((row) => row.state === "no-case")
@@ -231,7 +208,7 @@ export function coverage(input: CoverageInput): Coverage {
       noBar: rows.filter((row) => row.state === "no-bar").map((row) => row.hypothesis),
       layers: LAYERS.filter((layer) => !caseLayers.has(layer)),
     },
-    atlas: input.atlas === undefined ? undefined : atlasCoverage(input.atlas, { catalog, worlds, places, rows, problems }),
+    atlas: input.atlas === undefined ? undefined : atlasCoverage(input.atlas, { catalog, worlds, needs: needsOf, layers, rows, problems }),
     problems,
   };
 }
@@ -302,14 +279,15 @@ export interface AtlasCoverage {
 interface AtlasContext {
   readonly catalog: Catalog;
   readonly worlds: readonly CoverageWorld[];
-  readonly places: Readonly<Record<string, ClassPlace>>;
+  readonly needs: Readonly<Record<string, readonly WorldTrait[]>>;
+  readonly layers: ReadonlyMap<string, Layer>;
   readonly rows: readonly CoverageRow[];
   readonly problems: string[];
 }
 
 /** This function tells the problems of the entries of an atlas: for example a class that is not in the catalog. */
 function atlasProblems(atlas: readonly AtlasEntry[], context: AtlasContext): void {
-  const { catalog, places, rows, problems } = context;
+  const { catalog, layers, rows, problems } = context;
   const hypotheses = new Set(catalog.hypotheses.map((each) => each.id));
   const faults = new Set(rows.map((row) => row.hypothesis));
   const seen = new Set<string>();
@@ -326,7 +304,7 @@ function atlasProblems(atlas: readonly AtlasEntry[], context: AtlasContext): voi
     }
     if (entry.proposal !== undefined) problems.push(`The atlas entry ${entry.id} has a class and a proposal.`);
     if (!faults.has(entry.hypothesis)) problems.push(`The atlas entry ${entry.id} names ${entry.hypothesis}, and the catalog has no such fault class.`);
-    const layer = places[entry.hypothesis]?.layer;
+    const layer = layers.get(entry.hypothesis);
     if (layer !== undefined && layer !== entry.layer) problems.push(`The atlas entry ${entry.id} has the layer ${entry.layer}, and its class ${entry.hypothesis} has the layer ${layer}.`);
   }
   const named = new Set(atlas.map((entry) => entry.hypothesis));
@@ -345,14 +323,14 @@ function countsOf(rows: readonly AtlasRow[]): AtlasCounts {
  */
 function atlasCoverage(atlas: readonly AtlasEntry[], context: AtlasContext): AtlasCoverage {
   atlasProblems(atlas, context);
-  const { worlds, places } = context;
+  const { worlds, needs: needsOf } = context;
   const faults = new Set(context.rows.map((row) => row.hypothesis));
   const rows: AtlasRow[] = atlas
     .map((entry, order) => ({ entry, order }))
     .sort((a, b) => layerRank(a.entry.layer) - layerRank(b.entry.layer) || a.order - b.order)
     .map(({ entry }) => {
       const hypothesis = entry.hypothesis;
-      const needs = [...new Set([...(hypothesis === null ? [] : (places[hypothesis]?.needs ?? [])), ...(entry.needs ?? [])])];
+      const needs = [...new Set([...(hypothesis === null ? [] : (needsOf[hypothesis] ?? [])), ...(entry.needs ?? [])])];
       const state: AtlasState = hypothesis === null || !faults.has(hypothesis) ? "no-class" : stateOf(worlds.map((world) => cellOf(world, hypothesis, needs)));
       return { id: entry.id, layer: entry.layer, hypothesis, proposal: entry.proposal, needs, world: entry.world, state };
     });

@@ -1,7 +1,7 @@
 import { LAYERS, STANDARD_CATALOG } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { ATLAS_WORLDS, FAULT_ATLAS, isRfcSource, type AtlasEntry } from "./atlas.ts";
-import { STANDARD_CLASS_PLACES, atlasMarkdown, coverage, type AtlasCoverage } from "./coverage.ts";
+import { atlasMarkdown, coverage, type AtlasCoverage } from "./coverage.ts";
 import { labWorlds } from "./worlds.ts";
 
 const FAULTS = STANDARD_CATALOG.hypotheses.filter((each) => each.kind === "fault").map((each) => each.id);
@@ -54,11 +54,11 @@ describe("FAULT_ATLAS", () => {
     }
   });
 
-  it("names only fault classes of the catalog, each with the layer of its place", () => {
+  it("names only fault classes of the catalog, each with the layer of its class", () => {
     for (const entry of FAULT_ATLAS) {
       if (entry.hypothesis === null) continue;
       expect(FAULTS, entry.id).toContain(entry.hypothesis);
-      expect(entry.layer, entry.id).toBe(STANDARD_CLASS_PLACES[entry.hypothesis]?.layer);
+      expect(entry.layer, entry.id).toBe(STANDARD_CATALOG.hypotheses.find((each) => each.id === entry.hypothesis)?.layer);
       expect(entry.proposal, entry.id).toBeUndefined();
     }
   });

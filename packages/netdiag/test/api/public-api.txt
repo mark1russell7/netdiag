@@ -2131,6 +2131,7 @@ declare const FLOOR = .001;
 interface Fault {
   readonly id: string;
   readonly part: Part;
+  readonly layer: Layer;
   readonly reach: Reach;
   readonly summary: string;
   readonly step: string;
@@ -2157,6 +2158,7 @@ interface Hypothesis {
   readonly summary: string;
   readonly step: string;
   readonly part?: Part | undefined;
+  readonly layer?: Layer | undefined;
   readonly reach?: Reach | undefined;
 }
 

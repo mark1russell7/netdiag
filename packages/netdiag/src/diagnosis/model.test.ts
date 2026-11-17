@@ -16,6 +16,7 @@ import {
   type Evidence,
   type Feature,
 } from "./index.ts";
+import type { Layer } from "../layer.ts";
 
 const catalog = STANDARD_CATALOG;
 
@@ -78,25 +79,34 @@ describe("the catalog", () => {
     ["a feature with one value", { version: "t", features: [{ ...tcp, values: ["connected"], healthy: { connected: 1 } }], faults: [] }],
     [
       "an unknown feature in a prediction",
-      { version: "t", features: [tcp], faults: [{ id: "x", part: "service", reach: "target", summary: "", step: "", predicts: { "dns.answer": { expect: "ok", strength: "weak" } } }] },
+      { version: "t", features: [tcp], faults: [{ id: "x", part: "service", layer: "tcp", reach: "target", summary: "", step: "", predicts: { "dns.answer": { expect: "ok", strength: "weak" } } }] },
     ],
-    ["a fault that predicts nothing", { version: "t", features: [tcp], faults: [{ id: "x", part: "service", reach: "target", summary: "", step: "", predicts: {} }] }],
+    ["a fault that predicts nothing", { version: "t", features: [tcp], faults: [{ id: "x", part: "service", layer: "tcp", reach: "target", summary: "", step: "", predicts: {} }] }],
     [
       "a repeated fault",
       {
         version: "t",
         features: [tcp],
         faults: [
-          { id: "x", part: "service", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } },
-          { id: "x", part: "service", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } },
+          { id: "x", part: "service", layer: "tcp", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } },
+          { id: "x", part: "service", layer: "tcp", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } },
         ],
       },
     ],
     [
       "a fault with a reserved id",
-      { version: "t", features: [tcp], faults: [{ id: "none", part: "service", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } }] },
+      { version: "t", features: [tcp], faults: [{ id: "none", part: "service", layer: "tcp", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } }] },
     ],
     ["a prior of 0", { version: "t", features: [tcp], faults: [], priors: { unknown: 0 } }],
+    ["a feature with an unknown layer", { version: "t", features: [{ ...tcp, layer: "radio" as Layer }], faults: [] }],
+    [
+      "a fault with an unknown layer",
+      {
+        version: "t",
+        features: [tcp],
+        faults: [{ id: "x", part: "service", layer: "radio" as Layer, reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } }],
+      },
+    ],
   ])("refuses %s", (_name, spec) => {
     expect(compileCatalog(spec).tag).toBe("err");
   });

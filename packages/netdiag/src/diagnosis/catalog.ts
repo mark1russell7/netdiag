@@ -129,6 +129,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "interface.down",
     part: "interface",
+    layer: "link",
     reach: "shared",
     summary: "The network interface has no link.",
     step: "Connect the cable or the Wi-Fi network, and make sure that the interface is on.",
@@ -143,6 +144,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "wifi.weak",
     part: "wifi",
+    layer: "wifi",
     reach: "shared",
     summary: "The Wi-Fi signal is weak, so the link loses packets.",
     step: "Move nearer to the access point, or use a cable.",
@@ -155,6 +157,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "gateway.down",
     part: "gateway",
+    layer: "route",
     reach: "shared",
     summary: "The gateway does not forward packets.",
     step: "Restart the router, or examine the link from the router to the provider.",
@@ -168,6 +171,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "captive.portal",
     part: "gateway",
+    layer: "http",
     reach: "shared",
     summary: "A captive portal holds the traffic until you sign in.",
     step: "Open a web page in a browser, and accept the terms of the network.",
@@ -180,6 +184,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "resolver.down",
     part: "resolver",
+    layer: "dns",
     reach: "shared",
     summary: "The DNS resolver does not answer.",
     step: "Use a different DNS resolver, or examine the resolver of the router.",
@@ -190,6 +195,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "resolver.failing",
     part: "resolver",
+    layer: "dns",
     reach: "shared",
     summary: "The DNS resolver answers with an error for each name.",
     step: "Use a different DNS resolver, and examine the DNSSEC settings of the resolver.",
@@ -200,6 +206,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "name.missing",
     part: "service",
+    layer: "dns",
     reach: "target",
     summary: "The name does not exist in DNS.",
     step: "Examine the spelling of the name, and the records of its DNS zone.",
@@ -210,6 +217,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "port.closed",
     part: "service",
+    layer: "tcp",
     reach: "target",
     summary: "No program listens on the port.",
     step: "Start the service, or use the correct port.",
@@ -220,6 +228,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "host.down",
     part: "service",
+    layer: "ip",
     reach: "target",
     summary: "The host is down.",
     step: "Start the host, or examine its network link.",
@@ -231,6 +240,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "filter.drop",
     part: "path",
+    layer: "tcp",
     reach: "target",
     summary: "A filter drops the packets to the port.",
     step: "Examine the firewall rules of the host and of each network on the path.",
@@ -242,6 +252,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "filter.icmp",
     part: "path",
+    layer: "ip",
     reach: "target",
     summary: "A filter blocks ICMP. The host is up.",
     step: "No step is necessary for the service. Use TCP to examine the host.",
@@ -252,6 +263,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "filter.reset",
     part: "path",
+    layer: "tcp",
     reach: "target",
     summary: "A device on the path resets the connections.",
     step: "Examine the firewalls and the filters of content on the path, and try a different network.",
@@ -263,6 +275,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "path.loss",
     part: "path",
+    layer: "path",
     reach: "target",
     summary: "A network on the path loses packets.",
     step: "Find the first hop with loss, and tell the provider of that network.",
@@ -275,6 +288,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "path.mtu",
     part: "path",
+    layer: "path",
     reach: "shared",
     summary: "Large packets do not pass, and no ICMP message tells the size (an MTU black hole).",
     step: "Lower the MTU of the interface or of the VPN, or enable MSS clamping on the router.",
@@ -287,6 +301,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "ipv6.broken",
     part: "path",
+    layer: "ip",
     reach: "shared",
     summary: "IPv6 does not work, and IPv4 works.",
     step: "Examine the IPv6 settings of the router, or turn off IPv6 until the provider repairs it.",
@@ -298,6 +313,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "tls.proxy",
     part: "path",
+    layer: "tls",
     reach: "shared",
     summary: "A proxy examines the TLS traffic.",
     step: "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
@@ -310,6 +326,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "tls.cert-invalid",
     part: "service",
+    layer: "tls",
     reach: "target",
     summary: "The certificate of the server is not valid: it expired, or it is for a different name.",
     step: "Renew the certificate of the server, or correct its names.",
@@ -320,6 +337,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "tls.mismatch",
     part: "service",
+    layer: "tls",
     reach: "target",
     summary: "The client and the server have no TLS version or cipher in common.",
     step: "Enable TLS 1.2 or TLS 1.3 with modern ciphers on the server.",
@@ -330,6 +348,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "server.slow",
     part: "service",
+    layer: "http",
     reach: "target",
     summary: "The server is slow.",
     step: "Examine the load and the logs of the server.",
@@ -341,6 +360,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
   {
     id: "server.error",
     part: "service",
+    layer: "http",
     reach: "target",
     summary: "The server answers with an error.",
     step: "Examine the logs of the server and of its upstream services.",
