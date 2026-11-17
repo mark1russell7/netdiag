@@ -97,6 +97,67 @@ The table of the coverage comes from the data of the labs. `coverage` of `@netdi
 
 <!-- coverage:end -->
 
+### The fault atlas
+
+The fault atlas is data: `FAULT_ATLAS` in `packages/lab/src/atlas.ts` (ND-17). Each entry is a fault of real networks, with its layer, its signs, the world that can make it, and its sources. Each source is a section of an RFC or a public report, and each was read before it was cited.
+
+- An entry with no class of the catalog is a gap of the catalog. The entry proposes a class.
+- An entry of a class with no case is a gap of the labs. An entry with IPv6 counts only the cases of a world with IPv6.
+- The same command writes these tables. The same unit test fails when they are not current.
+
+<!-- atlas:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
+
+| Layer | Entries | Covered | Gap: no bar | Gap: no case | Gap: no class |
+| --- | --- | --- | --- | --- | --- |
+| `link` | 2 | 0 | 0 | 1 | 1 |
+| `wifi` | 3 | 0 | 0 | 1 | 2 |
+| `ip` | 6 | 2 | 0 | 1 | 3 |
+| `route` | 5 | 1 | 0 | 0 | 4 |
+| `path` | 9 | 2 | 0 | 1 | 6 |
+| `dns` | 9 | 3 | 0 | 0 | 6 |
+| `tcp` | 5 | 3 | 0 | 0 | 2 |
+| `tls` | 6 | 5 | 0 | 0 | 1 |
+| `http` | 4 | 3 | 0 | 0 | 1 |
+| All | 49 | 19 | 0 | 4 | 26 |
+
+| World | Entries | Covered | Gap: no bar | Gap: no case | Gap: no class |
+| --- | --- | --- | --- | --- | --- |
+| Loopback | 13 | 12 | 0 | 0 | 1 |
+| Kernel | 10 | 7 | 0 | 0 | 3 |
+| containerlab | 19 | 0 | 0 | 2 | 17 |
+| VMs | 7 | 0 | 0 | 2 | 5 |
+
+- The atlas has 49 entries. 23 name a class of the catalog, and 26 have no class.
+- The gaps of the labs, an entry of a class with no case: `link.no-carrier` (`interface.down`, VMs), `wifi.weak-signal` (`wifi.weak`, VMs), `ip.ipv6-no-route` (`ipv6.broken`, containerlab), `path.ipv6-too-big-filtered` (`path.mtu`, containerlab).
+- The gaps of the catalog. The atlas proposes 25 classes:
+  - `link.storm` (`link`, containerlab): `link.switching-loop`.
+  - `wifi.busy` (`wifi`, VMs): `wifi.interference`.
+  - `wifi.multicast` (`wifi`, VMs): `wifi.multicast-loss`.
+  - `dhcp.none` (`ip`, containerlab): `ip.dhcp-no-lease`.
+  - `dhcp.rogue` (`ip`, containerlab): `ip.dhcp-rogue`.
+  - `address.conflict` (`ip`, containerlab): `ip.address-conflict`.
+  - `ipv6.no-router` (`route`, VMs): `route.ipv6-no-advert`.
+  - `ipv6.rogue-router` (`route`, VMs): `route.ipv6-rogue-advert`.
+  - `nat.full` (`route`, containerlab): `route.nat-exhaustion`.
+  - `nat.hairpin` (`route`, containerlab): `route.nat-no-hairpin`.
+  - `path.black-hole` (`path`, containerlab): `path.dropped-prefix`.
+  - `path.loop` (`path`, containerlab): `path.routing-loop`.
+  - `path.asymmetric` (`path`, containerlab): `path.asymmetric-filter`.
+  - `path.hijack` (`path`, containerlab): `path.bgp-hijack`.
+  - `path.leak` (`path`, containerlab): `path.bgp-leak`.
+  - `path.queue` (`path`, Kernel): `path.full-queue`.
+  - `zone.lame` (`dns`, containerlab): `dns.lame-delegation`.
+  - `dnssec.bogus` (`dns`, containerlab): `dns.dnssec-bogus`, `dns.dnssec-expired`.
+  - `cache.stale` (`dns`, containerlab): `dns.stale-cache`.
+  - `zone.unreachable` (`dns`, containerlab): `dns.authority-unreachable`.
+  - `dns.fragments` (`dns`, Kernel): `dns.fragments-dropped`.
+  - `filter.ecn` (`tcp`, Kernel): `tcp.ecn-blocked`.
+  - `nat.timeout` (`tcp`, containerlab): `tcp.nat-idle-timeout`.
+  - `clock.wrong` (`tls`, VMs): `tls.wrong-clock`.
+  - `proxy.auth` (`http`, Loopback): `http.proxy-authentication`.
+
+<!-- atlas:end -->
+
 ### The licenses of the outside tools
 
 The table of licenses is data: `TOOL_LICENSES` in the entry `@mark1russell7/netdiag/tools` (ND-3). The project bundles no tool with a restrictive license.

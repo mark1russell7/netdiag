@@ -193,7 +193,40 @@ pnpm --filter @netdiag/lab roadmap
 pnpm --filter @netdiag/lab roadmap --check
 ```
 
-- The command writes the table between the marker lines.
-- With `--check`, it writes nothing. The exit code is then 1 when the table is not current.
-- A unit test of `src/coverage.test.ts` fails when the table is not current. Thus the job `ci / checks` holds the table.
-- After a change of a case, a bar or the catalog, start the command. Commit the roadmap with the change.
+- The command writes the table between the marker lines. It also writes the tables of the fault atlas between their marker lines.
+- With `--check`, it writes nothing. The exit code is then 1 when a table is not current.
+- A unit test of `src/coverage.test.ts` fails when a table is not current. Thus the job `ci / checks` holds the tables.
+- After a change of a case, a bar, the catalog or the atlas, start the command. Commit the roadmap with the change.
+
+## The fault atlas
+
+The fault atlas is a list of the faults of real networks, with their sources (ND-17). It is data: `FAULT_ATLAS` of `src/atlas.ts`.
+
+Each entry has these fields:
+
+| Field | What it tells |
+| --- | --- |
+| `id` and `layer` | The name of the fault, and its layer of `LAYERS`. |
+| `hypothesis` | The fault class of the catalog that names the fault, or `null`. |
+| `proposal` | For a fault with no class: the class that the atlas proposes for the catalog. |
+| `signs` | The signs of the fault that a probe can see. |
+| `world` | The world that can make the fault for a case: `loopback`, `kernel`, `containerlab` or `vm`. |
+| `needs` | The traits that a world needs for a case of the entry, with the traits of its class. |
+| `sources` | An RFC with its number and section, or a public incident report with its address. |
+
+Each source was read before it was cited. The atlas has only the faults with a source that was read. Thus it has no duplex mismatch and no VLAN mismatch today.
+
+### The atlas in the coverage query
+
+Give the atlas to `coverage` with the field `atlas`. The result then has the field `atlas`:
+
+- A row for each entry, with its state: `covered`, `no-bar`, `no-case` or `no-class`.
+- An entry with no class is a gap of the catalog. The field `proposals` gives each proposed class with its entries.
+- An entry of a class with no case is a gap of the labs. An entry with `needs` counts only the cases of a world with those traits.
+- The counts of the states, for each layer and for each world.
+
+The field `problems` also tells the problems of the atlas. Examples are a class that is not in the catalog, an entry with no source, and a class of the catalog with no entry.
+
+The section "The fault atlas" of `docs/ROADMAP.md` has the tables of the gaps by layer and by world. The command `pnpm --filter @netdiag/lab roadmap` writes them.
+
+To add a fault, add an entry to `FAULT_ATLAS`, then start the command. A unit test of `src/atlas.test.ts` holds the gap counts of today.
