@@ -4,10 +4,11 @@ import { LOOPBACK_CASES } from "./cases.ts";
 import type { CoverageWorld } from "./coverage.ts";
 import { KERNEL_CASES } from "./kernel/cases.ts";
 import { WHERE_CASES } from "./kernel/where.ts";
+import { simWorld } from "./sim/world.ts";
 
 // The worlds of the lab, as data for the coverage query (ND-17). A new world, for example a world of containerlab
-// on the layer E3, is one more entry of `labWorlds`. Each world of today is on the layer E1: processes and containers
-// on one kernel.
+// on the layer E3, is one more entry of `labWorlds`. The simulated world is on the layer E0. The other worlds of today
+// are on the layer E1: processes and containers on one kernel.
 
 /** The folder of the files of the bars. */
 export const BARS_FOLDER: URL = new URL("../bars/", import.meta.url);
@@ -28,11 +29,12 @@ export function readBars(name: string, folder: URL = BARS_FOLDER): LabBars {
 }
 
 /**
- * This function gives the worlds of the lab of today: the loopback lab, the kernel lab, and the where cases of the
- * kernel lab. `bars` gives the bars of each world from the name of its file. The default reads `bars/`.
+ * This function gives the worlds of the lab of today. They are the simulated network, the loopback lab, the kernel lab
+ * and the where cases of the kernel lab. `bars` gives the bars of each world from the name of its file. The default reads `bars/`.
  */
 export function labWorlds(bars: (name: string) => LabBars = readBars): readonly CoverageWorld[] {
   return [
+    simWorld(bars("sim")),
     { id: "loopback", name: "Loopback", layer: "E1", scores: "class", traits: [], cases: LOOPBACK_CASES, bars: bars("loopback") },
     { id: "kernel", name: "Kernel", layer: "E1", scores: "class", traits: [], cases: KERNEL_CASES, bars: bars("kernel") },
     { id: "where", name: "Kernel, where cases", layer: "E1", scores: "loss-start", traits: [], cases: WHERE_CASES, bars: bars("where") },

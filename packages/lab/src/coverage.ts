@@ -101,8 +101,8 @@ export interface WorldCell {
 /**
  * The state of a class.
  *
- * - `covered`: a world has a case of the class and a bar for it.
- * - `no-bar`: a world has a case of the class, and no world has a bar for it.
+ * - `covered`: a world has a case of the class and a bar above 0 for it.
+ * - `no-bar`: a world has a case of the class, and no world has a bar above 0 for it.
  * - `no-case`: no world has a case of the class.
  */
 export type ClassState = "covered" | "no-bar" | "no-case";
@@ -148,8 +148,8 @@ export interface CoverageWorldName {
 /**
  * The state of a cell of the ladder: one class on one layer of the lab.
  *
- * - `covered`: a world of the layer has a case of the class, and a bar for it.
- * - `no-bar`: a world of the layer has a case of the class, and no world of the layer has a bar for it.
+ * - `covered`: a world of the layer has a case of the class, and a bar above 0 for it.
+ * - `no-bar`: a world of the layer has a case of the class, and no world of the layer has a bar above 0 for it.
  * - `gap`: no world of the layer has a case of the class.
  * - `impossible`: the class needs a trait that the layer cannot ever have.
  * - `no-class`: the class is a proposal of the atlas, and the catalog does not have it.
@@ -277,7 +277,8 @@ function cellOf(world: CoverageWorld, hypothesis: string, needs: readonly WorldT
   const able = needs.every((trait) => world.traits.includes(trait));
   const cases = able ? world.cases.filter((each) => each.truth === hypothesis) : [];
   const key = (each: CoverageCase): string => (world.scores === "class" ? each.truth : each.id);
-  const bar = cases.length > 0 && cases.every((each) => world.bars[key(each)] !== undefined);
+  // A bar of 0 holds nothing, so only a bar above 0 counts.
+  const bar = cases.length > 0 && cases.every((each) => (world.bars[key(each)] ?? 0) > 0);
   return { world: world.id, cases: cases.map((each) => each.id), bar };
 }
 
@@ -615,12 +616,17 @@ export function ladderCountsLine(ladder: Ladder): string {
   );
 }
 
+/** The most case ids that a cell of the ladder names for one world. A world with more cases gives its count of cases. */
+const NAMED_CASES = 3;
+
 /** This function gives the text of a cell of the ladder: its mark, and its case ids or the number of each limit. */
 function ladderCellText(cell: LadderCell, footnote: (each: LayerLimit) => number): string {
   const { mark } = STATE_KEYS[cell.state];
   if (cell.state === "impossible") return `${mark} ${cell.limits.map((each) => `[${String(footnote(each))}]`).join(" ")}`;
-  const cases = cell.worlds.flatMap((each) => each.cases);
-  return cases.length > 0 ? `${mark} ${codes(cases)}` : mark;
+  const named = cell.worlds
+    .filter((each) => each.cases.length > 0)
+    .map((each) => (each.cases.length > NAMED_CASES ? `${countOf(each.cases.length, "case")} of ${code(each.world)}` : codes(each.cases)));
+  return named.length > 0 ? `${mark} ${named.join(", ")}` : mark;
 }
 
 /** This function gives the Markdown table of some rows of the ladder: one row for each class, and one column for each layer. */

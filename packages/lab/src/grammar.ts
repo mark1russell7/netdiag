@@ -348,11 +348,11 @@ export function optionId(option: Pick<GrammarOption, "layer" | "mode">): string 
 const OPTIONS: ReadonlyMap<string, GrammarOption> = new Map(GRAMMAR_OPTIONS.map((option) => [optionId(option), option]));
 
 /** This function gives the params of an option in the space: the param `place`, then the params of the option. */
-function paramsOf(option: GrammarOption): readonly SpaceParam[] {
+export function optionParams(option: GrammarOption): readonly SpaceParam[] {
   return [{ name: "place", kind: "enum", values: option.places, default: option.places[0] ?? "host" }, ...(option.params ?? [])];
 }
 
-const STAGE_OPTIONS: readonly StageOption[] = GRAMMAR_OPTIONS.map((option) => ({ id: optionId(option), params: paramsOf(option) }));
+const STAGE_OPTIONS: readonly StageOption[] = GRAMMAR_OPTIONS.map((option) => ({ id: optionId(option), params: optionParams(option) }));
 
 /**
  * The fault grammar as a space of `strategy-space/1`. The stage `fault` has the first fault. The optional stage `second`
@@ -392,11 +392,11 @@ export function faultsOf(term: FaultTerm): readonly StageChoice[] {
 }
 
 /** This function gives the values of the active params of a fault, with the default of each param that the fault does not set. */
-function valuesOf(choice: StageChoice): Readonly<Record<string, ParamValue>> {
+export function faultValues(choice: StageChoice): Readonly<Record<string, ParamValue>> {
   const option = OPTIONS.get(choice.option);
   if (option === undefined) throw new RangeError(`The grammar has no option ${choice.option}.`);
   const values: Record<string, ParamValue> = {};
-  for (const param of paramsOf(option)) if (paramActive(param, values)) values[param.name] = choice.params?.[param.name] ?? param.default;
+  for (const param of optionParams(option)) if (paramActive(param, values)) values[param.name] = choice.params?.[param.name] ?? param.default;
   return values;
 }
 
@@ -412,7 +412,7 @@ function matches(values: Readonly<Record<string, ParamValue>>, when: Readonly<Re
 export function faultClass(choice: StageChoice): string {
   const option = OPTIONS.get(choice.option);
   if (option === undefined) throw new RangeError(`The grammar has no option ${choice.option}.`);
-  const values = valuesOf(choice);
+  const values = faultValues(choice);
   const rule = option.labels.find((each) => matches(values, each.when));
   if (rule === undefined) throw new RangeError(`The option ${choice.option} has no rule for the values of the fault.`);
   return rule.label;
@@ -422,8 +422,8 @@ export function faultClass(choice: StageChoice): string {
 function pairMatches(rule: PairRule, first: StageChoice, second: StageChoice): boolean {
   const [a, b] = rule.faults;
   if (first.option !== a.option || second.option !== b.option) return false;
-  const one = valuesOf(first);
-  const two = valuesOf(second);
+  const one = faultValues(first);
+  const two = faultValues(second);
   return matches(one, a.when) && matches(two, b.when) && (rule.same ?? []).every((param) => one[param] === two[param]);
 }
 
@@ -448,7 +448,7 @@ export function termNeeds(term: FaultTerm): readonly WorldTrait[] {
   for (const choice of faultsOf(term)) {
     const option = OPTIONS.get(choice.option);
     for (const trait of option?.needs ?? []) needs.add(trait);
-    for (const [param, value] of Object.entries(valuesOf(choice))) {
+    for (const [param, value] of Object.entries(faultValues(choice))) {
       for (const trait of PARAM_NEEDS[param]?.[String(value)] ?? []) needs.add(trait);
       for (const trait of option?.valueNeeds?.[param]?.[String(value)] ?? []) needs.add(trait);
     }
@@ -496,7 +496,7 @@ function classesOf(): readonly GrammarClass[] {
   for (const rule of PAIR_RULES) {
     const sides = rule.faults.map((side) => singles.filter((term) => {
       const choice = faultsOf(term)[0];
-      return choice !== undefined && choice.option === side.option && matches(valuesOf(choice), side.when);
+      return choice !== undefined && choice.option === side.option && matches(faultValues(choice), side.when);
     }));
     const option = OPTIONS.get(rule.faults[0].option);
     if (option === undefined) continue;
@@ -590,12 +590,12 @@ export function grammarProblems(): readonly string[] {
     if (seen.has(id)) problems.push(`The grammar has the option ${id} more than once.`);
     seen.add(id);
     if (option.places.length === 0) problems.push(`The option ${id} has no place.`);
-    const names = new Set(paramsOf(option).map((param) => param.name));
+    const names = new Set(optionParams(option).map((param) => param.name));
     const last = option.labels.at(-1);
     if (last === undefined || last.when !== undefined) problems.push(`The last rule of the option ${id} has a condition, so a fault of the option can have no class.`);
     for (const rule of option.labels) for (const param of Object.keys(rule.when ?? {})) if (!names.has(param)) problems.push(`A rule of the option ${id} names the param ${param}, and the option has no such param.`);
     for (const [name, values] of Object.entries(option.valueNeeds ?? {})) {
-      const param = paramsOf(option).find((each) => each.name === name);
+      const param = optionParams(option).find((each) => each.name === name);
       for (const value of Object.keys(values)) if (param?.values?.map(String).includes(value) !== true) problems.push(`The needs of the option ${id} name the value ${value} of ${name}, and the option has no such value.`);
     }
   }

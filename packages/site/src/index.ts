@@ -558,6 +558,15 @@ function codeList(names: readonly string[]): (string | HTMLElement)[] {
   return names.flatMap((name, index) => [index === 0 ? "" : ", ", h("code", {}, name)]);
 }
 
+/** The most case ids that the detail of a cell names for one world. A world with more cases gives its count and its first and last ids. */
+const NAMED_CASES = 3;
+
+/** This function gives the cases of one world in a cell. A long list gives its count and its first and last ids. */
+function caseList(cases: readonly string[]): (string | HTMLElement)[] {
+  if (cases.length <= NAMED_CASES) return codeList(cases);
+  return [`${counted(cases.length, "case")}, `, h("code", {}, cases[0] ?? ""), " to ", h("code", {}, cases.at(-1) ?? "")];
+}
+
 /** This function shows the verdict and the facts of a report. `truth` is the fault of a lab sample. */
 function showReportHead(report: CheckReport, source: string, truth: string | undefined): void {
   const unended = report.problems.length;
@@ -907,7 +916,7 @@ function showLadderDetail(): void {
     h("p", {}, h("span", { class: `ladder-mark ${cell.state}`, "aria-hidden": "true" }, markOf(cell.state)), " ", h("b", {}, LADDER.states[cell.state].name), "."),
   ];
   if (cell.state === "covered" || cell.state === "no-bar") {
-    const worlds = cell.worlds.map((each) => h("li", {}, `${worldName(each.world)}: `, ...codeList(each.cases), each.bar ? ", with a bar." : ", with no bar."));
+    const worlds = cell.worlds.map((each) => h("li", {}, `${worldName(each.world)}: `, ...caseList(each.cases), each.bar ? ", with a bar." : ", with no bar."));
     parts.push(h("ul", { class: "ladder-worlds" }, ...worlds));
   } else if (cell.state === "impossible") {
     const limits = cell.limits.map((each) =>

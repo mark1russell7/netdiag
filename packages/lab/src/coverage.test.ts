@@ -26,10 +26,16 @@ import {
 import { GRAMMAR_CLASSES, GRAMMAR_END, GRAMMAR_START, grammarPart } from "./grammar.ts";
 import { KERNEL_LATER } from "./kernel/cases.ts";
 import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, type LabLayer } from "./ladder.ts";
+import { CASES_PER_CLASS } from "./sim/cases.ts";
 import { GATE_FILE, ROADMAP_FILE, SITE_FILE, labWorlds, readBars } from "./worlds.ts";
 
 const WORLDS = labWorlds();
 const TODAY = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, atlas: FAULT_ATLAS });
+/** The worlds on the layer E1. The tests of the query use them, because the simulated world has a case of each class. */
+const E1_WORLDS = WORLDS.filter((world) => world.layer === "E1");
+const E1 = coverage({ catalog: STANDARD_CATALOG, worlds: E1_WORLDS, atlas: FAULT_ATLAS });
+/** The ids of the cases of one class in the simulated world. */
+const simCases = (label: string): string[] => Array.from({ length: CASES_PER_CLASS }, (_, at) => `${label}#${at + 1}`);
 const FAULTS = STANDARD_CATALOG.hypotheses.filter((each) => each.kind === "fault").map((each) => each.id);
 
 /** A world of a later step: it has IPv6, and one case of `ipv6.broken`. */
@@ -56,45 +62,55 @@ describe("coverage", () => {
   it("gives the rows in the order of the layers, with a cell for each world", () => {
     const ranks = TODAY.rows.map((row) => LAYERS.indexOf(row.layer!));
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
-    for (const row of TODAY.rows) expect(row.worlds.map((cell) => cell.world)).toEqual(["loopback", "kernel", "where"]);
+    for (const row of TODAY.rows) expect(row.worlds.map((cell) => cell.world)).toEqual(["sim", "loopback", "kernel", "where"]);
   });
 
-  it("gives the gaps of today", () => {
-    expect(TODAY.gaps.noCase).toEqual([
+  it("gives the gaps of today: none, because the simulated world has a case and a bar of each class", () => {
+    expect(TODAY.gaps).toMatchObject({ noCase: [], noBar: [], layers: [] });
+    expect(TODAY.rows.filter((row) => row.state === "covered")).toHaveLength(20);
+    expect(E1.gaps.noCase).toEqual([
       { hypothesis: "interface.down", layer: "link", needs: ["link"], able: [] },
       { hypothesis: "wifi.weak", layer: "wifi", needs: ["wifi"], able: [] },
       { hypothesis: "ipv6.broken", layer: "ip", needs: ["ipv6"], able: [] },
     ]);
-    expect(TODAY.gaps.noBar).toEqual([]);
-    expect(TODAY.gaps.layers).toEqual(["link", "wifi"]);
-    expect(TODAY.rows.filter((row) => row.state === "covered")).toHaveLength(17);
+    expect(E1.gaps.noBar).toEqual([]);
+    expect(E1.gaps.layers).toEqual(["link", "wifi"]);
+    expect(E1.rows.filter((row) => row.state === "covered")).toHaveLength(17);
   });
 
   it("gives the cases of each world, and a bar only for a world with a bar for each case", () => {
     const loss = TODAY.rows.find((row) => row.hypothesis === "path.loss")!;
     expect(loss.worlds).toEqual([
+      { world: "sim", cases: simCases("path.loss"), bar: true },
       { world: "loopback", cases: [], bar: false },
       { world: "kernel", cases: ["path.loss"], bar: true },
       { world: "where", cases: ["loss.last-link", "loss.first-link"], bar: false },
     ]);
     const where = coverage({ catalog: STANDARD_CATALOG, worlds: labWorlds((name) => (name === "where" ? { "loss.last-link": 0.5 } : readBars(name))) });
-    expect(where.rows.find((row) => row.hypothesis === "path.loss")?.worlds[2]?.bar).toBe(false);
-    expect(TODAY.controls.map((cell) => cell.bar)).toEqual([true, true, false]);
+    expect(where.rows.find((row) => row.hypothesis === "path.loss")?.worlds[3]?.bar).toBe(false);
+    expect(TODAY.controls.map((cell) => cell.bar)).toEqual([true, true, true, false]);
+  });
+
+  it("gives no bar for a bar of 0, because a bar of 0 holds nothing", () => {
+    const zero = coverage({ catalog: STANDARD_CATALOG, worlds: labWorlds((name) => (name === "sim" ? { ...readBars(name), "path.loss": 0 } : readBars(name))) });
+    expect(zero.rows.find((row) => row.hypothesis === "path.loss")?.worlds[0]).toEqual({ world: "sim", cases: simCases("path.loss"), bar: false });
+    expect(readBars("sim")["path.mtu"]).toBe(0);
+    expect(TODAY.rows.find((row) => row.hypothesis === "path.mtu")?.worlds[0]?.bar).toBe(false);
   });
 
   it("closes a gap with a fake world that has one more case", () => {
-    const later = coverage({ catalog: STANDARD_CATALOG, worlds: [...WORLDS, IPV6_WORLD] });
+    const later = coverage({ catalog: STANDARD_CATALOG, worlds: [...E1_WORLDS, IPV6_WORLD] });
     expect(later.rows.find((row) => row.hypothesis === "ipv6.broken")?.state).toBe("covered");
     expect(later.gaps.noCase.map((gap) => gap.hypothesis)).toEqual(["interface.down", "wifi.weak"]);
     expect(later.problems).toEqual([]);
-    const noBar = coverage({ catalog: STANDARD_CATALOG, worlds: [...WORLDS, { ...IPV6_WORLD, bars: {} }] });
+    const noBar = coverage({ catalog: STANDARD_CATALOG, worlds: [...E1_WORLDS, { ...IPV6_WORLD, bars: {} }] });
     expect(noBar.rows.find((row) => row.hypothesis === "ipv6.broken")?.state).toBe("no-bar");
     expect(noBar.gaps.noBar).toEqual(["ipv6.broken"]);
     expect(coverage({ catalog: STANDARD_CATALOG, worlds: [{ ...IPV6_WORLD, cases: [] }] }).gaps.noCase.find((gap) => gap.hypothesis === "ipv6.broken")?.able).toEqual(["ipv6"]);
   });
 
   it("does not count a case in a world with no trait that the class needs, and tells it", () => {
-    const result = coverage({ catalog: STANDARD_CATALOG, worlds: [...WORLDS, { ...IPV6_WORLD, traits: [] }] });
+    const result = coverage({ catalog: STANDARD_CATALOG, worlds: [...E1_WORLDS, { ...IPV6_WORLD, traits: [] }] });
     expect(result.rows.find((row) => row.hypothesis === "ipv6.broken")?.state).toBe("no-case");
     expect(result.problems).toEqual(["The case ipv6.broken/no-route of the world ipv6 needs IPv6, and the world does not have it."]);
   });
@@ -111,7 +127,7 @@ describe("coverage", () => {
   });
 
   it("agrees with the list of the kernel classes for later", () => {
-    const gaps = new Set(TODAY.gaps.noCase.map((gap) => gap.hypothesis));
+    const gaps = new Set(E1.gaps.noCase.map((gap) => gap.hypothesis));
     for (const later of KERNEL_LATER) expect(gaps.has(later.hypothesis), later.hypothesis).toBe(true);
   });
 });
@@ -145,14 +161,15 @@ describe("the ladder", () => {
     expect(coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, classes: [] }).ladder.rows.every((row) => row.kind === "class")).toBe(true);
   });
 
-  it("gives the counts of today: each covered cell is on E1, and only link.duplex on E4 is impossible", () => {
-    expect(ladder.classes).toEqual({ cells: 140, covered: 17, noBar: 0, gap: 123, noClass: 0, impossible: 0, gaps: 123 });
+  it("gives the counts of today: each covered cell is on E0 or E1, and only link.duplex on E4 is impossible", () => {
+    expect(ladder.classes).toEqual({ cells: 140, covered: 36, noBar: 1, gap: 103, noClass: 0, impossible: 0, gaps: 104 });
     expect(ladder.proposals).toEqual({ cells: 511, covered: 0, noBar: 0, gap: 0, noClass: 510, impossible: 1, gaps: 510 });
-    expect(ladder.total).toEqual({ cells: 651, covered: 17, noBar: 0, gap: 123, noClass: 510, impossible: 1, gaps: 633 });
+    expect(ladder.total).toEqual({ cells: 651, covered: 36, noBar: 1, gap: 103, noClass: 510, impossible: 1, gaps: 614 });
     const impossible = ladder.rows.flatMap((row) => row.cells.filter((cell) => cell.state === "impossible").map((cell) => [row.id, cell.layer]));
     expect(impossible).toEqual([["link.duplex", "E4"]]);
     const covered = ladder.rows.flatMap((row) => row.cells).filter((cell) => cell.state === "covered");
-    expect(new Set(covered.map((cell) => cell.layer))).toEqual(new Set(["E1"]));
+    expect(new Set(covered.map((cell) => cell.layer))).toEqual(new Set(["E0", "E1"]));
+    expect(cellOf(TODAY, "path.mtu", "E0")).toEqual({ layer: "E0", state: "no-bar", worlds: [{ world: "sim", cases: simCases("path.mtu"), bar: false }], limits: [] });
     expect(cellOf(TODAY, "path.loss", "E1")).toEqual({
       layer: "E1",
       state: "covered",
@@ -179,12 +196,12 @@ describe("the ladder", () => {
   it("makes a cell impossible only when the class needs a trait that the layer cannot have", () => {
     const needs = { ...STANDARD_CLASS_NEEDS, "wifi.weak": ["wifi", "nic"] as const };
     const classes = GRAMMAR_CLASSES.map((each) => (each.id === "path.leak" ? { ...each, needs: ["forwarding" as const] } : each));
-    const result = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, needs, atlas: FAULT_ATLAS, classes });
+    const result = coverage({ catalog: STANDARD_CATALOG, worlds: E1_WORLDS, needs, atlas: FAULT_ATLAS, classes });
     expect(cellOf(result, "wifi.weak", "E4")).toEqual({ layer: "E4", state: "impossible", worlds: [], limits: [LAYER_LIMITS.E4[0]] });
     expect(LAB_LAYERS.filter((layer) => cellOf(result, "wifi.weak", layer)?.state === "impossible")).toEqual(["E4"]);
     expect(LAB_LAYERS.filter((layer) => cellOf(result, "path.leak", layer)?.state === "impossible")).toEqual(["E3", "E5"]);
-    expect(result.ladder.total.impossible).toBe(TODAY.ladder.total.impossible + 3);
-    expect(result.ladder.total.gaps).toBe(TODAY.ladder.total.gaps - 3);
+    expect(result.ladder.total.impossible).toBe(E1.ladder.total.impossible + 3);
+    expect(result.ladder.total.gaps).toBe(E1.ladder.total.gaps - 3);
     for (const row of result.ladder.rows) expect(row.cells[0]?.state, row.id).not.toBe("impossible");
   });
 
@@ -211,7 +228,7 @@ describe("coverageMarkdown", () => {
 
   it("gives the line of the counts first, with the gaps of the classes and of the proposed classes", () => {
     expect(lines[0]).toBe(
-      "- **633 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 123 gaps, and the proposed classes have 510 gaps. 17 cells covered, and 1 cell impossible. The work ends only at zero gaps.",
+      "- **614 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 104 gaps, and the proposed classes have 510 gaps. 36 cells covered, and 1 cell impossible. The work ends only at zero gaps.",
     );
   });
 
@@ -228,14 +245,15 @@ describe("coverageMarkdown", () => {
       const cells = line!.split("|").slice(3, -1).map((each) => each.trim());
       row.cells.forEach((cell, at) => expect(cells[at]?.startsWith(STATE_KEYS[cell.state].mark), `${row.id} ${cell.layer}`).toBe(true));
     }
-    expect(table).toContain("| `ipv6.broken` | `ip` | ○ | ○ | ○ | ○ | ○ | ○ | ○ |");
-    expect(table).toContain("| `path.loss` | `path` | ○ | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |");
+    expect(table).toContain("| `ipv6.broken` | `ip` | ✓ 12 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |");
+    expect(table).toContain("| `path.loss` | `path` | ✓ 12 cases of `sim` | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |");
+    expect(table).toContain("| `path.mtu` | `path` | ◐ 12 cases of `sim` | ✓ `path.mtu` | ○ | ○ | ○ | ○ | ○ |");
     expect(table).toContain("| `link.duplex` | `link` | ◌ | ◌ | ◌ | ◌ | ⊘ [1] | ◌ | ◌ |");
     expect(lines).toContain(`  1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: ${LAYER_LIMITS.E4[0]!.source}.`);
   });
 
   it("gives the reason and the source of each impossible cell in a numbered list", () => {
-    const result = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, needs: { ...STANDARD_CLASS_NEEDS, "wifi.weak": ["wifi", "nic"] } });
+    const result = coverage({ catalog: STANDARD_CATALOG, worlds: E1_WORLDS, needs: { ...STANDARD_CLASS_NEEDS, "wifi.weak": ["wifi", "nic"] } });
     const text = coverageMarkdown(result).split("\n");
     expect(text).toContain("| `wifi.weak` | `wifi` | ○ | ○ | ○ | ○ | ⊘ [1] | ○ | ○ |");
     expect(text).toContain(`  1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: ${LAYER_LIMITS.E4[0]!.source}.`);
