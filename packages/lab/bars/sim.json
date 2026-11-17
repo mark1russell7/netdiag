@@ -1,0 +1,23 @@
+{
+  "none": 0.757,
+  "interface.down": 0.157,
+  "wifi.weak": 0.052,
+  "gateway.down": 0.757,
+  "captive.portal": 0.757,
+  "resolver.down": 0.757,
+  "resolver.failing": 0.546,
+  "name.missing": 0.757,
+  "port.closed": 0.757,
+  "host.down": 0.757,
+  "filter.drop": 0.757,
+  "filter.icmp": 0.757,
+  "filter.reset": 0.757,
+  "path.loss": 0.066,
+  "path.mtu": 0,
+  "ipv6.broken": 0.247,
+  "tls.proxy": 0.115,
+  "tls.cert-invalid": 0.757,
+  "tls.mismatch": 0.757,
+  "server.slow": 0.757,
+  "server.error": 0.368
+}

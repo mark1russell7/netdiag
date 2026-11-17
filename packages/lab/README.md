@@ -1,6 +1,6 @@
 # @netdiag/lab
 
-The labs of netdiag: the loopback lab and the kernel lab. Each case makes one network fault with real servers. The lab diagnoses each case and scores the diagnosis against the true fault. This package is private.
+The labs of netdiag: the simulated world, the loopback lab and the kernel lab. Each case of a lab makes one network fault with real servers. The simulated world makes it in a model. The lab diagnoses each case and scores the diagnosis against the true fault. This package is private.
 
 ## The loopback lab
 
@@ -170,7 +170,7 @@ The files `bars/loopback.json` and `bars/kernel.json` keep the bars of the two l
 The coverage query tells which fault classes of the catalog have a case in which world, on each layer of the lab (ND-17). A gap is not a pass.
 
 - `coverage` of `src/coverage.ts` joins the classes of the catalog with the cases of each world. It imports no `node:` module itself, but its ladder imports the harness.
-- `labWorlds` of `src/worlds.ts` gives the worlds of today: the loopback lab, the kernel lab and the where cases. It reads the bars of each world from `bars/`.
+- `labWorlds` of `src/worlds.ts` gives the worlds of today: the simulated world, the loopback lab, the kernel lab and the where cases. It reads the bars of each world from `bars/`.
 - A world is data: its layer, its cases, the bars of its gate, its traits, and the thing that its gate holds. A new world is one more entry.
 - The catalog of netdiag gives the layer of each fault class. `STANDARD_CLASS_NEEDS` gives the traits that a world needs for a case of a class. The fault grammar gives them.
 
@@ -182,18 +182,18 @@ The query gives a row for each class. The row has the layer of the class, and a 
 | `noBar` | A class with a case and no bar in any world. |
 | `layers` | A layer of `LAYERS` with no case of a class. |
 
-A case of a class that needs a trait counts only in a world with that trait. For example, a case of `ipv6.broken` needs a world with IPv6. Today no world has IPv6. The field `problems` tells each case that does not count.
+A case of a class that needs a trait counts only in a world with that trait. For example, a case of `ipv6.broken` needs a world with IPv6. Today only the simulated world has IPv6. The field `problems` tells each case that does not count.
 
 ### The ladder: each class on each layer
 
 Each fault class must have a test on each layer E0 to E6 of the lab. The work of ND-17 ends only at zero gaps. The layers come from the table of [the plan S7](https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers). Their ids are `LAYERS` of `@mark1russell7/harness`.
 
-The field `ladder` of the result has one cell for each class and each layer. Each world of today is on E1. A cell has one of these states:
+The field `ladder` of the result has one cell for each class and each layer. The simulated world is on E0, and the other worlds of today are on E1. A cell has one of these states:
 
 | State | Mark | What it tells |
 | --- | --- | --- |
-| `covered` | ✓ | A world of the layer has a case of the class, and a bar for it. |
-| `no-bar` | ◐ | A world of the layer has a case of the class, and no bar. This is a gap. |
+| `covered` | ✓ | A world of the layer has a case of the class, and a bar above 0 for it. |
+| `no-bar` | ◐ | A world of the layer has a case of the class, and no bar above 0. This is a gap. |
 | `gap` | ○ | No world of the layer has a case of the class. |
 | `no-class` | ◌ | The fault grammar proposes the class, and the catalog does not have it. This is a gap. |
 | `impossible` | ⊘ | The class needs a trait that the layer cannot ever have. The cell gives the reason and the source. |
@@ -297,3 +297,57 @@ A term has two stages: `fault` and the optional stage `second`. The choice of a 
 Each class of the catalog and each entry of the atlas is a class of the grammar. A test fails when an atlas term does not give the class of its entry. Thus the atlas checks that the grammar misses no real fault.
 
 The section "The fault grammar" of `docs/ROADMAP.md` has the table of the modes and the layers. The command `pnpm --filter @netdiag/lab roadmap` writes it.
+
+## The simulated world
+
+The simulated world is the layer E0 of the ladder (ND-17). It is a model of a network in memory. Each case is one visit of netdiag on the model.
+
+- `visitSim` of `src/sim/world.ts` starts the real `visitTarget` of netdiag. The tools and the probes of the model replace the real ones.
+- `SimNetwork` of `src/sim/network.ts` is the model. It has the hops from the client to each end, the faults of a term at their places, and a seeded random source.
+- The tools of `src/sim/tools.ts` give the output of `ping` and `iw`. The real readers of netdiag read that output.
+- The probes of `src/sim/probes.ts` give the DNS, TCP, TLS and HTTP outcomes, with the error codes of Node.js and Linux.
+- The visit uses `fakeClock` of `@mark1russell7/algebra/clock`. Thus a plan of 252 cases takes less than one second, and it needs no lab.
+- The visit starts no `mtr`. The model of `mtr` is a later step.
+
+### The cases
+
+`simCases` of `src/sim/cases.ts` gives the plan of one seed: 12 cases of each class of `SIM_CLASSES`.
+
+- `SIM_CLASSES` has each class of the catalog that a fault of the grammar gives, and `none`. No fault gives the class `unknown`.
+- For each class, `enumerateSpace` of strategy-space draws terms of the fault grammar. A term of a case has its class as its only class.
+- A term that needs Wi-Fi gets a Wi-Fi client. A term that needs IPv6 gets IPv6. The other cases get a seeded medium and a seeded IPv6.
+- The terms of `none` have no fault, or one fault that gives no class alone. An example is a small MTU with no filter of ICMP.
+
+The bands of `SIM_BANDS` keep each fault in the range that a visit can detect. Each band tells its reason. For example, a visit sends 20 pings. A loss below 13.9 % in one direction gives no lost ping in 1 of 20 visits. A fault out of its band is a limit of the visit, not a miss of the diagnosis.
+
+### The bars of the simulated world
+
+The file `bars/sim.json` keeps the bars of the simulated world. `labBars` gives them from the scores of the seeds 1 to 5.
+
+```sh
+pnpm --filter @netdiag/lab sim [--out <folder>] [--write]
+```
+
+- The command prints the hits of each class, the hits of each option at each place, and the bands.
+- Without `--write`, the exit code is 1 when `bars/sim.json` does not have the bars of the runs.
+- A unit test of `src/sim/sim.test.ts` does the same check. Thus the job `ci / checks` stops a fall of a bar.
+- To change the bars, start the command with `--write`. Tell the reason in the pull request.
+- With `--out`, the command also writes `summary.md` and the outcome of each case into the folder.
+
+A class with a bar above 0 is covered on E0. The bar of `path.mtu` is 0, so its cell on E0 is a gap.
+
+### What the simulated world found
+
+The simulated world gives each fault at each place of the grammar. The labs give only one place for each class. Thus the simulated world found these weak points of the catalog. Each is a later step of ND-17, with the bars as its measure.
+
+| Class | Hits | The other answers | The cause |
+| --- | --- | --- | --- |
+| `path.mtu` | 42 % | `none` | The catalog has no evidence for each address family. A black hole of IPv4 with a good IPv6 reads as `none`. |
+| `path.loss` | 50 % | `wifi.weak`, `resolver.down` | The reach of `path.loss` is the target only. A loss near the client also hits the reference. The catalog has no evidence of a wired link. The DNS probe tries one time. |
+| `interface.down` | 68 % | `unknown` | When an interface is down, c-ares gives `ECONNREFUSED`. The catalog expects a DNS timeout. |
+| `ipv6.broken` | 72 % | `host.down` | The reach of `ipv6.broken` is shared. A missing route of IPv6 at the transit hits only the target. |
+| `tls.proxy` | 73 % | `none` | The reach of `tls.proxy` is shared. A proxy near the target hits only the target. |
+| `wifi.weak` | 82 % | `unknown` | A radio loss above 25 % also makes the DNS probe time out, because it tries one time. |
+| `server.error` | 97 % | `tls.proxy` | A proxy at the gateway that refuses the request also ends the TLS session with its own certificate. |
+
+The reach of a fault is fixed for each class today. A next step makes the reach a set of places, with one sub-hypothesis for each place.

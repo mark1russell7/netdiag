@@ -3,21 +3,21 @@
   "counts": {
     "total": {
       "cells": 651,
-      "covered": 17,
-      "noBar": 0,
-      "gap": 123,
+      "covered": 36,
+      "noBar": 1,
+      "gap": 103,
       "noClass": 510,
       "impossible": 1,
-      "gaps": 633
+      "gaps": 614
     },
     "classes": {
       "cells": 140,
-      "covered": 17,
-      "noBar": 0,
-      "gap": 123,
+      "covered": 36,
+      "noBar": 1,
+      "gap": 103,
       "noClass": 0,
       "impossible": 0,
-      "gaps": 123
+      "gaps": 104
     },
     "proposals": {
       "cells": 511,
@@ -240,6 +240,12 @@
   },
   "worlds": [
     {
+      "id": "sim",
+      "name": "Simulated network",
+      "layer": "E0",
+      "scores": "class"
+    },
+    {
       "id": "loopback",
       "name": "Loopback",
       "layer": "E1",
@@ -273,8 +279,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "interface.down#1",
+                "interface.down#2",
+                "interface.down#3",
+                "interface.down#4",
+                "interface.down#5",
+                "interface.down#6",
+                "interface.down#7",
+                "interface.down#8",
+                "interface.down#9",
+                "interface.down#10",
+                "interface.down#11",
+                "interface.down#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -329,8 +354,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "wifi.weak#1",
+                "wifi.weak#2",
+                "wifi.weak#3",
+                "wifi.weak#4",
+                "wifi.weak#5",
+                "wifi.weak#6",
+                "wifi.weak#7",
+                "wifi.weak#8",
+                "wifi.weak#9",
+                "wifi.weak#10",
+                "wifi.weak#11",
+                "wifi.weak#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -383,8 +427,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "host.down#1",
+                "host.down#2",
+                "host.down#3",
+                "host.down#4",
+                "host.down#5",
+                "host.down#6",
+                "host.down#7",
+                "host.down#8",
+                "host.down#9",
+                "host.down#10",
+                "host.down#11",
+                "host.down#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -445,8 +508,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "filter.icmp#1",
+                "filter.icmp#2",
+                "filter.icmp#3",
+                "filter.icmp#4",
+                "filter.icmp#5",
+                "filter.icmp#6",
+                "filter.icmp#7",
+                "filter.icmp#8",
+                "filter.icmp#9",
+                "filter.icmp#10",
+                "filter.icmp#11",
+                "filter.icmp#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -509,8 +591,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "ipv6.broken#1",
+                "ipv6.broken#2",
+                "ipv6.broken#3",
+                "ipv6.broken#4",
+                "ipv6.broken#5",
+                "ipv6.broken#6",
+                "ipv6.broken#7",
+                "ipv6.broken#8",
+                "ipv6.broken#9",
+                "ipv6.broken#10",
+                "ipv6.broken#11",
+                "ipv6.broken#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -563,8 +664,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "gateway.down#1",
+                "gateway.down#2",
+                "gateway.down#3",
+                "gateway.down#4",
+                "gateway.down#5",
+                "gateway.down#6",
+                "gateway.down#7",
+                "gateway.down#8",
+                "gateway.down#9",
+                "gateway.down#10",
+                "gateway.down#11",
+                "gateway.down#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -625,8 +745,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "path.loss#1",
+                "path.loss#2",
+                "path.loss#3",
+                "path.loss#4",
+                "path.loss#5",
+                "path.loss#6",
+                "path.loss#7",
+                "path.loss#8",
+                "path.loss#9",
+                "path.loss#10",
+                "path.loss#11",
+                "path.loss#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -695,8 +834,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "no-bar",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "path.mtu#1",
+                "path.mtu#2",
+                "path.mtu#3",
+                "path.mtu#4",
+                "path.mtu#5",
+                "path.mtu#6",
+                "path.mtu#7",
+                "path.mtu#8",
+                "path.mtu#9",
+                "path.mtu#10",
+                "path.mtu#11",
+                "path.mtu#12"
+              ],
+              "bar": false
+            }
+          ],
           "limits": []
         },
         {
@@ -757,8 +915,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "resolver.down#1",
+                "resolver.down#2",
+                "resolver.down#3",
+                "resolver.down#4",
+                "resolver.down#5",
+                "resolver.down#6",
+                "resolver.down#7",
+                "resolver.down#8",
+                "resolver.down#9",
+                "resolver.down#10",
+                "resolver.down#11",
+                "resolver.down#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -820,8 +997,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "resolver.failing#1",
+                "resolver.failing#2",
+                "resolver.failing#3",
+                "resolver.failing#4",
+                "resolver.failing#5",
+                "resolver.failing#6",
+                "resolver.failing#7",
+                "resolver.failing#8",
+                "resolver.failing#9",
+                "resolver.failing#10",
+                "resolver.failing#11",
+                "resolver.failing#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -882,8 +1078,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "name.missing#1",
+                "name.missing#2",
+                "name.missing#3",
+                "name.missing#4",
+                "name.missing#5",
+                "name.missing#6",
+                "name.missing#7",
+                "name.missing#8",
+                "name.missing#9",
+                "name.missing#10",
+                "name.missing#11",
+                "name.missing#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -944,8 +1159,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "port.closed#1",
+                "port.closed#2",
+                "port.closed#3",
+                "port.closed#4",
+                "port.closed#5",
+                "port.closed#6",
+                "port.closed#7",
+                "port.closed#8",
+                "port.closed#9",
+                "port.closed#10",
+                "port.closed#11",
+                "port.closed#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1006,8 +1240,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "filter.drop#1",
+                "filter.drop#2",
+                "filter.drop#3",
+                "filter.drop#4",
+                "filter.drop#5",
+                "filter.drop#6",
+                "filter.drop#7",
+                "filter.drop#8",
+                "filter.drop#9",
+                "filter.drop#10",
+                "filter.drop#11",
+                "filter.drop#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1068,8 +1321,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "filter.reset#1",
+                "filter.reset#2",
+                "filter.reset#3",
+                "filter.reset#4",
+                "filter.reset#5",
+                "filter.reset#6",
+                "filter.reset#7",
+                "filter.reset#8",
+                "filter.reset#9",
+                "filter.reset#10",
+                "filter.reset#11",
+                "filter.reset#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1130,8 +1402,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "tls.proxy#1",
+                "tls.proxy#2",
+                "tls.proxy#3",
+                "tls.proxy#4",
+                "tls.proxy#5",
+                "tls.proxy#6",
+                "tls.proxy#7",
+                "tls.proxy#8",
+                "tls.proxy#9",
+                "tls.proxy#10",
+                "tls.proxy#11",
+                "tls.proxy#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1193,8 +1484,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "tls.cert-invalid#1",
+                "tls.cert-invalid#2",
+                "tls.cert-invalid#3",
+                "tls.cert-invalid#4",
+                "tls.cert-invalid#5",
+                "tls.cert-invalid#6",
+                "tls.cert-invalid#7",
+                "tls.cert-invalid#8",
+                "tls.cert-invalid#9",
+                "tls.cert-invalid#10",
+                "tls.cert-invalid#11",
+                "tls.cert-invalid#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1256,8 +1566,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "tls.mismatch#1",
+                "tls.mismatch#2",
+                "tls.mismatch#3",
+                "tls.mismatch#4",
+                "tls.mismatch#5",
+                "tls.mismatch#6",
+                "tls.mismatch#7",
+                "tls.mismatch#8",
+                "tls.mismatch#9",
+                "tls.mismatch#10",
+                "tls.mismatch#11",
+                "tls.mismatch#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1318,8 +1647,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "captive.portal#1",
+                "captive.portal#2",
+                "captive.portal#3",
+                "captive.portal#4",
+                "captive.portal#5",
+                "captive.portal#6",
+                "captive.portal#7",
+                "captive.portal#8",
+                "captive.portal#9",
+                "captive.portal#10",
+                "captive.portal#11",
+                "captive.portal#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1380,8 +1728,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "server.slow#1",
+                "server.slow#2",
+                "server.slow#3",
+                "server.slow#4",
+                "server.slow#5",
+                "server.slow#6",
+                "server.slow#7",
+                "server.slow#8",
+                "server.slow#9",
+                "server.slow#10",
+                "server.slow#11",
+                "server.slow#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {
@@ -1442,8 +1809,27 @@
       "cells": [
         {
           "layer": "E0",
-          "state": "gap",
-          "worlds": [],
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "server.error#1",
+                "server.error#2",
+                "server.error#3",
+                "server.error#4",
+                "server.error#5",
+                "server.error#6",
+                "server.error#7",
+                "server.error#8",
+                "server.error#9",
+                "server.error#10",
+                "server.error#11",
+                "server.error#12"
+              ],
+              "bar": true
+            }
+          ],
           "limits": []
         },
         {

@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
-    "roadmap": "node src/coverage-main.ts"
+    "roadmap": "node src/coverage-main.ts",
+    "sim": "node src/sim/main.ts"
   },
   "devDependencies": {
     "@mark1russell7/cue": "^2.0.0",
@@ -33,6 +34,7 @@
     "@mark1russell7/optional": "^1.2.0",
     "@mark1russell7/quantity": "^0.4.0",
     "@mark1russell7/rigor-chaos": "^0.2.2",
+    "@mark1russell7/rigor-generators": "^0.1.16",
     "@mark1russell7/rigor-proxy": "^0.2.1",
     "@mark1russell7/rigor-statistics": "^0.2.3",
     "@mark1russell7/strategy-space": "^0.1.0",

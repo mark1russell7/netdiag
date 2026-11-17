@@ -10,6 +10,9 @@ const HYPOTHESES = new Set(STANDARD_CATALOG.hypotheses.map((each) => each.id));
 const WORLDS = labWorlds();
 const TODAY = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, atlas: FAULT_ATLAS });
 const ATLAS: AtlasCoverage = TODAY.atlas!;
+/** The worlds on the layer E1, with no simulated world. The tests of the traits of an entry use them. */
+const E1_WORLDS = WORLDS.filter((world) => world.layer === "E1");
+const E1_ATLAS: AtlasCoverage = coverage({ catalog: STANDARD_CATALOG, worlds: E1_WORLDS, atlas: FAULT_ATLAS }).atlas!;
 
 /** An entry with a class, for the tests of the problems. */
 const ENTRY: AtlasEntry = {
@@ -87,13 +90,13 @@ describe("the coverage of the atlas", () => {
   });
 
   it("gives the gap counts of today", () => {
-    expect(ATLAS.total).toEqual({ entries: 49, covered: 19, noBar: 0, noCase: 4, noClass: 26 });
+    expect(ATLAS.total).toEqual({ entries: 49, covered: 22, noBar: 1, noCase: 0, noClass: 26 });
     expect(ATLAS.layers).toEqual([
-      { layer: "link", entries: 2, covered: 0, noBar: 0, noCase: 1, noClass: 1 },
-      { layer: "wifi", entries: 3, covered: 0, noBar: 0, noCase: 1, noClass: 2 },
-      { layer: "ip", entries: 6, covered: 2, noBar: 0, noCase: 1, noClass: 3 },
+      { layer: "link", entries: 2, covered: 1, noBar: 0, noCase: 0, noClass: 1 },
+      { layer: "wifi", entries: 3, covered: 1, noBar: 0, noCase: 0, noClass: 2 },
+      { layer: "ip", entries: 6, covered: 3, noBar: 0, noCase: 0, noClass: 3 },
       { layer: "route", entries: 5, covered: 1, noBar: 0, noCase: 0, noClass: 4 },
-      { layer: "path", entries: 9, covered: 2, noBar: 0, noCase: 1, noClass: 6 },
+      { layer: "path", entries: 9, covered: 2, noBar: 1, noCase: 0, noClass: 6 },
       { layer: "dns", entries: 9, covered: 3, noBar: 0, noCase: 0, noClass: 6 },
       { layer: "tcp", entries: 5, covered: 3, noBar: 0, noCase: 0, noClass: 2 },
       { layer: "tls", entries: 6, covered: 5, noBar: 0, noCase: 0, noClass: 1 },
@@ -102,13 +105,15 @@ describe("the coverage of the atlas", () => {
     expect(ATLAS.worlds).toEqual([
       { world: "loopback", entries: 13, covered: 12, noBar: 0, noCase: 0, noClass: 1 },
       { world: "kernel", entries: 10, covered: 7, noBar: 0, noCase: 0, noClass: 3 },
-      { world: "containerlab", entries: 19, covered: 0, noBar: 0, noCase: 2, noClass: 17 },
-      { world: "vm", entries: 7, covered: 0, noBar: 0, noCase: 2, noClass: 5 },
+      { world: "containerlab", entries: 19, covered: 1, noBar: 1, noCase: 0, noClass: 17 },
+      { world: "vm", entries: 7, covered: 2, noBar: 0, noCase: 0, noClass: 5 },
     ]);
   });
 
-  it("gives the gaps of the labs: the entries of a class with no case", () => {
-    expect(ATLAS.rows.filter((row) => row.state === "no-case").map((row) => [row.id, row.hypothesis])).toEqual([
+  it("gives the gaps of the labs: no entry of a class with no case, and the MTU entry of IPv6 with a bar of 0", () => {
+    expect(ATLAS.rows.filter((row) => row.state === "no-case")).toEqual([]);
+    expect(ATLAS.rows.filter((row) => row.state === "no-bar").map((row) => [row.id, row.hypothesis])).toEqual([["path.ipv6-too-big-filtered", "path.mtu"]]);
+    expect(E1_ATLAS.rows.filter((row) => row.state === "no-case").map((row) => [row.id, row.hypothesis])).toEqual([
       ["link.no-carrier", "interface.down"],
       ["wifi.weak-signal", "wifi.weak"],
       ["ip.ipv6-no-route", "ipv6.broken"],
@@ -118,9 +123,9 @@ describe("the coverage of the atlas", () => {
 
   it("counts an entry with IPv6 only in a world with IPv6, while its class is covered in IPv4", () => {
     expect(TODAY.rows.find((row) => row.hypothesis === "path.mtu")?.state).toBe("covered");
-    expect(ATLAS.rows.find((row) => row.id === "path.ipv6-too-big-filtered")).toMatchObject({ needs: ["ipv6"], state: "no-case" });
+    expect(E1_ATLAS.rows.find((row) => row.id === "path.ipv6-too-big-filtered")).toMatchObject({ needs: ["ipv6"], state: "no-case" });
     const ipv6: (typeof WORLDS)[number] = { id: "ipv6", name: "IPv6", layer: "E1", scores: "class", traits: ["ipv6"], cases: [{ id: "mtu", truth: "path.mtu" }], bars: { "path.mtu": 0.5 } };
-    const later = coverage({ catalog: STANDARD_CATALOG, worlds: [...WORLDS, ipv6], atlas: FAULT_ATLAS });
+    const later = coverage({ catalog: STANDARD_CATALOG, worlds: [...E1_WORLDS, ipv6], atlas: FAULT_ATLAS });
     expect(later.atlas?.rows.find((row) => row.id === "path.ipv6-too-big-filtered")?.state).toBe("covered");
   });
 
@@ -182,17 +187,18 @@ describe("atlasMarkdown", () => {
   const lines = atlasMarkdown(ATLAS).split("\n");
 
   it("gives a row for each layer and each world, with a line of the totals", () => {
-    expect(lines).toContain("| `link` | 2 | 0 | 0 | 1 | 1 |");
-    expect(lines).toContain("| All | 49 | 19 | 0 | 4 | 26 |");
-    expect(lines).toContain("| containerlab | 19 | 0 | 0 | 2 | 17 |");
+    expect(lines).toContain("| `link` | 2 | 1 | 0 | 0 | 1 |");
+    expect(lines).toContain("| All | 49 | 22 | 1 | 0 | 26 |");
+    expect(lines).toContain("| containerlab | 19 | 1 | 1 | 0 | 17 |");
     const table = lines.filter((line) => line.startsWith("|"));
     for (const line of table) expect(line.split("|").length - 2, line).toBe(6);
     expect(table).toHaveLength(2 + LAYERS.length + 1 + 2 + ATLAS_WORLDS.length);
   });
 
-  it("names the gaps of the labs and the classes that the atlas proposes", () => {
+  it("names the gaps of the bars and the classes that the atlas proposes", () => {
     expect(lines).toContain("- The atlas has 49 entries. 23 name a class of the catalog, and 26 have no class.");
-    expect(lines.find((line) => line.startsWith("- The gaps of the labs"))).toContain("`path.ipv6-too-big-filtered` (`path.mtu`, containerlab)");
+    expect(lines.find((line) => line.startsWith("- The gaps of the labs"))).toBeUndefined();
+    expect(lines.find((line) => line.startsWith("- The gaps of the bars"))).toContain("`path.ipv6-too-big-filtered` (`path.mtu`, containerlab)");
     expect(lines).toContain("- The gaps of the catalog. The atlas proposes 25 classes:");
     expect(lines).toContain("  - `dnssec.bogus` (`dns`, containerlab): `dns.dnssec-bogus`, `dns.dnssec-expired`.");
   });
