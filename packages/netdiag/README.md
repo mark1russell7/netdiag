@@ -229,7 +229,9 @@ The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It impor
 
 After a DNS timeout, the ping of the gateway comes first. Its reply tells a down resolver from a down gateway or interface.
 
-Evidence with `primary: false` comes from a reference host, for example a second public server. A fault with the reach `target` does not change the reference host. A fault with the reach `shared` changes both hosts. Thus a slow TLS handshake on both hosts points to a TLS proxy. A slow handshake on the target only points to a slow server.
+Evidence with `primary: false` comes from a reference host, for example a second public server. A fault with the reach `target` does not change the reference host. A fault with the reach `shared` changes both hosts. Thus a slow TLS handshake on both hosts points to a TLS proxy.
+
+A fault can have the two reaches. For example, a loss can be near the client or near the target. The diagnosis then gives one variant of the fault for each reach, with an equal part of its prior. The probability of the fault is the sum of its variants. `Cause.reaches` gives the probability of each reach, and `causeVariants` gives the variants of a cause. The choice of the next probe and `predictive` use these variants.
 
 The standard catalog `STANDARD_CATALOG` has 15 features and 20 faults. The rules of practice give its first likelihoods, and each hypothesis has the same prior. The lab runs (ND-7) then fit these numbers.
 
@@ -251,7 +253,7 @@ const result = diagnose(STANDARD_CATALOG, [
 | --- | --- |
 | `dns.answer` | The outcome of each DNS query. One answer `ok` for a name and a resolver decides. `nodata` gives `ok`, because the name exists. |
 | `dns.address` | The addresses of a public name. One private address decides. A local name, for example `nas.local`, gives no value. |
-| `ip.family` | The TCP connects to the IPv4 and the IPv6 addresses of one name. |
+| `ip.family` | The TCP connects to the IPv4 and the IPv6 addresses of one name. When one family is broken, the other facts of its addresses give no second feature. |
 | `tcp.connect`, `tcp.time` | The outcome and the time of each TCP connect. A time of 900 ms or more tells that the SYN went again. |
 | `tls.handshake`, `tls.trust` | The outcome of the handshake and the root of the certificate chain. A chain with no root of the store gives `private`. |
 | `tls.ratio` | The time of the handshake divided by the time of the last TCP connect to the same address and port. |
@@ -265,6 +267,7 @@ const result = diagnose(STANDARD_CATALOG, [
 
 - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
 - A fact that gives no evidence goes in `skipped`, with the reason. For example, the catalog has no value for the TLS outcome `not-tls` yet.
+- When `ip.family` marks one family of a name as broken, a fact of an address of that family gives only `ip.family`. The echo, the handshake and the MTU facts of that address go in `skipped`. Thus the model does not count one failure two times.
 - A fact `path.trace` gives no evidence yet. The catalog has no feature for the hops of a path. The lab runs (ND-7) fit one.
 - The option `primary` tells which facts are about the target. The other facts are about a reference host.
 - The option `gateway` gives the IP address of the default gateway.

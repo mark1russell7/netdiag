@@ -78,7 +78,11 @@ check("the toggle adds the proposed classes", await until(() => $$("#coverage-ma
 click('#coverage-matrix button[data-row="path.loss"][data-layer="E1"]');
 check("a click on a covered cell shows its cases and its worlds", await until(() => text("#coverage-detail").includes("loss.last-link") && text("#coverage-detail").includes("Kernel (E1)")), text("#coverage-detail"));
 click('#coverage-matrix button[data-row="path.loss"][data-layer="E0"]');
-check("a cell of the simulated world gives the count of its cases", await until(() => /Simulated network \(E0\): 12 cases, path\.loss#1 to path\.loss#12/.test(text("#coverage-detail"))), text("#coverage-detail"));
+check("a cell of the simulated world gives the count of its cases", await until(() => {
+  // The count of the cases comes from the page, so a new count of the plan needs no change here.
+  const count = /Simulated network \(E0\): (\d+) cases, path\.loss#1 to path\.loss#(\d+)/.exec(text("#coverage-detail"));
+  return count !== null && Number(count[1]) > 0 && count[1] === count[2];
+}), text("#coverage-detail"));
 click('#coverage-filter [data-filter="gaps"]');
 check("the filter of the gaps dims each covered cell", await until(() => $$("#coverage-matrix td:not(.dim) .covered").length === 0 && $$("#coverage-matrix td:not(.dim) .gap").length > 0), text("#coverage-empty"));
 

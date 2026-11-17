@@ -9,8 +9,11 @@ import { baseRtt, type Medium } from "./network.ts";
 // seed draws terms from the fault grammar with `enumerateSpace` of strategy-space. A term of the case has its class as
 // its only class. The bands below keep each fault in the range that a visit can detect. Each band tells its reason.
 
-/** The number of cases of each class in one plan. */
-export const CASES_PER_CLASS = 12;
+/**
+ * The number of cases of each class in one plan. With 80 correct cases of 80, the lower end of the Wilson interval is
+ * 0.954. With 12 cases, it is 0.757, and a class with 70 % hits got no bar.
+ */
+export const CASES_PER_CLASS = 80;
 
 /** The number of pings of a visit of the simulated world. A loss estimate needs `LOSS_MIN_SENT` requests. */
 export const SIM_PING_COUNT = 20;

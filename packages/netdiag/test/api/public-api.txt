@@ -24,6 +24,7 @@ CapturedPacket: build/counts.chunk.d.ts#CapturedPacket
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
 type Cause: build/index.chunk2.d.ts#Cause
+type CauseVariant: build/index.chunk2.d.ts#CauseVariant
 CertProblem: build/counts.chunk.d.ts#CertProblem
 Cidr: build/index.chunk.d.ts#Cidr
 CidrSet: build/index.chunk.d.ts#CidrSet
@@ -193,6 +194,7 @@ type ProbeMode: build/counts.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/core.chunk.d.ts#ProbeOutcome
 RDAP_BOOTSTRAP: build/core.chunk.d.ts#RDAP_BOOTSTRAP
 RDAP_REGISTRIES: build/core.chunk.d.ts#RDAP_REGISTRIES
+REACHES: build/index.chunk2.d.ts#REACHES
 RECORD_TYPES: build/counts.chunk.d.ts#RECORD_TYPES
 RTO_ALPHA: build/core.chunk.d.ts#RTO_ALPHA
 RTO_BETA: build/core.chunk.d.ts#RTO_BETA
@@ -205,6 +207,7 @@ type RdapReply: build/index.d.ts#RdapReply
 type RdapRequest: build/index.d.ts#RdapRequest
 type RdapService: build/core.chunk.d.ts#RdapService
 type Reach: build/index.chunk2.d.ts#Reach
+type ReachShare: build/index.chunk2.d.ts#ReachShare
 ReadOptions: build/core.chunk.d.ts#ReadOptions
 Reading: build/core.chunk.d.ts#Reading
 RecordType: build/counts.chunk.d.ts#RecordType
@@ -290,6 +293,7 @@ bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
 canonicalHost: build/counts.chunk.d.ts#canonicalHost
+causeVariants: build/index.chunk2.d.ts#causeVariants
 certProblem: build/index.d.ts#certProblem
 cidrContains: build/index.chunk.d.ts#cidrContains
 cidrSet: build/index.chunk.d.ts#cidrSet
@@ -389,6 +393,7 @@ CapturedPacket: build/counts.chunk.d.ts#CapturedPacket
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
 type Cause: build/index.chunk2.d.ts#Cause
+type CauseVariant: build/index.chunk2.d.ts#CauseVariant
 CertProblem: build/counts.chunk.d.ts#CertProblem
 Cidr: build/index.chunk.d.ts#Cidr
 CidrSet: build/index.chunk.d.ts#CidrSet
@@ -526,6 +531,7 @@ type ProbeMode: build/counts.chunk.d.ts#ProbeMode
 type ProbeOutcome: build/core.chunk.d.ts#ProbeOutcome
 RDAP_BOOTSTRAP: build/core.chunk.d.ts#RDAP_BOOTSTRAP
 RDAP_REGISTRIES: build/core.chunk.d.ts#RDAP_REGISTRIES
+REACHES: build/index.chunk2.d.ts#REACHES
 RECORD_TYPES: build/counts.chunk.d.ts#RECORD_TYPES
 RTO_ALPHA: build/core.chunk.d.ts#RTO_ALPHA
 RTO_BETA: build/core.chunk.d.ts#RTO_BETA
@@ -535,6 +541,7 @@ type RankOptions: build/index.chunk2.d.ts#RankOptions
 type RdapBootstrap: build/core.chunk.d.ts#RdapBootstrap
 type RdapService: build/core.chunk.d.ts#RdapService
 type Reach: build/index.chunk2.d.ts#Reach
+type ReachShare: build/index.chunk2.d.ts#ReachShare
 ReadOptions: build/core.chunk.d.ts#ReadOptions
 Reading: build/core.chunk.d.ts#Reading
 RecordType: build/counts.chunk.d.ts#RecordType
@@ -605,6 +612,7 @@ bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
 canonicalHost: build/counts.chunk.d.ts#canonicalHost
+causeVariants: build/index.chunk2.d.ts#causeVariants
 cidrContains: build/index.chunk.d.ts#cidrContains
 cidrSet: build/index.chunk.d.ts#cidrSet
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
@@ -691,6 +699,7 @@ type Candidate: build/index.chunk2.d.ts#Candidate
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
 type Cause: build/index.chunk2.d.ts#Cause
+type CauseVariant: build/index.chunk2.d.ts#CauseVariant
 type Contribution: build/index.chunk2.d.ts#Contribution
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Distribution: build/index.chunk2.d.ts#Distribution
@@ -722,8 +731,10 @@ PARTS: build/index.chunk2.d.ts#PARTS
 type Part: build/index.chunk2.d.ts#Part
 type Prediction: build/index.chunk2.d.ts#Prediction
 type ProbeChoice: build/index.chunk2.d.ts#ProbeChoice
+REACHES: build/index.chunk2.d.ts#REACHES
 type RankOptions: build/index.chunk2.d.ts#RankOptions
 type Reach: build/index.chunk2.d.ts#Reach
+type ReachShare: build/index.chunk2.d.ts#ReachShare
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
@@ -731,6 +742,7 @@ STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Strength: build/index.chunk2.d.ts#Strength
 UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
+causeVariants: build/index.chunk2.d.ts#causeVariants
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
 diagnose: build/index.chunk2.d.ts#diagnose
 expand: build/index.chunk2.d.ts#expand
@@ -2007,7 +2019,7 @@ interface Catalog {
   readonly version: string;
   readonly features: ReadonlyMap<string, Feature>;
   readonly hypotheses: readonly Hypothesis[];
-  likelihood(hypothesis: string, feature: string, value: string, primary: boolean): number;
+  likelihood(hypothesis: string, feature: string, value: string, primary: boolean, reach?: Reach): number;
   prior(hypothesis: string): number;
 }
 
@@ -2024,6 +2036,13 @@ interface CatalogSpec {
 
 ### build/index.chunk2.d.ts#Cause
 interface Cause extends Hypothesis {
+  readonly probability: number;
+  readonly reaches?: readonly ReachShare[] | undefined;
+}
+
+### build/index.chunk2.d.ts#CauseVariant
+interface CauseVariant {
+  readonly reach: Reach | undefined;
   readonly probability: number;
 }
 
@@ -2068,7 +2087,7 @@ interface Fault {
   readonly id: string;
   readonly part: Part;
   readonly layer: Layer;
-  readonly reach: Reach;
+  readonly reach: Reach | readonly Reach[];
   readonly summary: string;
   readonly step: string;
   readonly prior?: number | undefined;
@@ -2095,7 +2114,7 @@ interface Hypothesis {
   readonly step: string;
   readonly part?: Part | undefined;
   readonly layer?: Layer | undefined;
-  readonly reach?: Reach | undefined;
+  readonly reach?: readonly Reach[] | undefined;
 }
 
 ### build/index.chunk2.d.ts#LAB_BAR_STEP
@@ -2197,6 +2216,9 @@ interface ProbeChoice {
   readonly counted: readonly Observable[];
 }
 
+### build/index.chunk2.d.ts#REACHES
+declare const REACHES: readonly Reach[];
+
 ### build/index.chunk2.d.ts#RankOptions
 interface RankOptions {
   readonly top?: number | undefined;
@@ -2204,6 +2226,12 @@ interface RankOptions {
 
 ### build/index.chunk2.d.ts#Reach
 type Reach = "shared" | "target";
+
+### build/index.chunk2.d.ts#ReachShare
+interface ReachShare {
+  readonly reach: Reach;
+  readonly probability: number;
+}
 
 ### build/index.chunk2.d.ts#STANDARD_CATALOG
 declare const STANDARD_CATALOG: Catalog;
@@ -2225,6 +2253,9 @@ type Strength = "sure" | "strong" | "usual" | "weak";
 
 ### build/index.chunk2.d.ts#UNKNOWN
 declare const UNKNOWN = "unknown";
+
+### build/index.chunk2.d.ts#causeVariants
+declare function causeVariants(cause: Cause): readonly CauseVariant[];
 
 ### build/index.chunk2.d.ts#compileCatalog
 declare function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]>;

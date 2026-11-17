@@ -7,8 +7,10 @@ export {
   FLOOR,
   NONE,
   PARTS,
+  REACHES,
   STRENGTHS,
   UNKNOWN,
+  causeVariants,
   compileCatalog,
   diagnose,
   expand,
@@ -17,6 +19,7 @@ export {
   type Catalog,
   type CatalogSpec,
   type Cause,
+  type CauseVariant,
   type Contribution,
   type Diagnosis,
   type Distribution,
@@ -28,6 +31,7 @@ export {
   type Part,
   type Prediction,
   type Reach,
+  type ReachShare,
   type Strength,
 } from "./model.ts";
 export { STANDARD_CATALOG, STANDARD_CATALOG_SPEC, STANDARD_FAULTS, STANDARD_FEATURES } from "./catalog.ts";

@@ -1,5 +1,5 @@
 import { informationGain } from "@mark1russell7/rigor-statistics";
-import type { Catalog, Cause, Diagnosis } from "./model.ts";
+import { causeVariants, type Catalog, type Cause, type Diagnosis } from "./model.ts";
 
 /** One feature that a probe observes, of the primary target or of a reference host. */
 export interface Observable {
@@ -78,11 +78,11 @@ function tableOf(catalog: Catalog, groups: readonly (readonly Cause[])[], counte
   return groups.map((group) => {
     const mass = group.reduce((sum, cause) => sum + cause.probability, 0);
     const row = new Array<number>(joint).fill(0);
-    for (const cause of group) {
-      // A group with a probability of 0 adds nothing to the gain. Its row is the mean of the rows of its causes.
-      const weight = mass > 0 ? cause.probability / mass : 1 / group.length;
-      // The probabilities of each value of each feature for the cause.
-      const rows = columns.map((column) => column.values.map((value) => catalog.likelihood(cause.id, column.feature, value, column.primary)));
+    for (const cause of group) for (const variant of causeVariants(cause)) {
+      // A group with a probability of 0 adds nothing to the gain. Its row is the mean of the rows of its variants.
+      const weight = mass > 0 ? variant.probability / mass : 1 / (group.length * causeVariants(cause).length);
+      // The probabilities of each value of each feature for the variant of the cause.
+      const rows = columns.map((column) => column.values.map((value) => catalog.likelihood(cause.id, column.feature, value, column.primary, variant.reach)));
       const walk = (depth: number, index: number, p: number): void => {
         const probabilities = rows[depth];
         if (probabilities === undefined) {

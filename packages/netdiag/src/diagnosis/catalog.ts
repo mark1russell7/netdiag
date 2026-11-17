@@ -276,7 +276,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     id: "path.loss",
     part: "path",
     layer: "path",
-    reach: "target",
+    reach: ["shared", "target"],
     summary: "A network on the path loses packets.",
     step: "Find the first hop with loss, and tell the provider of that network.",
     predicts: {
@@ -289,7 +289,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     id: "path.mtu",
     part: "path",
     layer: "path",
-    reach: "shared",
+    reach: ["shared", "target"],
     summary: "Large packets do not pass, and no ICMP message tells the size (an MTU black hole).",
     step: "Lower the MTU of the interface or of the VPN, or enable MSS clamping on the router.",
     predicts: {
@@ -302,7 +302,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     id: "ipv6.broken",
     part: "path",
     layer: "ip",
-    reach: "shared",
+    reach: ["shared", "target"],
     summary: "IPv6 does not work, and IPv4 works.",
     step: "Examine the IPv6 settings of the router, or turn off IPv6 until the provider repairs it.",
     predicts: {
@@ -314,7 +314,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     id: "tls.proxy",
     part: "path",
     layer: "tls",
-    reach: "shared",
+    reach: ["shared", "target"],
     summary: "A proxy examines the TLS traffic.",
     step: "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
     predicts: {
@@ -372,7 +372,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "2",
+  version: "3",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

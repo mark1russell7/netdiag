@@ -254,6 +254,8 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - An ICMP echo fact with replies to `LOSS_MIN_SENT` requests or more gives `path.loss`. A report of `mtr` gives it from
  *   the last hop, when the address answered there.
  * - A fact `path.mtu` with the outcome `measured` gives `path.mtu` for its address. `PATH_MTU_VALUES` gives the value.
+ * - When `ip.family` marks one family of a name as broken, a fact of an address of that family gives only `ip.family`.
+ *   These facts gave `ip.family`, so a second feature from them counts the same failure two times.
  * - A Wi-Fi fact of a connected interface gives `wifi.signal`, one for each interface. A quality of Windows changes to dBm.
  * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
  */
@@ -300,11 +302,24 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     }
   }
 
-  readFamily(sorted, primaryOf, note);
+  const broken = readFamily(sorted, primaryOf, note);
+  const reported = new Set<string>();
+  /** This function tells if a fact is of an address of a broken family. It gives the reason of the skip one time. */
+  const ofBrokenFamily = (fact: Fact, address: string, quiet = false): boolean => {
+    const name = broken.get(`${primaryOf(fact) ? 1 : 0}\u0000${canonicalAddress(address)}`);
+    if (name === undefined) return false;
+    if (!quiet && !reported.has(fact.id)) {
+      reported.add(fact.id);
+      skipped.push({ fact: fact.id, reason: `The address ${address} is of the broken family of ${name}. Its facts give only ip.family.` });
+    }
+    return true;
+  };
 
   const subject = (value: { readonly address: string; readonly port: number }): string => `${value.address}\u0000${value.port}`;
   for (const fact of sorted.tcp) {
     const connect = fact.value;
+    // A connect to an address of a broken family gave `ip.family`, so it is not a skip.
+    if (ofBrokenFamily(fact, connect.address, true)) continue;
     const value = TCP_CONNECT_VALUES[connect.outcome];
     if (value === undefined) {
       skip(fact, "tcp.connect", connect.outcome);
@@ -327,6 +342,7 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
 
   for (const fact of sorted.tls) {
     const handshake = fact.value;
+    if (ofBrokenFamily(fact, handshake.address)) continue;
     const group = `${subject(handshake)}\u0000${handshake.servername ?? ""}`;
     const value = TLS_HANDSHAKE_VALUES[handshake.outcome];
     if (value === undefined) {
@@ -341,6 +357,7 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
 
   for (const fact of sorted.http) {
     const response = fact.value;
+    if (ofBrokenFamily(fact, response.address)) continue;
     const group = [subject(response), response.scheme, response.host, response.method, response.path].join("\u0000");
     const status = statusValue(response);
     if (status === undefined) {
@@ -356,6 +373,7 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
   for (const fact of sorted.icmp) {
     const echo = fact.value;
     const address = canonicalAddress(echo.address);
+    if (ofBrokenFamily(fact, address)) continue;
     const isGateway = address === gateway;
     const feature = isGateway ? "gateway.reply" : "icmp.reply";
     const value = (isGateway ? GATEWAY_REPLY_VALUES : ICMP_REPLY_VALUES)[echo.outcome];
@@ -372,11 +390,12 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     if (!lossFacts.has(fact)) continue;
     const loss = lossOf(fact);
     if (typeof loss === "string") skipped.push({ fact: fact.id, reason: loss });
-    else if (loss !== undefined) note("path.loss", loss.address, fact, binOf(PATH_LOSS_BINS, loss.share));
+    else if (loss !== undefined && !ofBrokenFamily(fact, loss.address)) note("path.loss", loss.address, fact, binOf(PATH_LOSS_BINS, loss.share));
   }
 
   for (const fact of sorted.mtu) {
     const mtu = fact.value;
+    if (ofBrokenFamily(fact, mtu.address)) continue;
     if (mtu.outcome !== "measured") skip(fact, "path.mtu", mtu.outcome);
     else note("path.mtu", canonicalAddress(mtu.address), fact, PATH_MTU_VALUES[mtu.stop ?? "full"]);
   }
@@ -428,9 +447,14 @@ function statusValue(response: HttpResponse): string | undefined {
 
 /**
  * This function gives the feature `ip.family` for a name with IPv4 and IPv6 addresses. It needs a TCP connect to an
- * address of each family.
+ * address of each family. It gives the addresses of each broken family, as the key of the role and the address, with the name.
  */
-function readFamily(sorted: Facts, primaryOf: (fact: Fact) => boolean, note: (feature: string, group: string, fact: Fact, value: string) => void): void {
+function readFamily(
+  sorted: Facts,
+  primaryOf: (fact: Fact) => boolean,
+  note: (feature: string, group: string, fact: Fact, value: string) => void,
+): ReadonlyMap<string, string> {
+  const broken = new Map<string, string>();
   const names = new Map<string, { v4: Set<string>; v6: Set<string>; facts: Fact[]; primary: boolean }>();
   for (const fact of sorted.dns) {
     if (fact.value.outcome !== "ok") continue;
@@ -456,5 +480,9 @@ function readFamily(sorted: Facts, primaryOf: (fact: Fact) => boolean, note: (fe
     if (first === undefined) continue;
     note("ip.family", key, first, value);
     for (const fact of rest) note("ip.family", key, fact, value);
+    if (value === "both") continue;
+    const name = first.kind === DNS_ANSWER.kind ? (first.value as { readonly name: string }).name : key;
+    for (const address of value === "ipv4-only" ? entry.v6 : entry.v4) broken.set(`${entry.primary ? 1 : 0}\u0000${canonicalAddress(address)}`, name);
   }
+  return broken;
 }

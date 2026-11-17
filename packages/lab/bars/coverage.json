@@ -1,9 +1,9 @@
 {
-  "gaps": 614,
-  "classGaps": 104,
+  "gaps": 613,
+  "classGaps": 103,
   "proposalGaps": 510,
   "cells": 651,
-  "covered": 36,
+  "covered": 37,
   "impossible": 1,
-  "note": "The simulated world on E0 covers 19 classes of the catalog, so the gaps fall from 633 to 614. The class path.mtu has cases on E0 and a bar of 0, so its cell is a gap. The class link.duplex needs a physical NIC, so E4 cannot have it."
+  "note": "The simulated world on E0 covers 20 classes of the catalog. The class path.mtu got its bar on E0 when the faults of the path got both reaches and each class got 80 cases, so the gaps fall from 614 to 613. The class link.duplex needs a physical NIC, so E4 cannot have it."
 }
