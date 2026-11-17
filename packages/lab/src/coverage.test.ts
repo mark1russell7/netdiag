@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
 import { LAYERS, STANDARD_CATALOG } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
-import { STANDARD_CLASS_PLACES, coverage, coverageMarkdown, markedPart, roadmapPart, withMarkedPart, type CoverageWorld } from "./coverage.ts";
+import { FAULT_ATLAS } from "./atlas.ts";
+import { ATLAS_END, ATLAS_START, STANDARD_CLASS_PLACES, atlasPart, coverage, coverageMarkdown, markedPart, roadmapPart, withMarkedPart, withRoadmapParts, type CoverageWorld } from "./coverage.ts";
 import { KERNEL_LATER } from "./kernel/cases.ts";
 import { ROADMAP_FILE, labWorlds, readBars } from "./worlds.ts";
 
 const WORLDS = labWorlds();
-const TODAY = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS });
+const TODAY = coverage({ catalog: STANDARD_CATALOG, worlds: WORLDS, atlas: FAULT_ATLAS });
 const FAULTS = STANDARD_CATALOG.hypotheses.filter((each) => each.kind === "fault").map((each) => each.id);
 
 /** A world of a later step: it has IPv6, and one case of `ipv6.broken`. */
@@ -116,6 +117,9 @@ describe("the table of the roadmap", () => {
   it("is the rendering of the query. To correct it, start pnpm --filter @netdiag/lab roadmap", () => {
     const text = readFileSync(ROADMAP_FILE, "utf8");
     expect(markedPart(text)).toBe(roadmapPart(TODAY));
+    expect(TODAY.atlas).toBeDefined();
+    expect(markedPart(text, ATLAS_START, ATLAS_END)).toBe(atlasPart(TODAY.atlas!));
+    expect(withRoadmapParts(text, TODAY)).toBe(text);
   });
 });
 

@@ -1,9 +1,12 @@
 import { LAYERS, layerRank, type Catalog, type LabBars, type Layer } from "@mark1russell7/netdiag";
 import { countOf } from "@mark1russell7/text";
+import { ATLAS_WORLDS, ATLAS_WORLD_NAMES, type AtlasEntry, type AtlasWorld } from "./atlas.ts";
 
 // The coverage of the fault classes (ND-17, step 1). The query joins the classes of a catalog with the cases of each
 // world. It gives the gaps as data: a class with no case, a class with a case and no bar, and a layer with no case.
-// A gap is not a pass. This module imports no `node:` module. The module `worlds.ts` gives the worlds of the lab.
+// A gap is not a pass. The query also joins the fault atlas (`atlas.ts`) with the rows: a fault with no class is a
+// gap of the catalog, and a class with no case is a gap of the labs. This module imports no `node:` module. The
+// module `worlds.ts` gives the worlds of the lab.
 
 /**
  * A trait of the networks of a world. A case of some classes needs a trait.
@@ -145,6 +148,8 @@ export interface Coverage {
   /** The cell of the hypothesis `none`, the control, in each world. */
   readonly controls: readonly WorldCell[];
   readonly gaps: CoverageGaps;
+  /** The join of the fault atlas with the rows. It is absent when the input has no atlas. */
+  readonly atlas: AtlasCoverage | undefined;
   /** The problems of the data: for example a case with a truth that is not in the catalog. */
   readonly problems: readonly string[];
 }
@@ -155,9 +160,16 @@ export interface CoverageInput {
   readonly worlds: readonly CoverageWorld[];
   /** The place of each class. The default is `STANDARD_CLASS_PLACES`. */
   readonly places?: Readonly<Record<string, ClassPlace>> | undefined;
+  /** The entries of the fault atlas, for example `FAULT_ATLAS`. With no atlas, the result has no atlas part. */
+  readonly atlas?: readonly AtlasEntry[] | undefined;
 }
 
 const CONTROL = "none";
+
+/** This function gives the state of a class from its cells. A cell with a bar gives covered. Else a cell with a case gives no-bar. */
+function stateOf(cells: readonly WorldCell[]): ClassState {
+  return cells.some((cell) => cell.bar) ? "covered" : cells.some((cell) => cell.cases.length > 0) ? "no-bar" : "no-case";
+}
 
 /** This function gives the cell of one hypothesis in one world. A world with no trait of `needs` has no case of the hypothesis. */
 function cellOf(world: CoverageWorld, hypothesis: string, needs: readonly WorldTrait[]): WorldCell {
@@ -199,8 +211,7 @@ export function coverage(input: CoverageInput): Coverage {
     const place = places[id];
     const needs = place?.needs ?? [];
     const cells = worlds.map((world) => cellOf(world, id, needs));
-    const state: ClassState = cells.some((cell) => cell.bar) ? "covered" : cells.some((cell) => cell.cases.length > 0) ? "no-bar" : "no-case";
-    return { hypothesis: id, layer: place?.layer, needs, worlds: cells, state };
+    return { hypothesis: id, layer: place?.layer, needs, worlds: cells, state: stateOf(cells) };
   });
   const noCase: CaseGap[] = rows
     .filter((row) => row.state === "no-case")
@@ -220,7 +231,147 @@ export function coverage(input: CoverageInput): Coverage {
       noBar: rows.filter((row) => row.state === "no-bar").map((row) => row.hypothesis),
       layers: LAYERS.filter((layer) => !caseLayers.has(layer)),
     },
+    atlas: input.atlas === undefined ? undefined : atlasCoverage(input.atlas, { catalog, worlds, places, rows, problems }),
     problems,
+  };
+}
+
+/**
+ * The state of an entry of the fault atlas.
+ *
+ * - `covered`, `no-bar` and `no-case`: the state of the class of the entry in the worlds with the traits of the entry.
+ * - `no-class`: the catalog has no class for the fault. This is a gap of the catalog.
+ */
+export type AtlasState = ClassState | "no-class";
+
+/** An entry of the fault atlas, joined with the rows of the coverage. */
+export interface AtlasRow {
+  readonly id: string;
+  readonly layer: Layer;
+  readonly hypothesis: string | null;
+  readonly proposal: string | undefined;
+  /** The traits of the entry and of its class. */
+  readonly needs: readonly WorldTrait[];
+  readonly world: AtlasWorld;
+  readonly state: AtlasState;
+}
+
+/** The counts of the entries of a part of the atlas, by state. */
+export interface AtlasCounts {
+  readonly entries: number;
+  readonly covered: number;
+  readonly noBar: number;
+  readonly noCase: number;
+  readonly noClass: number;
+}
+
+/** The counts of the entries of one layer. */
+export interface AtlasLayerCounts extends AtlasCounts {
+  readonly layer: Layer;
+}
+
+/** The counts of the entries of one world of the atlas. */
+export interface AtlasWorldCounts extends AtlasCounts {
+  readonly world: AtlasWorld;
+}
+
+/** A class that the atlas proposes for the catalog, with the entries that propose it. */
+export interface AtlasProposal {
+  readonly proposal: string;
+  /** The layer of the first entry that proposes the class. */
+  readonly layer: Layer;
+  readonly entries: readonly string[];
+  /** The worlds of the entries, in the order of `ATLAS_WORLDS`. */
+  readonly worlds: readonly AtlasWorld[];
+}
+
+/** The join of the fault atlas with the rows of the coverage. */
+export interface AtlasCoverage {
+  /** One row for each entry, in the order of the layers, then in the order of the atlas. */
+  readonly rows: readonly AtlasRow[];
+  /** The counts of each layer of `LAYERS`, in its order. */
+  readonly layers: readonly AtlasLayerCounts[];
+  /** The counts of each world of `ATLAS_WORLDS`, in its order. */
+  readonly worlds: readonly AtlasWorldCounts[];
+  readonly total: AtlasCounts;
+  /** The classes that the entries with no class propose, in the order of the rows. */
+  readonly proposals: readonly AtlasProposal[];
+}
+
+/** The parts of the coverage that the join of the atlas reads. The join adds its problems to `problems`. */
+interface AtlasContext {
+  readonly catalog: Catalog;
+  readonly worlds: readonly CoverageWorld[];
+  readonly places: Readonly<Record<string, ClassPlace>>;
+  readonly rows: readonly CoverageRow[];
+  readonly problems: string[];
+}
+
+/** This function tells the problems of the entries of an atlas: for example a class that is not in the catalog. */
+function atlasProblems(atlas: readonly AtlasEntry[], context: AtlasContext): void {
+  const { catalog, places, rows, problems } = context;
+  const hypotheses = new Set(catalog.hypotheses.map((each) => each.id));
+  const faults = new Set(rows.map((row) => row.hypothesis));
+  const seen = new Set<string>();
+  for (const entry of atlas) {
+    if (seen.has(entry.id)) problems.push(`The atlas has the entry ${entry.id} more than once.`);
+    seen.add(entry.id);
+    if (hypotheses.has(entry.id)) problems.push(`The atlas entry ${entry.id} has the id of a hypothesis of the catalog.`);
+    if (entry.signs.length === 0) problems.push(`The atlas entry ${entry.id} has no sign.`);
+    if (entry.sources.length === 0) problems.push(`The atlas entry ${entry.id} has no source.`);
+    if (entry.hypothesis === null) {
+      if (entry.proposal === undefined) problems.push(`The atlas entry ${entry.id} has no class and no proposal.`);
+      else if (hypotheses.has(entry.proposal)) problems.push(`The atlas entry ${entry.id} proposes ${entry.proposal}, and the catalog has it. Name it as the class of the entry.`);
+      continue;
+    }
+    if (entry.proposal !== undefined) problems.push(`The atlas entry ${entry.id} has a class and a proposal.`);
+    if (!faults.has(entry.hypothesis)) problems.push(`The atlas entry ${entry.id} names ${entry.hypothesis}, and the catalog has no such fault class.`);
+    const layer = places[entry.hypothesis]?.layer;
+    if (layer !== undefined && layer !== entry.layer) problems.push(`The atlas entry ${entry.id} has the layer ${entry.layer}, and its class ${entry.hypothesis} has the layer ${layer}.`);
+  }
+  const named = new Set(atlas.map((entry) => entry.hypothesis));
+  for (const row of rows) if (!named.has(row.hypothesis)) problems.push(`The class ${row.hypothesis} has no entry in the atlas.`);
+}
+
+/** This function counts the rows of the atlas by state. */
+function countsOf(rows: readonly AtlasRow[]): AtlasCounts {
+  const of = (state: AtlasState): number => rows.filter((row) => row.state === state).length;
+  return { entries: rows.length, covered: of("covered"), noBar: of("no-bar"), noCase: of("no-case"), noClass: of("no-class") };
+}
+
+/**
+ * This function joins the entries of the fault atlas with the rows of the coverage. An entry with no class is a gap of
+ * the catalog. An entry of a class with no case, in the worlds with its traits, is a gap of the labs.
+ */
+function atlasCoverage(atlas: readonly AtlasEntry[], context: AtlasContext): AtlasCoverage {
+  atlasProblems(atlas, context);
+  const { worlds, places } = context;
+  const faults = new Set(context.rows.map((row) => row.hypothesis));
+  const rows: AtlasRow[] = atlas
+    .map((entry, order) => ({ entry, order }))
+    .sort((a, b) => layerRank(a.entry.layer) - layerRank(b.entry.layer) || a.order - b.order)
+    .map(({ entry }) => {
+      const hypothesis = entry.hypothesis;
+      const needs = [...new Set([...(hypothesis === null ? [] : (places[hypothesis]?.needs ?? [])), ...(entry.needs ?? [])])];
+      const state: AtlasState = hypothesis === null || !faults.has(hypothesis) ? "no-class" : stateOf(worlds.map((world) => cellOf(world, hypothesis, needs)));
+      return { id: entry.id, layer: entry.layer, hypothesis, proposal: entry.proposal, needs, world: entry.world, state };
+    });
+  const proposals = new Map<string, AtlasRow[]>();
+  for (const row of rows) {
+    if (row.state !== "no-class" || row.proposal === undefined) continue;
+    proposals.set(row.proposal, [...(proposals.get(row.proposal) ?? []), row]);
+  }
+  return {
+    rows,
+    layers: LAYERS.map((layer) => ({ layer, ...countsOf(rows.filter((row) => row.layer === layer)) })),
+    worlds: ATLAS_WORLDS.map((world) => ({ world, ...countsOf(rows.filter((row) => row.world === world)) })),
+    total: countsOf(rows),
+    proposals: [...proposals].map(([proposal, entries]) => ({
+      proposal,
+      layer: entries[0]?.layer ?? "link",
+      entries: entries.map((row) => row.id),
+      worlds: ATLAS_WORLDS.filter((world) => entries.some((row) => row.world === world)),
+    })),
   };
 }
 
@@ -296,4 +447,61 @@ export function withMarkedPart(text: string, part: string, start: string = COVER
   if (old === undefined) return undefined;
   const from = text.indexOf(`${start}\n`) + start.length + 1;
   return text.slice(0, from) + part + text.slice(from + old.length);
+}
+
+/** This function gives one line of a table of counts of the atlas. */
+function countsLine(head: string, counts: AtlasCounts): string {
+  return `| ${head} | ${counts.entries} | ${counts.covered} | ${counts.noBar} | ${counts.noCase} | ${counts.noClass} |`;
+}
+
+const COUNTS_HEAD = "| Entries | Covered | Gap: no bar | Gap: no case | Gap: no class |";
+const COUNTS_RULE = "| --- | --- | --- | --- | --- | --- |";
+
+/**
+ * This function gives the join of the atlas as Markdown. It gives the counts by layer and by world, and the gaps of the
+ * labs. It also gives the classes that the atlas proposes for the catalog.
+ */
+export function atlasMarkdown(atlas: AtlasCoverage): string {
+  const world = (id: AtlasWorld): string => ATLAS_WORLD_NAMES[id];
+  const lines = [`| Layer ${COUNTS_HEAD}`, COUNTS_RULE];
+  for (const each of atlas.layers) lines.push(countsLine(code(each.layer), each));
+  lines.push(countsLine("All", atlas.total), "", `| World ${COUNTS_HEAD}`, COUNTS_RULE);
+  for (const each of atlas.worlds) lines.push(countsLine(world(each.world), each));
+  const { total } = atlas;
+  lines.push(
+    "",
+    `- The atlas has ${countOf(total.entries, "entry", "entries")}. ${total.entries - total.noClass} name a class of the catalog, and ${total.noClass} have no class.`,
+  );
+  const gaps = (state: AtlasState): string =>
+    atlas.rows
+      .filter((row) => row.state === state)
+      .map((row) => `${code(row.id)} (${code(row.hypothesis ?? "")}, ${world(row.world)})`)
+      .join(", ");
+  if (total.noCase > 0) lines.push(`- The gaps of the labs, an entry of a class with no case: ${gaps("no-case")}.`);
+  if (total.noBar > 0) lines.push(`- The gaps of the bars, an entry of a class with a case and no bar: ${gaps("no-bar")}.`);
+  if (atlas.proposals.length > 0) {
+    lines.push(`- The gaps of the catalog. The atlas proposes ${countOf(atlas.proposals.length, "class", "classes")}:`);
+    for (const each of atlas.proposals) lines.push(`  - ${code(each.proposal)} (${code(each.layer)}, ${each.worlds.map(world).join(", ")}): ${codes(each.entries)}.`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+/** The line before the part of the atlas in a file that `coverage-main.ts` writes. */
+export const ATLAS_START = "<!-- atlas:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->";
+/** The line after the part of the atlas in a file that `coverage-main.ts` writes. */
+export const ATLAS_END = "<!-- atlas:end -->";
+
+/** This function gives the part of the roadmap between the marker lines of the atlas, with a blank line before and after it. */
+export function atlasPart(atlas: AtlasCoverage): string {
+  return `\n${atlasMarkdown(atlas)}\n`;
+}
+
+/**
+ * This function puts the table of the coverage, and the tables of the atlas when the result has an atlas, between
+ * their marker lines. It gives `undefined` when the file has no pair of marker lines for a part.
+ */
+export function withRoadmapParts(text: string, result: Coverage): string | undefined {
+  const next = withMarkedPart(text, roadmapPart(result));
+  if (next === undefined || result.atlas === undefined) return next;
+  return withMarkedPart(next, atlasPart(result.atlas), ATLAS_START, ATLAS_END);
 }
