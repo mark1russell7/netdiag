@@ -174,9 +174,9 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 - The layers, from [the table of S7](https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers):
   - E0: Code on a false clock. State: Today. It cannot prove: any real time.
   - E1: Processes and containers on one kernel. State: Today. It cannot prove: a second kernel, a separate clock, a reboot, a loss of power.
-  - E2: A cluster of containers on one kernel. State: Today, with kind. It cannot prove: a kernel for each node, a loss of a node with no signal.
+  - E2: A cluster of containers on one kernel. State: Today. It cannot prove: a kernel for each node, a loss of a node with no signal.
   - E3: A routed fabric of containers on one kernel. State: New. It cannot prove: the kernel or the forwarding hardware of a router.
-  - E4: Virtual machines, each with its own kernel. State: New, the VM tier of S4. It cannot prove: a physical NIC, real zones.
+  - E4: Virtual machines, each with its own kernel. State: New. It cannot prove: a physical NIC, real zones.
   - E5: Images of vendor routers in virtual machines. State: Later. It cannot prove: the forwarding chip of the router.
   - E6: Real hardware and clouds. State: Waits on the owner. It cannot prove: nothing that the plan covers.
 - The reasons of the impossible cells:

@@ -1,4 +1,4 @@
-import { LAYERS, STANDARD_FAULTS, layerRank, type Catalog, type LabBars, type Layer } from "@mark1russell7/netdiag";
+import { LAYERS, STANDARD_FAULTS, layerRank, type Catalog, type LabBars, type Layer } from "@mark1russell7/netdiag/core";
 import { countOf } from "@mark1russell7/text";
 import { ATLAS_WORLDS, ATLAS_WORLD_NAMES, type AtlasEntry, type AtlasWorld } from "./atlas.ts";
 import {
@@ -15,7 +15,7 @@ import {
   termProblems,
   type GrammarClass,
 } from "./grammar.ts";
-import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, S7_LAYERS_URL, type LabLayer, type LayerFacts, type LayerLimit } from "./ladder.ts";
+import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, LAYER_STATE_TEXT, S7_LAYERS_URL, type LabLayer, type LayerFacts, type LayerLimit } from "./ladder.ts";
 
 // The coverage of the fault classes (ND-17). The query joins the classes of a catalog with the cases of each world.
 // It gives the gaps as data: a class with no case, a class with a case and no bar, and a layer with no case. A gap
@@ -663,7 +663,7 @@ export function coverageMarkdown(result: Coverage): string {
   for (const layer of ladder.layers) {
     const facts: LayerFacts = LAYER_FACTS[layer];
     const cannot = facts.cannot.length > 0 ? facts.cannot.map((each) => each.charAt(0).toLowerCase() + each.slice(1)).join(", ") : "nothing that the plan covers";
-    lines.push(`  - ${layer}: ${facts.name}. State: ${facts.state}. It cannot prove: ${cannot}.`);
+    lines.push(`  - ${layer}: ${facts.name}. State: ${LAYER_STATE_TEXT[facts.state]}. It cannot prove: ${cannot}.`);
   }
   if (reasons.length === 0) lines.push("- The impossible cells: none. No class needs a trait that a layer cannot have.");
   else {
@@ -779,9 +779,12 @@ export function gateCounts(ladder: Ladder): Omit<CoverageGate, "note"> {
   return { gaps: total.gaps, classGaps: classes.gaps, proposalGaps: proposals.gaps, cells: total.cells, covered: total.covered, impossible: total.impossible };
 }
 
-/** A layer of the ladder for the site: its id, its facts from S7, and the traits that it cannot have. */
-export interface SiteLayer extends LayerFacts {
+/** A layer of the ladder for the site: its id, its texts from S7, and the traits that it cannot have. */
+export interface SiteLayer extends Pick<LayerFacts, "name" | "proves" | "cannot" | "tools" | "state"> {
   readonly id: LabLayer;
+  /** The text of the state of the layer, from `LAYER_STATE_TEXT`. */
+  readonly stateText: string;
+  /** The traits that the layer cannot ever have. These are not the `limits` of the harness, which are resources of a load. */
   readonly limits: readonly LayerLimit[];
 }
 
@@ -806,7 +809,10 @@ export function siteLadder(result: Coverage, limits: Readonly<Record<LabLayer, r
   return {
     source: S7_LAYERS_URL,
     counts: { total: ladder.total, classes: ladder.classes, proposals: ladder.proposals },
-    layers: ladder.layers.map((id) => ({ id, ...LAYER_FACTS[id], limits: limits[id] })),
+    layers: ladder.layers.map((id) => {
+      const { name, proves, cannot, tools, state } = LAYER_FACTS[id];
+      return { id, name, proves, cannot, tools, state, stateText: LAYER_STATE_TEXT[state], limits: limits[id] };
+    }),
     states: STATE_KEYS,
     gapStates: GAP_STATES,
     traits: TRAIT_NAMES,

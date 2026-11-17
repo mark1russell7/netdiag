@@ -1,4 +1,4 @@
-import { LAYERS, type Layer } from "@mark1russell7/netdiag";
+import { LAYERS, type Layer } from "@mark1russell7/netdiag/core";
 import {
   checkConfig,
   checkSpace,

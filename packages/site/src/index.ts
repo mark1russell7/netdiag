@@ -946,7 +946,7 @@ function showLadderLayers(): void {
       return h(
         "li",
         { class: "ladder-layer" },
-        h("span", { class: "ladder-layer-head" }, h("b", {}, layer.id), h("span", {}, layer.name), h("span", { class: covered > 0 ? "tag pass" : "tag" }, layer.state)),
+        h("span", { class: "ladder-layer-head" }, h("b", {}, layer.id), h("span", {}, layer.name), h("span", { class: covered > 0 ? "tag pass" : "tag" }, layer.stateText)),
         h("span", { class: "note small" }, `${counted(covered, "cell")} covered, ${counted(gaps, "gap")}. ${limits}`),
       );
     }),

@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@mark1russell7/algebra": "^0.8.8",
-    "@mark1russell7/harness": "^0.16.3",
+    "@mark1russell7/harness": "^0.16.10",
     "@mark1russell7/netdiag": "workspace:*",
     "@mark1russell7/netdiag-cli": "workspace:*",
     "@mark1russell7/optional": "^1.2.0",

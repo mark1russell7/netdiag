@@ -25,7 +25,7 @@ import {
 } from "./coverage.ts";
 import { GRAMMAR_CLASSES, GRAMMAR_END, GRAMMAR_START, grammarPart } from "./grammar.ts";
 import { KERNEL_LATER } from "./kernel/cases.ts";
-import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, type LabLayer } from "./ladder.ts";
+import { LAB_LAYERS, LAYER_FACTS, LAYER_LIMITS, LAYER_STATE_TEXT, type LabLayer } from "./ladder.ts";
 import { CASES_PER_CLASS } from "./sim/cases.ts";
 import { GATE_FILE, ROADMAP_FILE, SITE_FILE, labWorlds, readBars } from "./worlds.ts";
 
@@ -150,6 +150,18 @@ describe("the ladder", () => {
     expect(LAYER_LIMITS.E0).toEqual([]);
     expect(LAYER_LIMITS.E6).toEqual([]);
     expect(LAYER_FACTS.E6.cannot).toEqual([]);
+  });
+
+  it("gives the site the texts of S7 and the limits of the lab for each layer, and not the faults and loads of the harness", () => {
+    const layers = (JSON.parse(siteLadderText(TODAY)) as { layers: Record<string, unknown>[] }).layers;
+    expect(layers.map((layer) => layer["id"])).toEqual([...LAB_LAYERS]);
+    for (const layer of layers) {
+      const facts = LAYER_FACTS[layer["id"] as LabLayer];
+      expect(Object.keys(layer).sort()).toEqual(["cannot", "id", "limits", "name", "proves", "state", "stateText", "tools"]);
+      expect(layer).toMatchObject({ name: facts.name, state: facts.state, stateText: LAYER_STATE_TEXT[facts.state] });
+      expect(layer["limits"]).toEqual(LAYER_LIMITS[layer["id"] as LabLayer]);
+    }
+    expect(LAYER_STATE_TEXT.waiting).toBe("Waits on the owner");
   });
 
   it("has a row for each class of the catalog and each proposed class, with a cell for each layer", () => {
