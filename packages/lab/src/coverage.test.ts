@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { LAYERS, STANDARD_CATALOG } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { FAULT_ATLAS } from "./atlas.ts";
-import { ATLAS_END, ATLAS_START, STANDARD_CLASS_PLACES, atlasPart, coverage, coverageMarkdown, markedPart, roadmapPart, withMarkedPart, withRoadmapParts, type CoverageWorld } from "./coverage.ts";
+import { ATLAS_END, ATLAS_START, STANDARD_CLASS_NEEDS, atlasPart, coverage, coverageMarkdown, markedPart, roadmapPart, withMarkedPart, withRoadmapParts, type CoverageWorld } from "./coverage.ts";
 import { KERNEL_LATER } from "./kernel/cases.ts";
 import { ROADMAP_FILE, labWorlds, readBars } from "./worlds.ts";
 
@@ -26,7 +26,7 @@ describe("coverage", () => {
     expect([...ids].sort()).toEqual([...FAULTS].sort());
     expect(new Set(ids).size).toBe(ids.length);
     for (const row of TODAY.rows) expect(LAYERS, row.hypothesis).toContain(row.layer);
-    expect(Object.keys(STANDARD_CLASS_PLACES).sort()).toEqual([...FAULTS].sort());
+    for (const id of Object.keys(STANDARD_CLASS_NEEDS)) expect(FAULTS, id).toContain(id);
     expect(TODAY.problems).toEqual([]);
   });
 
@@ -76,13 +76,13 @@ describe("coverage", () => {
     expect(result.problems).toEqual(["The case ipv6.broken/no-route of the world ipv6 needs IPv6, and the world does not have it."]);
   });
 
-  it("tells a truth that is not in the catalog, and a class with no place", () => {
-    const { "wifi.weak": _wifi, ...places } = STANDARD_CLASS_PLACES;
-    const result = coverage({ catalog: STANDARD_CATALOG, worlds: [{ ...IPV6_WORLD, cases: [{ id: "x", truth: "dns.lame" }] }], places: { ...places, "dns.lame": { layer: "dns" } } });
+  it("tells a truth that is not in the catalog, a class with no layer, and needs of a class that is not in the catalog", () => {
+    const catalog = { ...STANDARD_CATALOG, hypotheses: STANDARD_CATALOG.hypotheses.map((each) => (each.id === "wifi.weak" ? { ...each, layer: undefined } : each)) };
+    const result = coverage({ catalog, worlds: [{ ...IPV6_WORLD, cases: [{ id: "x", truth: "dns.lame" }] }], needs: { ...STANDARD_CLASS_NEEDS, "dns.lame": [] } });
     expect(result.problems).toEqual([
       "The case x of the world ipv6 has the truth dns.lame, and the catalog has no such hypothesis.",
-      "The class wifi.weak has no place, so it has no layer.",
-      `The place of dns.lame is not for a fault class of the catalog ${STANDARD_CATALOG.version}.`,
+      "The class wifi.weak has no layer in the catalog.",
+      `The needs of dns.lame are not for a fault class of the catalog ${STANDARD_CATALOG.version}.`,
     ]);
     expect(result.rows.at(-1)).toMatchObject({ hypothesis: "wifi.weak", layer: undefined, state: "no-case" });
   });

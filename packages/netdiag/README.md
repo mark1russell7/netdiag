@@ -203,7 +203,7 @@ The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It impor
 
 - A feature is a discrete observation. For example, `tcp.connect` has the values `connected`, `refused`, `timeout`, `unreachable` and `reset`.
 - Each feature has a healthy distribution: the probability of each value when there is no fault.
-- A fault names a part of the network and the feature values that it predicts. The other features keep their healthy distributions.
+- A fault names a part of the network, the layer where it starts and the feature values that it predicts. The other features keep their healthy distributions.
 - The hypotheses are `none` (no fault), each fault of the catalog, and `unknown` (a cause that the catalog does not have).
 - The hypothesis `unknown` gives the same probability to each value. Thus it wins when no fault of the catalog explains the observations.
 

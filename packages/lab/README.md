@@ -172,7 +172,7 @@ The coverage query tells which fault classes of the catalog have a case in which
 - `coverage` of `src/coverage.ts` joins the classes of the catalog with the cases of each world. It imports no `node:` module.
 - `labWorlds` of `src/worlds.ts` gives the worlds of today: the loopback lab, the kernel lab and the where cases. It reads the bars of each world from `bars/`.
 - A world is data: its cases, the bars of its gate, its traits, and the thing that its gate holds. A new world is one more entry.
-- `STANDARD_CLASS_PLACES` gives the layer of each class, and the traits that a case of the class needs. The catalog gives no layer for a fault.
+- The catalog of netdiag gives the layer of each fault class. `STANDARD_CLASS_NEEDS` gives the traits that a world needs for a case of a class.
 
 The query gives a row for each class. The row has the layer of the class, and a cell for each world. A cell has the ids of the cases of the class, and tells if the world has a bar for it. The query also gives the gaps as data:
 
