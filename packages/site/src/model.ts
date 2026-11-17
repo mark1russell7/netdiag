@@ -39,6 +39,7 @@ export const CATALOG = STANDARD_CATALOG;
 export const FEATURE_NAMES: Readonly<Record<string, string>> = {
   "link.state": "The link of the interface",
   "wifi.signal": "The Wi-Fi signal",
+  "wifi.state": "The state of the Wi-Fi",
   "gateway.reply": "A ping of the gateway",
   "path.loss": "The packet loss",
   "path.mtu": "The MTU of the path",
