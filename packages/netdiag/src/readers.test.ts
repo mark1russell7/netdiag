@@ -257,6 +257,21 @@ describe("readEvidence", () => {
     expect(family(tcp("93.184.216.34", 443, "timeout"), tcp("2606:2800::1", 443, "timeout"))).toEqual([]);
   });
 
+  it("gives only ip.family from the facts of an address of a broken family", () => {
+    const answers = [dns("example.com", "A", "ok", ["93.184.216.34"]), dns("example.com", "AAAA", "ok", ["2606:2800::1"])];
+    const v6 = [tcp("2606:2800::1", 443, "unreachable"), echo("2606:2800::1", "unreachable"), report("2606:2800::1", "reached", LOSS_MIN_SENT, 0)];
+    const { evidence, skipped } = readEvidence(factsOf([...answers, tcp("93.184.216.34", 443, "connected"), echo("93.184.216.34", "reply"), ...v6]));
+    expect(evidence.map(({ feature, value }) => `${feature}=${value}`)).toEqual(["dns.answer=ok", "dns.address=public", "ip.family=ipv4-only", "tcp.connect=connected", "tcp.time=short", "icmp.reply=reply"]);
+    // The connect gave ip.family, so it is not a skip. The echo and the report give their reason one time each.
+    const reasons = skipped.map((item) => item.reason);
+    expect(reasons.filter((reason) => reason.includes("broken family of example.com"))).toHaveLength(2);
+    // With the two families broken, the facts give their features as before.
+    const down = readEvidence(factsOf([...answers, tcp("93.184.216.34", 443, "timeout"), ...v6])).evidence;
+    expect(valuesOf(down, "ip.family")).toEqual([]);
+    expect(valuesOf(down, "tcp.connect")).toEqual(["timeout", "unreachable"]);
+    expect(valuesOf(down, "icmp.reply")).toEqual(["unreachable"]);
+  });
+
   it("gives tcp.connect from the last fact, and tcp.time only for a connection", () => {
     const { evidence } = readEvidence(factsOf([tcp("192.0.2.1", 443, "timeout", 3000), tcp("192.0.2.1", 443, "connected", 40), tcp("192.0.2.1", 80, "refused", 1)]));
     expect(evidence.map(({ feature, value }) => `${feature}=${value}`)).toEqual(["tcp.connect=connected", "tcp.time=short", "tcp.connect=refused"]);

@@ -133,5 +133,5 @@ describe("the bars of the simulated world", () => {
     expect(barsText(runs.bars.value)).toBe(readFileSync(new URL("sim.json", BARS_FOLDER), "utf8"));
     const labels = new Set(placeHits(runs.outcomes).map((each) => each.label));
     for (const label of SIM_CLASSES.filter((each) => each !== NO_FAULT)) expect(labels.has(label), label).toBe(true);
-  }, 60_000);
+  }, 180_000);
 });

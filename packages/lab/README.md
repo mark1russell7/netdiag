@@ -306,12 +306,12 @@ The simulated world is the layer E0 of the ladder (ND-17). It is a model of a ne
 - `SimNetwork` of `src/sim/network.ts` is the model. It has the hops from the client to each end, the faults of a term at their places, and a seeded random source.
 - The tools of `src/sim/tools.ts` give the output of `ping` and `iw`. The real readers of netdiag read that output.
 - The probes of `src/sim/probes.ts` give the DNS, TCP, TLS and HTTP outcomes, with the error codes of Node.js and Linux.
-- The visit uses `fakeClock` of `@mark1russell7/algebra/clock`. Thus a plan of 252 cases takes less than one second, and it needs no lab.
+- The visit uses `fakeClock` of `@mark1russell7/algebra/clock`. Thus a plan of 1,680 cases takes approximately 3 seconds, and it needs no lab.
 - The visit starts no `mtr`. The model of `mtr` is a later step.
 
 ### The cases
 
-`simCases` of `src/sim/cases.ts` gives the plan of one seed: 12 cases of each class of `SIM_CLASSES`.
+`simCases` of `src/sim/cases.ts` gives the plan of one seed: 80 cases of each class of `SIM_CLASSES`. With 80 cases and no miss, the lower end of the Wilson interval is 0.954. With 12 cases, it was 0.757, and a class with 70 % hits got no bar.
 
 - `SIM_CLASSES` has each class of the catalog that a fault of the grammar gives, and `none`. No fault gives the class `unknown`.
 - For each class, `enumerateSpace` of strategy-space draws terms of the fault grammar. A term of a case has its class as its only class.
@@ -334,20 +334,23 @@ pnpm --filter @netdiag/lab sim [--out <folder>] [--write]
 - To change the bars, start the command with `--write`. Tell the reason in the pull request.
 - With `--out`, the command also writes `summary.md` and the outcome of each case into the folder.
 
-A class with a bar above 0 is covered on E0. The bar of `path.mtu` is 0, so its cell on E0 is a gap.
+A class with a bar above 0 is covered on E0. Each class has a bar above 0 today.
 
 ### What the simulated world found
 
 The simulated world gives each fault at each place of the grammar. The labs give only one place for each class. Thus the simulated world found these weak points of the catalog. Each is a later step of ND-17, with the bars as its measure.
 
+The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
+
 | Class | Hits | The other answers | The cause |
 | --- | --- | --- | --- |
-| `path.mtu` | 42 % | `none` | The catalog has no evidence for each address family. A black hole of IPv4 with a good IPv6 reads as `none`. |
-| `path.loss` | 50 % | `wifi.weak`, `resolver.down` | The reach of `path.loss` is the target only. A loss near the client also hits the reference. The catalog has no evidence of a wired link. The DNS probe tries one time. |
-| `interface.down` | 68 % | `unknown` | When an interface is down, c-ares gives `ECONNREFUSED`. The catalog expects a DNS timeout. |
-| `ipv6.broken` | 72 % | `host.down` | The reach of `ipv6.broken` is shared. A missing route of IPv6 at the transit hits only the target. |
-| `tls.proxy` | 73 % | `none` | The reach of `tls.proxy` is shared. A proxy near the target hits only the target. |
-| `wifi.weak` | 82 % | `unknown` | A radio loss above 25 % also makes the DNS probe time out, because it tries one time. |
-| `server.error` | 97 % | `tls.proxy` | A proxy at the gateway that refuses the request also ends the TLS session with its own certificate. |
+| `path.mtu` | 58 % | `none` | The catalog has no evidence for each address family. A black hole of IPv4 with a good IPv6 reads as `none`. Each miss is a case with IPv6. |
+| `path.loss` | 59 % | `wifi.weak`, `resolver.down` | The catalog has no evidence of a wired link. The DNS probe tries one time, so a large loss looks like a resolver that is down. |
+| `wifi.weak` | 69 % | `unknown` | A radio loss above 25 % also makes the DNS probe time out, because it tries one time. |
+| `interface.down` | 70 % | `unknown` | When an interface is down, c-ares gives `ECONNREFUSED`. The catalog expects a DNS timeout. |
+| `server.error` | 98 % | `tls.proxy` | A proxy at the gateway that refuses the request also ends the TLS session with its own certificate. |
 
-The reach of a fault is fixed for each class today. A next step makes the reach a set of places, with one sub-hypothesis for each place.
+Two changes of ND-17 closed two weak points. Each is a measure with 12 cases of each class:
+
+- A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
+- When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.

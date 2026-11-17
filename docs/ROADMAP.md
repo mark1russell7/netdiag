@@ -69,30 +69,30 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 
 <!-- coverage:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
 
-- **614 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 104 gaps, and the proposed classes have 510 gaps. 36 cells covered, and 1 cell impossible. The work ends only at zero gaps.
+- **613 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 103 gaps, and the proposed classes have 510 gaps. 37 cells covered, and 1 cell impossible. The work ends only at zero gaps.
 
 | Class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `interface.down` | `link` | ✓ 12 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |
-| `wifi.weak` | `wifi` | ✓ 12 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |
-| `host.down` | `ip` | ✓ 12 cases of `sim` | ✓ `host.down` | ○ | ○ | ○ | ○ | ○ |
-| `filter.icmp` | `ip` | ✓ 12 cases of `sim` | ✓ `filter.icmp` | ○ | ○ | ○ | ○ | ○ |
-| `ipv6.broken` | `ip` | ✓ 12 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |
-| `gateway.down` | `route` | ✓ 12 cases of `sim` | ✓ `gateway.down` | ○ | ○ | ○ | ○ | ○ |
-| `path.loss` | `path` | ✓ 12 cases of `sim` | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |
-| `path.mtu` | `path` | ◐ 12 cases of `sim` | ✓ `path.mtu` | ○ | ○ | ○ | ○ | ○ |
-| `resolver.down` | `dns` | ✓ 12 cases of `sim` | ✓ `resolver.down/silent`, `resolver.down/absent` | ○ | ○ | ○ | ○ | ○ |
-| `resolver.failing` | `dns` | ✓ 12 cases of `sim` | ✓ `resolver.failing` | ○ | ○ | ○ | ○ | ○ |
-| `name.missing` | `dns` | ✓ 12 cases of `sim` | ✓ `name.missing` | ○ | ○ | ○ | ○ | ○ |
-| `port.closed` | `tcp` | ✓ 12 cases of `sim` | ✓ `port.closed` | ○ | ○ | ○ | ○ | ○ |
-| `filter.drop` | `tcp` | ✓ 12 cases of `sim` | ✓ `filter.drop` | ○ | ○ | ○ | ○ | ○ |
-| `filter.reset` | `tcp` | ✓ 12 cases of `sim` | ✓ `filter.reset` | ○ | ○ | ○ | ○ | ○ |
-| `tls.proxy` | `tls` | ✓ 12 cases of `sim` | ✓ `tls.proxy` | ○ | ○ | ○ | ○ | ○ |
-| `tls.cert-invalid` | `tls` | ✓ 12 cases of `sim` | ✓ `tls.cert-invalid/expired`, `tls.cert-invalid/wrong-name` | ○ | ○ | ○ | ○ | ○ |
-| `tls.mismatch` | `tls` | ✓ 12 cases of `sim` | ✓ `tls.mismatch` | ○ | ○ | ○ | ○ | ○ |
-| `captive.portal` | `http` | ✓ 12 cases of `sim` | ✓ `captive.portal` | ○ | ○ | ○ | ○ | ○ |
-| `server.slow` | `http` | ✓ 12 cases of `sim` | ✓ `server.slow` | ○ | ○ | ○ | ○ | ○ |
-| `server.error` | `http` | ✓ 12 cases of `sim` | ✓ `server.error` | ○ | ○ | ○ | ○ | ○ |
+| `interface.down` | `link` | ✓ 80 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |
+| `wifi.weak` | `wifi` | ✓ 80 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |
+| `host.down` | `ip` | ✓ 80 cases of `sim` | ✓ `host.down` | ○ | ○ | ○ | ○ | ○ |
+| `filter.icmp` | `ip` | ✓ 80 cases of `sim` | ✓ `filter.icmp` | ○ | ○ | ○ | ○ | ○ |
+| `ipv6.broken` | `ip` | ✓ 80 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |
+| `gateway.down` | `route` | ✓ 80 cases of `sim` | ✓ `gateway.down` | ○ | ○ | ○ | ○ | ○ |
+| `path.loss` | `path` | ✓ 80 cases of `sim` | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |
+| `path.mtu` | `path` | ✓ 80 cases of `sim` | ✓ `path.mtu` | ○ | ○ | ○ | ○ | ○ |
+| `resolver.down` | `dns` | ✓ 80 cases of `sim` | ✓ `resolver.down/silent`, `resolver.down/absent` | ○ | ○ | ○ | ○ | ○ |
+| `resolver.failing` | `dns` | ✓ 80 cases of `sim` | ✓ `resolver.failing` | ○ | ○ | ○ | ○ | ○ |
+| `name.missing` | `dns` | ✓ 80 cases of `sim` | ✓ `name.missing` | ○ | ○ | ○ | ○ | ○ |
+| `port.closed` | `tcp` | ✓ 80 cases of `sim` | ✓ `port.closed` | ○ | ○ | ○ | ○ | ○ |
+| `filter.drop` | `tcp` | ✓ 80 cases of `sim` | ✓ `filter.drop` | ○ | ○ | ○ | ○ | ○ |
+| `filter.reset` | `tcp` | ✓ 80 cases of `sim` | ✓ `filter.reset` | ○ | ○ | ○ | ○ | ○ |
+| `tls.proxy` | `tls` | ✓ 80 cases of `sim` | ✓ `tls.proxy` | ○ | ○ | ○ | ○ | ○ |
+| `tls.cert-invalid` | `tls` | ✓ 80 cases of `sim` | ✓ `tls.cert-invalid/expired`, `tls.cert-invalid/wrong-name` | ○ | ○ | ○ | ○ | ○ |
+| `tls.mismatch` | `tls` | ✓ 80 cases of `sim` | ✓ `tls.mismatch` | ○ | ○ | ○ | ○ | ○ |
+| `captive.portal` | `http` | ✓ 80 cases of `sim` | ✓ `captive.portal` | ○ | ○ | ○ | ○ | ○ |
+| `server.slow` | `http` | ✓ 80 cases of `sim` | ✓ `server.slow` | ○ | ○ | ○ | ○ | ○ |
+| `server.error` | `http` | ✓ 80 cases of `sim` | ✓ `server.error` | ○ | ○ | ○ | ○ | ○ |
 
 | Proposed class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -182,7 +182,7 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 - The reasons of the impossible cells:
   1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: S7, the table "The layers", row E4, column "What it cannot prove".
 - The worlds: Simulated network (E0), Loopback (E1), Kernel (E1), Kernel, where cases (E1).
-- The control `none`. Simulated network: 12 cases, a bar. Loopback: 1 case, a bar. Kernel: 1 case, a bar. Kernel, where cases: 1 case, no bar.
+- The control `none`. Simulated network: 80 cases, a bar. Loopback: 1 case, a bar. Kernel: 1 case, a bar. Kernel, where cases: 1 case, no bar.
 
 <!-- coverage:end -->
 
@@ -202,22 +202,21 @@ The fault atlas is data: `FAULT_ATLAS` in `packages/lab/src/atlas.ts` (ND-17). E
 | `wifi` | 3 | 1 | 0 | 0 | 2 |
 | `ip` | 6 | 3 | 0 | 0 | 3 |
 | `route` | 5 | 1 | 0 | 0 | 4 |
-| `path` | 9 | 2 | 1 | 0 | 6 |
+| `path` | 9 | 3 | 0 | 0 | 6 |
 | `dns` | 9 | 3 | 0 | 0 | 6 |
 | `tcp` | 5 | 3 | 0 | 0 | 2 |
 | `tls` | 6 | 5 | 0 | 0 | 1 |
 | `http` | 4 | 3 | 0 | 0 | 1 |
-| All | 49 | 22 | 1 | 0 | 26 |
+| All | 49 | 23 | 0 | 0 | 26 |
 
 | World | Entries | Covered | Gap: no bar | Gap: no case | Gap: no class |
 | --- | --- | --- | --- | --- | --- |
 | Loopback | 13 | 12 | 0 | 0 | 1 |
 | Kernel | 10 | 7 | 0 | 0 | 3 |
-| containerlab | 19 | 1 | 1 | 0 | 17 |
+| containerlab | 19 | 2 | 0 | 0 | 17 |
 | VMs | 7 | 2 | 0 | 0 | 5 |
 
 - The atlas has 49 entries. 23 name a class of the catalog, and 26 have no class.
-- The gaps of the bars, an entry of a class with a case and no bar: `path.ipv6-too-big-filtered` (`path.mtu`, containerlab).
 - The gaps of the catalog. The atlas proposes 25 classes:
   - `link.storm` (`link`, containerlab): `link.switching-loop`.
   - `wifi.busy` (`wifi`, VMs): `wifi.interference`.
@@ -351,4 +350,4 @@ The status words are `active`, `waiting`, `blocked`, `later`, `done` and `droppe
 | ND-14 | The start of a loss on the site | done | P3 | S | site | ND-9, ND-11, ND-15 | Demo 4 of the site shows where the loss of each path starts, and the networks of those hops. The data comes from the facts of a report, with `lossOrigins`. The sample report with a loss comes from the where cases of the kernel lab. The job `where` writes these samples, with the lookups of the owners and the origins. `lookupGrants` gives the grants of the lookups (netdiag 0.5.6, #51). |
 | ND-15 | The lab gate of the start of a loss | active | P2 | M | ground truth | ND-11 | The where cases of the kernel lab put a loss on one link of the path, or no loss. Then `lossStart` must give the part of the path where the loss starts. Step 1 (#47): the cases and their records, with no bar. Step 2 (#48): the gate of the where cases. Step 3: the bars from 5 runs in CI, in `packages/lab/bars/where.json`. |
 | ND-16 | The origin AS of each hop | done | P3 | S | probes | ND-11 | The AS number of each hop. In RDAP, only ARIN gives it. The second source is the DNS of Team Cymru, the source of `mtr -z`: a TXT query under `origin.asn.cymru.com` or `origin6.asn.cymru.com` gives the BGP prefix and its origin AS. `netdiag check --owners` shows the AS of each hop, and the two values when RDAP and the DNS do not agree (netdiag 0.5.5, #49). |
-| ND-17 | netdiag learns on simulated networks | active | P2 | L | ground truth | ND-15 | The labs make each fault class of real networks in seeded worlds. A gap is not a pass. Each class must have a test on each layer E0 to E6 of the lab. The item is done only at zero gaps. Step 1: the coverage query, the fault atlas and the fault grammar. Step 2: the simulated world on E0, with 12 seeded cases of each class and their bars. Step 3: the weak points that the simulated world found, with its bars as the measure. Step 4: one PR for each new class, with its features, its case and its bar. Step 5: seeded worlds of 3, 30 and 300 nodes in containerlab and in VMs of the harness (SYS-77), with fault plans of `rigor-chaos`. Step 6: a gate on the recall, the precision and the count of next probes, with a demo of each world on the site. |
+| ND-17 | netdiag learns on simulated networks | active | P2 | L | ground truth | ND-15 | The labs make each fault class of real networks in seeded worlds. A gap is not a pass. Each class must have a test on each layer E0 to E6 of the lab. The item is done only at zero gaps. Step 1: the coverage query, the fault atlas and the fault grammar. Step 2: the simulated world on E0, with 80 seeded cases of each class and their bars. Step 3: the weak points that the simulated world found, with its bars as the measure. The reaches of a fault as a set and the evidence of a broken family are done. The evidence of a wired link, the DNS tries, the errors of a down interface and the evidence for each family are next. Step 4: one PR for each new class, with its features, its case and its bar. Step 5: seeded worlds of 3, 30 and 300 nodes in containerlab and in VMs of the harness (SYS-77), with fault plans of `rigor-chaos`. Step 6: a gate on the recall, the precision and the count of next probes, with a demo of each world on the site. |

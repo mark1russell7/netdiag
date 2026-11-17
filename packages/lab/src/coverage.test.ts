@@ -94,8 +94,8 @@ describe("coverage", () => {
   it("gives no bar for a bar of 0, because a bar of 0 holds nothing", () => {
     const zero = coverage({ catalog: STANDARD_CATALOG, worlds: labWorlds((name) => (name === "sim" ? { ...readBars(name), "path.loss": 0 } : readBars(name))) });
     expect(zero.rows.find((row) => row.hypothesis === "path.loss")?.worlds[0]).toEqual({ world: "sim", cases: simCases("path.loss"), bar: false });
-    expect(readBars("sim")["path.mtu"]).toBe(0);
-    expect(TODAY.rows.find((row) => row.hypothesis === "path.mtu")?.worlds[0]?.bar).toBe(false);
+    expect(readBars("sim")["path.mtu"]).toBeGreaterThan(0);
+    expect(TODAY.rows.find((row) => row.hypothesis === "path.mtu")?.worlds[0]?.bar).toBe(true);
   });
 
   it("closes a gap with a fake world that has one more case", () => {
@@ -162,14 +162,14 @@ describe("the ladder", () => {
   });
 
   it("gives the counts of today: each covered cell is on E0 or E1, and only link.duplex on E4 is impossible", () => {
-    expect(ladder.classes).toEqual({ cells: 140, covered: 36, noBar: 1, gap: 103, noClass: 0, impossible: 0, gaps: 104 });
+    expect(ladder.classes).toEqual({ cells: 140, covered: 37, noBar: 0, gap: 103, noClass: 0, impossible: 0, gaps: 103 });
     expect(ladder.proposals).toEqual({ cells: 511, covered: 0, noBar: 0, gap: 0, noClass: 510, impossible: 1, gaps: 510 });
-    expect(ladder.total).toEqual({ cells: 651, covered: 36, noBar: 1, gap: 103, noClass: 510, impossible: 1, gaps: 614 });
+    expect(ladder.total).toEqual({ cells: 651, covered: 37, noBar: 0, gap: 103, noClass: 510, impossible: 1, gaps: 613 });
     const impossible = ladder.rows.flatMap((row) => row.cells.filter((cell) => cell.state === "impossible").map((cell) => [row.id, cell.layer]));
     expect(impossible).toEqual([["link.duplex", "E4"]]);
     const covered = ladder.rows.flatMap((row) => row.cells).filter((cell) => cell.state === "covered");
     expect(new Set(covered.map((cell) => cell.layer))).toEqual(new Set(["E0", "E1"]));
-    expect(cellOf(TODAY, "path.mtu", "E0")).toEqual({ layer: "E0", state: "no-bar", worlds: [{ world: "sim", cases: simCases("path.mtu"), bar: false }], limits: [] });
+    expect(cellOf(TODAY, "path.mtu", "E0")).toEqual({ layer: "E0", state: "covered", worlds: [{ world: "sim", cases: simCases("path.mtu"), bar: true }], limits: [] });
     expect(cellOf(TODAY, "path.loss", "E1")).toEqual({
       layer: "E1",
       state: "covered",
@@ -228,7 +228,7 @@ describe("coverageMarkdown", () => {
 
   it("gives the line of the counts first, with the gaps of the classes and of the proposed classes", () => {
     expect(lines[0]).toBe(
-      "- **614 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 104 gaps, and the proposed classes have 510 gaps. 36 cells covered, and 1 cell impossible. The work ends only at zero gaps.",
+      "- **613 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 103 gaps, and the proposed classes have 510 gaps. 37 cells covered, and 1 cell impossible. The work ends only at zero gaps.",
     );
   });
 
@@ -245,9 +245,9 @@ describe("coverageMarkdown", () => {
       const cells = line!.split("|").slice(3, -1).map((each) => each.trim());
       row.cells.forEach((cell, at) => expect(cells[at]?.startsWith(STATE_KEYS[cell.state].mark), `${row.id} ${cell.layer}`).toBe(true));
     }
-    expect(table).toContain("| `ipv6.broken` | `ip` | ✓ 12 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |");
-    expect(table).toContain("| `path.loss` | `path` | ✓ 12 cases of `sim` | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |");
-    expect(table).toContain("| `path.mtu` | `path` | ◐ 12 cases of `sim` | ✓ `path.mtu` | ○ | ○ | ○ | ○ | ○ |");
+    expect(table).toContain("| `ipv6.broken` | `ip` | ✓ 80 cases of `sim` | ○ | ○ | ○ | ○ | ○ | ○ |");
+    expect(table).toContain("| `path.loss` | `path` | ✓ 80 cases of `sim` | ✓ `path.loss`, `loss.last-link`, `loss.first-link` | ○ | ○ | ○ | ○ | ○ |");
+    expect(table).toContain("| `path.mtu` | `path` | ✓ 80 cases of `sim` | ✓ `path.mtu` | ○ | ○ | ○ | ○ | ○ |");
     expect(table).toContain("| `link.duplex` | `link` | ◌ | ◌ | ◌ | ◌ | ⊘ [1] | ◌ | ◌ |");
     expect(lines).toContain(`  1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: ${LAYER_LIMITS.E4[0]!.source}.`);
   });

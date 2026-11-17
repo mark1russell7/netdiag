@@ -7,6 +7,7 @@ import {
   STANDARD_CATALOG_SPEC,
   STANDARD_FEATURES,
   UNKNOWN,
+  causeVariants,
   compileCatalog,
   diagnose,
   expand,
@@ -15,6 +16,7 @@ import {
   type CatalogSpec,
   type Evidence,
   type Feature,
+  type Reach,
 } from "./index.ts";
 import type { Layer } from "../layer.ts";
 
@@ -107,6 +109,21 @@ describe("the catalog", () => {
         faults: [{ id: "x", part: "service", layer: "radio" as Layer, reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } }],
       },
     ],
+    ...[
+      ["an empty list of reaches", []],
+      ["a repeated reach", ["target", "target"]],
+      ["an unknown reach", ["near"]],
+    ].map(
+      ([name, reach]): [string, CatalogSpec] =>
+        [
+          `a fault with ${name}`,
+          {
+            version: "t",
+            features: [tcp],
+            faults: [{ id: "x", part: "service", layer: "tcp", reach: reach as unknown as readonly Reach[], summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } }],
+          },
+        ],
+    ),
   ])("refuses %s", (_name, spec) => {
     expect(compileCatalog(spec).tag).toBe("err");
   });
@@ -189,7 +206,62 @@ describe("a reference host", () => {
 
   it("uses the healthy distribution for a fault of the target on a reference host", () => {
     expect(catalog.likelihood("server.slow", "http.ttfb", "high", false)).toBe(catalog.likelihood(NONE, "http.ttfb", "high", false));
-    expect(catalog.likelihood("tls.proxy", "tls.trust", "private", false)).toBe(catalog.likelihood("tls.proxy", "tls.trust", "private", true));
+    expect(catalog.likelihood("captive.portal", "tls.trust", "private", false)).toBe(catalog.likelihood("captive.portal", "tls.trust", "private", true));
+  });
+});
+
+describe("a fault with two reaches", () => {
+  const primary = [e("tcp.time", "short"), e("tls.ratio", "high")];
+  const reachOf = (evidence: readonly Evidence[], reach: string): number =>
+    diagnose(catalog, evidence).causes.find((cause) => cause.id === "tls.proxy")?.reaches?.find((share) => share.reach === reach)?.probability ?? Number.NaN;
+
+  it("gives the table of each reach on a reference host, and their mean without a reach", () => {
+    const shared = catalog.likelihood("tls.proxy", "tls.ratio", "high", false, "shared");
+    const target = catalog.likelihood("tls.proxy", "tls.ratio", "high", false, "target");
+    expect(shared).toBe(catalog.likelihood("tls.proxy", "tls.ratio", "high", true));
+    expect(target).toBe(catalog.likelihood(NONE, "tls.ratio", "high", false));
+    expect(catalog.likelihood("tls.proxy", "tls.ratio", "high", false)).toBeCloseTo((shared + target) / 2, 12);
+    expect(catalog.likelihood("tls.proxy", "tls.ratio", "high", true, "target")).toBe(catalog.likelihood("tls.proxy", "tls.ratio", "high", true));
+  });
+
+  it("gives no number for a reach that the fault does not have", () => {
+    expect(catalog.likelihood("server.slow", "http.ttfb", "high", true, "shared")).toBeNaN();
+    expect(catalog.hypotheses.find((h) => h.id === "server.slow")?.reach).toEqual(["target"]);
+    expect(catalog.hypotheses.find((h) => h.id === "tls.proxy")?.reach).toEqual(["shared", "target"]);
+  });
+
+  it("gives the probability of each reach, with a sum of the probability of the cause", () => {
+    const evidence = [...primary, e("tls.ratio", "high", false)];
+    const cause = diagnose(catalog, evidence).causes.find((each) => each.id === "tls.proxy");
+    expect(cause?.reaches?.map((share) => share.reach)).toEqual(["shared", "target"]);
+    expect((cause?.reaches ?? []).reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(cause?.probability ?? Number.NaN, 12);
+    expect(reachOf(evidence, "shared")).toBeGreaterThan(reachOf(evidence, "target"));
+    const fastOnReference = [...primary, e("tls.ratio", "low", false)];
+    expect(reachOf(fastOnReference, "target")).toBeGreaterThan(reachOf(fastOnReference, "shared"));
+  });
+
+  it("finds a fault of each reach: a proxy on the two hosts or on the path to the target only", () => {
+    expect(top([...primary, e("tcp.time", "short", false), e("tls.ratio", "high", false)])).toBe("tls.proxy");
+    // A slow handshake on the target alone fits a slow server too. A private issuer on the target only names the proxy.
+    const targetOnly = [...primary, e("tls.trust", "private"), e("tcp.time", "short", false), e("tls.ratio", "low", false), e("tls.trust", "public", false)];
+    expect(top(targetOnly)).toBe("tls.proxy");
+    expect(reachOf(targetOnly, "target")).toBeGreaterThan(reachOf(targetOnly, "shared"));
+  });
+
+  it("gives one variant for a cause with no reach, and the reaches of a fault", () => {
+    const causes = diagnose(catalog, primary).causes;
+    const none = causes.find((cause) => cause.id === NONE);
+    expect(none?.reaches).toBeUndefined();
+    expect(causeVariants(none ?? causes[0]!)).toEqual([{ reach: undefined, probability: none?.probability }]);
+    const proxy = causes.find((cause) => cause.id === "tls.proxy");
+    expect(causeVariants(proxy ?? causes[0]!).map((variant) => variant.reach)).toEqual(["shared", "target"]);
+  });
+
+  it("explains a fault by its most probable reach", () => {
+    const weights = explain(catalog, [...primary, e("tls.ratio", "low", false)], "tls.proxy");
+    expect(weights.find((item) => !item.evidence.primary)?.weight).toBeCloseTo(0, 12);
+    const shared = explain(catalog, [...primary, e("tls.ratio", "high", false)], "tls.proxy");
+    expect(shared.find((item) => !item.evidence.primary)?.weight).toBeGreaterThan(0);
   });
 });
 
@@ -236,6 +308,8 @@ describe("the properties of the model", () => {
         expect(sum).toBeCloseTo(1, 9);
         for (let i = 0; i < causes.length; i += 1) {
           const p = causes[i]?.probability ?? Number.NaN;
+          const reaches = causes[i]?.reaches;
+          if (reaches !== undefined) expect(reaches.reduce((a, share) => a + share.probability, 0)).toBeCloseTo(p, 12);
           expect(p).toBeGreaterThanOrEqual(0);
           expect(p).toBeLessThanOrEqual(1);
           if (i > 0) expect(p).toBeLessThanOrEqual(causes[i - 1]?.probability ?? Number.NaN);
@@ -255,6 +329,7 @@ describe("the properties of the model", () => {
     );
   });
 
+  // For a fault with two reaches, the factor of one more observation is its likelihood under the posterior of the reaches.
   it("changes the odds of two causes by the ratio of their likelihoods for one more observation", () => {
     const ids = catalog.hypotheses.map((h) => h.id);
     fc.assert(
@@ -263,9 +338,15 @@ describe("the properties of the model", () => {
         const p = (evidence: readonly Evidence[], id: string): number => diagnose(catalog, evidence).causes.find((c) => c.id === id)?.probability ?? Number.NaN;
         const oddsBefore = Math.log(p(before, a)) - Math.log(p(before, b));
         const oddsAfter = Math.log(p([...before, extra], a)) - Math.log(p([...before, extra], b));
-        const ratio =
-          Math.log(catalog.likelihood(a, extra.feature, extra.value, extra.primary)) - Math.log(catalog.likelihood(b, extra.feature, extra.value, extra.primary));
-        if (Number.isFinite(oddsBefore) && Number.isFinite(oddsAfter)) expect(oddsAfter - oddsBefore).toBeCloseTo(ratio, 6);
+        const causes = diagnose(catalog, before).causes;
+        const factor = (id: string): number => {
+          const cause = causes.find((c) => c.id === id);
+          if (cause === undefined) return Number.NaN;
+          const sum = causeVariants(cause).reduce((s, v) => s + v.probability * catalog.likelihood(id, extra.feature, extra.value, extra.primary, v.reach), 0);
+          return sum / cause.probability;
+        };
+        const ratio = Math.log(factor(a)) - Math.log(factor(b));
+        if (Number.isFinite(oddsBefore) && Number.isFinite(oddsAfter) && Number.isFinite(ratio)) expect(oddsAfter - oddsBefore).toBeCloseTo(ratio, 6);
       }),
       { seed: 20261115, numRuns: 300 },
     );

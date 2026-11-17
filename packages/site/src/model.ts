@@ -28,6 +28,7 @@ import {
   type LabScore,
   type Layer,
   type ProbeChoice,
+  type Reach,
 } from "@mark1russell7/netdiag/diagnosis";
 import { random } from "@mark1russell7/rigor-generators";
 
@@ -252,13 +253,24 @@ export function hiddenTruth(seed: string): string {
 }
 
 /**
+ * This function gives the reach of the fault of a world. A fault with more than one reach gets one reach for each seed,
+ * so each feature of the world agrees on it. A hypothesis with no reach gives no reach.
+ */
+export function worldReach(truth: string, seed: string): Reach | undefined {
+  const reaches = hypothesisOf(truth).reach ?? [];
+  if (reaches.length < 2) return reaches[0];
+  return random(`netdiag-demo/reach/${seed}/${truth}`).pick(reaches);
+}
+
+/**
  * This function gives the value that a world with a true hypothesis gives for one feature. It draws the value from the
- * likelihoods of the catalog. Each feature, role and seed has its own stream, so the order of the probes does not
- * change a value.
+ * likelihoods of the catalog, for the reach of the world. Each feature, role and seed has its own stream, so the order
+ * of the probes does not change a value.
  */
 export function observe(truth: string, seed: string, feature: string, primary: boolean): string {
   const { values } = featureOf(feature);
-  const weights = values.map((value) => CATALOG.likelihood(truth, feature, value, primary));
+  const reach = worldReach(truth, seed);
+  const weights = values.map((value) => CATALOG.likelihood(truth, feature, value, primary, reach));
   const value = values[random(`netdiag-demo/world/${seed}/${truth}/${feature}/${primary ? "target" : "reference"}`).weighted(weights)];
   if (value === undefined) throw new RangeError(`No value of ${feature}`);
   return value;

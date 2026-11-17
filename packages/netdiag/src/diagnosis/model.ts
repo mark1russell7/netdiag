@@ -31,6 +31,15 @@ export type Part = (typeof PARTS)[number];
  */
 export type Reach = "shared" | "target";
 
+/** The reaches, in the order of the variants of a fault. */
+export const REACHES: readonly Reach[] = ["shared", "target"];
+
+/** The probability of one reach of a cause. The probabilities of the reaches of a cause add up to the probability of the cause. */
+export interface ReachShare {
+  readonly reach: Reach;
+  readonly probability: number;
+}
+
 /**
  * The strength of a prediction. The rules of practice use these strengths. The lab runs then replace them with fitted
  * distributions.
@@ -68,7 +77,11 @@ export interface Fault {
   readonly part: Part;
   /** The layer where the fault starts. The coverage of the lab and the views of a report read it. */
   readonly layer: Layer;
-  readonly reach: Reach;
+  /**
+   * The reach of the fault. A list tells that the fault can be at a place of each reach. For example, a loss near the
+   * client is shared, and a loss near the target is not. The model then sums the variants of each reach.
+   */
+  readonly reach: Reach | readonly Reach[];
   /** The cause in plain words, for example "No program listens on the port." */
   readonly summary: string;
   /** The next step for the user in plain words. */
@@ -100,7 +113,8 @@ export interface Hypothesis {
   readonly part?: Part | undefined;
   /** The layer where the fault starts. Only a hypothesis of the kind `fault` has a layer. */
   readonly layer?: Layer | undefined;
-  readonly reach?: Reach | undefined;
+  /** The reaches of the fault, in the order of `REACHES`. Only a hypothesis of the kind `fault` has reaches. */
+  readonly reach?: readonly Reach[] | undefined;
 }
 
 /** The id of the hypothesis "no fault". */
@@ -113,8 +127,11 @@ export interface Catalog {
   readonly version: string;
   readonly features: ReadonlyMap<string, Feature>;
   readonly hypotheses: readonly Hypothesis[];
-  /** This function gives the probability of a value of a feature under a hypothesis, for a primary or a reference host. */
-  likelihood(hypothesis: string, feature: string, value: string, primary: boolean): number;
+  /**
+   * This function gives the probability of a value of a feature under a hypothesis, for a primary or a reference host.
+   * With `reach`, it gives the probability under the variant of that reach. Without it, it gives the mean over the reaches.
+   */
+  likelihood(hypothesis: string, feature: string, value: string, primary: boolean, reach?: Reach): number;
   prior(hypothesis: string): number;
 }
 
@@ -179,7 +196,12 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
     if (priors.has(fault.id)) problems.push(`The fault ${fault.id} is repeated.`);
     if (!LAYERS.includes(fault.layer)) problems.push(`The fault ${fault.id} has the unknown layer ${String(fault.layer)}.`);
     priors.set(fault.id, fault.prior ?? 1);
-    hypotheses.push({ id: fault.id, kind: "fault", summary: fault.summary, step: fault.step, part: fault.part, layer: fault.layer, reach: fault.reach });
+    const reaches: readonly Reach[] = typeof fault.reach === "string" ? [fault.reach] : fault.reach;
+    if (reaches.length === 0 || new Set(reaches).size !== reaches.length || reaches.some((reach) => !REACHES.includes(reach))) {
+      problems.push(`The fault ${fault.id} has the reach ${JSON.stringify(fault.reach)}. It must be one or more different values of ${REACHES.join(" and ")}.`);
+    }
+    const reach = REACHES.filter((each) => reaches.includes(each));
+    hypotheses.push({ id: fault.id, kind: "fault", summary: fault.summary, step: fault.step, part: fault.part, layer: fault.layer, reach });
     const table = new Map<string, Distribution>();
     for (const [featureId, prediction] of Object.entries(fault.predicts)) {
       const feature = features.get(featureId);
@@ -208,20 +230,23 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
   if (problems.length > 0) return err(problems);
 
   const total = [...priors.values()].reduce((a, b) => a + b, 0);
-  const reach = new Map(hypotheses.map((h) => [h.id, h.reach]));
+  const reachOf = new Map(hypotheses.map((h) => [h.id, h.reach ?? []]));
   return ok({
     version: spec.version,
     features,
     hypotheses,
     prior: (hypothesis) => (priors.get(hypothesis) ?? 0) / total,
-    likelihood(hypothesis, featureId, value, primary) {
+    likelihood(hypothesis, featureId, value, primary, reach) {
       const feature = features.get(featureId);
       if (feature === undefined || !feature.values.includes(value)) return Number.NaN;
       if (hypothesis === UNKNOWN) return 1 / feature.values.length;
-      const fault = tables.get(hypothesis);
-      const changed = fault?.get(featureId);
-      const applies = primary || reach.get(hypothesis) === "shared";
-      return (applies && changed !== undefined ? changed : feature.healthy)[value] ?? Number.NaN;
+      const changed = tables.get(hypothesis)?.get(featureId);
+      const reaches = reachOf.get(hypothesis) ?? [];
+      if (reach !== undefined && !reaches.includes(reach)) return Number.NaN;
+      const of = (each: Reach): number => ((primary || each === "shared") && changed !== undefined ? changed : feature.healthy)[value] ?? Number.NaN;
+      if (reach !== undefined) return of(reach);
+      if (reaches.length === 0) return feature.healthy[value] ?? Number.NaN;
+      return reaches.reduce((sum, each) => sum + of(each), 0) / reaches.length;
     },
   });
 }
@@ -239,9 +264,10 @@ export interface Evidence {
   readonly facts?: readonly string[] | undefined;
 }
 
-/** A cause with its probability. */
+/** A cause with its probability. A fault also gives the probability of each of its reaches. */
 export interface Cause extends Hypothesis {
   readonly probability: number;
+  readonly reaches?: readonly ReachShare[] | undefined;
 }
 
 /** The result of a diagnosis: the causes from the most probable, and the evidence that the model did not use, with the reason. */
@@ -263,30 +289,68 @@ function usable(catalog: Catalog, evidence: readonly Evidence[]): Pick<Diagnosis
   return { used, ignored };
 }
 
+/** This function gives the logarithm of the likelihood of the evidence under one variant of a hypothesis. */
+function logLikelihood(catalog: Catalog, used: readonly Evidence[], hypothesis: string, reach?: Reach): number {
+  let sum = 0;
+  for (const item of used) sum += Math.log(catalog.likelihood(hypothesis, item.feature, item.value, item.primary, reach));
+  return sum;
+}
+
+/** One variant of a hypothesis: its reach, and the logarithm of its prior and of the likelihood of the evidence. */
+interface VariantLog {
+  readonly reach: Reach | undefined;
+  readonly log: number;
+}
+
+/** This function gives the variants of a hypothesis: one for each reach of a fault, or the hypothesis itself. */
+function variantLogs(catalog: Catalog, used: readonly Evidence[], hypothesis: Hypothesis): VariantLog[] {
+  const prior = Math.log(catalog.prior(hypothesis.id));
+  const reaches = hypothesis.reach ?? [];
+  if (reaches.length === 0) return [{ reach: undefined, log: prior + logLikelihood(catalog, used, hypothesis.id) }];
+  const share = Math.log(reaches.length);
+  return reaches.map((reach) => ({ reach, log: prior - share + logLikelihood(catalog, used, hypothesis.id, reach) }));
+}
+
 /**
  * This function gives the probability of each hypothesis from the evidence, with the rule of Bayes.
  *
- * The model takes the observations as independent for a given hypothesis. The calculation uses logarithms, so a long
- * list of evidence does not go to zero. The order of the evidence does not change the result.
- * An exact tie keeps the order of the catalog, with "no fault" first.
+ * The model takes the observations as independent for a given variant of a hypothesis. A fault has one variant for each
+ * of its reaches, and each variant gets an equal part of the prior. The probability of the fault is the sum of its
+ * variants. The calculation uses logarithms, so a long list of evidence does not go to zero. The order of the evidence
+ * does not change the result. An exact tie keeps the order of the catalog, with "no fault" first.
  */
 export function diagnose(catalog: Catalog, evidence: readonly Evidence[]): Diagnosis {
   const { used, ignored } = usable(catalog, evidence);
-  const logs = catalog.hypotheses.map((h) => {
-    let sum = Math.log(catalog.prior(h.id));
-    for (const item of used) sum += Math.log(catalog.likelihood(h.id, item.feature, item.value, item.primary));
-    return sum;
-  });
-  const top = Math.max(...logs);
-  const weights = logs.map((log) => Math.exp(log - top));
-  const total = weights.reduce((a, b) => a + b, 0);
+  const variants = catalog.hypotheses.map((h) => variantLogs(catalog, used, h));
+  const top = Math.max(...variants.flat().map((variant) => variant.log));
+  const weights = variants.map((each) => each.map((variant) => ({ reach: variant.reach, weight: Math.exp(variant.log - top) })));
+  const total = weights.flat().reduce((sum, variant) => sum + variant.weight, 0);
   // An exact tie keeps the order of the catalog: "no fault" first, then the faults, then "unknown cause". Thus a fault
   // whose features are not observed does not come before "no fault".
   const causes = catalog.hypotheses
-    .map((h, i) => ({ ...h, probability: (weights[i] ?? 0) / total, order: i }))
+    .map((h, i) => {
+      const parts = weights[i] ?? [];
+      const probability = parts.reduce((sum, variant) => sum + variant.weight, 0) / total;
+      const reaches = parts.flatMap((variant) => (variant.reach === undefined ? [] : [{ reach: variant.reach, probability: variant.weight / total }]));
+      return { ...h, probability, ...(reaches.length > 0 ? { reaches } : {}), order: i };
+    })
     .sort((a, b) => b.probability - a.probability || a.order - b.order)
     .map(({ order: _order, ...cause }) => cause);
   return { causes, used, ignored };
+}
+
+/** One variant of a cause: the reach of a fault, or no reach for the cause itself, with its probability. */
+export interface CauseVariant {
+  readonly reach: Reach | undefined;
+  readonly probability: number;
+}
+
+/**
+ * This function gives the variants of a cause: one for each reach of a fault, or the cause itself. The choice of the
+ * next probe and `predictive` use them.
+ */
+export function causeVariants(cause: Cause): readonly CauseVariant[] {
+  return cause.reaches !== undefined && cause.reaches.length > 0 ? cause.reaches : [{ reach: undefined, probability: cause.probability }];
 }
 
 /** The part of one observation in the comparison of two hypotheses. */
@@ -296,19 +360,30 @@ export interface Contribution {
   readonly weight: number;
 }
 
+/** This function gives the reach of the most probable variant of a hypothesis for the evidence. A tie keeps the order of `REACHES`. */
+function likeliestReach(catalog: Catalog, used: readonly Evidence[], hypothesis: string): Reach | undefined {
+  const found = catalog.hypotheses.find((h) => h.id === hypothesis);
+  if (found === undefined) return undefined;
+  let best: VariantLog | undefined;
+  for (const variant of variantLogs(catalog, used, found)) if (best === undefined || variant.log > best.log) best = variant;
+  return best?.reach;
+}
+
 /**
  * This function tells why the model prefers one hypothesis to a second hypothesis.
  *
  * It gives each observation with its weight, from the largest weight in absolute value. The default second hypothesis is
- * "no fault".
+ * "no fault". For a fault with more than one reach, the weights use the most probable reach for the evidence.
  */
 export function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus: string = NONE): Contribution[] {
   const { used } = usable(catalog, evidence);
+  const first = likeliestReach(catalog, used, hypothesis);
+  const second = likeliestReach(catalog, used, versus);
   return used
     .map((item) => ({
       evidence: item,
-      weight: Math.log10(catalog.likelihood(hypothesis, item.feature, item.value, item.primary)) -
-        Math.log10(catalog.likelihood(versus, item.feature, item.value, item.primary)),
+      weight: Math.log10(catalog.likelihood(hypothesis, item.feature, item.value, item.primary, first)) -
+        Math.log10(catalog.likelihood(versus, item.feature, item.value, item.primary, second)),
     }))
     .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
 }
@@ -322,7 +397,10 @@ export function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: stri
   if (known === undefined) throw new RangeError(`The catalog has no feature ${feature}`);
   const dist: Record<string, number> = {};
   for (const value of known.values) {
-    dist[value] = diagnosis.causes.reduce((sum, cause) => sum + cause.probability * catalog.likelihood(cause.id, feature, value, primary), 0);
+    dist[value] = diagnosis.causes.reduce(
+      (sum, cause) => sum + causeVariants(cause).reduce((part, variant) => part + variant.probability * catalog.likelihood(cause.id, feature, value, primary, variant.reach), 0),
+      0,
+    );
   }
   return dist;
 }
