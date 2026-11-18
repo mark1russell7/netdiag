@@ -1,7 +1,7 @@
 import { wilson } from "@mark1russell7/rigor-statistics";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { LAB_RECORD_FORMAT, STANDARD_CATALOG, diagnose, labBars, labGate, labRecordOf, scoreLab, type LabRecalls, type LabRecord, type LabScore } from "./index.ts";
+import { LAB_RECORD_FORMAT, STANDARD_CATALOG, diagnose, labBars, labGate, labRecordOf, scoreLab, scoredCause, type LabRecalls, type LabRecord, type LabScore } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
 const ids = catalog.hypotheses.map((hypothesis) => hypothesis.id);
@@ -44,6 +44,16 @@ describe("labRecordOf", () => {
     expect(result.tag === "ok" && result.value.rank).toBeGreaterThan(1);
   });
 
+  it("keeps the alike causes of a case, and refuses an alike cause that is the truth or not a cause", () => {
+    const diagnosis = diagnose(catalog, [{ feature: "tcp.connect", value: "timeout", primary: true }]);
+    const result = labRecordOf(catalog, "filter.drop/all", "filter.drop", diagnosis, ["host.down", "host.down"]);
+    expect(result.tag === "ok" && result.value.alike).toEqual(["host.down"]);
+    const plain = labRecordOf(catalog, "lab", "filter.drop", diagnosis);
+    expect(plain.tag === "ok" && "alike" in plain.value).toBe(false);
+    expect(labRecordOf(catalog, "lab", "filter.drop", diagnosis, ["filter.drop"])).toMatchObject({ tag: "err" });
+    expect(labRecordOf(catalog, "lab", "filter.drop", diagnosis, ["dns.slow"])).toMatchObject({ tag: "err" });
+  });
+
   it("refuses a truth that is not a hypothesis, and a diagnosis with no cause", () => {
     const diagnosis = diagnose(catalog, []);
     expect(labRecordOf(catalog, "lab", "dns.slow", diagnosis)).toMatchObject({ tag: "err" });
@@ -78,6 +88,23 @@ describe("scoreLab", () => {
     if (result.tag !== "err") return;
     expect(result.error).toHaveLength(3);
     expect(result.error.join(" ")).toContain("dns.slow");
+  });
+
+  it("counts a record with alike causes as a hit only when the truth and the alike causes are the first causes", () => {
+    const pair = (causes: readonly string[]): LabRecord => ({
+      ...record("filter.drop", causes[0]),
+      causes: causes.map((id, i) => ({ id, probability: [0.48, 0.47, 0.05][i] ?? 0 })),
+      rank: causes.indexOf("filter.drop") + 1,
+      alike: ["host.down"],
+    });
+    const tie = pair(["host.down", "filter.drop", "filter.icmp"]);
+    const first = pair(["filter.drop", "host.down", "filter.icmp"]);
+    const apart = pair(["filter.drop", "filter.icmp", "host.down"]);
+    expect([tie, first, apart].map(scoredCause)).toEqual(["filter.drop", "filter.drop", "filter.icmp"]);
+    expect(scoredCause(record("none", "host.down"))).toBe("host.down");
+    const score = scored([tie, first, apart]);
+    expect(score.correct).toBe(2);
+    expect(score.classes.find((scores) => scores.label === "host.down")?.predicted).toBe(0);
   });
 
   it("keeps the sums of the table, and a Brier score from 0 to 2", () => {

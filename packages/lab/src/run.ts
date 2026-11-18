@@ -49,11 +49,21 @@ export type CaseRun =
   | { readonly status: "read"; readonly case: string; readonly round: number; readonly visits: number; readonly record: LabRecord; readonly evidence: readonly string[] }
   | { readonly status: "no-read"; readonly case: string; readonly round: number; readonly visits: number; readonly reason: string; readonly evidence: readonly string[] };
 
-/** The part of a case that the case loop uses: its id, its true class and the signs that its world must show. */
+/** The causes with the same facts as the truth in the world of a case, and the reason that the facts cannot tell them apart. */
+export interface Alike {
+  readonly causes: readonly string[];
+  readonly reason: string;
+}
+
+/**
+ * The part of a case that the case loop uses: its id, its true class and the signs that its world must show. It can also
+ * have the causes with the same facts as the truth.
+ */
 export interface CaseBase {
   readonly id: string;
   readonly truth: string;
   readonly signs: readonly CaseSign[];
+  readonly alike?: Alike | undefined;
 }
 
 /**
@@ -124,7 +134,7 @@ export function readVisit(labCase: CaseBase, round: number, visit: Visit, catalo
   const missing = missingSigns(labCase.signs, reading.evidence);
   if (missing.length > 0) problems.push(`The world did not show the signs ${missing.map(signLabel).join(", ")}.`);
   if (problems.length > 0) return noRead(problems.join(" "), evidence);
-  const record = labRecordOf(catalog, `${labCase.id}#${round}`, labCase.truth, diagnose(catalog, reading.evidence));
+  const record = labRecordOf(catalog, `${labCase.id}#${round}`, labCase.truth, diagnose(catalog, reading.evidence), labCase.alike?.causes);
   if (record.tag === "err") return noRead(record.error, evidence);
   return { status: "read", case: labCase.id, round, visits, record: record.value, evidence };
 }

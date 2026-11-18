@@ -88,6 +88,11 @@ export const KERNEL_CASES: readonly KernelCase[] = [
     summary: "The target drops each packet from the client and to it.",
     fault: { kind: "network", fault: "blackhole", at: "target" },
     signs: [sign("tcp.connect", "timeout"), sign("icmp.reply", "none")],
+    alike: {
+      causes: ["host.down"],
+      reason:
+        "The client gets no answer to a packet. A host that is down behind a router that sends no ICMP message gives the same facts: the degree silent of host.down.",
+    },
   },
   {
     id: "filter.icmp",

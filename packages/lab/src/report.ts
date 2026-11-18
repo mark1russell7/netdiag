@@ -1,4 +1,4 @@
-import { scoreLab, type Catalog, type LabGate, type LabRecord, type LabScore } from "@mark1russell7/netdiag";
+import { scoreLab, scoredCause, type Catalog, type LabGate, type LabRecord, type LabScore } from "@mark1russell7/netdiag";
 import type { CaseRun } from "./run.ts";
 
 /** The result of a lab: the score of the reads, and the runs with no read. */
@@ -73,10 +73,20 @@ export function reportMarkdown(report: LabReport, gate?: LabGate, options: Repor
       lines.push(`| \`${row.label}\` | ${row.support} | ${row.hits} | ${percent(row.recall)} | ${percent(row.recallInterval.low)} to ${percent(row.recallInterval.high)} | ${percent(row.precision)} |`);
     }
     lines.push("");
-    const wrong = report.records.filter((record) => record.predicted !== record.truth);
+    const wrong = report.records.filter((record) => scoredCause(record) !== record.truth);
     if (wrong.length > 0) {
       lines.push("### Wrong diagnoses", "");
       for (const record of wrong) lines.push(`- \`${record.case}\`: \`${record.truth}\` got \`${record.predicted}\` (rank of the truth: ${record.rank}).`);
+      lines.push("");
+    }
+    const alike = report.records.filter((record) => record.predicted !== record.truth && scoredCause(record) === record.truth);
+    if (alike.length > 0) {
+      lines.push("### Hits of causes with the same facts", "");
+      for (const record of alike) {
+        const set = [record.truth, ...(record.alike ?? [])];
+        const names = set.map((id) => `\`${id}\``).join(", ");
+        lines.push(`- \`${record.case}\`: \`${record.truth}\` got \`${record.predicted}\`. The causes ${names} have the same facts in this world, and they are the first ${set.length} causes.`);
+      }
       lines.push("");
     }
   }

@@ -1,4 +1,4 @@
-import { STANDARD_CATALOG, type Fact } from "@mark1russell7/netdiag";
+import { LAB_RECORD_FORMAT, STANDARD_CATALOG, type Fact } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
 import { LAB_VISITS, readVisit, reportMarkdown, labReport, runRounds, visitAgain, type CaseBase, type CaseRun, type LabRound, type Visit } from "./index.ts";
 
@@ -29,6 +29,13 @@ describe("readVisit", () => {
     expect(run.status).toBe("read");
     expect(run.evidence).toContain("tcp.connect=refused@target");
     if (run.status === "read") expect(run.record).toMatchObject({ case: "port.closed#2", truth: "port.closed" });
+    if (run.status === "read") expect("alike" in run.record).toBe(false);
+  });
+
+  it("gives the record the causes with the same facts as the truth", () => {
+    const alike: CaseBase = { ...REFUSED, alike: { causes: ["host.down"], reason: "A test." } };
+    const run = readVisit(alike, 0, visited([connect("f1", "refused")]), STANDARD_CATALOG);
+    expect(run.status === "read" && run.record.alike).toEqual(["host.down"]);
   });
 
   it("gives no read for a missing sign, a problem of a probe and no visit", () => {
@@ -129,5 +136,30 @@ describe("reportMarkdown", () => {
     expect(text.startsWith("## The kernel lab\n")).toBe(true);
     expect(text).toContain("- `ipv6.broken`: No IPv6.");
     expect(reportMarkdown(report)).toMatch(/^## The loopback lab\n/);
+  });
+
+  it("shows a hit of a cause with the same facts apart from the wrong diagnoses", () => {
+    const run = (id: string, order: readonly string[]): CaseRun => ({
+      status: "read",
+      case: "filter.drop",
+      round: 0,
+      visits: 1,
+      evidence: [],
+      record: {
+        format: LAB_RECORD_FORMAT,
+        case: id,
+        catalog: STANDARD_CATALOG.version,
+        truth: "filter.drop",
+        predicted: order[0] ?? "",
+        rank: order.indexOf("filter.drop") + 1,
+        causes: order.map((cause, i) => ({ id: cause, probability: [0.48, 0.47, 0.05][i] ?? 0 })),
+        alike: ["host.down"],
+      },
+    });
+    const report = labReport(STANDARD_CATALOG, [run("filter.drop#0", ["host.down", "filter.drop", "filter.icmp"]), run("filter.drop#1", ["host.down", "filter.icmp", "filter.drop"])], 2, 1);
+    expect(report.score?.correct).toBe(1);
+    const text = reportMarkdown(report);
+    expect(text).toContain("### Hits of causes with the same facts\n\n- `filter.drop#0`: `filter.drop` got `host.down`. The causes `filter.drop`, `host.down` have the same facts in this world, and they are the first 2 causes.");
+    expect(text).toContain("### Wrong diagnoses\n\n- `filter.drop#1`: `filter.drop` got `host.down` (rank of the truth: 3).\n\n### Hits");
   });
 });

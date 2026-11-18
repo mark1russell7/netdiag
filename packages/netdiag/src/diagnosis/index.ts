@@ -45,6 +45,7 @@ export {
   labGate,
   labRecordOf,
   scoreLab,
+  scoredCause,
   type LabBars,
   type LabBarsOptions,
   type LabCause,

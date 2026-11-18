@@ -372,6 +372,7 @@ rtoOf: build/core.chunk.d.ts#rtoOf
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
+scoredCause: build/index.chunk2.d.ts#scoredCause
 secureBase: build/core.chunk.d.ts#secureBase
 serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
@@ -688,6 +689,7 @@ rtoOf: build/core.chunk.d.ts#rtoOf
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
+scoredCause: build/index.chunk2.d.ts#scoredCause
 secureBase: build/core.chunk.d.ts#secureBase
 serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
@@ -781,6 +783,7 @@ layerRank: build/layer.chunk.d.ts#layerRank
 predictive: build/index.chunk2.d.ts#predictive
 rankProbes: build/index.chunk2.d.ts#rankProbes
 scoreLab: build/index.chunk2.d.ts#scoreLab
+scoredCause: build/index.chunk2.d.ts#scoredCause
 
 ## ./tools (build/tools.d.ts): names
 
@@ -2226,6 +2229,7 @@ interface LabRecord {
   readonly predicted: string;
   readonly rank: number;
   readonly causes: readonly LabCause[];
+  readonly alike?: readonly string[] | undefined;
 }
 
 ### build/index.chunk2.d.ts#LabScore
@@ -2355,7 +2359,7 @@ declare function labBars(scores: readonly LabRecalls[], options?: LabBarsOptions
 declare function labGate(score: LabRecalls, bars: LabBars): Result<LabGate, string[]>;
 
 ### build/index.chunk2.d.ts#labRecordOf
-declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis): Result<LabRecord, string>;
+declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, alike?: readonly string[]): Result<LabRecord, string>;
 
 ### build/index.chunk2.d.ts#predictive
 declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;
@@ -2365,6 +2369,9 @@ declare function rankProbes(catalog: Catalog, diagnosis: Diagnosis, candidates: 
 
 ### build/index.chunk2.d.ts#scoreLab
 declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
+
+### build/index.chunk2.d.ts#scoredCause
+declare function scoredCause(record: LabRecord): string;
 
 ### build/index.d.ts#ConnectOptions
 interface ConnectOptions {

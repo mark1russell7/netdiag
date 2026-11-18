@@ -26,18 +26,27 @@ export interface LabRecord {
   readonly rank: number;
   /** The probability of each cause, from the most probable. */
   readonly causes: readonly LabCause[];
+  /**
+   * The causes with the same facts as the truth in the world of the case. The facts cannot tell them from the truth. A
+   * record without this field has no such cause.
+   */
+  readonly alike?: readonly string[] | undefined;
 }
 
 /**
  * This function makes the record of one run of a lab case. The truth must be a hypothesis of the catalog, and the
- * diagnosis must have a cause.
+ * diagnosis must have a cause. `alike` has the causes with the same facts as the truth in the world of the case.
  */
-export function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis): Result<LabRecord, string> {
+export function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, alike: readonly string[] = []): Result<LabRecord, string> {
   if (!catalog.hypotheses.some((hypothesis) => hypothesis.id === truth)) return err(`The truth "${truth}" is not a hypothesis of the catalog ${catalog.version}.`);
   const first = diagnosis.causes[0];
   if (first === undefined) return err("The diagnosis has no cause.");
   const index = diagnosis.causes.findIndex((cause) => cause.id === truth);
   if (index < 0) return err(`The diagnosis has no cause "${truth}".`);
+  for (const id of alike) {
+    if (id === truth) return err(`The alike cause "${id}" is the truth.`);
+    if (!diagnosis.causes.some((cause) => cause.id === id)) return err(`The diagnosis has no alike cause "${id}".`);
+  }
   return ok({
     format: LAB_RECORD_FORMAT,
     case: caseId,
@@ -46,7 +55,20 @@ export function labRecordOf(catalog: Catalog, caseId: string, truth: string, dia
     predicted: first.id,
     rank: index + 1,
     causes: diagnosis.causes.map((cause) => ({ id: cause.id, probability: cause.probability })),
+    ...(alike.length > 0 ? { alike: [...new Set(alike)] } : {}),
   });
+}
+
+/**
+ * This function gives the cause that the score counts as the prediction of a record. Without alike causes, it is the
+ * predicted cause. With alike causes, the truth and the alike causes are a set of `k` causes. The score counts the truth
+ * when the first `k` causes of the diagnosis are this set. Else it counts the first of these `k` causes that is not in
+ * the set.
+ */
+export function scoredCause(record: LabRecord): string {
+  const set = new Set([record.truth, ...(record.alike ?? [])]);
+  const outside = record.causes.slice(0, set.size).find((cause) => !set.has(cause.id));
+  return outside?.id ?? (set.has(record.predicted) ? record.truth : record.predicted);
 }
 
 /** The scores of the lab records of one catalog. */
@@ -69,7 +91,9 @@ export interface LabScore {
 
 /**
  * This function scores the lab records of one catalog. The recall of a hypothesis is the part of its runs where the
- * diagnosis names it. A record of a different catalog version, or with a hypothesis that is not in the catalog, is an error.
+ * diagnosis names it. For a record with alike causes, the diagnosis names the truth when the truth and the alike causes
+ * are its first causes (refer to `scoredCause`). A record of a different catalog version, or with a hypothesis that is not in
+ * the catalog, is an error.
  */
 export function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]> {
   const ids = catalog.hypotheses.map((hypothesis) => hypothesis.id);
@@ -79,14 +103,14 @@ export function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Resul
     const name = `Record ${i} (${record.case})`;
     if (record.format !== LAB_RECORD_FORMAT) problems.push(`${name} has the format "${String(record.format)}", not "${LAB_RECORD_FORMAT}".`);
     if (record.catalog !== catalog.version) problems.push(`${name} comes from the catalog ${record.catalog}, not ${catalog.version}.`);
-    for (const id of new Set([record.truth, record.predicted, ...record.causes.map((cause) => cause.id)])) {
+    for (const id of new Set([record.truth, record.predicted, ...record.causes.map((cause) => cause.id), ...(record.alike ?? [])])) {
       if (!known.has(id)) problems.push(`${name} names "${id}", which is not a hypothesis of the catalog.`);
     }
   });
   if (problems.length > 0) return err(problems);
   const table = confusion(
     records.map((record) => record.truth),
-    records.map((record) => record.predicted),
+    records.map(scoredCause),
     ids,
   );
   const forecasts = records.flatMap((record) => {

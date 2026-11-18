@@ -76,7 +76,7 @@ Each round starts one world. Each case adds its fault to the world, starts the a
 | Case | Fault |
 | --- | --- |
 | `none` | No fault. |
-| `filter.drop` | The harness drops each packet of the target. |
+| `filter.drop` | The harness drops each packet of the target. The client gets no answer, as from a host that is down behind a silent router. Thus the case names `host.down` as `alike`. |
 | `filter.icmp` | The target ignores each echo request (`net.ipv4.icmp_echo_ignore_all`). |
 | `path.loss` | `netem` drops 20% of the packets of the target. |
 | `path.mtu` | The router drops each TCP packet above 1200 bytes toward the two servers. |
