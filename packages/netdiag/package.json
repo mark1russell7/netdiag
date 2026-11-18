@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "@mark1russell7/netdiag",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "Network diagnosis: typed facts at each layer of the stack, probes as adapters, and a scope rule for active probes.",
   "keywords": [
     "network",

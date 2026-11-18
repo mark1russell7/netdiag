@@ -1,4 +1,4 @@
-import { LAYERS, type Layer } from "@mark1russell7/netdiag/core";
+import { LAYERS, LOSS_DEGREES, type Layer, type Reach } from "@mark1russell7/netdiag/core";
 import {
   checkConfig,
   checkSpace,
@@ -392,6 +392,39 @@ export function faultsOf(term: FaultTerm): readonly StageChoice[] {
   return [term.stages["fault"], term.stages["second"]].filter((choice): choice is StageChoice => choice !== undefined && choice !== null);
 }
 
+/**
+ * A function that gives the reach of a fault from its option and its place. The reach is a fact of a world, not of the
+ * grammar: it tells the ends whose observations the fault changes.
+ */
+export type ReachOf = (option: string, place: FaultPlace) => Reach;
+
+/** The options whose param `share` is a loss of packets. The degree of such a fault is a degree of `LOSS_DEGREES`. */
+const LOSS_OPTIONS: ReadonlySet<string> = new Set(["path/loss", "wifi/loss"]);
+
+/** The variant of one fault: the reach of its place, and the degree of a loss. A fault that is not a loss has no degree. */
+export interface FaultVariant {
+  readonly reach: Reach | undefined;
+  readonly degree?: string | undefined;
+}
+
+/**
+ * This function gives the variant of one fault.
+ *
+ * - The reach comes from `reachOf` of the world. A fault with no place has no reach.
+ * - A loss in both directions loses an exchange with the probability 1 - (1 - s)^2. A loss in one direction loses it
+ *   with the probability s. The degree is the degree of `LOSS_DEGREES` that is nearest to that probability.
+ */
+export function faultVariant(choice: StageChoice, reachOf: ReachOf): FaultVariant {
+  const values = faultValues(choice);
+  const place = values["place"];
+  const reach = typeof place === "string" && (FAULT_PLACES as readonly string[]).includes(place) ? reachOf(choice.option, place as FaultPlace) : undefined;
+  const share = values["share"];
+  if (!LOSS_OPTIONS.has(choice.option) || typeof share !== "number") return { reach };
+  const q = values["direction"] === "out" || values["direction"] === "back" ? share : 1 - (1 - share) ** 2;
+  const nearest = LOSS_DEGREES.reduce((best, each) => (Math.abs(each.loss - q) < Math.abs(best.loss - q) ? each : best));
+  return { reach, degree: nearest.id };
+}
+
 /** This function gives the values of the active params of a fault, with the default of each param that the fault does not set. */
 export function faultValues(choice: StageChoice): Readonly<Record<string, ParamValue>> {
   const option = OPTIONS.get(choice.option);
@@ -441,6 +474,27 @@ export function termClasses(term: FaultTerm): readonly string[] {
   }
   const labels = [...new Set(choices.map(faultClass))].filter((label) => label !== NO_FAULT).sort();
   return labels.length === 0 ? [NO_FAULT] : labels;
+}
+
+/**
+ * This function gives the variant of a term of one fault. A term of two faults has no variant, and gives `undefined`.
+ *
+ * - A rule of two faults makes one fault. Its variant is the variant of the first fault of the rule.
+ * - A term with only faults of `NO_FAULT` has no reach.
+ */
+export function termVariant(term: FaultTerm, reachOf: ReachOf): FaultVariant | undefined {
+  const choices = faultsOf(term);
+  const [first, second] = choices;
+  if (first !== undefined && second !== undefined) {
+    for (const rule of PAIR_RULES) {
+      if (pairMatches(rule, first, second)) return faultVariant(first, reachOf);
+      if (pairMatches(rule, second, first)) return faultVariant(second, reachOf);
+    }
+  }
+  const real = choices.filter((choice) => faultClass(choice) !== NO_FAULT);
+  if (real.length > 1) return undefined;
+  const [only] = real;
+  return only === undefined ? { reach: undefined } : faultVariant(only, reachOf);
 }
 
 /** This function gives the traits that a world needs for a term: the needs of each option and of the values of its params. */

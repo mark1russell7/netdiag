@@ -261,6 +261,25 @@ const result = diagnose(STANDARD_CATALOG, [
 // result.causes[0].id is "filter.icmp": a filter blocks ICMP, and the host is up.
 ```
 
+### The recovery action
+
+`chooseAction(catalog, diagnosis, rules, policy)` gives the action of a service after a failed check. It takes the kind of action with the least expected cost.
+
+- An action rule gives the action for some variants of a cause: their reaches and their degrees. `STANDARD_ACTIONS` has the rules of `STANDARD_CATALOG`.
+- `ACTION_KINDS` has the kinds: `none`, `retry`, `back-off`, `change-path`, `change-copy`, `wait-network` and `stop`.
+- `harmfulOf(catalog, rule)` gives the harmful kinds of a rule: its own list, or the kinds of `harmOf`. For example, a `stop` is harmful unless the fault stays.
+- The cost of the kind of the rule of a variant is 0. A harmful kind costs `costs.harmful`, `none` costs `costs.none`, and each other kind costs `costs.useless`.
+- The expected cost of a kind is the sum of the probability of each variant multiplied by its cost. A tie goes to the kind that comes first in `ACTION_KINDS`.
+- With a harmful cost h, the choice takes a harmful kind only at a probability of approximately h / (h + 1) or more.
+
+The probabilities go through a calibration map first. `calibration.cause` tempers the probability of each cause, and `calibration.variant` tempers the share of each variant in its cause. A temperature t raises each probability to the power 1 / t, and then the map divides each by their sum.
+
+`STANDARD_POLICY` is data. The simulated world of the lab fits it on five sets of seeds that its gate does not use.
+
+- The two temperatures give the least Brier score of the probabilities of the kinds, on the cases of all five sets.
+- The harmful cost is the least cost that keeps the harm of each class at 0.05 or under it, on each set.
+- The harm of a class is the higher high end of two intervals. One is a Wilson interval. The other is a bootstrap that draws the terms again.
+
 ## Readers
 
 `readEvidence(facts, options)` changes the facts of the native probes and of the adapters into evidence for the model. Each value that it gives is a value of a feature of `STANDARD_CATALOG`.

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
+import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { random } from "@mark1russell7/rigor-generators";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
@@ -7,8 +7,9 @@ import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
 import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
+import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
 import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
-import { barsText, placeHits, silentVisits, simRuns } from "./report.ts";
+import { actionRates, actionsText, barsText, limitProblems, placeHits, SIM_HARM_LIMIT, silentVisits, simRuns, type ActionLimits } from "./report.ts";
 import { SIM_VISITS, simVisit, visitSim } from "./world.ts";
 
 /** The term with no fault. */
@@ -188,6 +189,15 @@ describe("the draws of the faults", () => {
 });
 
 describe("the bars of the simulated world", () => {
+  it("have the policy of the actions that the held-out seed sets give, in bars/policy.json and in STANDARD_POLICY", async () => {
+    const runs = await simRuns(SIM_FIT_SEEDS);
+    expect(runs.problems).toEqual([]);
+    const fit = fitPolicy(runs.outcomes);
+    expect(fit.problems).toEqual([]);
+    expect(policyText(fit)).toBe(readFileSync(new URL("policy.json", BARS_FOLDER), "utf8"));
+    expect(STANDARD_POLICY).toEqual(fit.policy);
+  }, 600_000);
+
   it("are in bars/sim.json. To change them, start pnpm --filter @netdiag/lab sim --write, and tell the reason", async () => {
     const runs = await simRuns();
     expect(runs.problems).toEqual([]);
@@ -198,5 +208,13 @@ describe("the bars of the simulated world", () => {
     expect(silentVisits(runs.outcomes)).toBe(20);
     const labels = new Set(placeHits(runs.outcomes).map((each) => each.label));
     for (const label of SIM_CLASSES.filter((each) => each !== NO_FAULT)) expect(labels.has(label), label).toBe(true);
+    // The actions with STANDARD_POLICY: the file bars/actions.json has the rates, and no class takes a harmful action too often.
+    expect(actionsText(runs.outcomes)).toBe(readFileSync(new URL("actions.json", BARS_FOLDER), "utf8"));
+    const rates = actionRates(runs.outcomes);
+    for (const label of SIM_CLASSES) expect(rates[label]?.cases, label).toBeGreaterThan(0);
+    for (const [label, rate] of Object.entries(rates)) expect(rate.harmHigh, label).toBeLessThanOrEqual(SIM_HARM_LIMIT);
+    // The limits of the correct low end come from five seed sets. Change them only with --limits and a reason in the PR.
+    const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
+    expect(limitProblems(rates, limits)).toEqual([]);
   }, 180_000);
 });
