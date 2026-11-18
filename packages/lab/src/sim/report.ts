@@ -18,6 +18,7 @@ import {
   type ActionRule,
   type AlikeBand,
   type Calibration,
+  type Catalog,
   type LabBars,
   type LabRecalls,
   type LabRecord,
@@ -28,7 +29,7 @@ import type { Result } from "@mark1russell7/optional";
 import { canonicalJson } from "@mark1russell7/rigor-generators";
 import { bootstrapClusters, brier, calibrationError, reliability, wilson, type Forecast, type ReliabilityBin } from "@mark1russell7/rigor-statistics";
 import { countOf } from "@mark1russell7/text";
-import { faultsOf, faultValues, termVariant } from "../grammar.ts";
+import { faultClass, faultsOf, faultValues, NO_FAULT, termVariant } from "../grammar.ts";
 import { bandLine, labReport } from "../report.ts";
 import { evidenceOfLabel, runRounds, type LabRound } from "../run.ts";
 import { SIM_BANDS, simCases, type SimCase } from "./cases.ts";
@@ -51,6 +52,8 @@ export interface SimOutcome {
   readonly predicted: string | undefined;
   readonly reason?: string | undefined;
   readonly visits: number;
+  /** The labels of the evidence of a case with a read, `feature=value@role`, with each repeat. */
+  readonly evidence?: readonly string[] | undefined;
   /** The truth of the case for the actions. A case with two faults has none. */
   readonly truth?: SimTruth | undefined;
   /** The action of the case with the policy of the runs. A case with no truth has none. */
@@ -74,15 +77,23 @@ export interface SimAction {
   readonly probabilities: Readonly<Partial<Record<ActionKind, number>>>;
 }
 
+/** The variant of the catalog for one case: its class, its reach and its degree, and the number of its faults. */
+export interface CaseVariant {
+  readonly hypothesis: string;
+  readonly reach: Reach | undefined;
+  readonly degree: string | undefined;
+  readonly faults: number;
+}
+
 /**
- * This function gives the truth of one case for the actions, from the evidence of its run.
+ * This function gives the variant of the catalog for one case: its class, its reach in the world and its degree.
  *
- * - The correct action is the action of the rule of the variant of the case: its class, its reach in the world and its degree.
  * - A class with no upstream reach takes an upstream fault as shared, because the fault changes the reference too.
- * - A case with two faults, or with a class that the catalog does not have, has no truth.
+ * - A case with two faults gives the variant of the fault that decides, or no variant.
+ * - A case with a class that the catalog does not have gives no variant.
  */
-export function simTruth(labCase: SimCase, evidence: readonly string[]): SimTruth | undefined {
-  const hypothesis = STANDARD_CATALOG.hypotheses.find((each) => each.id === labCase.truth);
+export function caseVariant(labCase: SimCase, catalog: Catalog = STANDARD_CATALOG): CaseVariant | undefined {
+  const hypothesis = catalog.hypotheses.find((each) => each.id === labCase.truth);
   const variant = termVariant(labCase.term, simReach);
   if (hypothesis === undefined || variant === undefined) return undefined;
   const reaches = hypothesis.reach ?? [];
@@ -90,8 +101,21 @@ export function simTruth(labCase: SimCase, evidence: readonly string[]): SimTrut
     if (reach === undefined || reaches.length === 0 || reaches.includes(reach)) return reaches.length === 0 ? undefined : reach;
     return reach === "upstream" && reaches.includes("shared") ? "shared" : reaches[0];
   };
-  const rule = ruleOf(STANDARD_ACTIONS, labCase.truth, near(variant.reach), variant.degree);
-  return { rule, variants: ruledVariants(diagnose(STANDARD_CATALOG, evidence.map(evidenceOfLabel)), STANDARD_ACTIONS) };
+  const faults = faultsOf(labCase.term).filter((choice) => faultClass(choice) !== NO_FAULT).length;
+  return { hypothesis: hypothesis.id, reach: near(variant.reach), degree: variant.degree, faults };
+}
+
+/**
+ * This function gives the truth of one case for the actions, from the evidence of its run.
+ *
+ * - The correct action is the action of the rule of the variant of the case (`caseVariant`).
+ * - A case with no variant has no truth.
+ */
+export function simTruth(labCase: SimCase, evidence: readonly string[], catalog: Catalog = STANDARD_CATALOG): SimTruth | undefined {
+  const variant = caseVariant(labCase, catalog);
+  if (variant === undefined) return undefined;
+  const rule = ruleOf(STANDARD_ACTIONS, labCase.truth, variant.reach, variant.degree);
+  return { rule, variants: ruledVariants(diagnose(catalog, evidence.map(evidenceOfLabel)), STANDARD_ACTIONS) };
 }
 
 /** This function gives the action of a policy for one case, with the correct action and the harm of the variant of the case. */
@@ -106,6 +130,18 @@ export function simAction(truth: SimTruth, policy: ActionPolicy): SimAction {
 /** This function gives the forecast of each kind of action of a case with a calibration map. It prices no action, thus a sweep of maps is fast. */
 export function truthForecasts(truth: SimTruth, calibration: Calibration): Forecast[] {
   return kindForecasts({ probabilities: kindProbabilities(temper(truth.variants, calibration)), correct: truth.rule.action.kind });
+}
+
+/**
+ * This function gives the outcomes with the diagnoses of a different catalog, from the evidence of each outcome, and the
+ * actions of a policy. The class that the classifier of the run predicted stays.
+ */
+export function withCatalog(outcomes: readonly SimOutcome[], catalog: Catalog, policy: ActionPolicy = STANDARD_POLICY): SimOutcome[] {
+  return outcomes.map((each) => {
+    if (each.evidence === undefined || each.truth === undefined) return each;
+    const truth = simTruth(each.case, each.evidence, catalog);
+    return truth === undefined ? each : { ...each, truth, action: simAction(truth, policy) };
+  });
 }
 
 /** This function gives the outcomes with the actions of a different policy. The variants of the diagnoses stay. */
@@ -129,7 +165,7 @@ export interface SimRuns {
 }
 
 /** This function visits each case of the plans of the seeds, and it gives the bars of the runs and the actions of the policy. */
-export async function simRuns(seeds: readonly number[] = SIM_SEEDS, policy: ActionPolicy = STANDARD_POLICY): Promise<SimRuns> {
+export async function simRuns(seeds: readonly number[] = SIM_SEEDS, policy: ActionPolicy = STANDARD_POLICY, catalog: Catalog = STANDARD_CATALOG): Promise<SimRuns> {
   const scores: LabRecalls[] = [];
   const outcomes: SimOutcome[] = [];
   const problems: string[] = [];
@@ -147,16 +183,16 @@ export async function simRuns(seeds: readonly number[] = SIM_SEEDS, policy: Acti
       },
       close: () => Promise.resolve(),
     };
-    const runs = await runRounds(cases, 1, () => Promise.resolve(round), STANDARD_CATALOG);
-    const report = labReport(STANDARD_CATALOG, runs, 1, cases.length);
+    const runs = await runRounds(cases, 1, () => Promise.resolve(round), catalog);
+    const report = labReport(catalog, runs, 1, cases.length);
     records.push(...report.records);
     for (const run of runs) {
       const labCase = byId.get(run.case);
       if (labCase === undefined) continue;
       const count = visits.get(run.case) ?? 1;
       if (run.status === "read") {
-        const truth = simTruth(labCase, run.evidence);
-        outcomes.push({ seed, case: labCase, predicted: scoredCause(run.record), visits: count, ...(truth !== undefined ? { truth, action: simAction(truth, policy) } : {}) });
+        const truth = simTruth(labCase, run.evidence, catalog);
+        outcomes.push({ seed, case: labCase, predicted: scoredCause(run.record), visits: count, evidence: run.evidence, ...(truth !== undefined ? { truth, action: simAction(truth, policy) } : {}) });
       } else outcomes.push({ seed, case: labCase, predicted: undefined, reason: run.reason, visits: count });
     }
     if (report.noReads.length > 0) problems.push(`The seed ${seed} has ${countOf(report.noReads.length, "case")} with no read.`);

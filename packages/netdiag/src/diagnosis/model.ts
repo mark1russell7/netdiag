@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "@mark1russell7/optional";
+import { polyaPredictive } from "@mark1russell7/rigor-statistics";
 import { LAYERS, type Layer } from "../layer.ts";
 
 /** A probability for each value of a feature. The probabilities are more than 0, and their sum is 1. */
@@ -20,6 +21,11 @@ export interface Feature {
    * A fault with the reach `upstream` does not change it.
    */
   readonly local?: boolean | undefined;
+  /**
+   * The concentration of the repeated observations of the feature, for one role in one diagnosis. A small concentration
+   * makes a repeat nearly a copy of the earlier observations. Without a concentration, the observations are independent.
+   */
+  readonly concentration?: number | undefined;
 }
 
 /** The parts of the model. Each fault is in one part. */
@@ -243,6 +249,10 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
       problems.push(`The feature ${feature.id} must have two or more different values.`);
     }
     problems.push(...distributionProblems(`healthy of ${feature.id}`, feature, feature.healthy));
+    const concentration = feature.concentration;
+    if (concentration !== undefined && !(Number.isFinite(concentration) && concentration > 0)) {
+      problems.push(`The concentration of ${feature.id} is ${concentration}. It must be a finite number more than 0, or no value for independent observations.`);
+    }
     features.set(feature.id, feature);
   }
   const hypotheses: Hypothesis[] = [{ id: NONE, kind: "none", summary: "The network has no fault.", step: "No step is necessary." }];
@@ -433,11 +443,60 @@ function usable(catalog: Catalog, evidence: readonly Evidence[]): Pick<Diagnosis
   return { used, ignored };
 }
 
+/** The key of the repeats of an observation: its feature and its role. */
+export const repeatKey = (item: Pick<Evidence, "feature" | "primary">): string => `${item.feature}\u0000${item.primary ? 1 : 0}`;
+
+/** The earlier observations of one feature and role: the count of each value, and the count of all values. */
+export interface Tally {
+  readonly values: ReadonlyMap<string, number>;
+  readonly total: number;
+}
+
+/** This function gives the tally of each feature and role of the evidence. */
+export function tallies(used: readonly Evidence[]): Map<string, Tally> {
+  const result = new Map<string, { values: Map<string, number>; total: number }>();
+  for (const item of used) {
+    const key = repeatKey(item);
+    const tally = result.get(key) ?? { values: new Map<string, number>(), total: 0 };
+    tally.values.set(item.value, (tally.values.get(item.value) ?? 0) + 1);
+    tally.total += 1;
+    result.set(key, tally);
+  }
+  return result;
+}
+
+/**
+ * This function gives the probability of an observation after the earlier observations of its feature and role. The
+ * likelihood `base` is the probability of the value under a variant. A feature without a concentration gives `base`.
+ */
+export function repeatedLikelihood(feature: Pick<Feature, "concentration"> | undefined, base: number, same: number, earlier: number): number {
+  const concentration = feature?.concentration;
+  return concentration === undefined ? base : polyaPredictive(base, concentration, same, earlier);
+}
+
+/**
+ * This function gives the natural logarithm of the probability of each item of the evidence under one variant, in the
+ * order of the evidence. An item of a feature with a concentration depends on the earlier items of its feature and role.
+ * The sum does not depend on the order.
+ */
+function itemLogs(catalog: Catalog, used: readonly Evidence[], hypothesis: string, reach?: Reach, degree?: string): number[] {
+  const seen = new Map<string, { values: Map<string, number>; total: number }>();
+  return used.map((item) => {
+    const key = repeatKey(item);
+    const tally = seen.get(key) ?? { values: new Map<string, number>(), total: 0 };
+    seen.set(key, tally);
+    const same = tally.values.get(item.value) ?? 0;
+    const base = catalog.likelihood(hypothesis, item.feature, item.value, item.primary, reach, degree);
+    const p = repeatedLikelihood(catalog.features.get(item.feature), base, same, tally.total);
+    tally.values.set(item.value, same + 1);
+    tally.total += 1;
+    return Math.log(p);
+  });
+}
+
 /** This function gives the logarithm of the likelihood of the evidence under one variant of a hypothesis. */
 function logLikelihood(catalog: Catalog, used: readonly Evidence[], hypothesis: string, reach?: Reach, degree?: string): number {
-  let sum = 0;
-  for (const item of used) sum += Math.log(catalog.likelihood(hypothesis, item.feature, item.value, item.primary, reach, degree));
-  return sum;
+  return itemLogs(catalog, used, hypothesis, reach, degree).reduce((sum, log) => sum + log, 0);
 }
 
 /** One variant of a hypothesis: its reach and its degree, and the logarithm of its prior and of the likelihood of the evidence. */
@@ -473,9 +532,12 @@ function sumsBy<K>(variants: readonly CauseVariant[], key: (variant: CauseVarian
 /**
  * This function gives the probability of each hypothesis from the evidence, with the rule of Bayes.
  *
- * The model takes the observations as independent for a given variant of a hypothesis. A fault has one variant for each
- * of its reaches and each of its degrees. The variants share the prior of the fault. The probability of the fault is
- * the sum of its variants.
+ * A fault has one variant for each of its reaches and each of its degrees. The variants share the prior of the fault.
+ * The probability of the fault is the sum of its variants.
+ *
+ * For a given variant, the observations of different features or roles are independent. The repeated observations of
+ * one feature and role follow the Dirichlet-multinomial law with the concentration of the feature. Thus a repeat that
+ * agrees with the earlier observations adds less evidence. A feature without a concentration has independent repeats.
  *
  * The calculation uses logarithms, so a long list of evidence does not go to zero. The order of the evidence does not
  * change the result. An exact tie keeps the order of the catalog, with "no fault" first.
@@ -655,32 +717,38 @@ function likeliestVariant(catalog: Catalog, used: readonly Evidence[], hypothesi
  *
  * It gives each observation with its weight, from the largest weight in absolute value. The default second hypothesis is
  * "no fault". For a fault with more than one variant, the weights use the most probable reach and degree for the evidence.
+ * A repeat of a feature with a concentration has the weight after the earlier observations of its feature and role. The
+ * sum of the weights does not depend on the order of the evidence.
  */
 export function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus: string = NONE): Contribution[] {
   const { used } = usable(catalog, evidence);
   const first = likeliestVariant(catalog, used, hypothesis);
   const second = likeliestVariant(catalog, used, versus);
+  const firstLogs = itemLogs(catalog, used, hypothesis, first?.reach, first?.degree);
+  const secondLogs = itemLogs(catalog, used, versus, second?.reach, second?.degree);
   return used
-    .map((item) => ({
-      evidence: item,
-      weight: Math.log10(catalog.likelihood(hypothesis, item.feature, item.value, item.primary, first?.reach, first?.degree)) -
-        Math.log10(catalog.likelihood(versus, item.feature, item.value, item.primary, second?.reach, second?.degree)),
-    }))
+    .map((item, i) => ({ evidence: item, weight: ((firstLogs[i] ?? Number.NaN) - (secondLogs[i] ?? Number.NaN)) / Math.LN10 }))
     .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight));
 }
 
 /**
- * This function gives the probability of each value of a feature that is not observed yet, from the probabilities of
- * the causes. The choice of the next probe uses it.
+ * This function gives the probability of each value of the next observation of a feature, from the probabilities of
+ * the causes. For a feature with a concentration, the earlier observations of the feature and role change it.
  */
 export function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution {
   const known = catalog.features.get(feature);
   if (known === undefined) throw new RangeError(`The catalog has no feature ${feature}`);
+  const tally = tallies(diagnosis.used).get(repeatKey({ feature, primary }));
   const dist: Record<string, number> = {};
   for (const value of known.values) {
+    const same = tally?.values.get(value) ?? 0;
     dist[value] = diagnosis.causes.reduce(
       (sum, cause) =>
-        sum + causeVariants(cause).reduce((part, variant) => part + variant.probability * catalog.likelihood(cause.id, feature, value, primary, variant.reach, variant.degree), 0),
+        sum +
+        causeVariants(cause).reduce((part, variant) => {
+          const base = catalog.likelihood(cause.id, feature, value, primary, variant.reach, variant.degree);
+          return part + variant.probability * repeatedLikelihood(known, base, same, tally?.total ?? 0);
+        }, 0),
       0,
     );
   }

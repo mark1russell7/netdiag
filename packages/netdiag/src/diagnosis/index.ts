@@ -44,6 +44,7 @@ export {
 } from "./model.ts";
 export { LOSS_DEGREES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CATALOG_SPEC, STANDARD_FAULTS, STANDARD_FEATURES, type LossDegree, type LossStep } from "./catalog.ts";
 export { STANDARD_POLICY } from "./standard-policy.ts";
+export { STANDARD_CONCENTRATIONS } from "./standard-concentrations.ts";
 export {
   ACTION_KINDS,
   NO_CALIBRATION,

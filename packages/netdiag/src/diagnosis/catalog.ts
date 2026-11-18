@@ -1,5 +1,6 @@
 import { poissonBinomial } from "@mark1russell7/rigor-statistics";
 import { binOf, LOSS_MIN_SENT, PATH_LOSS_BINS } from "./bins.ts";
+import { STANDARD_CONCENTRATIONS } from "./standard-concentrations.ts";
 import { compileCatalog, FLOOR, STRENGTHS, type Catalog, type CatalogSpec, type Degree, type Distribution, type Feature, type Fault, type Prediction } from "./model.ts";
 
 /**
@@ -8,7 +9,7 @@ import { compileCatalog, FLOOR, STRENGTHS, type Catalog, type CatalogSpec, type 
  * The readers of the facts give these features. The distribution `healthy` of each feature is a rule of practice. The
  * lab runs (ND-7) then fit it.
  */
-export const STANDARD_FEATURES: readonly Feature[] = [
+const FEATURES: readonly Feature[] = [
   {
     id: "link.state",
     layer: "link",
@@ -142,6 +143,15 @@ export const STANDARD_FEATURES: readonly Feature[] = [
     healthy: { low: 0.6, mid: 0.3, high: 0.1 },
   },
 ];
+
+/**
+ * The features of the standard catalog, with the concentration of the repeats of each feature from
+ * `STANDARD_CONCENTRATIONS`. The lab fits it on the simulated world.
+ */
+export const STANDARD_FEATURES: readonly Feature[] = FEATURES.map((feature) => {
+  const concentration = STANDARD_CONCENTRATIONS[feature.id];
+  return concentration === undefined ? feature : { ...feature, concentration };
+});
 
 /** A degree of a loss: the chance that one exchange loses a packet, and the weight of the degree in the prior. */
 export interface LossDegree {
@@ -650,7 +660,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "12",
+  version: "13",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };
