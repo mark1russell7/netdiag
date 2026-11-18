@@ -21,6 +21,8 @@ The labs of netdiag: the simulated world, the loopback lab and the kernel lab. E
 
 Each case has signs: the values of the evidence that its fault causes. A result with no sign did not make the fault. It gives no read, not a record. The command then ends with the exit code 2.
 
+A random fault does not show each sign in each visit. For example, a loss of 20 % keeps 19 or 20 of 20 pings in 7 of 100 visits. So the case loop visits a case again when the evidence does not show each sign, 3 times or fewer (`LAB_VISITS`). A visit with a problem of a probe gets no new visit. The field `visits` of each run tells the count, and the summary counts the runs with more than one visit.
+
 A group of signs (`anyOf`) is for a fault with more than one form. The evidence shows the group when it shows one sign of the group.
 
 ### How to start it
