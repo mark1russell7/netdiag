@@ -13,7 +13,7 @@ function search(path: Path, bounds: MtuBounds): MtuTry[] {
   const tries: MtuTry[] = [];
   for (let size = nextMtuSize(tries, bounds); size !== undefined; size = nextMtuSize(tries, bounds)) {
     if (tries.some((each) => each.size === size)) throw new Error(`The search tried ${size} bytes two times.`);
-    if (size < bounds.floor || size > bounds.ceiling) throw new Error(`The size ${size} is out of the bounds.`);
+    if (size < (bounds.least ?? bounds.floor) || size > bounds.ceiling) throw new Error(`The size ${size} is out of the bounds.`);
     tries.push({ size, ...path(size) });
   }
   return tries;
@@ -36,10 +36,14 @@ const withMessage =
 
 const V4: MtuBounds = { floor: IPV4_MIN_MTU, ceiling: ETHERNET_MTU };
 const V6: MtuBounds = { floor: IPV6_MIN_MTU, ceiling: ETHERNET_MTU };
+/** The bounds of the probe over IPv6: a plain echo request of 104 bytes is the size `least`. */
+const V6_LEAST: MtuBounds = { floor: IPV6_MIN_MTU, least: 104, ceiling: ETHERNET_MTU };
 
-const halves = (bounds: MtuBounds): number => Math.ceil(Math.log2(Math.max(1, bounds.ceiling - bounds.floor)));
+/** The one more try of a search with `least`. */
+const extra = (bounds: MtuBounds): number => (bounds.least === undefined ? 0 : 1);
+const halves = (bounds: MtuBounds): number => Math.ceil(Math.log2(Math.max(1, bounds.ceiling - (bounds.least ?? bounds.floor))));
 /** The largest number of tries of a search, from the doc comment of `nextMtuSize`. */
-const most = (bounds: MtuBounds): number => 4 + 3 * halves(bounds);
+const most = (bounds: MtuBounds): number => 4 + extra(bounds) + 3 * halves(bounds);
 
 const measure = (path: Path, bounds: MtuBounds): { tries: MtuTry[]; value: PathMtu } => {
   const tries = search(path, bounds);
@@ -94,6 +98,30 @@ describe("the search for the MTU", () => {
     expect(value).toMatchObject({ outcome: "measured", mtu: 1350, stop: "silent" });
   });
 
+  it("finds an MTU below the floor of IPv6 when a plain echo request passes", () => {
+    const { tries, value } = measure(blackHole(1000), V6_LEAST);
+    expect(sizes(tries).slice(0, 3)).toEqual([1500, 1280, 104]);
+    expect(value).toMatchObject({ outcome: "measured", mtu: 1000, stop: "silent" });
+    expect(tries.length).toBeLessThanOrEqual(most(V6_LEAST));
+  });
+
+  it("uses a true message below the floor of IPv6", () => {
+    const { tries, value } = measure(withMessage(1000), V6_LEAST);
+    expect(sizes(tries)).toEqual([1500, 1280, 104, 1000, 1001]);
+    expect(value).toMatchObject({ outcome: "measured", mtu: 1000, stop: "message" });
+  });
+
+  it("does not try the plain echo request when the floor passes", () => {
+    const { tries } = measure(blackHole(1350), V6_LEAST);
+    expect(sizes(tries)).not.toContain(104);
+  });
+
+  it("gives the outcome none when the floor and the plain echo request fail", () => {
+    const { tries, value } = measure(() => ({ result: "none" }), V6_LEAST);
+    expect(sizes(tries)).toEqual([1500, 1280, 104]);
+    expect(value.outcome).toBe("none");
+  });
+
   it("gives the outcome none when the floor fails, with the first detail", () => {
     const path: Path = () => ({ result: "none", detail: "Destination Host Unreachable" });
     const { tries, value } = measure(path, V4);
@@ -111,7 +139,15 @@ describe("the search for the MTU", () => {
 
   it("gives an error for tries that do not bound the MTU, and for bounds that are not valid", () => {
     expect(mtuOf("192.0.2.1", [{ size: 1000, result: "reply" }], V4)).toMatchObject({ outcome: "error", detail: expect.stringContaining("1000") });
-    for (const bounds of [{ floor: 0, ceiling: 1500 }, { floor: 1500, ceiling: 1400 }, { floor: 68.5, ceiling: 1500 }]) {
+    const wrong: MtuBounds[] = [
+      { floor: 0, ceiling: 1500 },
+      { floor: 1500, ceiling: 1400 },
+      { floor: 68.5, ceiling: 1500 },
+      { floor: 1280, least: 1280, ceiling: 1500 },
+      { floor: 1280, least: 0, ceiling: 1500 },
+      { floor: 1280, least: 100.5, ceiling: 1500 },
+    ];
+    for (const bounds of wrong) {
       expect(() => nextMtuSize([], bounds)).toThrow(RangeError);
       expect(() => mtuOf("192.0.2.1", [], bounds)).toThrow(RangeError);
     }
@@ -120,21 +156,22 @@ describe("the search for the MTU", () => {
 
 describe("a property of the search for the MTU", () => {
   const bounds = fc
-    .record({ floor: fc.integer({ min: 1, max: 2000 }), width: fc.integer({ min: 0, max: 7216 }) })
-    .map(({ floor, width }): MtuBounds => ({ floor, ceiling: floor + width }));
+    .record({ floor: fc.integer({ min: 1, max: 2000 }), width: fc.integer({ min: 0, max: 7216 }), below: fc.option(fc.integer({ min: 1, max: 1999 }), { nil: undefined }) })
+    .map(({ floor, width, below }): MtuBounds => (below === undefined || below >= floor ? { floor, ceiling: floor + width } : { floor, least: floor - below, ceiling: floor + width }));
   const told = fc.func(fc.option(fc.integer({ min: 1, max: 9300 }), { nil: undefined }));
 
   it("finds the MTU of each path that passes each size up to its MTU, with any message", () => {
     fc.assert(
       fc.property(bounds, fc.double({ min: -0.1, max: 1.1, noNaN: true }), fc.constantFrom("silent", "true", "any"), told, (b, share, kind, tell) => {
         // A path MTU below 0 is not a path: no message tells a negative MTU.
-        const mtu = Math.max(0, Math.round(b.floor + share * (b.ceiling - b.floor)));
+        const lowest = b.least ?? b.floor;
+        const mtu = Math.max(0, Math.round(lowest + share * (b.ceiling - lowest)));
         const path = kind === "silent" ? blackHole(mtu) : kind === "true" ? withMessage(mtu) : withMessage(mtu, tell);
         const { tries, value } = measure(path, b);
-        if (mtu < b.floor) expect(value.outcome).toBe("none");
+        if (mtu < lowest) expect(value.outcome).toBe("none");
         else if (mtu >= b.ceiling) expect(value).toMatchObject({ outcome: "measured", mtu: b.ceiling });
         else expect(value).toMatchObject({ outcome: "measured", mtu, stop: kind === "silent" ? "silent" : "message" });
-        expect(tries.length).toBeLessThanOrEqual(kind === "silent" ? 2 + halves(b) : kind === "true" ? 4 : most(b));
+        expect(tries.length).toBeLessThanOrEqual(kind === "silent" ? 2 + extra(b) + halves(b) : kind === "true" ? 4 + extra(b) : most(b));
       }),
       { seed: 20261115, numRuns: 400 },
     );

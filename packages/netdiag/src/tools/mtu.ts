@@ -41,6 +41,12 @@ export const MAX_MTU_CEILING = 9216;
 /** The size of the headers of an echo request, in bytes: the IP header and the ICMP header of each family. */
 export const ECHO_HEADER_BYTES: Readonly<Record<AddressFamily, number>> = { ipv4: 28, ipv6: 48 };
 
+/**
+ * The size of the payload of a plain echo request of ping, in bytes. With the headers, it is the size `least` of a search
+ * over IPv6. A path that passes it and drops 1280 bytes has a link with an MTU below the smallest MTU of IPv6.
+ */
+export const PLAIN_ECHO_PAYLOAD_BYTES = 56;
+
 interface CheckedInput extends ToolAddress {
   readonly bounds: MtuBounds;
   readonly count: number;
@@ -50,9 +56,11 @@ interface CheckedInput extends ToolAddress {
 function checked(input: MtuInput): CheckedInput {
   const address = toolAddress(input.address);
   const floor = address.family === "ipv4" ? IPV4_MIN_MTU : IPV6_MIN_MTU;
+  const least = ECHO_HEADER_BYTES[address.family] + PLAIN_ECHO_PAYLOAD_BYTES;
+  const ceiling = integerIn(input.ceiling ?? ETHERNET_MTU, floor, MAX_MTU_CEILING, "a ceiling in bytes");
   return {
     ...address,
-    bounds: { floor, ceiling: integerIn(input.ceiling ?? ETHERNET_MTU, floor, MAX_MTU_CEILING, "a ceiling in bytes") },
+    bounds: least < floor ? { floor, least, ceiling } : { floor, ceiling },
     count: integerIn(input.count ?? DEFAULT_MTU_COUNT, 1, MAX_MTU_COUNT, "a number of requests"),
     waitMs: integerIn(input.waitMs ?? DEFAULT_MTU_WAIT_MS, 1, 60_000, "a time in milliseconds"),
   };
@@ -69,7 +77,7 @@ function checked(input: MtuInput): CheckedInput {
  */
 export function mtuCommand(platform: string, input: MtuInput, size: number): ToolCommand | undefined {
   const { address, family, bounds, count, waitMs } = checked(input);
-  const payload = String(integerIn(size, bounds.floor, bounds.ceiling, "a size in bytes") - ECHO_HEADER_BYTES[family]);
+  const payload = String(integerIn(size, bounds.least ?? bounds.floor, bounds.ceiling, "a size in bytes") - ECHO_HEADER_BYTES[family]);
   const deadlineS = Math.ceil(((count - 1) * PING_INTERVAL_MS + waitMs) / 1000) + 1;
   const timeoutMs = deadlineS * 1000 + TOOL_MARGIN_MS;
   const interval = String(PING_INTERVAL_MS / 1000);
@@ -166,7 +174,7 @@ export interface MtuRaw {
 export function mtuProbe(host: ToolHost): Probe<MtuInput, MtuRaw> {
   return defineProbe<MtuInput, MtuRaw>({
     id: "path.mtu",
-    version: "1",
+    version: "2",
     summary: "The MTU of the path to one IP address, from the echo requests of the tool ping with do not fragment.",
     layer: "path",
     mode: "active",
