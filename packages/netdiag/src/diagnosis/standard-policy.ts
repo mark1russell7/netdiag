@@ -8,4 +8,4 @@ import type { ActionPolicy } from "./actions.ts";
  * - The two temperatures give the least Brier score of the kind probabilities on the held-out seeds of the sim.
  * - The harmful cost is the least cost that keeps the harm of each class at the limit or under it, on each seed set.
  */
-export const STANDARD_POLICY: ActionPolicy = { calibration: { cause: 0.354, variant: 1 }, costs: { none: 1, useless: 1, harmful: 12 } };
+export const STANDARD_POLICY: ActionPolicy = { calibration: { cause: 0.354, variant: 1 }, costs: { none: 1, useless: 1, needless: 1, harmful: 12 } };

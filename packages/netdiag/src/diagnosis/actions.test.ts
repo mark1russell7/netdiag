@@ -158,24 +158,30 @@ describe("harmOf", () => {
 });
 
 /** A policy with no calibration map and a harmful cost of 10. The tests of the choice use it, so a new fit does not change them. */
-const policy: ActionPolicy = { calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, harmful: 10 } };
+const policy: ActionPolicy = { calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, needless: 1, harmful: 10 } };
 
 describe("actionCost and checkPolicy", () => {
-  it("gives 0 for the correct kind, the unit for none, and the harmful cost for a harmful kind", () => {
+  it("gives 0 for the correct kind, the unit for none, the harmful cost for a harmful kind, and the needless cost for an action on no fault", () => {
     const rule = ruleOf(STANDARD_ACTIONS, "name.missing", "target");
     expect(actionCost(catalog, rule, "stop", policy.costs)).toBe(0);
     expect(actionCost(catalog, rule, "none", policy.costs)).toBe(1);
     expect(actionCost(catalog, rule, "retry", policy.costs)).toBe(1);
     expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "stop", policy.costs)).toBe(10);
     expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "none", policy.costs)).toBe(0);
+    const costs = { ...policy.costs, needless: 3 };
+    expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "back-off", costs)).toBe(3);
+    expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "stop", costs)).toBe(10);
+    expect(actionCost(catalog, rule, "retry", costs)).toBe(1);
   });
 
   it("finds the standard policy correct and a bad policy not correct", () => {
     expect(checkPolicy(STANDARD_POLICY)).toEqual([]);
     expect(checkPolicy({ calibration: { cause: 0, variant: 1 }, costs: policy.costs })).toHaveLength(1);
-    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 0.5, harmful: 10 } })).toHaveLength(1);
-    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, harmful: 1 } })).toHaveLength(1);
-    expect(checkPolicy({ calibration: { cause: Number.NaN, variant: -1 }, costs: { none: 0, useless: 1, harmful: Number.POSITIVE_INFINITY } })).toHaveLength(4);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 0.5, needless: 1, harmful: 10 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, needless: 1, harmful: 1 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { ...policy.costs, needless: 0.5 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { ...policy.costs, needless: 20 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: { cause: Number.NaN, variant: -1 }, costs: { none: 0, useless: 1, needless: 1, harmful: Number.POSITIVE_INFINITY } })).toHaveLength(4);
   });
 });
 
@@ -196,6 +202,12 @@ describe("chooseAction", () => {
       ["none", 0.85],
       ["stop", 1.5],
     ]);
+  });
+
+  it("asks for more certainty for an action on a healthy target when a needless action costs more", () => {
+    const diagnosis = diagnosisOf([{ cause: "resolver.failing", probability: 0.6 }, { cause: NONE, probability: 0.4 }]);
+    expect(chooseAction(catalog, diagnosis, STANDARD_ACTIONS, policy).action.kind).toBe("back-off");
+    expect(chooseAction(catalog, diagnosis, STANDARD_ACTIONS, { ...policy, costs: { ...policy.costs, needless: 2 } }).action.kind).toBe("none");
   });
 
   it("asks for more certainty when a harmful action costs more", () => {

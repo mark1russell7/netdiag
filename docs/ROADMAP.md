@@ -259,7 +259,7 @@ The fault grammar is data: `FAULT_GRAMMAR` in `packages/lab/src/grammar.ts` (ND-
 
 <!-- grammar:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
 
-- The grammar has 24 modes, 10 places and 87 options. Of the 216 pairs of a layer and a mode, 87 are options, 119 are aliases of an option, and 10 have a reason. The grammar gives 94 classes. The grid with 3 levels has 542 terms of one fault and 293,764 terms of two faults.
+- The grammar has 24 modes, 10 places and 87 options. Of the 216 pairs of a layer and a mode, 87 are options, 119 are aliases of an option, and 10 have a reason. The grammar gives 94 classes. The grid with 3 levels has 544 terms of one fault and 295,936 terms of two faults.
 
 | Mode | link | wifi | ip | route | path | dns | tcp | tls | http |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

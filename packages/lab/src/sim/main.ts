@@ -13,7 +13,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { BARS_FOLDER } from "../worlds.ts";
-import { fitPolicy, policySource, policySummary, policyText, SIM_FIT_SEEDS, STANDARD_POLICY_FILE } from "./policy.ts";
+import { NO_FAULT } from "../grammar.ts";
+import { falseActionSummary, fitPolicy, policySource, policySummary, policyText, SIM_FIT_SEEDS, STANDARD_POLICY_FILE } from "./policy.ts";
 import {
   actionCalibration,
   actionLimits,
@@ -59,7 +60,7 @@ const limits = await readFile(LIMITS_FILE, "utf8").then(
   (text) => JSON.parse(text) as ActionLimits,
   () => undefined,
 );
-const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}\n${concentrationSummary(concentrations, runs.outcomes, catalog)}`;
+const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}\n${falseActionSummary(runs.outcomes, fit.policy, limits?.limits[NO_FAULT])}\n${concentrationSummary(concentrations, runs.outcomes, catalog)}`;
 if (values.out !== undefined) {
   await mkdir(values.out, { recursive: true });
   await writeFile(join(values.out, "summary.md"), summary);

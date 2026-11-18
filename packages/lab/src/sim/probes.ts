@@ -75,14 +75,15 @@ function certificateOf(net: SimNetwork, end: End, proxied: boolean): TlsCertific
   const problem = proxied ? undefined : net.certFault(end);
   const portal = end === "portal";
   const selfSigned = portal;
-  const trust = proxied ? "private" : portal || problem === "untrusted" ? "none" : "public";
+  const privateRoot = !proxied && net.privateRoot(end);
+  const trust = proxied || privateRoot ? "private" : portal || problem === "untrusted" ? "none" : "public";
   return {
     subject: `CN=${name}`,
-    issuer: portal ? `CN=${name}` : proxied ? "CN=Sim Inspection CA" : "CN=Sim Public CA R1",
+    issuer: portal ? `CN=${name}` : proxied ? "CN=Sim Inspection CA" : privateRoot ? "CN=Sim Private Root" : "CN=Sim Public CA R1",
     names: problem === "name" ? ["other.shop-lab.net"] : [name],
     validFrom: "2026-09-01T00:00:00.000Z",
     validTo: problem === "expired" ? "2026-10-01T00:00:00.000Z" : "2027-09-01T00:00:00.000Z",
-    fingerprint256: `SIM:${name}:${proxied ? "proxy" : (problem ?? "ok")}`,
+    fingerprint256: `SIM:${name}:${proxied ? "proxy" : privateRoot ? "private" : (problem ?? "ok")}`,
     selfSigned,
     chain: selfSigned ? 1 : problem === "untrusted" ? 1 : 2,
     trust,

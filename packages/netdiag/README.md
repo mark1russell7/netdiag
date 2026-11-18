@@ -268,9 +268,11 @@ const result = diagnose(STANDARD_CATALOG, [
 - An action rule gives the action for some variants of a cause: their reaches and their degrees. `STANDARD_ACTIONS` has the rules of `STANDARD_CATALOG`.
 - `ACTION_KINDS` has the kinds: `none`, `retry`, `back-off`, `change-path`, `change-copy`, `wait-network` and `stop`.
 - `harmfulOf(catalog, rule)` gives the harmful kinds of a rule: its own list, or the kinds of `harmOf`. For example, a `stop` is harmful unless the fault stays.
-- The cost of the kind of the rule of a variant is 0. A harmful kind costs `costs.harmful`, `none` costs `costs.none`, and each other kind costs `costs.useless`.
+- The cost of the kind of the rule of a variant is 0. A harmful kind costs `costs.harmful`, and `none` costs `costs.none`.
+- Each other kind costs `costs.needless` for a variant with the kind `none`, and `costs.useless` for a variant with a fault.
 - The expected cost of a kind is the sum of the probability of each variant multiplied by its cost. A tie goes to the kind that comes first in `ACTION_KINDS`.
 - With a harmful cost h, the choice takes a harmful kind only at a probability of approximately h / (h + 1) or more.
+- With a needless cost n, the choice takes a kind that is not harmful only at approximately n times the probability of `none`, or more.
 
 The probabilities go through a calibration map first. `calibration.cause` tempers the probability of each cause, and `calibration.variant` tempers the share of each variant in its cause. A temperature t raises each probability to the power 1 / t, and then the map divides each by their sum.
 

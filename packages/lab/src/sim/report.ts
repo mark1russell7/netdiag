@@ -398,6 +398,28 @@ export function harmHighOf(label: string, rows: readonly SimOutcome[]): { readon
   return { wilson: high, bootstrap: drawn.high };
 }
 
+/**
+ * This function gives the low end of the gate of the correct actions of the cases of one class. It is the lower low end
+ * of a Wilson interval and of a bootstrap that draws the terms again.
+ */
+export function correctLowOf(label: string, rows: readonly SimOutcome[]): { readonly wilson: number; readonly bootstrap: number } {
+  const correct = rows.filter((each) => each.action?.taken === each.action?.correct).length;
+  const drawn = bootstrapClusters(rows, termOf, (sample) => share(sample, (action) => action.taken === action.correct), { runs: SIM_BOOTSTRAP_RUNS, level: 0.95, seed: `actions:${label}:correct` });
+  return { wilson: wilson(correct, rows.length).low, bootstrap: drawn.low };
+}
+
+/**
+ * This function gives the high end of the gate of the false actions on healthy targets: the cases of the class `none`.
+ * A false action is an action other than `none`. The high end is 1 minus the correct low end of the class `none`, thus
+ * the gate of that class holds it. With no healthy case, the function gives -1.
+ */
+export function falseHighOf(outcomes: readonly SimOutcome[]): number {
+  const healthy = outcomes.filter((each) => each.action !== undefined && each.case.truth === NO_FAULT);
+  if (healthy.length === 0) return -1;
+  const ends = correctLowOf(NO_FAULT, healthy);
+  return third(1 - Math.min(third(ends.wilson), third(ends.bootstrap)));
+}
+
 /** This function gives the outcomes with an action of each class, in the order of the classes. */
 export function actionClasses(outcomes: readonly SimOutcome[]): readonly (readonly [string, readonly SimOutcome[]])[] {
   const groups = new Map<string, SimOutcome[]>();
@@ -415,10 +437,10 @@ export function actionRates(outcomes: readonly SimOutcome[]): Readonly<Record<st
   const rate = (label: string, rows: readonly SimOutcome[]): SimActionRate => {
     const correct = rows.filter((each) => each.action?.taken === each.action?.correct).length;
     const harmful = rows.filter((each) => each.action?.harmful === true).length;
-    const hits = bootstrapClusters(rows, termOf, (sample) => share(sample, (action) => action.taken === action.correct), { runs: SIM_BOOTSTRAP_RUNS, level: 0.95, seed: `actions:${label}:correct` });
+    const hits = correctLowOf(label, rows);
     const harm = harmHighOf(label, rows);
-    const wilsonEnds = { correctLow: third(wilson(correct, rows.length).low), harmHigh: third(harm.wilson) };
-    const bootstrapEnds = { correctLow: third(hits.low), harmHigh: third(harm.bootstrap) };
+    const wilsonEnds = { correctLow: third(hits.wilson), harmHigh: third(harm.wilson) };
+    const bootstrapEnds = { correctLow: third(hits.bootstrap), harmHigh: third(harm.bootstrap) };
     const forecasts = rows.flatMap((each) => (each.action === undefined ? [] : kindForecasts(each.action)));
     return {
       cases: rows.length,
