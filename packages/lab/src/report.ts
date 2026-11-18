@@ -7,6 +7,8 @@ export interface LabReport {
   readonly cases: number;
   readonly records: readonly LabRecord[];
   readonly noReads: readonly Extract<CaseRun, { status: "no-read" }>[];
+  /** The count of the runs with more than one visit of their case. */
+  readonly revisited: number;
   /** The score is absent when the lab has no read. */
   readonly score: LabScore | undefined;
   /** The problems of the score, when the records do not fit the catalog. */
@@ -21,11 +23,12 @@ export function labReport(catalog: Catalog, runs: readonly CaseRun[], rounds: nu
     if (run.status === "read") records.push(run.record);
     else noReads.push(run);
   }
-  if (records.length === 0) return { rounds, cases, records, noReads, score: undefined, problems: [] };
+  const revisited = runs.filter((run) => run.visits > 1).length;
+  if (records.length === 0) return { rounds, cases, records, noReads, revisited, score: undefined, problems: [] };
   const score = scoreLab(catalog, records);
   return score.tag === "ok"
-    ? { rounds, cases, records, noReads, score: score.value, problems: [] }
-    : { rounds, cases, records, noReads, score: undefined, problems: score.error };
+    ? { rounds, cases, records, noReads, revisited, score: score.value, problems: [] }
+    : { rounds, cases, records, noReads, revisited, score: undefined, problems: score.error };
 }
 
 /** This function gives a part from 0 to 1 as a whole percent, or a dash for no value. */
@@ -60,7 +63,8 @@ export interface ReportOptions {
 export function reportMarkdown(report: LabReport, gate?: LabGate, options: ReportOptions = {}): string {
   const lines = [`## ${options.title ?? "The loopback lab"}`, ""];
   const reads = report.records.length;
-  lines.push(`${report.cases} cases, ${report.rounds} rounds: ${reads} reads and ${report.noReads.length} runs with no read.`, "");
+  const revisited = report.revisited > 0 ? ` ${report.revisited} runs visited their case again, because a visit did not show each sign.` : "";
+  lines.push(`${report.cases} cases, ${report.rounds} rounds: ${reads} reads and ${report.noReads.length} runs with no read.${revisited}`, "");
   const score = report.score;
   if (score !== undefined) {
     lines.push(`Catalog ${score.catalog}. Accuracy ${percent(score.correct / score.n)} (${score.correct} of ${score.n}), 95% interval ${percent(score.accuracy.low)} to ${percent(score.accuracy.high)}. Brier score ${score.brier?.toFixed(3) ?? "–"}.`, "");

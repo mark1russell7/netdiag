@@ -12,6 +12,7 @@ import {
   PATH_TRACE,
   TCP_CONNECT,
   TLS_HANDSHAKE,
+  WIFI_INTERFACES,
   WIFI_LINK,
   type ConnectOutcome,
   type DnsAnswer,
@@ -29,6 +30,7 @@ import {
   type TcpConnect,
   type TlsHandshake,
   type Trust,
+  type WifiInterfaces,
   type WifiLink,
 } from "./kinds.ts";
 
@@ -184,6 +186,7 @@ interface Facts {
   readonly link: Fact<LinkState>[];
   readonly mtu: Fact<PathMtu>[];
   readonly wifi: Fact<WifiLink>[];
+  readonly radios: Fact<WifiInterfaces>[];
 }
 
 /**
@@ -207,6 +210,7 @@ export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[
   "path.loss": [[ICMP_ECHO.kind], [PATH_REPORT.kind]],
   "path.mtu": [[PATH_MTU.kind]],
   "wifi.signal": [[WIFI_LINK.kind]],
+  "wifi.state": [[WIFI_INTERFACES.kind], [WIFI_LINK.kind]],
 };
 
 /** The options of `featuresOf`. */
@@ -241,6 +245,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["link", LINK_STATE],
   ["mtu", PATH_MTU],
   ["wifi", WIFI_LINK],
+  ["radios", WIFI_INTERFACES],
 ];
 
 /**
@@ -257,13 +262,15 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - When `ip.family` marks one family of a name as broken, a fact of an address of that family gives only `ip.family`.
  *   These facts gave `ip.family`, so a second feature from them counts the same failure two times.
  * - A Wi-Fi fact of a connected interface gives `wifi.signal`, one for each interface. A quality of Windows changes to dBm.
+ * - A Wi-Fi fact of a connected interface gives `wifi.state` `connected`. A fact `wifi.interfaces` gives `none` when no
+ *   fact tells of a connected interface. Only the list of the interfaces tells that a computer has no Wi-Fi link.
  * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
  */
 export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {
   const primaryOf = options.primary ?? (() => true);
   const slots = new Map<string, Slot>();
   const skipped: Skipped[] = [];
-  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [], mtu: [], wifi: [] };
+  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [], mtu: [], wifi: [], radios: [] };
 
   for (const fact of facts) {
     const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
@@ -409,6 +416,9 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     else if (link.state !== "connected") skipped.push({ fact: fact.id, reason: `The Wi-Fi interface ${link.interface} is ${link.state}, so it has no signal.` });
     else skipped.push({ fact: fact.id, reason: `The Wi-Fi fact of ${link.interface} has no signal level and no quality.` });
   }
+  // One connected interface makes the state connected, in each order of the facts.
+  for (const fact of sorted.radios) note("wifi.state", "", fact, "none", "connected");
+  for (const fact of sorted.wifi.filter((each) => each.value.state === "connected")) note("wifi.state", "", fact, "connected", "connected");
 
   for (const fact of sorted.trace) {
     skipped.push({ fact: fact.id, reason: "The catalog has no feature for the hops of a path. The lab runs fit such a feature later." });

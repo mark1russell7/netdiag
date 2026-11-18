@@ -45,6 +45,7 @@ DNS_ANSWER: build/counts.chunk.d.ts#DNS_ANSWER
 DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
 DNS_OUTCOMES: build/counts.chunk.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
+DNS_TRIES: build/index.d.ts#DNS_TRIES
 type DelayMetrics: build/core.chunk.d.ts#DelayMetrics
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Dial: build/index.d.ts#Dial
@@ -128,6 +129,7 @@ type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
 type LossOrigin: build/core.chunk.d.ts#LossOrigin
 type LossStart: build/core.chunk.d.ts#LossStart
+MAX_DNS_TRIES: build/index.d.ts#MAX_DNS_TRIES
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_OWNER_ADDRESSES: build/index.d.ts#MAX_OWNER_ADDRESSES
@@ -273,6 +275,7 @@ type VisitStep: build/core.chunk.d.ts#VisitStep
 WIFI_BANDS: build/counts.chunk.d.ts#WIFI_BANDS
 WIFI_CHANGE_KINDS: build/core.chunk.d.ts#WIFI_CHANGE_KINDS
 WIFI_FLOOR_DBM: build/counts.chunk.d.ts#WIFI_FLOOR_DBM
+WIFI_INTERFACES: build/counts.chunk.d.ts#WIFI_INTERFACES
 WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
 WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
 WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
@@ -281,6 +284,7 @@ WifiBand: build/counts.chunk.d.ts#WifiBand
 type WifiChange: build/core.chunk.d.ts#WifiChange
 type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
 type WifiChanges: build/core.chunk.d.ts#WifiChanges
+WifiInterfaces: build/counts.chunk.d.ts#WifiInterfaces
 WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
@@ -367,6 +371,8 @@ serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
 tlsProbe: build/index.d.ts#tlsProbe
+triesOf: build/index.d.ts#triesOf
+tryTimeoutOf: build/index.d.ts#tryTimeoutOf
 upInterfaces: build/index.d.ts#upInterfaces
 visitTarget: build/index.d.ts#visitTarget
 widen: build/core.chunk.d.ts#widen
@@ -592,6 +598,7 @@ type VisitStep: build/core.chunk.d.ts#VisitStep
 WIFI_BANDS: build/counts.chunk.d.ts#WIFI_BANDS
 WIFI_CHANGE_KINDS: build/core.chunk.d.ts#WIFI_CHANGE_KINDS
 WIFI_FLOOR_DBM: build/counts.chunk.d.ts#WIFI_FLOOR_DBM
+WIFI_INTERFACES: build/counts.chunk.d.ts#WIFI_INTERFACES
 WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
 WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
 WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
@@ -600,6 +607,7 @@ WifiBand: build/counts.chunk.d.ts#WifiBand
 type WifiChange: build/core.chunk.d.ts#WifiChange
 type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
 type WifiChanges: build/core.chunk.d.ts#WifiChanges
+WifiInterfaces: build/counts.chunk.d.ts#WifiInterfaces
 WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
@@ -1409,6 +1417,7 @@ interface DnsAnswer {
   readonly ttl?: number | undefined;
   readonly ms: number;
   readonly code?: string | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/counts.chunk.d.ts#DnsOutcome
@@ -1878,6 +1887,9 @@ declare const WIFI_BANDS: readonly ["2.4", "5", "6"];
 ### build/counts.chunk.d.ts#WIFI_FLOOR_DBM
 declare const WIFI_FLOOR_DBM = -120;
 
+### build/counts.chunk.d.ts#WIFI_INTERFACES
+declare const WIFI_INTERFACES: FactKind<WifiInterfaces>;
+
 ### build/counts.chunk.d.ts#WIFI_LINK
 declare const WIFI_LINK: FactKind<WifiLink>;
 
@@ -1889,6 +1901,11 @@ declare const WIFI_WIDTHS: readonly [20, 40, 80, 160, 320];
 
 ### build/counts.chunk.d.ts#WifiBand
 type WifiBand = (typeof WIFI_BANDS)[number];
+
+### build/counts.chunk.d.ts#WifiInterfaces
+interface WifiInterfaces {
+  readonly interfaces: readonly string[];
+}
 
 ### build/counts.chunk.d.ts#WifiLink
 interface WifiLink {
@@ -2310,6 +2327,9 @@ export declare const DEFAULT_TIMEOUT_MS = 5e3;
 ### build/index.d.ts#DNS_PROBE
 export declare const DNS_PROBE: Probe<DnsInput, DnsRaw>;
 
+### build/index.d.ts#DNS_TRIES
+export declare const DNS_TRIES = 3;
+
 ### build/index.d.ts#Dial
 type Dial = (options: TcpNetConnectOpts) => Socket;
 
@@ -2320,6 +2340,7 @@ interface DnsInput {
   readonly resolver: string;
   readonly port?: number | undefined;
   readonly timeoutMs?: number | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#DnsRaw
@@ -2333,6 +2354,7 @@ interface DnsRaw {
   readonly addresses: readonly string[];
   readonly ttl?: number | undefined;
   readonly code?: string | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#HTTP_PROBE
@@ -2407,6 +2429,9 @@ interface LinkRaw {
   readonly end: number;
 }
 
+### build/index.d.ts#MAX_DNS_TRIES
+export declare const MAX_DNS_TRIES = 10;
+
 ### build/index.d.ts#MAX_OWNER_ADDRESSES
 export declare const MAX_OWNER_ADDRESSES = 64;
 
@@ -2425,6 +2450,7 @@ interface OriginInput {
   readonly resolver: string;
   readonly port?: number | undefined;
   readonly timeoutMs?: number | undefined;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#OriginLookup
@@ -2568,6 +2594,7 @@ interface TxtQuery {
   readonly resolver: string;
   readonly port: number;
   readonly timeoutMs: number;
+  readonly tries?: number | undefined;
 }
 
 ### build/index.d.ts#TxtResolve
@@ -2593,6 +2620,7 @@ interface VisitOptions {
   readonly path?: string | undefined;
   readonly tls?: TlsProbeOptions | undefined;
   readonly dnsTimeoutMs?: number | undefined;
+  readonly dnsTries?: number | undefined;
   readonly httpTimeoutMs?: number | undefined;
   readonly wall?: string | undefined;
   readonly signal?: AbortSignal | undefined;
@@ -2655,6 +2683,12 @@ export declare function tcpProbe(options?: ConnectOptions): Probe<TcpInput, TcpR
 
 ### build/index.d.ts#tlsProbe
 export declare function tlsProbe(options?: TlsProbeOptions): Probe<TlsInput, TlsRaw>;
+
+### build/index.d.ts#triesOf
+export declare function triesOf(tries: number | undefined): number;
+
+### build/index.d.ts#tryTimeoutOf
+export declare function tryTimeoutOf(limitMs: number, tries: number): number;
 
 ### build/index.d.ts#upInterfaces
 export declare function upInterfaces(table: InterfaceTable): LinkInterface[];

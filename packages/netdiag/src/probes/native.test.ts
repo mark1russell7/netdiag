@@ -10,6 +10,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   DNS_ANSWER,
   DNS_PROBE,
+  DNS_TRIES,
+  MAX_DNS_TRIES,
   HTTP_RESPONSE,
   TCP_CONNECT,
   TCP_PROBE,
@@ -94,7 +96,7 @@ describe("the DNS probe", () => {
     const { port } = await dnsServer();
     const runner = runnerWith(realClock);
     const a = await runner.run(DNS_PROBE, { name: "ok.test", resolver: LOCAL, port });
-    expect(factOf<DnsAnswer>(a, DNS_ANSWER)).toMatchObject({ outcome: "ok", record: "A", addresses: ["192.0.2.10", "192.0.2.11"], ttl: 240, resolver: `${LOCAL}:${port}` });
+    expect(factOf<DnsAnswer>(a, DNS_ANSWER)).toMatchObject({ outcome: "ok", record: "A", addresses: ["192.0.2.10", "192.0.2.11"], ttl: 240, resolver: `${LOCAL}:${port}`, tries: DNS_TRIES });
     const aaaa = await runner.run(DNS_PROBE, { name: "ok.test", record: "AAAA", resolver: LOCAL, port });
     expect(factOf<DnsAnswer>(aaaa, DNS_ANSWER)).toMatchObject({ outcome: "ok", addresses: ["2001:db8::10"] });
     if (a.status === "done") expect(a.facts[0]?.subject).toEqual({ host: "ok.test", kind: "name" });
@@ -109,6 +111,34 @@ describe("the DNS probe", () => {
     const { port } = await dnsServer();
     const result = await runnerWith(realClock).run(DNS_PROBE, { name, resolver: LOCAL, port });
     expect(factOf<DnsAnswer>(result, DNS_ANSWER)).toMatchObject({ outcome, addresses: [] });
+  });
+
+  it("sends the query again after a lost query, and not after an error answer", async () => {
+    const sent = new Map<string, number>();
+    const server = await startDnsServer({
+      host: LOCAL,
+      zone: (name) => {
+        const count = (sent.get(name) ?? 0) + 1;
+        sent.set(name, count);
+        if (name === "lossy.test") return count === 1 ? "silent" : { rcode: 0, a: ["192.0.2.20"] };
+        return { rcode: 2 };
+      },
+    });
+    closers.push(() => server.close());
+    const runner = runnerWith(realClock);
+    const lossy = await runner.run(DNS_PROBE, { name: "lossy.test", resolver: LOCAL, port: server.port, timeoutMs: 3000, tries: 3 });
+    expect(factOf<DnsAnswer>(lossy, DNS_ANSWER)).toMatchObject({ outcome: "ok", addresses: ["192.0.2.20"], tries: 3 });
+    expect(sent.get("lossy.test")).toBe(2);
+    const failing = await runner.run(DNS_PROBE, { name: "fail.test", resolver: LOCAL, port: server.port, timeoutMs: 3000, tries: 3 });
+    expect(factOf<DnsAnswer>(failing, DNS_ANSWER)).toMatchObject({ outcome: "servfail" });
+    expect(sent.get("fail.test")).toBe(1);
+  });
+
+  it("gives a timeout with one try when the input asks for one try", async () => {
+    const { port, asked } = await dnsServer();
+    const result = await runnerWith(realClock).run(DNS_PROBE, { name: "slow.test", resolver: LOCAL, port, timeoutMs: 400, tries: 1 });
+    expect(factOf<DnsAnswer>(result, DNS_ANSWER)).toMatchObject({ outcome: "timeout", tries: 1 });
+    expect(asked.filter((name) => name === "slow.test")).toHaveLength(1);
   });
 
   it("gives a timeout when the resolver does not answer", async () => {
@@ -132,6 +162,11 @@ describe("the DNS probe", () => {
     const runner = runnerWith(realClock);
     expect(await runner.run(DNS_PROBE, { name: "ok.test", resolver: "192.0.2.53" })).toMatchObject({ status: "refused" });
     expect(await runner.run(DNS_PROBE, { name: "192.0.2.1", resolver: LOCAL })).toMatchObject({ status: "failed", stage: "probe" });
+  });
+
+  it.each([0, 1.5, MAX_DNS_TRIES + 1])("refuses %s tries", async (tries) => {
+    const result = await runnerWith(realClock).run(DNS_PROBE, { name: "ok.test", resolver: LOCAL, tries });
+    expect(result).toMatchObject({ status: "failed", stage: "probe" });
   });
 });
 

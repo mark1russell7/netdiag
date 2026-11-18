@@ -41,7 +41,8 @@
         "algebra",
         "the service conformance kit"
       ],
-      "state": "Today",
+      "state": "today",
+      "stateText": "Today",
       "limits": []
     },
     {
@@ -57,7 +58,8 @@
       "tools": [
         "The harness"
       ],
-      "state": "Today",
+      "state": "today",
+      "stateText": "Today",
       "limits": [
         {
           "layer": "E1",
@@ -97,7 +99,8 @@
         "kind",
         "k3d"
       ],
-      "state": "Today, with kind",
+      "state": "today",
+      "stateText": "Today",
       "limits": [
         {
           "layer": "E2",
@@ -123,7 +126,8 @@
       "tools": [
         "containerlab with FRR"
       ],
-      "state": "New",
+      "state": "new",
+      "stateText": "New",
       "limits": [
         {
           "layer": "E3",
@@ -151,7 +155,8 @@
         "QEMU",
         "k3s in a VM"
       ],
-      "state": "New, the VM tier of S4",
+      "state": "new",
+      "stateText": "New",
       "limits": [
         {
           "layer": "E4",
@@ -177,7 +182,8 @@
       "tools": [
         "vrnetlab"
       ],
-      "state": "Later",
+      "state": "later",
+      "stateText": "Later",
       "limits": [
         {
           "layer": "E5",
@@ -195,7 +201,8 @@
       "tools": [
         "HW-1"
       ],
-      "state": "Waits on the owner",
+      "state": "waiting",
+      "stateText": "Waits on the owner",
       "limits": []
     }
   ],

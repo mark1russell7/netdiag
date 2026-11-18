@@ -21,6 +21,8 @@ The labs of netdiag: the simulated world, the loopback lab and the kernel lab. E
 
 Each case has signs: the values of the evidence that its fault causes. A result with no sign did not make the fault. It gives no read, not a record. The command then ends with the exit code 2.
 
+A random fault does not show each sign in each visit. For example, a loss of 20 % keeps 19 or 20 of 20 pings in 7 of 100 visits. So the case loop visits a case again when the evidence does not show each sign, 3 times or fewer (`LAB_VISITS`). A visit with a problem of a probe gets no new visit. The field `visits` of each run tells the count, and the summary counts the runs with more than one visit.
+
 A group of signs (`anyOf`) is for a fault with more than one form. The evidence shows the group when it shows one sign of the group.
 
 ### How to start it
@@ -204,7 +206,8 @@ The ladder also has a row for each class that the fault grammar gives and the ca
 
 A cell is impossible only by a query. Nobody marks a cell by hand.
 
-- `LAYER_FACTS` of `src/ladder.ts` keeps the name, the proofs, the limits, the tools and the state of each layer, from S7. This copy stays until harness 0.16.10 exports `LAYER_FACTS`.
+- `LAYER_FACTS` of the entry `@mark1russell7/harness/layers` gives the name, the proofs, the limits, the tools and the state of each layer, from S7. The lab keeps no copy.
+- `LAYER_STATE_TEXT` gives the text of each state for the site. The text of `waiting` names no person.
 - `LAYER_LIMITS` gives the traits that each layer cannot have. Each limit is an item of the column "What it cannot prove" of S7, with its row as the source.
 - A cell is impossible when its class needs a trait of a limit of its layer.
 - When nobody verified a limit, the cell stays a gap. For example, Wi-Fi is not impossible on E1 to E3, because `mac80211_hwsim` can possibly make a Wi-Fi link.
@@ -345,12 +348,15 @@ The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
 | Class | Hits | The other answers | The cause |
 | --- | --- | --- | --- |
 | `path.mtu` | 58 % | `none` | The catalog has no evidence for each address family. A black hole of IPv4 with a good IPv6 reads as `none`. Each miss is a case with IPv6. |
-| `path.loss` | 59 % | `wifi.weak`, `resolver.down` | The catalog has no evidence of a wired link. The DNS probe tries one time, so a large loss looks like a resolver that is down. |
-| `wifi.weak` | 69 % | `unknown` | A radio loss above 25 % also makes the DNS probe time out, because it tries one time. |
 | `interface.down` | 70 % | `unknown` | When an interface is down, c-ares gives `ECONNREFUSED`. The catalog expects a DNS timeout. |
+| `path.loss` | 88 % | `resolver.down`, `filter.drop` | A heavy loss reads as a down resolver or a filter. In 9 of 10 of these answers, the loss is 44 % or more. |
+| `wifi.weak` | 86 % | `unknown` | In 9 of 10 misses, the radio loss is 35 % or more. The cause of each miss is a later step. |
 | `server.error` | 98 % | `tls.proxy` | A proxy at the gateway that refuses the request also ends the TLS session with its own certificate. |
 
-Two changes of ND-17 closed two weak points. Each is a measure with 12 cases of each class:
+Five changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last three with 80:
 
 - A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
 - When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.
+- A loss does not slow a TCP connect: each SYN passes at once, or the client sends it again after 1 s. Thus `path.loss` expects `tcp.time` `short` or `retry`, not `long` or `retry`. `path.loss` went from 59 % to 68 %. The kernel lab read 5 of its 70 recorded loss cases as `server.slow`, and with the new rule it reads all 70 correctly.
+- The DNS probe sends a query again after a loss, 3 times or fewer. The DNS of the simulated world does the same. `wifi.weak` went from 69 % to 85 %, and `path.loss` from 68 % to 79 %.
+- The Wi-Fi probe also gives the list of the Wi-Fi interfaces. With no connected interface, the feature `wifi.state` is `none`, so `wifi.weak` is not the cause. `path.loss` went from 79 % to 88 %. Before, 42 wired cases read as `wifi.weak`, and 0 do so after the change.

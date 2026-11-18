@@ -363,7 +363,7 @@ function scopeValue() {
 describe("the probe wifi.link", () => {
   const scope = { value: scopeValue() };
 
-  it("runs iw for each managed interface only, with no shell, and gives one fact for each interface", async () => {
+  it("runs iw for each managed interface only, with no shell, and gives the list and one fact for each interface", async () => {
     const clock = fakeClock(1000);
     const rules: FakeRule[] = [
       [(args) => args[0] === "--version", ok("iw version 6.9\n")],
@@ -378,7 +378,9 @@ describe("the probe wifi.link", () => {
     });
     const outcome = await createRunner({ scope: scope.value, clock }).run(wifiProbe(host), {});
     if (outcome.status !== "done") throw new Error(JSON.stringify(outcome));
-    const facts = outcome.facts as Fact<WifiLink>[];
+    const [list, ...links] = outcome.facts;
+    expect(list).toMatchObject({ kind: "wifi.interfaces", layer: "wifi", subject: { host: "localhost" }, value: { interfaces: ["wlan0", "wlan1"] } });
+    const facts = links as Fact<WifiLink>[];
     expect(facts.map((fact) => [fact.kind, fact.layer, fact.subject.host, fact.value.interface, fact.value.state])).toEqual([
       ["wifi.link", "wifi", "localhost", "wlan0", "connected"],
       ["wifi.link", "wifi", "localhost", "wlan1", "disconnected"],
@@ -404,6 +406,8 @@ describe("the probe wifi.link", () => {
     ]);
     const outcome = await createRunner({ scope: scope.value, clock }).run(wifiProbe(host), { interface: "wlan1" });
     expect(outcome).toMatchObject({ status: "done" });
+    // The probe read one interface, so it gives no list of the interfaces.
+    expect(outcome.status === "done" && outcome.facts.map((fact) => [fact.kind, (fact.value as WifiLink).interface])).toEqual([["wifi.link", "wlan1"]]);
     expect(host.calls.map((call) => call.args.join(" "))).toEqual(["--version", "dev", "dev wlan1 link", "dev wlan1 survey dump"]);
   });
 
@@ -414,15 +418,32 @@ describe("the probe wifi.link", () => {
       [() => true, ok(NETSH_11)],
     ]);
     const done = await createRunner({ scope: scope.value, clock }).run(wifiProbe(windows), {});
-    expect(done).toMatchObject({ status: "done", facts: [{ value: { interface: "Wi-Fi", signalDbm: -52 } }] });
+    expect(done).toMatchObject({ status: "done", facts: [{ kind: "wifi.interfaces", value: { interfaces: ["Wi-Fi"] } }, { value: { interface: "Wi-Fi", signalDbm: -52 } }] });
     expect(windows.calls.map((call) => [call.command, ...call.args].join(" "))).toEqual(["netsh wlan /?", "netsh wlan show interfaces"]);
     const mac = fakeToolHost<ToolRunOptions>("darwin", [
       [(args) => args[0] === "-listDataTypes", ok("Available Datatypes:\nSPAirPortDataType\nSPUSBDataType\n")],
       [() => true, ok(PROFILER)],
     ]);
     const report = await createRunner({ scope: scope.value, clock }).run(wifiProbe(mac), {});
-    expect(report).toMatchObject({ status: "done", facts: [{ value: { interface: "en0", noiseDbm: -94 } }] });
+    expect(report).toMatchObject({ status: "done", facts: [{ kind: "wifi.interfaces", value: { interfaces: ["en0"] } }, { value: { interface: "en0", noiseDbm: -94 } }] });
     expect(mac.calls.map((call) => call.args.join(" "))).toEqual(["-listDataTypes", "-json SPAirPortDataType"]);
+  });
+
+  it("gives an empty list on a computer with no Wi-Fi interface, or with no Wi-Fi service", async () => {
+    const clock = fakeClock();
+    const linux = fakeToolHost<ToolRunOptions>("linux", [
+      [(args) => args[0] === "--version", ok("iw version 6.9\n")],
+      [(args) => args.length === 1 && args[0] === "dev", ok("")],
+    ]);
+    const wired = await createRunner({ scope: scope.value, clock }).run(wifiProbe(linux), {});
+    expect(wired).toMatchObject({ status: "done", facts: [{ kind: "wifi.interfaces", value: { interfaces: [] } }] });
+    expect(wired.status === "done" && wired.facts).toHaveLength(1);
+    const stopped = fakeToolHost<ToolRunOptions>("win32", [
+      [(args) => args[1] === "/?", ok("Commands in this context:\n")],
+      [() => true, { exitCode: 1, stdout: "The Wireless AutoConfig Service (wlansvc) is not running.\n", stderr: "" }],
+    ]);
+    const service = await createRunner({ scope: scope.value, clock }).run(wifiProbe(stopped), {});
+    expect(service).toMatchObject({ status: "done", facts: [{ kind: "wifi.interfaces", value: { interfaces: [] } }] });
   });
 
   it("tells the version of iw, and the reason when a tool is not available", async () => {

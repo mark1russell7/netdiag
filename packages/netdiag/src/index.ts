@@ -44,6 +44,7 @@ export {
   type TcpPhase,
   type TlsPhase,
 } from "./probes/socket.ts";
+export { DNS_TRIES, MAX_DNS_TRIES, triesOf, tryTimeoutOf } from "./probes/tries.ts";
 export {
   DEFAULT_OWNER_REDIRECTS,
   DEFAULT_RDAP_BODY,

@@ -170,6 +170,31 @@ describe("the rules of practice", () => {
     expect(top([e("tcp.time", "short"), e("tls.ratio", "low"), e("http.status", "ok"), e("http.ttfb", "high")])).toBe("server.slow");
   });
 
+  it("names a loss on the path to the target when the connect is fast and the first byte is slow", () => {
+    // A read of the kernel lab: netem drops 20 % of the packets of the target. Each SYN passed at once.
+    const read = [
+      "dns.answer=ok@target", "dns.answer=ok@reference", "tcp.connect=connected@target", "tcp.time=short@target",
+      "tcp.connect=connected@reference", "tcp.time=short@reference", "tls.handshake=ok@target", "tls.trust=public@target",
+      "tls.ratio=mid@target", "tls.handshake=ok@reference", "tls.trust=public@reference", "tls.ratio=low@reference",
+      "http.status=ok@target", "http.ttfb=high@target", "http.status=ok@reference", "http.ttfb=low@reference",
+      "icmp.reply=reply@target", "icmp.reply=reply@reference", "gateway.reply=reply@reference", "path.loss=high@target",
+      "path.loss=none@reference", "path.loss=none@reference", "link.state=up@reference",
+    ];
+    const evidence = read.map((label) => {
+      const [pair = "", at] = label.split("@");
+      const [feature = "", value = ""] = pair.split("=");
+      return e(feature, value, at === "target");
+    });
+    expect(top(evidence)).toBe("path.loss");
+  });
+
+  it("expects no slow connect from a loss: a SYN passes at once, or it goes again after 1 s", () => {
+    const of = (value: string): number => catalog.likelihood("path.loss", "tcp.time", value, true);
+    expect(of("long")).toBeLessThan(catalog.likelihood(NONE, "tcp.time", "long", true));
+    expect(of("short")).toBeGreaterThan(of("long"));
+    expect(of("retry")).toBeGreaterThan(of("long"));
+  });
+
   it("names an MTU black hole when TCP connects and the TLS handshake times out", () => {
     expect(top([e("tcp.connect", "connected"), e("tls.handshake", "timeout"), e("http.status", "none")])).toBe("path.mtu");
   });

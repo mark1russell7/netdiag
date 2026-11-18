@@ -42,7 +42,8 @@ export async function visitSim(labCase: SimCase): Promise<Visit> {
     tools: simTools(net, clock),
     probes: { dns: simDnsProbe(net, clock), http: simHttpProbe(net, clock) },
     interfaces: () => interfacesOf(net),
-    wifi: labCase.medium === "wifi",
+    // A real visit reads the Wi-Fi tool on each computer. On a wired case, `iw dev` lists no interface.
+    wifi: true,
     pingCount: SIM_PING_COUNT,
     mtrCycles: 0,
     mtu: "auto",

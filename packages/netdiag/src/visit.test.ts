@@ -193,8 +193,8 @@ describe("the visit of a target", () => {
       iw((args) => args.at(-1) === "dump", ""),
     ]);
     const steps = await visit({ target: { host: NAME }, grants: [range(`${RESOLVER}/32`)] }, { tools, pingCount: 0, wifi: true });
-    expect(shape(steps)).toEqual(["local link.state localhost", "local wifi.link localhost"]);
-    const wifi = steps[1];
+    expect(shape(steps)).toEqual(["local link.state localhost", "local wifi.interfaces localhost", "local wifi.link localhost"]);
+    const wifi = steps[2];
     expect(wifi?.kind === "fact" && isFactOf(WIFI_LINK, wifi.fact) ? wifi.fact.value : undefined).toMatchObject({ interface: "wlan0", state: "connected", ssid: "lab-net", signalDbm: -80, channel: 36, band: "5" });
     expect(tools.calls.map((call) => [call.command, ...call.args].join(" "))).toEqual(["iw --version", "iw dev", "iw dev wlan0 link", "iw dev wlan0 survey dump"]);
   });
