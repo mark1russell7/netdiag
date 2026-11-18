@@ -58,6 +58,7 @@ DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
 type DnsRaw: build/index.d.ts#DnsRaw
 ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
 ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
+EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
 EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk2.d.ts#Evidence
@@ -110,6 +111,7 @@ LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
+LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
@@ -131,6 +133,7 @@ type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
 type LossOrigin: build/core.chunk.d.ts#LossOrigin
 type LossStart: build/core.chunk.d.ts#LossStart
+type LossStep: build/index.chunk2.d.ts#LossStep
 MAX_DNS_TRIES: build/index.d.ts#MAX_DNS_TRIES
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
@@ -424,6 +427,7 @@ DnsAnswer: build/counts.chunk.d.ts#DnsAnswer
 DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
 ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
 ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
+EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
 EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk2.d.ts#Evidence
@@ -467,6 +471,7 @@ LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
+LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
@@ -486,6 +491,7 @@ type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
 type LossOrigin: build/core.chunk.d.ts#LossOrigin
 type LossStart: build/core.chunk.d.ts#LossStart
+type LossStep: build/index.chunk2.d.ts#LossStep
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 MAX_MTR_CYCLES: build/counts.chunk.d.ts#MAX_MTR_CYCLES
 MAX_PING_COUNT: build/counts.chunk.d.ts#MAX_PING_COUNT
@@ -717,6 +723,7 @@ type Degree: build/index.chunk2.d.ts#Degree
 type DegreeShare: build/index.chunk2.d.ts#DegreeShare
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Distribution: build/index.chunk2.d.ts#Distribution
+EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type Evidence: build/index.chunk2.d.ts#Evidence
 type Expectation: build/index.chunk2.d.ts#Expectation
 FLOOR: build/index.chunk2.d.ts#FLOOR
@@ -727,6 +734,7 @@ type Hypothesis: build/index.chunk2.d.ts#Hypothesis
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
+LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
 type LabCause: build/index.chunk2.d.ts#LabCause
@@ -738,6 +746,7 @@ type LabScore: build/index.chunk2.d.ts#LabScore
 type LabStatus: build/index.chunk2.d.ts#LabStatus
 type LabVerdict: build/index.chunk2.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
+type LossStep: build/index.chunk2.d.ts#LossStep
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 NONE: build/index.chunk2.d.ts#NONE
 type Observable: build/index.chunk2.d.ts#Observable
@@ -2106,6 +2115,9 @@ interface Diagnosis {
 ### build/index.chunk2.d.ts#Distribution
 type Distribution = Readonly<Record<string, number>>;
 
+### build/index.chunk2.d.ts#EXCHANGE_LOSS
+declare const EXCHANGE_LOSS: Readonly<Record<"light" | "heavy", number>>;
+
 ### build/index.chunk2.d.ts#Evidence
 interface Evidence {
   readonly feature: string;
@@ -2167,6 +2179,9 @@ declare const LAB_BAR_STEP = .001;
 
 ### build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 declare const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
+
+### build/index.chunk2.d.ts#LOSS_STEPS
+declare const LOSS_STEPS: readonly LossStep[];
 
 ### build/index.chunk2.d.ts#LabBars
 type LabBars = Readonly<Record<string, number>>;
@@ -2231,6 +2246,15 @@ interface LabVerdict {
   readonly bar: number;
   readonly low: number | undefined;
   readonly support: number;
+}
+
+### build/index.chunk2.d.ts#LossStep
+interface LossStep {
+  readonly feature: string;
+  readonly timeout: string;
+  readonly tries: number;
+  readonly time?: string | undefined;
+  readonly late?: Distribution | undefined;
 }
 
 ### build/index.chunk2.d.ts#MAX_JOINT_VALUES

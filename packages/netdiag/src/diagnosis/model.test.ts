@@ -1,7 +1,9 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
+  EXCHANGE_LOSS,
   FLOOR,
+  LOSS_STEPS,
   NONE,
   STANDARD_CATALOG,
   STANDARD_CATALOG_SPEC,
@@ -394,6 +396,42 @@ describe("a fault with degrees", () => {
     expect(degreeOf(heavy, "heavy")).toBeGreaterThan(degreeOf(heavy, "light"));
   });
 
+  it("takes the signs of a loss in each step from the tries of the step", () => {
+    const healthy = (feature: string, value: string): number => catalog.likelihood(NONE, feature, value, true);
+    for (const [degree, loss] of Object.entries(EXCHANGE_LOSS)) {
+      for (const step of LOSS_STEPS) {
+        const timeout = loss ** step.tries;
+        const expected = timeout + (1 - timeout) * healthy(step.feature, step.timeout);
+        expect(catalog.likelihood("path.loss", step.feature, step.timeout, true, "target", degree)).toBeCloseTo(expected, 12);
+      }
+    }
+    // Under a heavy loss, a connect that passes lost its first SYN in 0.54 of the visits. So it gives retry.
+    const late = (EXCHANGE_LOSS.heavy - EXCHANGE_LOSS.heavy ** 3) / (1 - EXCHANGE_LOSS.heavy ** 3);
+    expect(late).toBeCloseTo(0.543, 3);
+    expect(catalog.likelihood("path.loss", "tcp.time", "retry", true, "target", "heavy")).toBeCloseTo(late + (1 - late) * healthy("tcp.time", "retry"), 12);
+  });
+
+  it("names a loss that passes its tries, and not a broken family, when the connects of one family fail", () => {
+    // The case 1:path.loss#33 of the simulated world: a loss of 50 % near the target. Each step passed after a few tries.
+    const passed = [
+      e("dns.answer", "ok"),
+      e("ip.family", "ipv4-only"),
+      e("ip.family", "both", false),
+      e("tcp.connect", "connected"),
+      e("tcp.time", "retry"),
+      e("tcp.connect", "connected", false),
+      e("tcp.time", "short", false),
+      e("tls.handshake", "ok"),
+      e("tls.ratio", "low"),
+      e("http.status", "ok"),
+      e("http.ttfb", "low"),
+      e("path.loss", "high"),
+      e("path.loss", "none", false),
+      e("gateway.loss", "none", false),
+    ];
+    expect(top(passed)).toBe("path.loss");
+  });
+
   it("names a weak Wi-Fi signal with a heavy loss when DNS times out", () => {
     const weak = heavy.map((item) => (item.feature === "wifi.signal" ? e("wifi.signal", "weak", false) : item));
     expect(top(weak)).toBe("wifi.weak");
@@ -420,11 +458,11 @@ describe("a fault with degrees", () => {
   it("gives the table of each degree, and their mean with the shares without a degree", () => {
     const light = catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared", "light");
     const severe = catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared", "heavy");
-    expect(light).toBe(catalog.likelihood(NONE, "dns.answer", "timeout", true));
-    expect(severe).toBeCloseTo(0.45, 12);
+    expect(light).toBeLessThan(severe);
     expect(catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared")).toBeCloseTo(0.75 * light + 0.25 * severe, 12);
-    // A degree keeps each prediction of the fault that it does not replace.
-    expect(catalog.likelihood("path.loss", "http.ttfb", "high", true, "shared", "heavy")).toBe(catalog.likelihood("path.loss", "http.ttfb", "high", true, "shared", "light"));
+    // A degree keeps each prediction of the fault that it does not replace: light keeps `path.loss` some or high (strong).
+    expect(catalog.likelihood("path.loss", "path.loss", "high", true, "shared", "light")).toBeCloseTo(0.45, 12);
+    expect(catalog.likelihood("path.loss", "path.loss", "high", true, "shared", "heavy")).toBeCloseTo(0.9, 12);
     // A fault of the target uses the healthy distribution on a reference host for each degree.
     expect(catalog.likelihood("path.loss", "dns.answer", "timeout", false, "target", "heavy")).toBe(catalog.likelihood(NONE, "dns.answer", "timeout", false));
   });
@@ -459,9 +497,19 @@ describe("a fault with degrees", () => {
   });
 
   it("explains a fault by its most probable degree", () => {
-    // Under the degree heavy, a DNS timeout has the same probability as under a down resolver.
+    // The weight of the DNS timeout comes from the degree heavy, the most probable degree of this read.
+    const causes = diagnose(catalog, heavy).causes;
+    const likeliest = (id: string) => {
+      const cause = causes.find((each) => each.id === id);
+      return cause === undefined ? undefined : [...causeVariants(cause)].sort((a, b) => b.probability - a.probability)[0];
+    };
+    const first = likeliest("path.loss");
+    const second = likeliest("resolver.down");
+    expect(first?.degree).toBe("heavy");
+    const timeout = (id: string, variant: typeof first): number => catalog.likelihood(id, "dns.answer", "timeout", true, variant?.reach, variant?.degree);
     const why = explain(catalog, heavy, "path.loss", "resolver.down");
-    expect(why.find((item) => item.evidence.feature === "dns.answer" && item.evidence.primary)?.weight).toBeCloseTo(0, 12);
+    const weight = why.find((item) => item.evidence.feature === "dns.answer" && item.evidence.primary)?.weight;
+    expect(weight).toBeCloseTo(Math.log10(timeout("path.loss", first)) - Math.log10(timeout("resolver.down", second)), 12);
     expect(why[0]?.evidence.feature).toBe("path.loss");
   });
 });

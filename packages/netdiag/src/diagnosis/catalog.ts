@@ -1,4 +1,4 @@
-import { compileCatalog, type Catalog, type CatalogSpec, type Degree, type Feature, type Fault, type Prediction } from "./model.ts";
+import { compileCatalog, type Catalog, type CatalogSpec, type Degree, type Distribution, type Feature, type Fault, type Prediction } from "./model.ts";
 
 /**
  * The features of the standard catalog.
@@ -142,6 +142,92 @@ export const STANDARD_FEATURES: readonly Feature[] = [
 ];
 
 /**
+ * The chance that one exchange loses a packet, for each degree of a loss. An exchange is a packet and its answer.
+ * Under a loss s in both directions, an exchange loses a packet with the probability 1 - (1 - s)^2.
+ */
+export const EXCHANGE_LOSS: Readonly<Record<"light" | "heavy", number>> = { light: 0.25, heavy: 0.7 };
+
+/** A step of a visit that a loss changes: its feature, its tries, and the time feature of a step that passes. */
+export interface LossStep {
+  /** The feature of the outcome of the step. */
+  readonly feature: string;
+  /** The value of the feature when the step loses each try. */
+  readonly timeout: string;
+  /** The count of the tries of the step in the time limit of a probe. */
+  readonly tries: number;
+  /** The time feature of a step that passes, if the step has one. */
+  readonly time?: string | undefined;
+  /** The bins of the time feature where a late step lands. */
+  readonly late?: Distribution | undefined;
+}
+
+/**
+ * The steps of a visit that a loss changes, with their tries in the time limit of 5 s of a probe.
+ *
+ * - A DNS query has 3 tries, the default of the DNS probe.
+ * - A connect sends its SYN at 0, 1 and 3 s: the RTO of a connect starts at 1 s and doubles. A late SYN gives
+ *   `retry`, not `long`.
+ * - A TLS or HTTP exchange sends again at 0.2, 0.6 and 1.4 s: the RTO starts at the floor of 200 ms of Linux and
+ *   doubles. The 2 s after the last SYN of a connect fit these 4 tries.
+ * - A late TLS or HTTP exchange waits an RTO of 200 ms or 3 round trips, the larger. Its ratio to the connect is then
+ *   1 + max(200 ms / rtt, 3), so 4 or more: `mid`, or `high` for a short round trip. The split is even until the lab
+ *   runs fit it. A connect that sent its SYN again gives no ratio (Karn's rule), so a late connect does not make a
+ *   ratio low.
+ */
+export const LOSS_STEPS: readonly LossStep[] = [
+  { feature: "dns.answer", timeout: "timeout", tries: 3 },
+  { feature: "tcp.connect", timeout: "timeout", tries: 3, time: "tcp.time", late: { retry: 1 } },
+  { feature: "tls.handshake", timeout: "timeout", tries: 4, time: "tls.ratio", late: { mid: 0.5, high: 0.5 } },
+  { feature: "http.status", timeout: "none", tries: 4, time: "http.ttfb", late: { mid: 0.5, high: 0.5 } },
+];
+
+/**
+ * This function gives the predictions of a loss in the steps of a visit. The argument `loss` is the chance that one
+ * exchange loses a packet.
+ *
+ * - A step with k tries times out when it loses each try: loss^k. The other outcomes keep their healthy shares.
+ * - A step that passes was late when it lost its first try: (loss - loss^k) / (1 - loss^k). A late step lands in the
+ *   bins `late` of its time feature. A step on time keeps the healthy distribution of the time feature.
+ * - The connects of each address family fail on their own. Thus one family can fail alone, as under `ipv6.broken`.
+ */
+function lossSigns(loss: number): Record<string, Prediction> {
+  const signs: Record<string, Prediction> = {};
+  for (const step of LOSS_STEPS) {
+    const timeout = loss ** step.tries;
+    signs[step.feature] = moved(step.feature, timeout, { [step.timeout]: 1 });
+    if (step.time !== undefined && step.late !== undefined) signs[step.time] = moved(step.time, (loss - timeout) / (1 - timeout), step.late);
+  }
+  const connect = LOSS_STEPS.find((step) => step.feature === "tcp.connect");
+  if (connect === undefined) throw new Error("The loss steps have no connect.");
+  const fail = loss ** connect.tries;
+  const healthy = healthyOf("ip.family");
+  const both = healthy["both"] ?? 0;
+  const family = {
+    both: both * (1 - fail) ** 2,
+    "ipv4-only": (healthy["ipv4-only"] ?? 0) * (1 - fail) + both * fail * (1 - fail),
+    "ipv6-only": (healthy["ipv6-only"] ?? 0) * (1 - fail) + both * fail * (1 - fail),
+  };
+  // When each family fails, the visit reads no family. So the shares are of the visits that read a family.
+  const read = family.both + family["ipv4-only"] + family["ipv6-only"];
+  signs["ip.family"] = Object.fromEntries(Object.entries(family).map(([value, p]) => [value, p / read]));
+  return signs;
+}
+
+/** This function gives the healthy distribution of a feature of the standard catalog. */
+function healthyOf(feature: string): Distribution {
+  const healthy = STANDARD_FEATURES.find((each) => each.id === feature)?.healthy;
+  if (healthy === undefined) throw new Error(`The catalog has no feature ${feature}.`);
+  return healthy;
+}
+
+/** This function gives the healthy distribution of a feature, with the share `share` moved to the bins `to`. */
+function moved(feature: string, share: number, to: Distribution): Distribution {
+  const healthy = healthyOf(feature);
+  for (const value of Object.keys(to)) if (!(value in healthy)) throw new Error(`The feature ${feature} has no value ${value}.`);
+  return Object.fromEntries(Object.entries(healthy).map(([value, p]) => [value, (1 - share) * p + share * (to[value] ?? 0)]));
+}
+
+/**
  * This function gives the degrees of a fault that loses packets, with the predictions of the fault for each degree.
  * A loss does the same to TCP and HTTP at each place where it starts. The place can be the radio, the local network
  * or a network on the path. So each fault with a loss takes these degrees.
@@ -150,32 +236,25 @@ export const STANDARD_FEATURES: readonly Feature[] = [
  * try, each SYN and each request can fail. Thus the timeouts come together with the loss, at each host that the loss
  * reaches. Most losses in the field are light, so the degree light has 3 parts of the prior and the degree heavy 1.
  *
- * A loss does not slow a connect: each SYN passes at once, or the client sends it again after 1 s. Under a loss s in
- * both directions, a SYN passes at once with the probability (1 - s)^2. Thus a light loss mostly gives short, and a
- * heavy loss retry. A lost segment of the answer waits for its next send, so the first byte of the answer comes late.
+ * The signs of a loss in the steps of a visit come from the tries of each step (`lossSigns`). A broken family
+ * leaves the other family with no loss, but a loss changes each family.
  */
 function lossDegrees(): readonly Degree[] {
-  const signs: Readonly<Record<string, Prediction>> = { "http.ttfb": { expect: ["mid", "high"], strength: "weak" } };
   return [
     {
       id: "light",
       summary: "A small share of the packets is lost. Each try passes after a few repeats.",
       share: 3,
-      predicts: { ...signs, "tcp.time": { short: 0.7, retry: 0.25, long: 0.05 } },
+      predicts: lossSigns(EXCHANGE_LOSS.light),
     },
     {
       id: "heavy",
       summary: "A large share of the packets is lost, so DNS, TCP and HTTP can time out.",
       share: 1,
       predicts: {
-        ...signs,
-        "tcp.time": { short: 0.25, retry: 0.7, long: 0.05 },
+        ...lossSigns(EXCHANGE_LOSS.heavy),
         "path.loss": { expect: "high", strength: "strong" },
         "gateway.loss": { expect: "high", strength: "strong" },
-        "dns.answer": { expect: ["ok", "timeout"], strength: "strong" },
-        "tcp.connect": { expect: ["connected", "timeout"], strength: "strong" },
-        "tls.handshake": { expect: ["ok", "timeout"], strength: "strong" },
-        "http.status": { expect: ["ok", "none"], strength: "strong" },
       },
     },
   ];
@@ -454,7 +533,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "10",
+  version: "11",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

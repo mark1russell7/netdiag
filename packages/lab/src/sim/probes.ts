@@ -14,7 +14,7 @@ const FULL_SEGMENT = 1500;
 export const SYN_TRIES_MS: readonly number[] = [0, 1000, 3000, 7000, 15_000];
 
 /** The smallest RTO of Linux, in ms. */
-const MIN_RTO_MS = 200;
+export const MIN_RTO_MS = 200;
 
 /** This function gives the table of interfaces of the client, in the form of `os.networkInterfaces`. */
 export function interfacesOf(net: SimNetwork): InterfaceTable {

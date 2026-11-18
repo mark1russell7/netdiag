@@ -287,6 +287,18 @@ describe("readEvidence", () => {
     expect(valuesOf(readEvidence(factsOf([tls("192.0.2.1", "ok", 100, "public")])).evidence, "tls.ratio")).toEqual([]);
   });
 
+  it("gives no ratio against a connect that sent its SYN again (Karn's rule)", () => {
+    const retry = [tcp("192.0.2.1", 443, "connected", 1010), tls("192.0.2.1", "ok", 300, "public"), http("192.0.2.1", "response", 200, 400)];
+    const { evidence } = readEvidence(factsOf(retry));
+    expect(valuesOf(evidence, "tcp.time")).toEqual(["retry"]);
+    expect(valuesOf(evidence, "tls.handshake")).toEqual(["ok"]);
+    expect(valuesOf(evidence, "tls.ratio")).toEqual([]);
+    expect(valuesOf(evidence, "http.status")).toEqual(["ok"]);
+    expect(valuesOf(evidence, "http.ttfb")).toEqual([]);
+    const long = readEvidence(factsOf([tcp("192.0.2.1", 443, "connected", 800), tls("192.0.2.1", "ok", 900, "public")])).evidence;
+    expect(valuesOf(long, "tls.ratio")).toEqual(["low"]);
+  });
+
   it("counts a TCP time below 1 ms as 1 ms in a ratio", () => {
     expect(valuesOf(readEvidence(factsOf([tcp("127.0.0.1", 443, "connected", 0.01), tls("127.0.0.1", "ok", 2, "private")])).evidence, "tls.ratio")).toEqual(["low"]);
   });
