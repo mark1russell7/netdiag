@@ -16,6 +16,7 @@ The labs of netdiag: the simulated world, the loopback lab and the kernel lab. E
 - The range `203.0.113.0/24` is a documentation range. The readers see it as public, so the lab hosts stand for hosts on the internet.
 - The probes count the lab root as a public root (the option `publicRoots`). The root of the TLS proxy is a root that the user trusts (the option `roots`).
 - `netem` adds 10 ms to each packet on `lo` in CI. Thus the ratios of the times are the ratios of a real path.
+- Each visit reads the link of the computer first, as `netdiag check` does. Without the link, a resolver with no DNS service and a down interface give the same evidence.
 
 ### The signs of a case
 
