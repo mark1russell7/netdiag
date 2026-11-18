@@ -2,22 +2,22 @@
   "source": "https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers",
   "counts": {
     "total": {
-      "cells": 651,
-      "covered": 37,
-      "noBar": 0,
-      "gap": 103,
+      "cells": 658,
+      "covered": 38,
+      "noBar": 1,
+      "gap": 108,
       "noClass": 510,
       "impossible": 1,
-      "gaps": 613
+      "gaps": 619
     },
     "classes": {
-      "cells": 140,
-      "covered": 37,
-      "noBar": 0,
-      "gap": 103,
+      "cells": 147,
+      "covered": 38,
+      "noBar": 1,
+      "gap": 108,
       "noClass": 0,
       "impossible": 0,
-      "gaps": 103
+      "gaps": 109
     },
     "proposals": {
       "cells": 511,
@@ -3209,6 +3209,155 @@
                 "server.error"
               ],
               "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E2",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E3",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E4",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E5",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        },
+        {
+          "layer": "E6",
+          "state": "gap",
+          "worlds": [],
+          "limits": []
+        }
+      ]
+    },
+    {
+      "id": "proxy.error",
+      "kind": "class",
+      "layer": "http",
+      "needs": [],
+      "entries": [],
+      "options": [
+        "http/refuse"
+      ],
+      "cells": [
+        {
+          "layer": "E0",
+          "state": "covered",
+          "worlds": [
+            {
+              "world": "sim",
+              "cases": [
+                "proxy.error#1",
+                "proxy.error#2",
+                "proxy.error#3",
+                "proxy.error#4",
+                "proxy.error#5",
+                "proxy.error#6",
+                "proxy.error#7",
+                "proxy.error#8",
+                "proxy.error#9",
+                "proxy.error#10",
+                "proxy.error#11",
+                "proxy.error#12",
+                "proxy.error#13",
+                "proxy.error#14",
+                "proxy.error#15",
+                "proxy.error#16",
+                "proxy.error#17",
+                "proxy.error#18",
+                "proxy.error#19",
+                "proxy.error#20",
+                "proxy.error#21",
+                "proxy.error#22",
+                "proxy.error#23",
+                "proxy.error#24",
+                "proxy.error#25",
+                "proxy.error#26",
+                "proxy.error#27",
+                "proxy.error#28",
+                "proxy.error#29",
+                "proxy.error#30",
+                "proxy.error#31",
+                "proxy.error#32",
+                "proxy.error#33",
+                "proxy.error#34",
+                "proxy.error#35",
+                "proxy.error#36",
+                "proxy.error#37",
+                "proxy.error#38",
+                "proxy.error#39",
+                "proxy.error#40",
+                "proxy.error#41",
+                "proxy.error#42",
+                "proxy.error#43",
+                "proxy.error#44",
+                "proxy.error#45",
+                "proxy.error#46",
+                "proxy.error#47",
+                "proxy.error#48",
+                "proxy.error#49",
+                "proxy.error#50",
+                "proxy.error#51",
+                "proxy.error#52",
+                "proxy.error#53",
+                "proxy.error#54",
+                "proxy.error#55",
+                "proxy.error#56",
+                "proxy.error#57",
+                "proxy.error#58",
+                "proxy.error#59",
+                "proxy.error#60",
+                "proxy.error#61",
+                "proxy.error#62",
+                "proxy.error#63",
+                "proxy.error#64",
+                "proxy.error#65",
+                "proxy.error#66",
+                "proxy.error#67",
+                "proxy.error#68",
+                "proxy.error#69",
+                "proxy.error#70",
+                "proxy.error#71",
+                "proxy.error#72",
+                "proxy.error#73",
+                "proxy.error#74",
+                "proxy.error#75",
+                "proxy.error#76",
+                "proxy.error#77",
+                "proxy.error#78",
+                "proxy.error#79",
+                "proxy.error#80"
+              ],
+              "bar": true
+            }
+          ],
+          "limits": []
+        },
+        {
+          "layer": "E1",
+          "state": "no-bar",
+          "worlds": [
+            {
+              "world": "loopback",
+              "cases": [
+                "proxy.error"
+              ],
+              "bar": false
             }
           ],
           "limits": []
@@ -7359,7 +7508,7 @@
     "tls/size": "A middlebox drops a ClientHello that needs more than one packet, for example with post-quantum key shares.",
     "http/intercept": "A captive portal holds the traffic and changes the answers until the user signs in.",
     "http/delay": "The server is slow, so the answer comes late, or a proxy before it times out.",
-    "http/refuse": "The server answers with errors, or a proxy of the network asks for credentials before it sends requests on.",
+    "http/refuse": "The server answers with errors, a proxy of the network fails, or a proxy asks for credentials before it sends requests on.",
     "http/stale": "A cache or a CDN gives an old version of the page after the server changes it.",
     "http/loop": "The redirects of the server come back to their start, so the client never gets a page.",
     "http/exhaust": "The server limits the rate of the client, and it refuses the requests above the limit.",

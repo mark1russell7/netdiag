@@ -19,5 +19,6 @@
   "tls.cert-invalid": 0.954,
   "tls.mismatch": 0.954,
   "server.slow": 0.954,
-  "server.error": 0.822
+  "server.error": 0.862,
+  "proxy.error": 0.844
 }

@@ -69,7 +69,7 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 
 <!-- coverage:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
 
-- **613 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 103 gaps, and the proposed classes have 510 gaps. 37 cells covered, and 1 cell impossible. The work ends only at zero gaps.
+- **619 gaps** in 658 cells: 94 classes on 7 layers. The classes of the catalog have 109 gaps, and the proposed classes have 510 gaps. 38 cells covered, and 1 cell impossible. The work ends only at zero gaps.
 
 | Class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -93,6 +93,7 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 | `captive.portal` | `http` | ✓ 80 cases of `sim` | ✓ `captive.portal` | ○ | ○ | ○ | ○ | ○ |
 | `server.slow` | `http` | ✓ 80 cases of `sim` | ✓ `server.slow` | ○ | ○ | ○ | ○ | ○ |
 | `server.error` | `http` | ✓ 80 cases of `sim` | ✓ `server.error` | ○ | ○ | ○ | ○ | ○ |
+| `proxy.error` | `http` | ✓ 80 cases of `sim` | ◐ `proxy.error` | ○ | ○ | ○ | ○ | ○ |
 
 | Proposed class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -206,17 +207,17 @@ The fault atlas is data: `FAULT_ATLAS` in `packages/lab/src/atlas.ts` (ND-17). E
 | `dns` | 9 | 3 | 0 | 0 | 6 |
 | `tcp` | 5 | 3 | 0 | 0 | 2 |
 | `tls` | 6 | 5 | 0 | 0 | 1 |
-| `http` | 4 | 3 | 0 | 0 | 1 |
-| All | 49 | 23 | 0 | 0 | 26 |
+| `http` | 5 | 4 | 0 | 0 | 1 |
+| All | 50 | 24 | 0 | 0 | 26 |
 
 | World | Entries | Covered | Gap: no bar | Gap: no case | Gap: no class |
 | --- | --- | --- | --- | --- | --- |
-| Loopback | 13 | 12 | 0 | 0 | 1 |
+| Loopback | 14 | 13 | 0 | 0 | 1 |
 | Kernel | 10 | 7 | 0 | 0 | 3 |
 | containerlab | 19 | 2 | 0 | 0 | 17 |
 | VMs | 7 | 2 | 0 | 0 | 5 |
 
-- The atlas has 49 entries. 23 name a class of the catalog, and 26 have no class.
+- The atlas has 50 entries. 24 name a class of the catalog, and 26 have no class.
 - The gaps of the catalog. The atlas proposes 25 classes:
   - `link.storm` (`link`, containerlab): `link.switching-loop`.
   - `wifi.busy` (`wifi`, VMs): `wifi.interference`.
@@ -258,7 +259,7 @@ The fault grammar is data: `FAULT_GRAMMAR` in `packages/lab/src/grammar.ts` (ND-
 
 <!-- grammar:start. The command `pnpm --filter @netdiag/lab roadmap` writes this part. Do not edit it. -->
 
-- The grammar has 24 modes, 10 places and 87 options. Of the 216 pairs of a layer and a mode, 87 are options, 119 are aliases of an option, and 10 have a reason. The grammar gives 93 classes. The grid with 3 levels has 542 terms of one fault and 293,764 terms of two faults.
+- The grammar has 24 modes, 10 places and 87 options. Of the 216 pairs of a layer and a mode, 87 are options, 119 are aliases of an option, and 10 have a reason. The grammar gives 94 classes. The grid with 3 levels has 542 terms of one fault and 293,764 terms of two faults.
 
 | Mode | link | wifi | ip | route | path | dns | tcp | tls | http |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -274,7 +275,7 @@ The fault grammar is data: `FAULT_GRAMMAR` in `packages/lab/src/grammar.ts` (ND-
 | `queue` | → `path/queue` | → `path/queue` | → `path/queue` | → `path/queue` | `path.queue` | → `path/queue` | → `path/queue` | → `path/queue` | → `path/queue` |
 | `size` | `link.mtu` | → `link/size` | → `path/size` | → `path/size` | `path.mtu` with `path/filter` (kind `icmp-too-big`) | `dns.fragments` | → `path/size` | `tls.large-hello` | → `http/refuse` |
 | `filter` | `link.port-blocked` | → `wifi/refuse` | `filter.icmp` | `nat.hairpin` | `path.asymmetric`, `path.mtu` with `path/size` | `dns.tcp-blocked`, `dns.blocked` | `filter.ecn`, `filter.drop` | `tls.blocked` | → `http/refuse` |
-| `refuse` | → `link/filter` | `wifi.refused` | → `path/missing` | → `path/missing` | → `path/missing` | `resolver.failing` | `filter.reset` | → `tls/mismatch` | `proxy.auth`, `server.error` |
+| `refuse` | → `link/filter` | `wifi.refused` | → `path/missing` | → `path/missing` | → `path/missing` | `resolver.failing` | `filter.reset` | → `tls/mismatch` | `proxy.auth`, `proxy.error`, `server.error` |
 | `missing` | → `link/down` | → `wifi/down` | `ipv6.broken` | `ipv6.no-router` | `path.no-route` | `name.missing` | `port.closed` | → `tls/wrong` | ⊘ [1] |
 | `wrong` | `link.vlan` | → `link/wrong` | `address.wrong` | `route.wrong` | `path.leak` | `zone.lame`, `dns.wrong-record` | → `dns/wrong` | `tls.cert-invalid` | `cdn.wrong-content` |
 | `stale` | → `ip/stale` | → `ip/stale` | `arp.stale` | → `route/wrong` | → `path/down` | `cache.stale` | → `tcp/expire` | → `tls/expire` | `cdn.stale` |
@@ -350,4 +351,4 @@ The status words are `active`, `waiting`, `blocked`, `later`, `done` and `droppe
 | ND-14 | The start of a loss on the site | done | P3 | S | site | ND-9, ND-11, ND-15 | Demo 4 of the site shows where the loss of each path starts, and the networks of those hops. The data comes from the facts of a report, with `lossOrigins`. The sample report with a loss comes from the where cases of the kernel lab. The job `where` writes these samples, with the lookups of the owners and the origins. `lookupGrants` gives the grants of the lookups (netdiag 0.5.6, #51). |
 | ND-15 | The lab gate of the start of a loss | active | P2 | M | ground truth | ND-11 | The where cases of the kernel lab put a loss on one link of the path, or no loss. Then `lossStart` must give the part of the path where the loss starts. Step 1 (#47): the cases and their records, with no bar. Step 2 (#48): the gate of the where cases. Step 3: the bars from 5 runs in CI, in `packages/lab/bars/where.json`. |
 | ND-16 | The origin AS of each hop | done | P3 | S | probes | ND-11 | The AS number of each hop. In RDAP, only ARIN gives it. The second source is the DNS of Team Cymru, the source of `mtr -z`: a TXT query under `origin.asn.cymru.com` or `origin6.asn.cymru.com` gives the BGP prefix and its origin AS. `netdiag check --owners` shows the AS of each hop, and the two values when RDAP and the DNS do not agree (netdiag 0.5.5, #49). |
-| ND-17 | netdiag learns on simulated networks | active | P2 | L | ground truth | ND-15 | The labs make each fault class of real networks in seeded worlds. A gap is not a pass. Each class must have a test on each layer E0 to E6 of the lab. The item is done only at zero gaps. Step 1: the coverage query, the fault atlas and the fault grammar. Step 2: the simulated world on E0, with 80 seeded cases of each class and their bars. Step 3: the weak points that the simulated world found, with its bars as the measure. The reaches of a fault as a set, the evidence of a broken family, the signs of a loss on a connect, the DNS tries, the evidence of a wired link, the DNS errors of a down interface, the MTU search below the floor of IPv6 and the degrees of a loss are done. The misses of `server.error`, `resolver.failing` and `filter.reset` are next. Step 4: one PR for each new class, with its features, its case and its bar. Step 5: seeded worlds of 3, 30 and 300 nodes in containerlab and in VMs of the harness (SYS-77), with fault plans of `rigor-chaos`. Step 6: a gate on the recall, the precision and the count of next probes, with a demo of each world on the site. |
+| ND-17 | netdiag learns on simulated networks | active | P2 | L | ground truth | ND-15 | The labs make each fault class of real networks in seeded worlds. A gap is not a pass. Each class must have a test on each layer E0 to E6 of the lab. The item is done only at zero gaps. Step 1: the coverage query, the fault atlas and the fault grammar. Step 2: the simulated world on E0, with 80 seeded cases of each class and their bars. Step 3: the weak points that the simulated world found, with its bars as the measure. The reaches of a fault as a set, the evidence of a broken family, the signs of a loss on a connect, the DNS tries, the evidence of a wired link, the DNS errors of a down interface, the MTU search below the floor of IPv6, the degrees of a loss and the class `proxy.error` are done. The visits with no sign of the fault and the misses of `resolver.failing` are next. Step 4: one PR for each new class, with its features, its case and its bar. Step 5: seeded worlds of 3, 30 and 300 nodes in containerlab and in VMs of the harness (SYS-77), with fault plans of `rigor-chaos`. Step 6: a gate on the recall, the precision and the count of next probes, with a demo of each world on the site. |

@@ -407,11 +407,24 @@ export const STANDARD_FAULTS: readonly Fault[] = [
       "http.status": { expect: "server-error", strength: "strong" },
     },
   },
+  {
+    id: "proxy.error",
+    part: "path",
+    layer: "http",
+    reach: ["shared", "target"],
+    summary: "A proxy of the network fails, and it answers the requests with errors.",
+    step: "Ask the owner of the network to repair the proxy, and compare the site on a different network.",
+    predicts: {
+      // A device of the network can give an HTTP status for an HTTPS site only as a TLS proxy that the clients trust.
+      "tls.trust": { expect: "private", strength: "strong" },
+      "http.status": { expect: "server-error", strength: "strong" },
+    },
+  },
 ];
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "7",
+  version: "8",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

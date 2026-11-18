@@ -90,7 +90,7 @@ describe("the coverage of the atlas", () => {
   });
 
   it("gives the gap counts of today", () => {
-    expect(ATLAS.total).toEqual({ entries: 49, covered: 23, noBar: 0, noCase: 0, noClass: 26 });
+    expect(ATLAS.total).toEqual({ entries: 50, covered: 24, noBar: 0, noCase: 0, noClass: 26 });
     expect(ATLAS.layers).toEqual([
       { layer: "link", entries: 2, covered: 1, noBar: 0, noCase: 0, noClass: 1 },
       { layer: "wifi", entries: 3, covered: 1, noBar: 0, noCase: 0, noClass: 2 },
@@ -100,10 +100,10 @@ describe("the coverage of the atlas", () => {
       { layer: "dns", entries: 9, covered: 3, noBar: 0, noCase: 0, noClass: 6 },
       { layer: "tcp", entries: 5, covered: 3, noBar: 0, noCase: 0, noClass: 2 },
       { layer: "tls", entries: 6, covered: 5, noBar: 0, noCase: 0, noClass: 1 },
-      { layer: "http", entries: 4, covered: 3, noBar: 0, noCase: 0, noClass: 1 },
+      { layer: "http", entries: 5, covered: 4, noBar: 0, noCase: 0, noClass: 1 },
     ]);
     expect(ATLAS.worlds).toEqual([
-      { world: "loopback", entries: 13, covered: 12, noBar: 0, noCase: 0, noClass: 1 },
+      { world: "loopback", entries: 14, covered: 13, noBar: 0, noCase: 0, noClass: 1 },
       { world: "kernel", entries: 10, covered: 7, noBar: 0, noCase: 0, noClass: 3 },
       { world: "containerlab", entries: 19, covered: 2, noBar: 0, noCase: 0, noClass: 17 },
       { world: "vm", entries: 7, covered: 2, noBar: 0, noCase: 0, noClass: 5 },
@@ -188,7 +188,7 @@ describe("atlasMarkdown", () => {
 
   it("gives a row for each layer and each world, with a line of the totals", () => {
     expect(lines).toContain("| `link` | 2 | 1 | 0 | 0 | 1 |");
-    expect(lines).toContain("| All | 49 | 23 | 0 | 0 | 26 |");
+    expect(lines).toContain("| All | 50 | 24 | 0 | 0 | 26 |");
     expect(lines).toContain("| containerlab | 19 | 2 | 0 | 0 | 17 |");
     const table = lines.filter((line) => line.startsWith("|"));
     for (const line of table) expect(line.split("|").length - 2, line).toBe(6);
@@ -196,7 +196,7 @@ describe("atlasMarkdown", () => {
   });
 
   it("names the gaps of the bars and the classes that the atlas proposes", () => {
-    expect(lines).toContain("- The atlas has 49 entries. 23 name a class of the catalog, and 26 have no class.");
+    expect(lines).toContain("- The atlas has 50 entries. 24 name a class of the catalog, and 26 have no class.");
     expect(lines.find((line) => line.startsWith("- The gaps of the labs"))).toBeUndefined();
     expect(lines.find((line) => line.startsWith("- The gaps of the bars"))).toBeUndefined();
     expect(lines).toContain("- The gaps of the catalog. The atlas proposes 25 classes:");

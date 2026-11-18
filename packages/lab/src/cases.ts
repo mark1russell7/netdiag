@@ -236,6 +236,15 @@ export const LOOPBACK_CASES: readonly LabCase[] = [
     signs: [sign("http.status", "server-error"), sign("http.status", "ok", false)],
   },
   {
+    id: "proxy.error",
+    truth: "proxy.error",
+    summary: "A TLS proxy with a root that the user trusts replies with the status 502 to each request to the target.",
+    dns: ANSWER,
+    target: { certificate: "proxy", status: 502 },
+    reference: HEALTHY,
+    signs: [sign("tls.trust", "private"), sign("http.status", "server-error"), sign("http.status", "ok", false)],
+  },
+  {
     id: "captive.portal",
     truth: "captive.portal",
     summary: "The resolver gives the address of a captive portal for each name.",

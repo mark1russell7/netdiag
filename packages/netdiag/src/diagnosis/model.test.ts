@@ -187,6 +187,15 @@ describe("the rules of practice", () => {
     );
   });
 
+  it("names a failing proxy of the network when the issuer is private and the status is an error", () => {
+    // Only a TLS proxy that the clients trust can give an HTTP status for an HTTPS site.
+    expect(top([e("tls.handshake", "ok"), e("tls.trust", "private"), e("http.status", "server-error")])).toBe("proxy.error");
+    expect(top([e("tls.handshake", "ok"), e("tls.trust", "public"), e("http.status", "server-error")])).toBe("server.error");
+    expect(top([e("tls.handshake", "ok"), e("tls.trust", "private"), e("http.status", "ok")])).toBe("tls.proxy");
+    const reference = [e("tls.trust", "public", false), e("http.status", "ok", false)];
+    expect(top([e("tls.trust", "private"), e("http.status", "server-error"), ...reference])).toBe("proxy.error");
+  });
+
   it("names a slow server when the first byte is slow and the handshakes are fast", () => {
     expect(top([e("tcp.time", "short"), e("tls.ratio", "low"), e("http.status", "ok"), e("http.ttfb", "high")])).toBe("server.slow");
   });

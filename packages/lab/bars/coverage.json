@@ -1,9 +1,9 @@
 {
-  "gaps": 613,
-  "classGaps": 103,
+  "gaps": 619,
+  "classGaps": 109,
   "proposalGaps": 510,
-  "cells": 651,
-  "covered": 37,
+  "cells": 658,
+  "covered": 38,
   "impossible": 1,
-  "note": "The simulated world on E0 covers 20 classes of the catalog. The class path.mtu got its bar on E0 when the faults of the path got both reaches and each class got 80 cases, so the gaps fall from 614 to 613. The class link.duplex needs a physical NIC, so E4 cannot have it."
+  "note": "The new class proxy.error (a failing proxy of the network) adds 7 cells. The simulated world covers it on E0. The loopback lab has its case on E1, with no bar until a dispatch of 5 runs gives one. So the gaps rise from 613 to 619. The class link.duplex needs a physical NIC, so E4 cannot have it."
 }
