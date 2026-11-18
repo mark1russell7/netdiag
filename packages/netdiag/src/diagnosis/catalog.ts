@@ -281,7 +281,10 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Find the first hop with loss, and tell the provider of that network.",
     predicts: {
       "path.loss": { expect: ["some", "high"], strength: "strong" },
-      "tcp.time": { expect: ["long", "retry"], strength: "usual" },
+      // A loss does not slow a connect: each SYN passes at once, or the client sends it again after 1 s.
+      "tcp.time": { expect: ["short", "retry"], strength: "strong" },
+      // A lost segment of the TLS handshake waits for a retransmit, so the handshake takes longer than the connect.
+      "tls.ratio": { expect: ["mid", "high"], strength: "weak" },
       "http.ttfb": { expect: ["mid", "high"], strength: "weak" },
     },
   },
@@ -372,7 +375,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "3",
+  version: "4",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };
