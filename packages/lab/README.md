@@ -354,11 +354,10 @@ The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
 
 | Class | Hits | The other answers | The cause |
 | --- | --- | --- | --- |
-| `path.loss` | 97 % | `wifi.weak`, `ipv6.broken`, `none`, `server.slow` | The 11 misses go to four other answers, with a loss from 9 % to 83 %. Their cause is a later step. |
+| `path.loss` | 97 % | `wifi.weak`, `ipv6.broken`, `none`, `server.slow` | The 12 misses go to four other answers, with a loss from 9 % to 83 %. Their cause is a later step. |
 | `wifi.weak` | 98 % | `path.loss` | Each of the 8 misses has a radio loss of 25 % or less. Their cause is a later step. |
-| `resolver.failing` | 99 % | `name.missing` | In each of the 4 misses, the resolver refuses the name of the target and answers the name of the reference. Their cause is a later step. |
 
-Ten changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last eight with 80:
+Eleven changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last nine with 80:
 
 - A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
 - When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.
@@ -370,3 +369,4 @@ Ten changes of ND-17 closed weak points. The first two are measures with 12 case
 - A loss has two degrees, light and heavy. Under a heavy loss, DNS, TCP, TLS and HTTP time out together. Before, the model took each timeout as one more sign against a loss. A heavy loss read as a down resolver or a filter. `path.loss` went from 88 % to 97 %, and `wifi.weak` from 86 % to 98 %. The kernel lab reads all 70 recorded cases of each class correctly.
 - A device of the network can give an HTTP status for an HTTPS site only as a TLS proxy that the clients trust. Thus an HTTP error at the gateway or at the provider comes from a proxy, not from the server. The new class `proxy.error` expects a private issuer and an error status. Before, the simulated world labeled these cases `server.error`, and 7 of them read as `tls.proxy`. `server.error` hits 392 of 400, and `proxy.error` hits 394 of 400. The loopback lab has a case of `proxy.error`: a TLS proxy that gives the status 502.
 - The simulated world visits a case again after a silent visit. Before, each silent visit was a miss: `server.error` had 8, `proxy.error` 6 and `filter.reset` 4. The three classes went to 100 %, with no change of the model. The other classes did not change.
+- A prediction gives the rest of its mass to the other values as the healthy distribution, with the floor for each value. Before, `name.missing` gave `servfail` the same 0.02 as a healthy answer. `resolver.failing` went from 99 % to 100 %. One case of `path.loss` at a near tie (0.57 to 0.43) went to `wifi.weak`.
