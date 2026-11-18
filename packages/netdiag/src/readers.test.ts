@@ -204,7 +204,7 @@ describe("the tables of the readers", () => {
   it("put a number at a limit in the next bin", () => {
     expect([149.9, 150, 899, 900, 5000].map((ms) => binOf(TCP_TIME_BINS, ms))).toEqual(["short", "long", "long", "retry", "retry"]);
     expect([2.9, 3, 7.9, 8].map((r) => binOf(TLS_RATIO_BINS, r))).toEqual(["low", "mid", "mid", "high"]);
-    expect([18 / 20, 19 / 20, 57 / 60, 99 / 100, 1].map((r) => binOf(PATH_LOSS_BINS, r))).toEqual(["high", "some", "some", "some", "none"]);
+    expect([9 / 20, 10 / 20, 18 / 20, 19 / 20, 57 / 60, 99 / 100, 1].map((r) => binOf(PATH_LOSS_BINS, r))).toEqual(["most", "high", "high", "some", "some", "some", "none"]);
     expect(() => binOf([{ below: 1, value: "a" }], 2)).toThrow(RangeError);
   });
 
@@ -352,8 +352,8 @@ describe("readEvidence", () => {
 
   it("gives path.loss only for replies to LOSS_MIN_SENT requests or more", () => {
     const n = LOSS_MIN_SENT;
-    const facts = factsOf([echo("192.0.2.1", "reply", n, n), echo("192.0.2.2", "reply", n, n - 1), echo("192.0.2.3", "reply", n, n - 2), echo("192.0.2.4", "reply", n - 1, 1), echo("192.0.2.5", "none", n)]);
-    expect(valuesOf(readEvidence(facts).evidence, "path.loss")).toEqual(["none", "some", "high"]);
+    const facts = factsOf([echo("192.0.2.1", "reply", n, n), echo("192.0.2.2", "reply", n, n - 1), echo("192.0.2.3", "reply", n, n - 2), echo("192.0.2.4", "reply", n - 1, 1), echo("192.0.2.5", "none", n), echo("192.0.2.6", "reply", n, 3)]);
+    expect(valuesOf(readEvidence(facts).evidence, "path.loss")).toEqual(["none", "some", "high", "most"]);
   });
 
   it("gives gateway.loss for the loss to the gateway, from ping or from mtr, and path.loss for each other address", () => {

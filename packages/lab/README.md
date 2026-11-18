@@ -38,6 +38,8 @@ On a computer with no set-up, `--hosts local` uses addresses of `127.0.0.0/8`. T
 
 The command writes `runs.ndjson`, `records.ndjson`, `score.json` and `summary.md`. With `--bars <file>`, it also writes `gate.json`, and a failed gate gives the exit code 1.
 
+The summary tells the largest distance of an alike cause and the smallest distance of another cause. A cause in the band around the alike bound is a problem, and the exit code is then 2. Refer to `bandProblems` of netdiag.
+
 ### The sample reports of the site
 
 The command `samples-main.ts` starts the world of each loopback case. Then it starts `netdiag check` in the world, as a user does:
@@ -76,7 +78,7 @@ Each round starts one world. Each case adds its fault to the world, starts the a
 | Case | Fault |
 | --- | --- |
 | `none` | No fault. |
-| `filter.drop` | The harness drops each packet of the target. |
+| `filter.drop` | The harness drops each packet of the target. The client gets no answer, as from a host that is down behind a silent router. The degree `all` of `filter.drop` and the degree `silent` of `host.down` have the same predictions. Thus each record gets `host.down` as `alike`. |
 | `filter.icmp` | The target ignores each echo request (`net.ipv4.icmp_echo_ignore_all`). |
 | `path.loss` | `netem` drops 20% of the packets of the target. |
 | `path.mtu` | The router drops each TCP packet above 1200 bytes toward the two servers. |
@@ -333,9 +335,11 @@ pnpm --filter @netdiag/lab sim [--out <folder>] [--write]
 ```
 
 - The command prints the hits of each class, the hits of each option at each place, and the bands.
+- The command also prints the alike band of the records of all seeds. A cause in the band around the alike bound is a problem of the runs.
 - Without `--write`, the exit code is 1 when `bars/sim.json` does not have the bars of the runs.
 - A unit test of `src/sim/sim.test.ts` does the same check. Thus the job `ci / checks` stops a fall of a bar.
 - To change the bars, start the command with `--write`. Tell the reason in the pull request.
+- The workflow `sim.yml` starts the command with `--write` on each pull request. Its summary gives the diff of each file of the bars, and its artifact has the files.
 - With `--out`, the command also writes `summary.md` and the outcome of each case into the folder. Each outcome has the number of its visits.
 
 A class with a bar above 0 is covered on E0. Each class has a bar above 0 today.
@@ -354,9 +358,9 @@ The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
 
 | Class | Hits | The other answers | The cause |
 | --- | --- | --- | --- |
-| `path.loss` | 99 % | `none` | Three visits lost 1 ping of 20, with each other value on time. Then a light loss and no loss have almost the same probability. One visit lost the `A` query of each name, and the `AAAA` answers hid the timeouts. Two visits lost pings to only one of two hosts. |
+| `path.loss` | 98 % | `none`, `resolver.down` | Five visits lost 1 ping of 20, with each other value on time. A healthy path loses 1 ping of 20 in 8 of 100 visits, so one visit cannot tell them apart. One visit lost the `A` query of each name, and the `AAAA` answers hid the timeouts. Two visits lost pings to only one of two hosts. One loss of 58 % made both DNS queries time out, and read as a down resolver. |
 
-Fourteen changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last twelve with 80:
+Sixteen changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last fourteen with 80:
 
 - A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
 - When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.
@@ -372,3 +376,6 @@ Fourteen changes of ND-17 closed weak points. The first two are measures with 12
 - The loss to the gateway is the new feature `gateway.loss`. The new reach `upstream` changes each host past the gateway, but not the local features. `path.loss` has the reaches `shared`, `upstream` and `target`, with the shares 1, 1 and 2 of its prior. `wifi.weak` needs a connected Wi-Fi interface. `path.loss` went from 388 to 387 hits, and `wifi.weak` from 392 to 397. Before, 2 wired cases read as `wifi.weak`, and 0 do so after the change.
 - A loss does the same to TCP and HTTP at each place where it starts. Thus `wifi.weak` and `path.loss` take the signs of a loss in `tcp.time` and `http.ttfb` from one place. Before, `wifi.weak` expected a slow connect. `path.loss` went from 387 to 393 hits of 400, and `wifi.weak` from 397 to 400.
 - The signs of a loss come from the tries of each step. A step with k tries times out with the chance q^k, under the chance q of a loss of one exchange. A connect that sent its SYN again gives no `tls.ratio` and no `http.ttfb` (Karn's rule). Before, a slow first byte after a late connect read as a slow server. `path.loss` went from 393 to 394 hits of 400. On the seeds 6 to 10, which are not in the fit, it went from 390 to 394.
+- Each mode of a fault is a degree with one expected value. A down resolver is silent or absent, and each query of a visit shows the same mode. Before, each query paid for the split of the strength between the two values. Thus 4 DNS timeouts with a gateway that answers read as `gateway.down` (0.62). They read as `resolver.down` (0.82) after the change.
+- The degrees of a loss are a grid of the chance q of a loss of one exchange, from 0.05 to 0.9. The bins of `path.loss` follow the binomial distribution of 20 pings, with the new bin `most` for less than half of the replies. Before, a light loss gave 1 lost ping of 20 the chance 0.45, but no loss gives it a chance above 0.38.
+- With the modes and the grid, `path.loss` went from 394 to 391 hits of 400, and to 392 on the seeds 6 to 10. The other 21 classes stay at 400. Three of the 5 new misses are near ties. In the other two, the evidence fits another cause better. The 3 new misses of the seeds 1 to 5 are all in seed 3, so the bar of `path.loss` went from 0.831 to 0.747. Step 6 sends more probes for these cases.

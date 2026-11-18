@@ -1,4 +1,5 @@
 import { addressKind, canonicalAddress } from "./address/index.ts";
+import { binOf, LOSS_MIN_SENT, PATH_LOSS_BINS, type Bin } from "./diagnosis/bins.ts";
 import type { Evidence } from "./diagnosis/model.ts";
 import { isFactOf, type Fact, type FactKind } from "./fact.ts";
 import { wifiSignalOf } from "./metrics/wifi.ts";
@@ -60,11 +61,8 @@ export interface ReadOptions {
   readonly gateway?: string | undefined;
 }
 
-/** A bin of a time or a ratio. A number below `below` gets `value`. The last bin has no limit. */
-export interface Bin {
-  readonly below?: number | undefined;
-  readonly value: string;
-}
+// The loss bins are data of the catalog, so they are in the entry ./diagnosis. The reader gives them here too.
+export { binOf, LOSS_MIN_SENT, PATH_LOSS_BINS, type Bin } from "./diagnosis/bins.ts";
 
 /** The bins of the feature `tcp.time`, in milliseconds. A connect of 900 ms or more sent its SYN again. */
 export const TCP_TIME_BINS: readonly Bin[] = [{ below: 150, value: "short" }, { below: 900, value: "long" }, { value: "retry" }];
@@ -134,17 +132,7 @@ export const PATH_MTU_VALUES: Readonly<Record<MtuStop | "full", string>> = { ful
  */
 export const GATEWAY_REPLY_VALUES: Readonly<Partial<Record<EchoOutcome, string>>> = { reply: "reply", none: "none", unreachable: "none" };
 
-/**
- * The bins of the feature `path.loss`, on the share of the echo requests with a reply. A share of 1 has no loss. A share
- * of 0.95 or more has a loss of up to 5 %.
- */
-export const PATH_LOSS_BINS: readonly Bin[] = [{ below: 0.95, value: "high" }, { below: 1, value: "some" }, { value: "none" }];
 
-/**
- * The smallest number of echo requests that gives the feature `path.loss`. With 20 requests, one lost request is a loss
- * of 5 %. With no reply, the feature `icmp.reply` tells the result, not `path.loss`.
- */
-export const LOSS_MIN_SENT = 20;
 
 /**
  * The bins of the feature `wifi.signal`, on the signal level in dBm. A level below -75 dBm is weak. A level of -60 dBm or
@@ -155,11 +143,6 @@ export const WIFI_SIGNAL_BINS: readonly Bin[] = [{ below: -75, value: "weak" }, 
 /** The suffixes of the names of local networks and of the special-use names (RFC 6761, RFC 6762 and RFC 8375). */
 export const LOCAL_SUFFIXES: readonly string[] = ["local", "localhost", "test", "invalid", "example", "home.arpa", "internal", "lan", "home", "corp", "intranet", "private"];
 
-/** This function gives the value of the first bin that holds `x`. */
-export function binOf(bins: readonly Bin[], x: number): string {
-  for (const bin of bins) if (bin.below === undefined || x < bin.below) return bin.value;
-  throw new RangeError("The last bin has a limit.");
-}
 
 /** This function tells if a name is a local name: a name with one label, or a name with a local suffix. */
 export function isLocalName(name: string): boolean {

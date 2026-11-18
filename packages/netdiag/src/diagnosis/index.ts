@@ -4,18 +4,24 @@
  * This entry imports no `node:` module, so a browser can also use it.
  */
 export {
+  ALIKE_EPSILON,
+  ALIKE_MARGIN,
   FLOOR,
   NONE,
   PARTS,
   REACHES,
   STRENGTHS,
   UNKNOWN,
+  alikeCauses,
+  alikeDistance,
+  alikeMargin,
   causeVariants,
   compileCatalog,
   diagnose,
   expand,
   explain,
   predictive,
+  type AlikeMargin,
   type Catalog,
   type CatalogSpec,
   type Cause,
@@ -36,15 +42,19 @@ export {
   type ReachShare,
   type Strength,
 } from "./model.ts";
-export { EXCHANGE_LOSS, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CATALOG_SPEC, STANDARD_FAULTS, STANDARD_FEATURES, type LossStep } from "./catalog.ts";
+export { LOSS_DEGREES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CATALOG_SPEC, STANDARD_FAULTS, STANDARD_FEATURES, type LossDegree, type LossStep } from "./catalog.ts";
 export { GAIN_RESOLUTION, MAX_JOINT_VALUES, rankProbes, type Candidate, type Observable, type ProbeChoice, type RankOptions } from "./next.ts";
 export {
   LAB_BAR_STEP,
   LAB_RECORD_FORMAT,
+  alikeBand,
+  bandProblems,
   labBars,
   labGate,
   labRecordOf,
   scoreLab,
+  scoredCause,
+  type AlikeBand,
   type LabBars,
   type LabBarsOptions,
   type LabCause,

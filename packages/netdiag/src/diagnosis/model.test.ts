@@ -1,14 +1,20 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
-  EXCHANGE_LOSS,
+  ALIKE_EPSILON,
+  ALIKE_MARGIN,
   FLOOR,
+  LOSS_DEGREES,
   LOSS_STEPS,
   NONE,
   STANDARD_CATALOG,
   STANDARD_CATALOG_SPEC,
   STANDARD_FEATURES,
+  STRENGTHS,
   UNKNOWN,
+  alikeCauses,
+  alikeDistance,
+  alikeMargin,
   causeVariants,
   compileCatalog,
   diagnose,
@@ -349,10 +355,10 @@ describe("a fault with three reaches and their shares", () => {
     diagnose(catalog, evidence).causes.find((cause) => cause.id === "path.loss")?.reaches?.find((share) => share.reach === reach)?.probability ?? Number.NaN;
 
   it("keeps the local features healthy under the reach upstream, and changes the others on each host", () => {
-    expect(catalog.likelihood("path.loss", "gateway.loss", "none", true, "upstream")).toBe(catalog.likelihood(NONE, "gateway.loss", "none", true));
+    expect(catalog.likelihood("path.loss", "gateway.loss", "none", true, "upstream")).toBeCloseTo(catalog.likelihood(NONE, "gateway.loss", "none", true), 12);
     expect(catalog.likelihood("path.loss", "gateway.loss", "none", true, "shared")).toBeLessThan(catalog.likelihood(NONE, "gateway.loss", "none", true));
     expect(catalog.likelihood("path.loss", "path.loss", "some", false, "upstream")).toBe(catalog.likelihood("path.loss", "path.loss", "some", true, "upstream"));
-    expect(catalog.likelihood("path.loss", "path.loss", "some", false, "target")).toBe(catalog.likelihood(NONE, "path.loss", "some", false));
+    expect(catalog.likelihood("path.loss", "path.loss", "some", false, "target")).toBeCloseTo(catalog.likelihood(NONE, "path.loss", "some", false), 12);
   });
 
   it("gives each reach its share of the prior, and the mean of the reaches by their shares", () => {
@@ -360,7 +366,7 @@ describe("a fault with three reaches and their shares", () => {
     expect(catalog.prior("path.loss", undefined, "shared")).toBeCloseTo(whole / 4, 12);
     expect(catalog.prior("path.loss", undefined, "upstream")).toBeCloseTo(whole / 4, 12);
     expect(catalog.prior("path.loss", undefined, "target")).toBeCloseTo(whole / 2, 12);
-    expect(catalog.prior("path.loss", "light", "target")).toBeCloseTo(catalog.prior("path.loss", "light") / 2, 12);
+    expect(catalog.prior("path.loss", "loss-5", "target")).toBeCloseTo(catalog.prior("path.loss", "loss-5") / 2, 12);
     expect(catalog.prior("tls.proxy", undefined, "target")).toBeCloseTo(catalog.prior("tls.proxy") / 2, 12);
     expect(catalog.prior("server.slow", undefined, "upstream")).toBe(0);
     const of = (reach: Reach): number => catalog.likelihood("path.loss", "gateway.loss", "none", false, reach);
@@ -368,47 +374,56 @@ describe("a fault with three reaches and their shares", () => {
   });
 
   it("finds where a loss starts: before the gateway or past it", () => {
-    const past = [e("gateway.loss", "none"), e("path.loss", "some"), e("path.loss", "some", false)];
+    // A loss of 15 % loses 2 pings of 20 or more in 82 of 100 visits. One lost ping of 20 is a weak sign, because a
+    // healthy path loses one in 8 of 100 visits.
+    const past = [e("gateway.loss", "none"), e("path.loss", "high"), e("path.loss", "high", false)];
     expect(top(past)).toBe("path.loss");
     expect(reachOf(past, "upstream")).toBeGreaterThan(reachOf(past, "shared"));
     expect(reachOf(past, "upstream")).toBeGreaterThan(reachOf(past, "target"));
-    const before = [e("gateway.loss", "some"), e("path.loss", "some"), e("path.loss", "some", false)];
+    const before = [e("gateway.loss", "high"), e("path.loss", "high"), e("path.loss", "high", false)];
     expect(reachOf(before, "shared")).toBeGreaterThan(reachOf(before, "upstream"));
   });
 });
 
 describe("a fault with degrees", () => {
   // A read of the simulated world: a loss of 76 % at the gateway. Each DNS try fails at the target and at the reference.
+  // The reference replies to less than half of the pings.
   const heavy = [
     e("dns.answer", "timeout"),
     e("dns.answer", "timeout", false),
     e("gateway.reply", "reply", false),
-    e("path.loss", "high", false),
+    e("path.loss", "most", false),
     e("link.state", "up", false),
     e("wifi.signal", "strong", false),
     e("wifi.state", "connected", false),
   ];
   const lossOf = (evidence: readonly Evidence[]) => diagnose(catalog, evidence).causes.find((cause) => cause.id === "path.loss");
-  const degreeOf = (evidence: readonly Evidence[], degree: string): number => lossOf(evidence)?.degrees?.find((share) => share.degree === degree)?.probability ?? Number.NaN;
+  const lossOfDegree = (degree: string | undefined): number => LOSS_DEGREES.find((each) => each.id === degree)?.loss ?? Number.NaN;
+  const likeliestDegree = (evidence: readonly Evidence[]): string | undefined =>
+    [...(lossOf(evidence)?.degrees ?? [])].sort((a, b) => b.probability - a.probability)[0]?.degree;
 
   it("names a heavy loss when each DNS try fails and the reference loses packets", () => {
     expect(top(heavy)).toBe("path.loss");
-    expect(degreeOf(heavy, "heavy")).toBeGreaterThan(degreeOf(heavy, "light"));
+    expect(lossOfDegree(likeliestDegree(heavy))).toBeGreaterThanOrEqual(0.5);
   });
 
   it("takes the signs of a loss in each step from the tries of the step", () => {
     const healthy = (feature: string, value: string): number => catalog.likelihood(NONE, feature, value, true);
-    for (const [degree, loss] of Object.entries(EXCHANGE_LOSS)) {
+    for (const { id, loss } of LOSS_DEGREES) {
       for (const step of LOSS_STEPS) {
         const timeout = loss ** step.tries;
-        const expected = timeout + (1 - timeout) * healthy(step.feature, step.timeout);
-        expect(catalog.likelihood("path.loss", step.feature, step.timeout, true, "target", degree)).toBeCloseTo(expected, 12);
+        const expected = Math.max(FLOOR, timeout + (1 - timeout) * healthy(step.feature, step.timeout));
+        expect(catalog.likelihood("path.loss", step.feature, step.timeout, true, "target", id)).toBeCloseTo(expected, 12);
       }
     }
-    // Under a heavy loss, a connect that passes lost its first SYN in 0.54 of the visits. So it gives retry.
-    const late = (EXCHANGE_LOSS.heavy - EXCHANGE_LOSS.heavy ** 3) / (1 - EXCHANGE_LOSS.heavy ** 3);
+    // Under a loss of 0.7, a connect that passes lost its first SYN in 0.54 of the visits. So it gives retry.
+    const heavy = lossOfDegree("loss-70");
+    const late = (heavy - heavy ** 3) / (1 - heavy ** 3);
     expect(late).toBeCloseTo(0.543, 3);
-    expect(catalog.likelihood("path.loss", "tcp.time", "retry", true, "target", "heavy")).toBeCloseTo(late + (1 - late) * healthy("tcp.time", "retry"), 12);
+    expect(catalog.likelihood("path.loss", "tcp.time", "retry", true, "target", "loss-70")).toBeCloseTo(late + (1 - late) * healthy("tcp.time", "retry"), 12);
+    // The pings follow the binomial of 20 requests: a visit under a loss of 0.05 loses no ping with the chance 0.95^20.
+    const none = (1 - STRENGTHS.sure) * healthy("path.loss", "none") + STRENGTHS.sure * 0.95 ** 20;
+    expect(catalog.likelihood("path.loss", "path.loss", "none", true, "target", "loss-5")).toBeCloseTo(none, 3);
   });
 
   it("names a loss that passes its tries, and not a broken family, when the connects of one family fail", () => {
@@ -448,48 +463,53 @@ describe("a fault with degrees", () => {
       e("http.status", "ok", false),
       e("icmp.reply", "reply"),
       e("icmp.reply", "reply", false),
-      e("path.loss", "high"),
+      e("path.loss", "most"),
       e("path.loss", "none", false),
     ];
     expect(top(target)).toBe("path.loss");
-    expect(degreeOf(target, "heavy")).toBeGreaterThan(degreeOf(target, "light"));
+    expect(lossOfDegree(likeliestDegree(target))).toBeGreaterThanOrEqual(0.5);
   });
 
   it("gives the table of each degree, and their mean with the shares without a degree", () => {
-    const light = catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared", "light");
-    const severe = catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared", "heavy");
-    expect(light).toBeLessThan(severe);
-    expect(catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared")).toBeCloseTo(0.75 * light + 0.25 * severe, 12);
-    // A degree keeps each prediction of the fault that it does not replace: light keeps `path.loss` some or high (strong).
-    expect(catalog.likelihood("path.loss", "path.loss", "high", true, "shared", "light")).toBeCloseTo(0.45, 12);
-    expect(catalog.likelihood("path.loss", "path.loss", "high", true, "shared", "heavy")).toBeCloseTo(0.9, 12);
+    const timeouts = LOSS_DEGREES.map((degree) => catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared", degree.id));
+    timeouts.slice(1).forEach((p, index) => expect(p).toBeGreaterThan(timeouts[index] ?? Number.NaN));
+    const total = LOSS_DEGREES.reduce((sum, degree) => sum + degree.share, 0);
+    const mean = LOSS_DEGREES.reduce((sum, degree, index) => sum + (degree.share / total) * (timeouts[index] ?? Number.NaN), 0);
+    expect(catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared")).toBeCloseTo(mean, 12);
+    // A larger loss gives more visits with less than half of the replies.
+    const most = LOSS_DEGREES.map((degree) => catalog.likelihood("path.loss", "path.loss", "most", true, "shared", degree.id));
+    most.slice(1).forEach((p, index) => expect(p).toBeGreaterThanOrEqual(most[index] ?? Number.NaN));
+    // A degree keeps each prediction of the fault that it does not replace: each degree of wifi.weak keeps the weak signal.
+    expect(catalog.likelihood("wifi.weak", "wifi.signal", "weak", false, undefined, "loss-5")).toBe(catalog.likelihood("wifi.weak", "wifi.signal", "weak", false, undefined, "loss-90"));
+    expect(catalog.likelihood("wifi.weak", "wifi.signal", "weak", false, undefined, "loss-5")).toBeGreaterThan(catalog.likelihood(NONE, "wifi.signal", "weak", false));
     // A fault of the target uses the healthy distribution on a reference host for each degree.
-    expect(catalog.likelihood("path.loss", "dns.answer", "timeout", false, "target", "heavy")).toBe(catalog.likelihood(NONE, "dns.answer", "timeout", false));
+    expect(catalog.likelihood("path.loss", "dns.answer", "timeout", false, "target", "loss-90")).toBe(catalog.likelihood(NONE, "dns.answer", "timeout", false));
   });
 
   it("gives the part of the prior of each degree", () => {
     const whole = catalog.prior("path.loss");
-    expect(catalog.prior("path.loss", "light")).toBeCloseTo(0.75 * whole, 12);
-    expect(catalog.prior("path.loss", "heavy")).toBeCloseTo(0.25 * whole, 12);
+    expect(catalog.prior("path.loss", "loss-5")).toBeCloseTo((3 / 12) * whole, 12);
+    expect(catalog.prior("path.loss", "loss-90")).toBeCloseTo((1 / 12) * whole, 12);
     expect(catalog.prior("path.loss", "medium")).toBe(0);
   });
 
   it("gives no number for a degree that the hypothesis does not have", () => {
     expect(catalog.likelihood("path.loss", "dns.answer", "timeout", true, undefined, "medium")).toBeNaN();
-    expect(catalog.likelihood("server.slow", "http.ttfb", "high", true, undefined, "heavy")).toBeNaN();
-    expect(catalog.likelihood(NONE, "http.ttfb", "high", true, undefined, "heavy")).toBeNaN();
-    expect(catalog.hypotheses.find((h) => h.id === "path.loss")?.degree).toEqual(["light", "heavy"]);
+    expect(catalog.likelihood("server.slow", "http.ttfb", "high", true, undefined, "loss-90")).toBeNaN();
+    expect(catalog.likelihood(NONE, "http.ttfb", "high", true, undefined, "loss-90")).toBeNaN();
+    expect(catalog.hypotheses.find((h) => h.id === "path.loss")?.degree).toEqual(LOSS_DEGREES.map((degree) => degree.id));
     expect(catalog.hypotheses.find((h) => h.id === "server.slow")?.degree).toBeUndefined();
   });
 
   it("gives the probability of each degree and each variant, with a sum of the probability of the cause", () => {
     const cause = lossOf(heavy);
     const p = cause?.probability ?? Number.NaN;
-    expect(cause?.degrees?.map((share) => share.degree)).toEqual(["light", "heavy"]);
+    expect(cause?.degrees?.map((share) => share.degree)).toEqual(LOSS_DEGREES.map((degree) => degree.id));
     expect((cause?.degrees ?? []).reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(p, 12);
     expect((cause?.reaches ?? []).reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(p, 12);
     const variants = cause === undefined ? [] : causeVariants(cause);
-    expect(variants.map((variant) => `${variant.degree ?? ""}/${variant.reach ?? ""}`)).toEqual(["light/shared", "light/upstream", "light/target", "heavy/shared", "heavy/upstream", "heavy/target"]);
+    const expected = LOSS_DEGREES.flatMap((degree) => ["shared", "upstream", "target"].map((reach) => `${degree.id}/${reach}`));
+    expect(variants.map((variant) => `${variant.degree ?? ""}/${variant.reach ?? ""}`)).toEqual(expected);
     expect(variants.reduce((sum, variant) => sum + variant.probability, 0)).toBeCloseTo(p, 12);
     const slow = diagnose(catalog, heavy).causes.find((each) => each.id === "server.slow");
     expect(slow?.degrees).toBeUndefined();
@@ -497,7 +517,7 @@ describe("a fault with degrees", () => {
   });
 
   it("explains a fault by its most probable degree", () => {
-    // The weight of the DNS timeout comes from the degree heavy, the most probable degree of this read.
+    // The weight of the DNS timeout comes from the most probable degree of this read, a loss of 0.5 or more.
     const causes = diagnose(catalog, heavy).causes;
     const likeliest = (id: string) => {
       const cause = causes.find((each) => each.id === id);
@@ -505,12 +525,38 @@ describe("a fault with degrees", () => {
     };
     const first = likeliest("path.loss");
     const second = likeliest("resolver.down");
-    expect(first?.degree).toBe("heavy");
+    expect(lossOfDegree(first?.degree)).toBeGreaterThanOrEqual(0.5);
     const timeout = (id: string, variant: typeof first): number => catalog.likelihood(id, "dns.answer", "timeout", true, variant?.reach, variant?.degree);
     const why = explain(catalog, heavy, "path.loss", "resolver.down");
     const weight = why.find((item) => item.evidence.feature === "dns.answer" && item.evidence.primary)?.weight;
     expect(weight).toBeCloseTo(Math.log10(timeout("path.loss", first)) - Math.log10(timeout("resolver.down", second)), 12);
     expect(why[0]?.evidence.feature).toBe("path.loss");
+  });
+});
+
+describe("the modes of a fault", () => {
+  // The sample of a silent resolver: the DNS queries of the target and of the reference time out, and the gateway answers.
+  const silent = [
+    e("dns.answer", "timeout"),
+    e("dns.answer", "timeout", false),
+    e("gateway.reply", "reply", false),
+    e("gateway.loss", "none", false),
+    e("link.state", "up", false),
+    e("wifi.signal", "strong", false),
+    e("wifi.state", "connected", false),
+  ];
+
+  it("names a down resolver and its silent mode when each DNS query times out and the gateway answers", () => {
+    expect(top(silent)).toBe("resolver.down");
+    const cause = diagnose(catalog, silent).causes.find((each) => each.id === "resolver.down");
+    expect([...(cause?.degrees ?? [])].sort((a, b) => b.probability - a.probability)[0]?.degree).toBe("silent");
+  });
+
+  it("counts a mode once for each visit, so more timeouts do not move the read to another fault", () => {
+    // Before the modes, each subject paid for the split of the strength between two values. Four timeouts read as gateway.down.
+    const four = [...silent, e("dns.answer", "timeout"), e("dns.answer", "timeout", false)];
+    expect(top(four)).toBe("resolver.down");
+    expect(probability(four, "resolver.down")).toBeGreaterThanOrEqual(probability(silent, "resolver.down"));
   });
 });
 
@@ -603,6 +649,92 @@ describe("the properties of the model", () => {
         if (Number.isFinite(oddsBefore) && Number.isFinite(oddsAfter) && Number.isFinite(ratio)) expect(oddsAfter - oddsBefore).toBeCloseTo(ratio, 6);
       }),
       { seed: 20261115, numRuns: 300 },
+    );
+  });
+});
+
+describe("alikeCauses", () => {
+  const twin = (id: string, prior: number) => ({ id, part: "service" as const, layer: "tcp" as const, reach: "target" as const, summary: "", step: "", prior, predicts: { "tcp.connect": { expect: "timeout", strength: "strong" as const } } });
+  // The fault d gives the timeout the same probability as a and b (0.9), but it moves the rest to refused.
+  const tied = { ...twin("d", 1), predicts: { "tcp.connect": { connected: 0.001, refused: 0.099, timeout: 0.9 } } };
+  const compiled = compileCatalog({ version: "t", features: [tcp], faults: [twin("a", 1), twin("b", 3), { ...twin("c", 1), predicts: { "tcp.connect": { expect: "refused", strength: "strong" } } }, tied] });
+  const small = compiled.tag === "ok" ? compiled.value : catalog;
+
+  it("gives the causes with the same predictions of the read features, also when their priors are not the same", () => {
+    const diagnosis = diagnose(small, [e("tcp.connect", "timeout")]);
+    expect(diagnosis.causes.map((cause) => cause.id).slice(0, 2)).toEqual(["b", "a"]);
+    expect(alikeCauses(small, diagnosis, "a")).toEqual(["b"]);
+    expect(alikeCauses(small, diagnosis, "b")).toEqual(["a"]);
+    expect(alikeCauses(small, diagnosis, "c")).toEqual([]);
+    expect(alikeDistance(small, diagnosis, "a", "b")).toBe(0);
+    // With no evidence, the diagnosis read no feature, so each cause is alike to each other cause.
+    const empty = diagnose(small, []);
+    expect(alikeCauses(small, empty, NONE)).toEqual(empty.causes.map((cause) => cause.id).filter((id) => id !== NONE));
+    expect(alikeCauses(small, empty, NONE)).toContain(UNKNOWN);
+  });
+
+  it("does not make a tie of the likelihoods of the evidence alone an alike cause", () => {
+    const diagnosis = diagnose(small, [e("tcp.connect", "timeout")]);
+    const p = new Map(diagnosis.causes.map((cause) => [cause.id, cause.probability]));
+    expect(p.get("d")).toBeCloseTo(p.get("a") ?? 0, 12);
+    expect(alikeCauses(small, diagnosis, "a")).not.toContain("d");
+    // The rest of a goes mostly to connected (the healthy distribution), and d gives connected the probability 0.001.
+    expect(alikeDistance(small, diagnosis, "a", "d")).toBeGreaterThan(ALIKE_EPSILON * ALIKE_MARGIN);
+    const margin = alikeMargin(small, diagnosis, "a");
+    expect(margin?.inner).toBe(0);
+    expect(margin?.outer).toBe(Math.min(...["c", "d", NONE, UNKNOWN].map((id) => alikeDistance(small, diagnosis, "a", id))));
+  });
+
+  it("gives no alike cause for a cause that is not in the diagnosis, and refuses a bound below 0", () => {
+    const diagnosis = diagnose(small, [e("tcp.connect", "timeout")]);
+    expect(alikeCauses(small, diagnosis, "dns.slow")).toEqual([]);
+    expect(alikeMargin(small, diagnosis, "dns.slow")).toBeUndefined();
+    expect(alikeDistance(small, diagnosis, "a", "dns.slow")).toBe(Number.POSITIVE_INFINITY);
+    expect(() => alikeCauses(small, diagnosis, "a", -1)).toThrow(RangeError);
+    expect(() => alikeMargin(small, diagnosis, "a", -1)).toThrow(RangeError);
+  });
+
+  it("finds host.down alike to filter.drop on the evidence of a target that drops each packet", () => {
+    // The kernel world of filter.drop gave this evidence in each round. The degree all of filter.drop and the degree
+    // silent of host.down have the same predictions, so the read probes cannot tell them apart.
+    const evidence = [
+      "dns.answer=ok@target", "dns.answer=ok@reference", "tcp.connect=timeout@target", "tcp.connect=connected@reference",
+      "tcp.time=short@reference", "tls.handshake=ok@reference", "tls.trust=public@reference", "tls.ratio=mid@reference",
+      "http.status=ok@reference", "http.ttfb=mid@reference", "icmp.reply=none@target", "icmp.reply=reply@reference",
+      "gateway.reply=reply@reference", "path.loss=none@reference", "gateway.loss=none@reference", "link.state=up@reference",
+    ].map((text) => {
+      const [pair = "", subject = ""] = text.split("@");
+      const [feature = "", value = ""] = pair.split("=");
+      return e(feature, value, subject === "target");
+    });
+    const diagnosis = diagnose(catalog, evidence);
+    expect(diagnosis.ignored).toEqual([]);
+    expect(diagnosis.causes.map((cause) => cause.id).slice(0, 2)).toEqual(["filter.drop", "host.down"]);
+    expect(alikeCauses(catalog, diagnosis, "filter.drop")).toEqual(["host.down"]);
+    expect(alikeCauses(catalog, diagnosis, "host.down")).toEqual(["filter.drop"]);
+    expect(alikeCauses(catalog, diagnosis, "filter.drop", 0)).toEqual(["host.down"]);
+    const margin = alikeMargin(catalog, diagnosis, "filter.drop");
+    expect(margin?.inner).toBe(0);
+    expect(margin?.outer).toBeGreaterThan(ALIKE_EPSILON * ALIKE_MARGIN);
+  });
+
+  it("is a symmetric relation that agrees with alikeDistance and alikeMargin", () => {
+    const ids = catalog.hypotheses.map((h) => h.id);
+    fc.assert(
+      fc.property(evidenceArb, fc.constantFrom(...ids), (evidence, id) => {
+        const diagnosis = diagnose(catalog, evidence);
+        const alike = alikeCauses(catalog, diagnosis, id);
+        for (const other of alike) expect(alikeCauses(catalog, diagnosis, other)).toContain(id);
+        const live = diagnosis.causes.filter((cause) => cause.probability > 0 && cause.id !== id).map((cause) => cause.id);
+        if (!live.length || !((diagnosis.causes.find((cause) => cause.id === id)?.probability ?? 0) > 0)) return;
+        const distances = live.map((other) => ({ other, d: alikeDistance(catalog, diagnosis, id, other) }));
+        expect(new Set(alike)).toEqual(new Set(distances.filter((each) => each.d <= ALIKE_EPSILON).map((each) => each.other)));
+        for (const { other, d } of distances) expect(alikeDistance(catalog, diagnosis, other, id)).toBe(d);
+        const margin = alikeMargin(catalog, diagnosis, id);
+        const outside = distances.filter((each) => each.d > ALIKE_EPSILON).map((each) => each.d);
+        expect(margin?.outer).toBe(outside.length > 0 ? Math.min(...outside) : undefined);
+      }),
+      { seed: 20261118, numRuns: 200 },
     );
   });
 });

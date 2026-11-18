@@ -109,8 +109,10 @@ export interface Fault {
   readonly prior?: number | undefined;
   readonly predicts: Readonly<Record<string, Prediction>>;
   /**
-   * The degrees of the fault. A degree is a severity that the facts do not tell directly, for example a light or a heavy
-   * loss. With no degrees, the fault has one degree. The model sums the variants of each degree and each reach.
+   * The degrees of the fault. A degree is a severity or a mode that the facts do not tell directly. Examples are a small
+   * or a large loss, and a silent or an absent resolver. A mode is the same on each subject of a visit, so a degree
+   * with one expected value counts it once. With no degrees, the fault has one degree. The model sums the variants of each
+   * degree and each reach.
    */
   readonly degrees?: readonly Degree[] | undefined;
 }
@@ -277,8 +279,8 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
       ...(degree !== undefined ? { degree } : {}),
     });
     const table = tableOf(fault.id, fault.predicts, features, problems);
-    if (table.size === 0) problems.push(`The fault ${fault.id} predicts no feature.`);
     if (fault.degrees === undefined) {
+      if (table.size === 0) problems.push(`The fault ${fault.id} predicts no feature.`);
       forms.set(fault.id, [{ id: undefined, share: 1, table }]);
       continue;
     }
@@ -288,7 +290,9 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
       fault.id,
       fault.degrees.map((each) => {
         const own = tableOf(`${fault.id} (${each.id})`, each.predicts ?? {}, features, problems);
-        return { id: each.id, share: each.share / total, table: new Map([...table, ...own]) };
+        const merged = new Map([...table, ...own]);
+        if (merged.size === 0) problems.push(`The fault ${fault.id} (${each.id}) predicts no feature.`);
+        return { id: each.id, share: each.share / total, table: merged };
       }),
     );
   }
@@ -514,6 +518,117 @@ export interface CauseVariant {
 export function causeVariants(cause: Cause): readonly CauseVariant[] {
   if (cause.variants !== undefined && cause.variants.length > 0) return cause.variants;
   return cause.reaches !== undefined && cause.reaches.length > 0 ? cause.reaches : [{ reach: undefined, probability: cause.probability }];
+}
+
+/**
+ * The default bound of `alikeCauses`, as a difference of natural logarithms. Two variants with the same predictions of
+ * the catalog give the same numbers, so their distance is 0. The bound is only for the errors of floating point.
+ */
+export const ALIKE_EPSILON = 1e-6;
+
+/**
+ * The factor of the empty band around the bound of `alikeCauses`. Each alike cause is `epsilon / ALIKE_MARGIN` or less
+ * from the cause, and each other cause is `epsilon * ALIKE_MARGIN` or more. A lab fails when a cause is in this band, so
+ * a change of the catalog cannot change an alike set silently.
+ */
+export const ALIKE_MARGIN = 100;
+
+/** This function gives the variant of a cause with the highest probability. A tie keeps the first variant. */
+function likeliestOf(cause: Cause): CauseVariant {
+  let best: CauseVariant = { reach: undefined, probability: cause.probability };
+  let found = false;
+  for (const variant of causeVariants(cause)) {
+    if (!found || variant.probability > best.probability) best = variant;
+    found = true;
+  }
+  return best;
+}
+
+/** This function gives each feature and subject of the evidence that the diagnosis used, one time each. */
+function readFeatures(diagnosis: Diagnosis): readonly Pick<Evidence, "feature" | "primary">[] {
+  return [...new Map(diagnosis.used.map((item) => [`${item.feature}@${String(item.primary)}`, { feature: item.feature, primary: item.primary }])).values()];
+}
+
+/**
+ * This function gives the distance of two causes for the probes that a diagnosis read. The likeliest variant of each
+ * cause gives a probability to each value of each read feature. The distance is the largest difference of the natural
+ * logarithms of these probabilities.
+ *
+ * - The distance is 0 when the read probes cannot tell the causes apart: each fact has the same probability under both.
+ * - Each value of each read feature counts, also a value that the evidence does not have. So a tie of the two
+ *   likelihoods of the evidence alone does not make the distance small.
+ * - A cause that is not in the diagnosis, or that has the probability 0, has the distance `Infinity`.
+ */
+export function alikeDistance(catalog: Catalog, diagnosis: Diagnosis, first: string, second: string): number {
+  const a = diagnosis.causes.find((each) => each.id === first);
+  const b = diagnosis.causes.find((each) => each.id === second);
+  if (a === undefined || b === undefined || !(a.probability > 0) || !(b.probability > 0)) return Number.POSITIVE_INFINITY;
+  return variantDistance(catalog, readFeatures(diagnosis), a, b);
+}
+
+function variantDistance(catalog: Catalog, reads: readonly Pick<Evidence, "feature" | "primary">[], a: Cause, b: Cause): number {
+  const va = likeliestOf(a);
+  const vb = likeliestOf(b);
+  let worst = 0;
+  for (const { feature, primary } of reads) {
+    for (const value of catalog.features.get(feature)?.values ?? []) {
+      const pa = catalog.likelihood(a.id, feature, value, primary, va.reach, va.degree);
+      const pb = catalog.likelihood(b.id, feature, value, primary, vb.reach, vb.degree);
+      worst = Math.max(worst, Math.abs(Math.log(pa) - Math.log(pb)));
+    }
+  }
+  return worst;
+}
+
+/** The distances around one cause of a diagnosis (refer to `alikeMargin`). */
+export interface AlikeMargin {
+  /** The largest distance of an alike cause. It is 0 when the cause has no alike cause. */
+  readonly inner: number;
+  /** The smallest distance of a cause that is not alike. It is absent when no such cause has a probability above 0. */
+  readonly outer?: number | undefined;
+  /** The cause at the distance `outer`. */
+  readonly nearest?: string | undefined;
+}
+
+/**
+ * This function gives the distances around `cause` (refer to `alikeDistance`): the largest distance of an alike cause,
+ * and the smallest distance of the other causes. It gives `undefined` for a cause that is not in the diagnosis, or that
+ * has the probability 0. A bound below 0 is a `RangeError`.
+ */
+export function alikeMargin(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon: number = ALIKE_EPSILON): AlikeMargin | undefined {
+  if (!(epsilon >= 0)) throw new RangeError(`The bound of the alike causes is ${epsilon}. It must be 0 or more.`);
+  const self = diagnosis.causes.find((each) => each.id === cause);
+  if (self === undefined || !(self.probability > 0)) return undefined;
+  const reads = readFeatures(diagnosis);
+  let inner = 0;
+  let outer = Number.POSITIVE_INFINITY;
+  let nearest: string | undefined;
+  for (const each of diagnosis.causes) {
+    if (each.id === cause || !(each.probability > 0)) continue;
+    const distance = variantDistance(catalog, reads, self, each);
+    if (distance <= epsilon) inner = Math.max(inner, distance);
+    else if (distance < outer) {
+      outer = distance;
+      nearest = each.id;
+    }
+  }
+  return nearest === undefined ? { inner } : { inner, outer, nearest };
+}
+
+/**
+ * This function gives the causes of a diagnosis that the read probes cannot tell from `cause`, from the most probable.
+ * Each has a distance of `epsilon` or less from `cause` (refer to `alikeDistance`).
+ *
+ * - Only the priors of these causes put them in an order. A next probe that splits them reads a different feature.
+ * - The relation is symmetric. A cause that is not in the diagnosis, or that has the probability 0, has no alike cause.
+ * - A bound below 0 is a `RangeError`.
+ */
+export function alikeCauses(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon: number = ALIKE_EPSILON): readonly string[] {
+  if (!(epsilon >= 0)) throw new RangeError(`The bound of the alike causes is ${epsilon}. It must be 0 or more.`);
+  const self = diagnosis.causes.find((each) => each.id === cause);
+  if (self === undefined || !(self.probability > 0)) return [];
+  const reads = readFeatures(diagnosis);
+  return diagnosis.causes.filter((each) => each.id !== cause && each.probability > 0 && variantDistance(catalog, reads, self, each) <= epsilon).map((each) => each.id);
 }
 
 /** The part of one observation in the comparison of two hypotheses. */

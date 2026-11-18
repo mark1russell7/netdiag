@@ -1,4 +1,4 @@
-import { scoreLab, type Catalog, type LabGate, type LabRecord, type LabScore } from "@mark1russell7/netdiag";
+import { ALIKE_EPSILON, ALIKE_MARGIN, bandProblems, scoreLab, scoredCause, type AlikeBand, type Catalog, type LabGate, type LabRecord, type LabScore } from "@mark1russell7/netdiag";
 import type { CaseRun } from "./run.ts";
 
 /** The result of a lab: the score of the reads, and the runs with no read. */
@@ -11,11 +11,14 @@ export interface LabReport {
   readonly revisited: number;
   /** The score is absent when the lab has no read. */
   readonly score: LabScore | undefined;
-  /** The problems of the score, when the records do not fit the catalog. */
+  /** The problems of the score: records that do not fit the catalog, or a cause in the band around the alike bound. */
   readonly problems: readonly string[];
 }
 
-/** This function scores the reads of a lab, and keeps the runs with no read. */
+/**
+ * This function scores the reads of a lab, and keeps the runs with no read. A cause in the band around the alike bound
+ * is a problem (refer to `bandProblems`).
+ */
 export function labReport(catalog: Catalog, runs: readonly CaseRun[], rounds: number, cases: number): LabReport {
   const records: LabRecord[] = [];
   const noReads: Extract<CaseRun, { status: "no-read" }>[] = [];
@@ -27,7 +30,7 @@ export function labReport(catalog: Catalog, runs: readonly CaseRun[], rounds: nu
   if (records.length === 0) return { rounds, cases, records, noReads, revisited, score: undefined, problems: [] };
   const score = scoreLab(catalog, records);
   return score.tag === "ok"
-    ? { rounds, cases, records, noReads, revisited, score: score.value, problems: [] }
+    ? { rounds, cases, records, noReads, revisited, score: score.value, problems: bandProblems(score.value.band) }
     : { rounds, cases, records, noReads, revisited, score: undefined, problems: score.error };
 }
 
@@ -59,6 +62,16 @@ export interface ReportOptions {
   readonly later?: readonly LaterClass[] | undefined;
 }
 
+/**
+ * This function gives the extremes of the distances around the truths as one line of Markdown, with the empty band that
+ * the gate holds.
+ */
+export function bandLine(band: AlikeBand): string {
+  const inner = band.innerCase === undefined ? "No record has an alike cause" : `The largest distance of an alike cause is ${band.inner.toExponential(2)} (\`${band.innerCase}\`)`;
+  const outer = band.outer === undefined ? "no record has another cause" : `the smallest distance of another cause is ${band.outer.toExponential(3)} (\`${band.outerCase ?? "?"}\` to \`${band.nearest ?? "?"}\`)`;
+  return `${inner}, and ${outer}. The gate holds the band from ${(ALIKE_EPSILON / ALIKE_MARGIN).toExponential(0)} to ${(ALIKE_EPSILON * ALIKE_MARGIN).toExponential(0)} empty.`;
+}
+
 /** This function gives the report as Markdown, for the summary of a CI run. */
 export function reportMarkdown(report: LabReport, gate?: LabGate, options: ReportOptions = {}): string {
   const lines = [`## ${options.title ?? "The loopback lab"}`, ""];
@@ -68,15 +81,26 @@ export function reportMarkdown(report: LabReport, gate?: LabGate, options: Repor
   const score = report.score;
   if (score !== undefined) {
     lines.push(`Catalog ${score.catalog}. Accuracy ${percent(score.correct / score.n)} (${score.correct} of ${score.n}), 95% interval ${percent(score.accuracy.low)} to ${percent(score.accuracy.high)}. Brier score ${score.brier?.toFixed(3) ?? "–"}.`, "");
+    lines.push(bandLine(score.band), "");
     lines.push("| Hypothesis | Cases | Hits | Recall | 95% interval | Precision |", "| --- | ---: | ---: | ---: | --- | ---: |");
     for (const row of score.classes.filter((c) => c.support > 0 || c.predicted > 0)) {
       lines.push(`| \`${row.label}\` | ${row.support} | ${row.hits} | ${percent(row.recall)} | ${percent(row.recallInterval.low)} to ${percent(row.recallInterval.high)} | ${percent(row.precision)} |`);
     }
     lines.push("");
-    const wrong = report.records.filter((record) => record.predicted !== record.truth);
+    const wrong = report.records.filter((record) => scoredCause(record) !== record.truth);
     if (wrong.length > 0) {
       lines.push("### Wrong diagnoses", "");
       for (const record of wrong) lines.push(`- \`${record.case}\`: \`${record.truth}\` got \`${record.predicted}\` (rank of the truth: ${record.rank}).`);
+      lines.push("");
+    }
+    const alike = report.records.filter((record) => record.predicted !== record.truth && scoredCause(record) === record.truth);
+    if (alike.length > 0) {
+      lines.push("### Hits of causes with the same facts", "");
+      for (const record of alike) {
+        const set = [record.truth, ...(record.alike ?? [])];
+        const names = set.map((id) => `\`${id}\``).join(", ");
+        lines.push(`- \`${record.case}\`: \`${record.truth}\` got \`${record.predicted}\`. The causes ${names} have the same facts in this world, and they are the first ${set.length} causes.`);
+      }
       lines.push("");
     }
   }

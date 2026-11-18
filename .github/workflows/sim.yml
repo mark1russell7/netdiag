@@ -1,0 +1,81 @@
+# The refit of the simulated world (ND-17, the layer E0). The job starts the sim command with --write: it fits the
+# policy of the actions on the held-out seed sets, and it writes each file of the bars from the runs. The summary of the
+# job gives the diff of each file against the commit. The files go up as an artifact.
+#
+# The job does not gate. The tests of src/sim/sim.test.ts in the job ci / checks hold the files. This job tells the new
+# values when a change of the catalog or of the world moves them, so a pull request can give the old and the new values.
+# A dispatch with a reason in `limits` also fits the limits of the correct low end from the five seed sets.
+name: Sim
+
+on:
+  # No path filter (the rule gate-trigger): the job starts on each pull request.
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      limits:
+        description: The reason for new limits of the correct low end. Empty keeps the limits.
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sim-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  refit:
+    name: Refit of the simulated world
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      LIMITS: ${{ inputs.limits || '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Fit and write the bars
+        run: |
+          limits=()
+          if [ -n "$LIMITS" ]; then limits=(--limits "$LIMITS"); fi
+          pnpm --filter @netdiag/lab sim --write --out "$GITHUB_WORKSPACE/sim-out" "${limits[@]}" > /dev/null
+      - name: Give the diff of the files
+        if: ${{ always() }}
+        run: |
+          mkdir -p sim-out
+          git diff --stat -- packages/lab/bars packages/netdiag/src > sim-out/diff-stat.txt
+          git diff -- packages/lab/bars packages/netdiag/src > sim-out/bars.diff
+          {
+            echo "## The refit of the simulated world"
+            echo
+            if [ -s sim-out/bars.diff ]; then
+              echo "The refit changes these files:"
+              echo
+              echo '```diff'
+              cat sim-out/bars.diff
+              echo '```'
+            else
+              echo "The refit changes no file."
+            fi
+            echo
+            cat sim-out/summary.md 2>/dev/null || true
+          } >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p sim-out/bars
+          cp -r packages/lab/bars/. sim-out/bars/
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ always() }}
+        with:
+          name: sim-refit
+          path: sim-out
+          retention-days: 30

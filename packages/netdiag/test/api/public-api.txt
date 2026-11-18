@@ -7,11 +7,15 @@
 ## . (build/index.d.ts): names
 
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
+ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
+ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
+type AlikeBand: build/index.chunk2.d.ts#AlikeBand
+type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Availability: build/counts.chunk.d.ts#Availability
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
-Bin: build/core.chunk.d.ts#Bin
+type Bin: build/core.chunk.d.ts#Bin
 CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
@@ -58,7 +62,6 @@ DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
 type DnsRaw: build/index.d.ts#DnsRaw
 ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
 ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
-EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
 EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk2.d.ts#Evidence
@@ -109,6 +112,7 @@ LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
+LOSS_DEGREES: build/index.chunk2.d.ts#LOSS_DEGREES
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
@@ -128,6 +132,7 @@ LinkInterface: build/counts.chunk.d.ts#LinkInterface
 type LinkRaw: build/index.d.ts#LinkRaw
 LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
+type LossDegree: build/index.chunk2.d.ts#LossDegree
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
@@ -298,6 +303,11 @@ addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
+alikeBand: build/index.chunk2.d.ts#alikeBand
+alikeCauses: build/index.chunk2.d.ts#alikeCauses
+alikeDistance: build/index.chunk2.d.ts#alikeDistance
+alikeMargin: build/index.chunk2.d.ts#alikeMargin
+bandProblems: build/index.chunk2.d.ts#bandProblems
 bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
@@ -371,6 +381,7 @@ rtoOf: build/core.chunk.d.ts#rtoOf
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
+scoredCause: build/index.chunk2.d.ts#scoredCause
 secureBase: build/core.chunk.d.ts#secureBase
 serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
@@ -387,11 +398,15 @@ wifiSignalOf: build/core.chunk.d.ts#wifiSignalOf
 ## ./core (build/core.d.ts): names
 
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
+ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
+ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
+type AlikeBand: build/index.chunk2.d.ts#AlikeBand
+type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Availability: build/counts.chunk.d.ts#Availability
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
-Bin: build/core.chunk.d.ts#Bin
+type Bin: build/core.chunk.d.ts#Bin
 CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
@@ -427,7 +442,6 @@ DnsAnswer: build/counts.chunk.d.ts#DnsAnswer
 DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
 ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
 ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
-EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
 EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk2.d.ts#Evidence
@@ -469,6 +483,7 @@ LINK_STATES: build/counts.chunk.d.ts#LINK_STATES
 LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
+LOSS_DEGREES: build/index.chunk2.d.ts#LOSS_DEGREES
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
@@ -486,6 +501,7 @@ type Layer: build/layer.chunk.d.ts#Layer
 LinkInterface: build/counts.chunk.d.ts#LinkInterface
 LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
+type LossDegree: build/index.chunk2.d.ts#LossDegree
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
@@ -626,6 +642,11 @@ addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
+alikeBand: build/index.chunk2.d.ts#alikeBand
+alikeCauses: build/index.chunk2.d.ts#alikeCauses
+alikeDistance: build/index.chunk2.d.ts#alikeDistance
+alikeMargin: build/index.chunk2.d.ts#alikeMargin
+bandProblems: build/index.chunk2.d.ts#bandProblems
 bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
@@ -686,6 +707,7 @@ rtoOf: build/core.chunk.d.ts#rtoOf
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
+scoredCause: build/index.chunk2.d.ts#scoredCause
 secureBase: build/core.chunk.d.ts#secureBase
 serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
@@ -713,6 +735,10 @@ parseCidr: build/index.chunk.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
 
+ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
+ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
+type AlikeBand: build/index.chunk2.d.ts#AlikeBand
+type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Candidate: build/index.chunk2.d.ts#Candidate
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
@@ -723,7 +749,6 @@ type Degree: build/index.chunk2.d.ts#Degree
 type DegreeShare: build/index.chunk2.d.ts#DegreeShare
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Distribution: build/index.chunk2.d.ts#Distribution
-EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type Evidence: build/index.chunk2.d.ts#Evidence
 type Expectation: build/index.chunk2.d.ts#Expectation
 FLOOR: build/index.chunk2.d.ts#FLOOR
@@ -734,6 +759,7 @@ type Hypothesis: build/index.chunk2.d.ts#Hypothesis
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
+LOSS_DEGREES: build/index.chunk2.d.ts#LOSS_DEGREES
 LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
@@ -746,6 +772,7 @@ type LabScore: build/index.chunk2.d.ts#LabScore
 type LabStatus: build/index.chunk2.d.ts#LabStatus
 type LabVerdict: build/index.chunk2.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
+type LossDegree: build/index.chunk2.d.ts#LossDegree
 type LossStep: build/index.chunk2.d.ts#LossStep
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 NONE: build/index.chunk2.d.ts#NONE
@@ -765,6 +792,11 @@ STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Strength: build/index.chunk2.d.ts#Strength
 UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
+alikeBand: build/index.chunk2.d.ts#alikeBand
+alikeCauses: build/index.chunk2.d.ts#alikeCauses
+alikeDistance: build/index.chunk2.d.ts#alikeDistance
+alikeMargin: build/index.chunk2.d.ts#alikeMargin
+bandProblems: build/index.chunk2.d.ts#bandProblems
 causeVariants: build/index.chunk2.d.ts#causeVariants
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
 diagnose: build/index.chunk2.d.ts#diagnose
@@ -778,6 +810,7 @@ layerRank: build/layer.chunk.d.ts#layerRank
 predictive: build/index.chunk2.d.ts#predictive
 rankProbes: build/index.chunk2.d.ts#rankProbes
 scoreLab: build/index.chunk2.d.ts#scoreLab
+scoredCause: build/index.chunk2.d.ts#scoredCause
 
 ## ./tools (build/tools.d.ts): names
 
@@ -2040,6 +2073,28 @@ declare function ipVersion(text: string): 0 | 4 | 6;
 ### build/index.chunk.d.ts#parseCidr
 declare function parseCidr(text: string): Result<Cidr, string>;
 
+### build/index.chunk2.d.ts#ALIKE_EPSILON
+declare const ALIKE_EPSILON = 1e-6;
+
+### build/index.chunk2.d.ts#ALIKE_MARGIN
+declare const ALIKE_MARGIN = 100;
+
+### build/index.chunk2.d.ts#AlikeBand
+interface AlikeBand {
+  readonly inner: number;
+  readonly innerCase?: string | undefined;
+  readonly outer?: number | undefined;
+  readonly outerCase?: string | undefined;
+  readonly nearest?: string | undefined;
+}
+
+### build/index.chunk2.d.ts#AlikeMargin
+interface AlikeMargin {
+  readonly inner: number;
+  readonly outer?: number | undefined;
+  readonly nearest?: string | undefined;
+}
+
 ### build/index.chunk2.d.ts#Candidate
 interface Candidate {
   readonly id: string;
@@ -2115,9 +2170,6 @@ interface Diagnosis {
 ### build/index.chunk2.d.ts#Distribution
 type Distribution = Readonly<Record<string, number>>;
 
-### build/index.chunk2.d.ts#EXCHANGE_LOSS
-declare const EXCHANGE_LOSS: Readonly<Record<"light" | "heavy", number>>;
-
 ### build/index.chunk2.d.ts#Evidence
 interface Evidence {
   readonly feature: string;
@@ -2180,6 +2232,9 @@ declare const LAB_BAR_STEP = .001;
 ### build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 declare const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
 
+### build/index.chunk2.d.ts#LOSS_DEGREES
+declare const LOSS_DEGREES: readonly LossDegree[];
+
 ### build/index.chunk2.d.ts#LOSS_STEPS
 declare const LOSS_STEPS: readonly LossStep[];
 
@@ -2223,6 +2278,8 @@ interface LabRecord {
   readonly predicted: string;
   readonly rank: number;
   readonly causes: readonly LabCause[];
+  readonly alike?: readonly string[] | undefined;
+  readonly margin?: AlikeMargin | undefined;
 }
 
 ### build/index.chunk2.d.ts#LabScore
@@ -2234,6 +2291,7 @@ interface LabScore {
   readonly table: Confusion<string>;
   readonly classes: readonly ClassScore<string>[];
   readonly brier: number | undefined;
+  readonly band: AlikeBand;
 }
 
 ### build/index.chunk2.d.ts#LabStatus
@@ -2246,6 +2304,13 @@ interface LabVerdict {
   readonly bar: number;
   readonly low: number | undefined;
   readonly support: number;
+}
+
+### build/index.chunk2.d.ts#LossDegree
+interface LossDegree {
+  readonly id: string;
+  readonly loss: number;
+  readonly share: number;
 }
 
 ### build/index.chunk2.d.ts#LossStep
@@ -2323,6 +2388,21 @@ type Strength = "sure" | "strong" | "usual" | "weak";
 ### build/index.chunk2.d.ts#UNKNOWN
 declare const UNKNOWN = "unknown";
 
+### build/index.chunk2.d.ts#alikeBand
+declare function alikeBand(records: readonly LabRecord[]): AlikeBand;
+
+### build/index.chunk2.d.ts#alikeCauses
+declare function alikeCauses(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon?: number): readonly string[];
+
+### build/index.chunk2.d.ts#alikeDistance
+declare function alikeDistance(catalog: Catalog, diagnosis: Diagnosis, first: string, second: string): number;
+
+### build/index.chunk2.d.ts#alikeMargin
+declare function alikeMargin(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon?: number): AlikeMargin | undefined;
+
+### build/index.chunk2.d.ts#bandProblems
+declare function bandProblems(band: AlikeBand, epsilon?: number, margin?: number): string[];
+
 ### build/index.chunk2.d.ts#causeVariants
 declare function causeVariants(cause: Cause): readonly CauseVariant[];
 
@@ -2345,7 +2425,7 @@ declare function labBars(scores: readonly LabRecalls[], options?: LabBarsOptions
 declare function labGate(score: LabRecalls, bars: LabBars): Result<LabGate, string[]>;
 
 ### build/index.chunk2.d.ts#labRecordOf
-declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis): Result<LabRecord, string>;
+declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, epsilon?: number): Result<LabRecord, string>;
 
 ### build/index.chunk2.d.ts#predictive
 declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;
@@ -2355,6 +2435,9 @@ declare function rankProbes(catalog: Catalog, diagnosis: Diagnosis, candidates: 
 
 ### build/index.chunk2.d.ts#scoreLab
 declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
+
+### build/index.chunk2.d.ts#scoredCause
+declare function scoredCause(record: LabRecord): string;
 
 ### build/index.d.ts#ConnectOptions
 interface ConnectOptions {
