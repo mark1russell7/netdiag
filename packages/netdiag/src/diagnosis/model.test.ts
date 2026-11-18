@@ -60,14 +60,21 @@ describe("the catalog", () => {
     }
   });
 
-  it("expands an expectation: the expected values share the strength, the others share the rest", () => {
+  it("expands an expectation: the expected values share the strength, the others share the rest as the healthy distribution", () => {
     const strong = expand(tcp, { expect: "refused", strength: "strong" });
-    expect(strong.tag === "ok" ? strong.value["refused"] : 0).toBe(0.9);
-    expect(strong.tag === "ok" ? strong.value["connected"] : 0).toBeCloseTo(0.05, 12);
-    expect(expand(tcp, { expect: ["refused", "timeout"], strength: "usual" })).toEqual({
-      tag: "ok",
-      value: { refused: 0.375, timeout: 0.375, connected: 0.25 },
-    });
+    if (strong.tag !== "ok") throw new Error(strong.error.join(" "));
+    expect(strong.value["refused"]).toBe(0.9);
+    // Each other value gets the floor. The rest above the floors goes as the healthy probabilities 0.98 and 0.01.
+    expect(strong.value["connected"]).toBeCloseTo(0.001 + (0.098 * 0.98) / 0.99, 12);
+    expect(strong.value["timeout"]).toBeCloseTo(0.001 + (0.098 * 0.01) / 0.99, 12);
+    expect(Object.values(strong.value).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
+    const usual = expand(tcp, { expect: ["refused", "timeout"], strength: "usual" });
+    expect(usual.tag === "ok" ? usual.value : {}).toMatchObject({ refused: 0.375, timeout: 0.375 });
+    expect(usual.tag === "ok" ? usual.value["connected"] : 0).toBeCloseTo(0.25, 12);
+    // With no room above the floors, the other values share the rest equally.
+    const many: Feature = { ...tcp, values: Array.from({ length: 22 }, (_, i) => `v${i}`), healthy: Object.fromEntries(Array.from({ length: 22 }, (_, i) => [`v${i}`, 1 / 22])) };
+    const sure = expand(many, { expect: "v0", strength: "sure" });
+    expect(sure.tag === "ok" ? [sure.value["v1"], sure.value["v21"]] : []).toEqual([(1 - 0.98) / 21, (1 - 0.98) / 21]);
     expect(expand(tcp, { expect: ["connected", "refused", "timeout"], strength: "weak" })).toMatchObject({ tag: "ok", value: { connected: 1 / 3 } });
     expect(expand(tcp, { expect: "maybe", strength: "weak" }).tag).toBe("err");
     expect(expand(tcp, { expect: [], strength: "weak" }).tag).toBe("err");

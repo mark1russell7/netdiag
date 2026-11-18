@@ -424,7 +424,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "8",
+  version: "9",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

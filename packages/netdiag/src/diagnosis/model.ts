@@ -58,7 +58,9 @@ export const STRENGTHS: Readonly<Record<Strength, number>> = { sure: 0.98, stron
 /**
  * A prediction of a fault for one feature: a full distribution, or the expected values and a strength.
  *
- * With `expect`, the expected values share the probability of the strength equally. The other values share the rest.
+ * With `expect`, the expected values share the probability of the strength equally. Each other value gets `FLOOR`. The
+ * rest goes to the other values in proportion to their healthy probabilities. A fault that does not show its expected
+ * value mostly leaves the feature healthy.
  */
 export type Prediction = Distribution | Expectation;
 
@@ -195,7 +197,13 @@ export function expand(feature: Feature, prediction: Prediction): Result<Distrib
   const mass = others.length === 0 ? 1 : STRENGTHS[prediction.strength];
   const dist: Record<string, number> = {};
   for (const value of expected) dist[value] = mass / expected.length;
-  for (const value of others) dist[value] = (1 - mass) / others.length;
+  // A fault that does not show its expected value mostly leaves the feature healthy. Thus each other value gets the floor,
+  // and the rest above the floors follows the healthy distribution. With no room above the floors, the rest is equal.
+  const healthy = others.reduce((sum, value) => sum + (feature.healthy[value] ?? 0), 0);
+  const free = 1 - mass - FLOOR * others.length;
+  for (const value of others) {
+    dist[value] = healthy > 0 && free > 0 ? FLOOR + (free * (feature.healthy[value] ?? 0)) / healthy : (1 - mass) / others.length;
+  }
   return ok(dist);
 }
 
