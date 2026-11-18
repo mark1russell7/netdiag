@@ -217,10 +217,10 @@ export function nextSteps(diagnosis: Diagnosis, plan: CheckPlan, addressed: Read
   for (const choice of rankProbes(STANDARD_CATALOG, diagnosis, candidates, { top: TOP_CAUSES })) {
     const probe = probes.get(choice.candidate.id);
     if (probe === undefined || choice.gain <= GAIN_RESOLUTION) continue;
-    const step = stepText(probe, choice.counted, plan);
+    const step = stepText(probe, choice.candidate.observes, plan);
     if (said.has(step)) continue;
     said.add(step);
-    steps.push({ id: probe.id, step, gain: choice.gain, observes: choice.counted });
+    steps.push({ id: probe.id, step, gain: choice.gain, observes: choice.candidate.observes });
   }
   return steps;
 }

@@ -304,7 +304,7 @@ export interface Search {
   readonly truth: string;
   readonly steps: readonly Step[];
   readonly diagnosis: Diagnosis;
-  /** The probes from the largest expected information gain. */
+  /** The probes from the largest expected information gain. The observes of each candidate are the facts that no run read. */
   readonly ranked: readonly ProbeChoice[];
   /** The total time of the probes, in seconds. */
   readonly time: number;
@@ -330,7 +330,9 @@ export function search(truth: string, seed: string, runs: readonly string[]): Se
     diagnosis = diagnose(CATALOG, evidence);
     steps.push({ probe, observed, diagnosis });
   }
-  const ranked = rankProbes(CATALOG, diagnosis, PROBES);
+  // The world of the site gives one value for each fact, so a probe counts only the facts that no run read.
+  const fresh = PROBES.map((probe) => ({ ...probe, observes: probe.observes.filter((item) => !seen.has(keyOf(item))) }));
+  const ranked = rankProbes(CATALOG, diagnosis, fresh);
   return { truth, steps, diagnosis, ranked, time: steps.reduce((sum, step) => sum + step.probe.cost, 0) };
 }
 

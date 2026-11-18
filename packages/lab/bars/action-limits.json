@@ -1,5 +1,5 @@
 {
-  "set": "Set on 2026-11-18 after the first look at the rates of five seed sets. A correct limit is the worst low end of a class minus the spread of its low ends, rounded down. An error limit is the highest error plus the spread of the errors, rounded up.",
+  "set": "ND-18 Step 3a: the repeats of one feature and role follow the fitted Dirichlet-multinomial law",
   "sets": [
     [
       1,
@@ -109,11 +109,11 @@
       0.99
     ],
     "path.loss": [
-      0.638,
-      0.64,
-      0.651,
-      0.679,
-      0.659
+      0.625,
+      0.643,
+      0.661,
+      0.666,
+      0.653
     ],
     "path.mtu": [
       0.99,
@@ -179,18 +179,18 @@
       0.99
     ],
     "tls.proxy": [
-      0.596,
-      0.647,
-      0.71,
-      0.58,
-      0.62
+      0.277,
+      0.248,
+      0.274,
+      0.245,
+      0.28
     ],
     "wifi.weak": [
-      0.655,
-      0.661,
+      0.653,
+      0.671,
       0.708,
-      0.684,
-      0.669
+      0.682,
+      0.677
     ]
   },
   "highs": {
@@ -267,7 +267,7 @@
     "path.loss": [
       0.029,
       0.025,
-      0.036,
+      0.032,
       0.01,
       0.032
     ],
@@ -343,9 +343,9 @@
     ],
     "wifi.weak": [
       0.025,
-      0.032,
-      0.01,
       0.029,
+      0.01,
+      0.025,
       0.014
     ]
   },
@@ -360,7 +360,7 @@
     "ipv6.broken": 0.99,
     "name.missing": 0.99,
     "none": 0.99,
-    "path.loss": 0.597,
+    "path.loss": 0.584,
     "path.mtu": 0.99,
     "port.closed": 0.99,
     "proxy.error": 0.99,
@@ -370,42 +370,42 @@
     "server.slow": 0.99,
     "tls.cert-invalid": 0.99,
     "tls.mismatch": 0.99,
-    "tls.proxy": 0.45,
-    "wifi.weak": 0.602
+    "tls.proxy": 0.21,
+    "wifi.weak": 0.598
   },
   "unsureCases": [
-    573,
-    582,
-    567,
-    603,
-    560
+    623,
+    649,
+    629,
+    654,
+    609
   ],
   "errors": {
     "top": [
-      0.0053,
-      0.0047,
-      0.0046,
-      0.0053,
-      0.0058
+      0.0073,
+      0.0051,
+      0.0052,
+      0.0057,
+      0.0069
     ],
     "kinds": [
-      0.0016,
-      0.0011,
-      0.0012,
+      0.0021,
+      0.0013,
       0.0015,
-      0.0016
+      0.0017,
+      0.002
     ],
     "unsure": [
-      0.0638,
-      0.0506,
-      0.0522,
-      0.0463,
-      0.0584
+      0.0773,
+      0.0439,
+      0.0487,
+      0.0402,
+      0.0641
     ]
   },
   "errorLimits": {
-    "top": 0.007,
-    "kinds": 0.0021,
-    "unsure": 0.0813
+    "top": 0.0095,
+    "kinds": 0.0029,
+    "unsure": 0.1144
   }
 }

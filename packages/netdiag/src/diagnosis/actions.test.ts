@@ -5,20 +5,24 @@ import {
   NONE,
   STANDARD_ACTIONS,
   STANDARD_CATALOG,
+  STANDARD_CATALOG_SPEC,
   STANDARD_POLICY,
   UNKNOWN,
   actionCost,
   checkActions,
   checkPolicy,
   chooseAction,
+  compileCatalog,
   diagnose,
   harmOf,
   harmfulOf,
   ruleOf,
   type ActionPolicy,
   type ActionRule,
+  type Catalog,
   type Cause,
   type Diagnosis,
+  type Evidence,
 } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
@@ -269,5 +273,41 @@ describe("chooseAction", () => {
     expect(choice.kinds.reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(1);
     expect(ACTION_KINDS).toContain(choice.action.kind);
     expect(choice.kinds[0]?.kind).toBe(choice.action.kind);
+  });
+});
+
+describe("the repeats of a private certificate by design", () => {
+  // A target with a private root by design gives tls.trust=private over IPv4 and over IPv6. The two observations are one fact.
+  const compiled = compileCatalog({ ...STANDARD_CATALOG_SPEC, features: STANDARD_CATALOG_SPEC.features.map((feature) => ({ ...feature, concentration: undefined })) });
+  if (compiled.tag === "err") throw new Error(compiled.error.join(" "));
+  const independent = compiled.value;
+  const healthy: Evidence[] = [...STANDARD_CATALOG.features.values()].flatMap((feature) => {
+    const value = Object.entries(feature.healthy).sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (value === undefined || feature.id === "tls.trust") return [];
+    return [true, false].map((primary) => ({ feature: feature.id, value, primary }));
+  });
+  const evidence = (privates: number): Evidence[] => [
+    ...healthy,
+    { feature: "tls.trust", value: "public", primary: false },
+    ...Array.from({ length: privates }, () => ({ feature: "tls.trust", value: "private", primary: true })),
+  ];
+  // The two causes of a proxy share the observation, so the odds of a proxy are the odds of the two causes together.
+  const proxyOdds = (model: Catalog, privates: number): number => {
+    const p = diagnose(model, evidence(privates))
+      .causes.filter((cause) => cause.id === "tls.proxy" || cause.id === "proxy.error")
+      .reduce((sum, cause) => sum + cause.probability, 0);
+    return p / (1 - p);
+  };
+
+  it("do not reach the confidence of a proxy through the repeat alone", () => {
+    expect(STANDARD_CATALOG.features.get("tls.trust")?.concentration).toBeDefined();
+    expect(proxyOdds(STANDARD_CATALOG, 2) / proxyOdds(STANDARD_CATALOG, 1)).toBeLessThan(2);
+    const one = chooseAction(STANDARD_CATALOG, diagnose(STANDARD_CATALOG, evidence(1)), STANDARD_ACTIONS);
+    const two = chooseAction(STANDARD_CATALOG, diagnose(STANDARD_CATALOG, evidence(2)), STANDARD_ACTIONS);
+    expect(two.action).toEqual(one.action);
+  });
+
+  it("reach it with independent repeats, the old count", () => {
+    expect(proxyOdds(independent, 2) / proxyOdds(independent, 1)).toBeGreaterThan(10);
   });
 });

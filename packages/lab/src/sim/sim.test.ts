@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
+import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CONCENTRATIONS, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { random } from "@mark1russell7/rigor-generators";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
@@ -9,6 +9,7 @@ import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
 import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
 import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
+import { concentrationCatalog, concentrationRecord, concentrationsSource, repeatConcentrations, STANDARD_CONCENTRATIONS_FILE } from "./repeats.ts";
 import {
   actionCalibration,
   actionLimits,
@@ -21,6 +22,7 @@ import {
   SIM_HARM_LIMIT,
   silentVisits,
   simRuns,
+  withCatalog,
   topForecast,
   type ActionLimits,
   type SimActionRate,
@@ -205,10 +207,13 @@ describe("the draws of the faults", () => {
 });
 
 describe("the bars of the simulated world", () => {
-  it("have the policy of the actions that the held-out seed sets give, in bars/policy.json and in STANDARD_POLICY", async () => {
+  it("have the concentrations of the repeats and the policy of the actions that the held-out seed sets give, in STANDARD_CONCENTRATIONS, bars/policy.json and STANDARD_POLICY", async () => {
     const runs = await simRuns(SIM_FIT_SEEDS);
     expect(runs.problems).toEqual([]);
-    const fit = fitPolicy(runs.outcomes);
+    const concentrations = repeatConcentrations(runs.outcomes);
+    expect(concentrationRecord(concentrations)).toEqual(STANDARD_CONCENTRATIONS);
+    expect(concentrationsSource(concentrations)).toBe(readFileSync(STANDARD_CONCENTRATIONS_FILE, "utf8"));
+    const fit = fitPolicy(withCatalog(runs.outcomes, concentrationCatalog(concentrations)));
     expect(fit.problems).toEqual([]);
     expect(policyText(fit)).toBe(readFileSync(new URL("policy.json", BARS_FOLDER), "utf8"));
     expect(STANDARD_POLICY).toEqual(fit.policy);

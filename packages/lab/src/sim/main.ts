@@ -27,22 +27,28 @@ import {
   SIM_SEEDS,
   simRuns,
   simSummary,
+  withCatalog,
   type ActionLimits,
   type SimActionRate,
   type SimCalibration,
 } from "./report.ts";
+import { concentrationCatalog, concentrationsSource, concentrationSummary, repeatConcentrations, STANDARD_CONCENTRATIONS_FILE } from "./repeats.ts";
 
 const { values } = parseArgs({ options: { out: { type: "string" }, write: { type: "boolean", default: false }, limits: { type: "string" } } });
 const LIMITS_FILE = new URL("action-limits.json", BARS_FOLDER);
+// The evidence of a run does not depend on the concentrations. Thus the fit of the concentrations comes first, and the
+// fit of the policy and the gate use the catalog with them.
 const fitRuns = await simRuns(SIM_FIT_SEEDS);
-const fit = fitPolicy(fitRuns.outcomes);
-const runs = await simRuns(SIM_SEEDS, fit.policy);
+const concentrations = repeatConcentrations(fitRuns.outcomes);
+const catalog = concentrationCatalog(concentrations);
+const fit = fitPolicy(withCatalog(fitRuns.outcomes, catalog));
+const runs = await simRuns(SIM_SEEDS, fit.policy, catalog);
 const limitRuns: string[] = [];
 if (values.limits !== undefined) {
   const rates: Readonly<Record<string, SimActionRate>>[] = [];
   const calibrations: SimCalibration[] = [];
   for (const seeds of SIM_LIMIT_SETS) {
-    const each = seeds === SIM_SEEDS ? runs : await simRuns(seeds, fit.policy);
+    const each = seeds === SIM_SEEDS ? runs : await simRuns(seeds, fit.policy, catalog);
     limitRuns.push(...each.problems.map((problem) => `The limit seeds ${seeds.join(", ")}: ${problem}`));
     rates.push(actionRates(each.outcomes));
     calibrations.push(actionCalibration(each.outcomes));
@@ -53,7 +59,7 @@ const limits = await readFile(LIMITS_FILE, "utf8").then(
   (text) => JSON.parse(text) as ActionLimits,
   () => undefined,
 );
-const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}`;
+const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}\n${concentrationSummary(concentrations, runs.outcomes, catalog)}`;
 if (values.out !== undefined) {
   await mkdir(values.out, { recursive: true });
   await writeFile(join(values.out, "summary.md"), summary);
@@ -75,6 +81,7 @@ for (const [file, text] of [
   [new URL("calibration.json", BARS_FOLDER), calibrationText(runs.outcomes)],
   [new URL("policy.json", BARS_FOLDER), policyText(fit)],
   [STANDARD_POLICY_FILE, policySource(fit.policy)],
+  [STANDARD_CONCENTRATIONS_FILE, concentrationsSource(concentrations)],
 ] as const) {
   if (values.write) await writeFile(file, text);
   else if ((await readFile(file, "utf8").catch(() => "")) !== text) {
