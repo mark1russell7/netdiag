@@ -914,8 +914,26 @@ export const WIFI_LINK: FactKind<WifiLink> = defineFactKind<WifiLink>({
     optional(value["standard"], isText),
 });
 
+/**
+ * The Wi-Fi interfaces of this computer, from the Wi-Fi tool of the operating system. Each interface is in the list, in
+ * each state. An empty list tells that the tool found no Wi-Fi interface.
+ */
+export interface WifiInterfaces {
+  /** The names of the interfaces, each one time, in the order of the tool. */
+  readonly interfaces: readonly string[];
+}
+
+/** The fact kind `wifi.interfaces`. */
+export const WIFI_INTERFACES: FactKind<WifiInterfaces> = defineFactKind<WifiInterfaces>({
+  kind: "wifi.interfaces",
+  layer: "wifi",
+  summary: "The Wi-Fi interfaces of this computer, in each state. An empty list tells that the computer has no Wi-Fi interface.",
+  check: (value): value is WifiInterfaces =>
+    isRecord(value) && isTextList(value["interfaces"]) && new Set(value["interfaces"]).size === value["interfaces"].length,
+});
+
 /** The fact kinds of the adapters of outside tools (`@mark1russell7/netdiag/tools`). */
-export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE, PATH_MTU, WIFI_LINK];
+export const TOOL_KINDS: readonly FactKind<unknown>[] = [ICMP_ECHO, PATH_TRACE, PATH_REPORT, PATH_THROUGHPUT, PATH_CAPTURE, PATH_MTU, WIFI_LINK, WIFI_INTERFACES];
 
 /**
  * The outcomes of a lookup of the owner of an address in the public registries.
