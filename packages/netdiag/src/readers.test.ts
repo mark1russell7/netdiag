@@ -419,6 +419,9 @@ describe("the readers and the model", () => {
     expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "connected", 20), tls("93.184.216.34", "ok", 40, "public"), http("93.184.216.34", "response", 503, 30)])).toBe(
       "server.error",
     );
+    expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "connected", 20), tls("93.184.216.34", "ok", 40, "private"), http("93.184.216.34", "response", 502, 30)])).toBe(
+      "proxy.error",
+    );
   });
 
   it("names a silent resolver, not a down interface, when the gateway replies", () => {

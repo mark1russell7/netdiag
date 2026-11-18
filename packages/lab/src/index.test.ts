@@ -31,7 +31,7 @@ describe("the cases", () => {
 
   it("cover each fault of the loopback column of the roadmap", () => {
     const truths = new Set(LOOPBACK_CASES.map((c) => c.truth));
-    const loopback = ["none", "resolver.down", "resolver.failing", "name.missing", "port.closed", "tls.cert-invalid", "tls.mismatch", "tls.proxy", "server.slow", "server.error", "captive.portal"];
+    const loopback = ["none", "resolver.down", "resolver.failing", "name.missing", "port.closed", "tls.cert-invalid", "tls.mismatch", "tls.proxy", "server.slow", "server.error", "proxy.error", "captive.portal"];
     expect([...truths].sort()).toEqual([...loopback].sort());
   });
 });

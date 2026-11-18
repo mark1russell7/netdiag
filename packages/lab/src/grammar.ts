@@ -276,10 +276,11 @@ export const GRAMMAR_OPTIONS: readonly GrammarOption[] = [
   {
     layer: "http",
     mode: "refuse",
-    summary: "The server answers with errors, or a proxy of the network asks for credentials before it sends requests on.",
+    summary: "The server answers with errors, a proxy of the network fails, or a proxy asks for credentials before it sends requests on.",
     places: ["gateway", "provider", "remote", "server"],
     params: [kinds("error", "auth"), { ...share(1), when: { param: "kind", in: ["error"] } }],
-    labels: [{ when: { kind: ["auth"] }, label: "proxy.auth" }, { label: "server.error" }],
+    // An error at the gateway or at the provider comes from a proxy of the network, not from the server.
+    labels: [{ when: { kind: ["auth"] }, label: "proxy.auth" }, { when: { place: ["gateway", "provider"] }, label: "proxy.error" }, { label: "server.error" }],
   },
   { layer: "http", mode: "stale", summary: "A cache or a CDN gives an old version of the page after the server changes it.", places: ["remote"], labels: one("cdn.stale") },
   { layer: "http", mode: "loop", summary: "The redirects of the server come back to their start, so the client never gets a page.", places: ["remote", "server"], labels: one("http.redirect-loop") },

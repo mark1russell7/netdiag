@@ -744,6 +744,22 @@ export const FAULT_ATLAS: readonly AtlasEntry[] = [
     ],
   },
   {
+    id: "http.proxy-failure",
+    summary: "A proxy of the network fails, for example when it cannot reach the server, and it answers the requests with errors.",
+    layer: "http",
+    hypothesis: "proxy.error",
+    term: fault("http/refuse", { place: "gateway", kind: "error" }),
+    signs: [
+      "The status is 5xx (`http.status` server-error), for example 502 or 504.",
+      "The issuer of the certificate is a private root (`tls.trust` private), because the proxy ends the TLS connection.",
+    ],
+    world: "loopback",
+    sources: [
+      { rfc: 9110, section: "15.6.3", title: RFC_9110 },
+      { rfc: 9110, section: "15.6.5", title: RFC_9110 },
+    ],
+  },
+  {
     id: "http.proxy-authentication",
     summary: "A proxy of the network asks for credentials before it sends requests on.",
     layer: "http",

@@ -82,6 +82,15 @@ describe("the fault grammar", () => {
     expect(termClasses(faults(MTU, reverse))).toEqual(["path.asymmetric"]);
   });
 
+  it("gives proxy.error for an error at the gateway or the provider, and server.error for an error at the remote or the server", () => {
+    const refuse = (place: string, kind: string): readonly string[] => termClasses(fault("http/refuse", { place, kind }));
+    expect(refuse("gateway", "error")).toEqual(["proxy.error"]);
+    expect(refuse("provider", "error")).toEqual(["proxy.error"]);
+    expect(refuse("remote", "error")).toEqual(["server.error"]);
+    expect(refuse("server", "error")).toEqual(["server.error"]);
+    expect(refuse("gateway", "auth")).toEqual(["proxy.auth"]);
+  });
+
   it("gives a class only the traits that each of its terms needs", () => {
     expect(CLASSES.get("path.mtu")?.needs).toEqual([]);
     const ipv6 = FAULT_ATLAS.find((each) => each.id === "path.ipv6-too-big-filtered");

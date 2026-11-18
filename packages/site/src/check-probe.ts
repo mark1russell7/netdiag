@@ -47,8 +47,12 @@ click("#search-best");
 check("the best probe runs once", await until(() => $$("#search-steps .step").length === 1), $$("#search-steps .step").length);
 
 // 3. Score the catalog
-check("the lab scores 420 runs", text("#lab-result").includes("420 runs"), text("#lab-result"));
-check("the lab has a row for each hypothesis", $$("#lab-rows .recall").length === 22, $$("#lab-rows .recall").length);
+// The truths are the options of the search, without the hidden fault. The lab scores 20 runs of each truth.
+// The row of an unknown cause has no runs and no bar.
+const truths = $$('#search-truth option:not([value="hidden"])').length;
+const labRows = $$("#lab-rows .recall:not(.unbarred)").length;
+check("the lab has a row for each hypothesis", truths > 0 && labRows === truths && $$("#lab-rows .recall.unbarred").length === 1, labRows);
+check("the lab scores 20 runs of each hypothesis", text("#lab-result").includes(`${labRows * 20} runs`), text("#lab-result"));
 for (const box of $$("#lab-probes input")) if ((box as HTMLInputElement).checked) click(box);
 check("with no probe, the gate fails", await until(() => text("#lab-result").includes("No probe observes the network")), text("#lab-result"));
 set("#lab-bar", "0");
@@ -72,7 +76,8 @@ check("a file that is not a report removes the views", $$("#report-flow .flow-la
 // 5. Where each fault class is tested
 check("the ladder names its gaps first", /^\d+ gaps? in \d+ cells?$/.test(text("#coverage-head .ladder-total")), text("#coverage-head"));
 const ladderRows = (): number => $$("#coverage-matrix tbody tr:not(.ladder-group)").length;
-check("the matrix has a row for each class and a column for each layer", ladderRows() === 20 && $$("#coverage-matrix thead th").length === 8, ladderRows());
+// The matrix has a row for each fault: each truth but no fault.
+check("the matrix has a row for each class and a column for each layer", ladderRows() === truths - 1 && $$("#coverage-matrix thead th").length === 8, ladderRows());
 click("#coverage-proposals");
 check("the toggle adds the proposed classes", await until(() => $$("#coverage-matrix tbody tr.proposal").length === 73), ladderRows());
 click('#coverage-matrix button[data-row="path.loss"][data-layer="E1"]');

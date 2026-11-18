@@ -350,9 +350,10 @@ The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
 | --- | --- | --- | --- |
 | `path.loss` | 97 % | `wifi.weak`, `ipv6.broken`, `none`, `server.slow` | The 11 misses go to four other answers, with a loss from 9 % to 83 %. Their cause is a later step. |
 | `wifi.weak` | 98 % | `path.loss` | Each of the 8 misses has a radio loss of 25 % or less. Their cause is a later step. |
-| `server.error` | 98 % | `tls.proxy` | A proxy at the gateway that refuses the request also ends the TLS session with its own certificate. |
+| `server.error` | 98 % | `none` | In each of the 8 misses, each request passed. Thus the visit has no sign of the fault. |
+| `proxy.error` | 98 % | `tls.proxy` | In each of the 6 misses, each request passed. Thus the visit has only the private issuer of the proxy. |
 
-Eight changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last six with 80:
+Nine changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last seven with 80:
 
 - A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
 - When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.
@@ -362,3 +363,4 @@ Eight changes of ND-17 closed weak points. The first two are measures with 12 ca
 - When an interface is down, the computer has no route, so c-ares cannot send the query and gives `ECONNREFUSED`. Thus `interface.down` expects the DNS values `unreachable` and `timeout`. `interface.down` went from 70 % to 100 %.
 - Each miss of `path.mtu` was an IPv6 link with an MTU below 1280 bytes. RFC 8200 forbids it, but a tunnel with no fragmentation can make it. Before, the MTU search stopped when 1280 bytes failed. When 1280 bytes fail, the search tries a plain echo request of 104 bytes, and then finds the MTU below 1280. `path.mtu` went from 58 % to 100 %.
 - A loss has two degrees, light and heavy. Under a heavy loss, DNS, TCP, TLS and HTTP time out together. Before, the model took each timeout as one more sign against a loss. A heavy loss read as a down resolver or a filter. `path.loss` went from 88 % to 97 %, and `wifi.weak` from 86 % to 98 %. The kernel lab reads all 70 recorded cases of each class correctly.
+- A device of the network can give an HTTP status for an HTTPS site only as a TLS proxy that the clients trust. Thus an HTTP error at the gateway or at the provider comes from a proxy, not from the server. The new class `proxy.error` expects a private issuer and an error status. Before, the simulated world labeled these cases `server.error`, and 7 of them read as `tls.proxy`. `server.error` hits 392 of 400, and `proxy.error` hits 394 of 400. The loopback lab has a case of `proxy.error`: a TLS proxy that gives the status 502.

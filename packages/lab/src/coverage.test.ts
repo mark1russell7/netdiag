@@ -67,13 +67,14 @@ describe("coverage", () => {
 
   it("gives the gaps of today: none, because the simulated world has a case and a bar of each class", () => {
     expect(TODAY.gaps).toMatchObject({ noCase: [], noBar: [], layers: [] });
-    expect(TODAY.rows.filter((row) => row.state === "covered")).toHaveLength(20);
+    expect(TODAY.rows.filter((row) => row.state === "covered")).toHaveLength(21);
     expect(E1.gaps.noCase).toEqual([
       { hypothesis: "interface.down", layer: "link", needs: ["link"], able: [] },
       { hypothesis: "wifi.weak", layer: "wifi", needs: ["wifi"], able: [] },
       { hypothesis: "ipv6.broken", layer: "ip", needs: ["ipv6"], able: [] },
     ]);
-    expect(E1.gaps.noBar).toEqual([]);
+    // The loopback lab has a case of proxy.error. Its bar comes from a dispatch of 5 runs.
+    expect(E1.gaps.noBar).toEqual(["proxy.error"]);
     expect(E1.gaps.layers).toEqual(["link", "wifi"]);
     expect(E1.rows.filter((row) => row.state === "covered")).toHaveLength(17);
   });
@@ -105,7 +106,7 @@ describe("coverage", () => {
     expect(later.problems).toEqual([]);
     const noBar = coverage({ catalog: STANDARD_CATALOG, worlds: [...E1_WORLDS, { ...IPV6_WORLD, bars: {} }] });
     expect(noBar.rows.find((row) => row.hypothesis === "ipv6.broken")?.state).toBe("no-bar");
-    expect(noBar.gaps.noBar).toEqual(["ipv6.broken"]);
+    expect(noBar.gaps.noBar).toEqual(["ipv6.broken", "proxy.error"]);
     expect(coverage({ catalog: STANDARD_CATALOG, worlds: [{ ...IPV6_WORLD, cases: [] }] }).gaps.noCase.find((gap) => gap.hypothesis === "ipv6.broken")?.able).toEqual(["ipv6"]);
   });
 
@@ -174,9 +175,9 @@ describe("the ladder", () => {
   });
 
   it("gives the counts of today: each covered cell is on E0 or E1, and only link.duplex on E4 is impossible", () => {
-    expect(ladder.classes).toEqual({ cells: 140, covered: 37, noBar: 0, gap: 103, noClass: 0, impossible: 0, gaps: 103 });
+    expect(ladder.classes).toEqual({ cells: 147, covered: 38, noBar: 1, gap: 108, noClass: 0, impossible: 0, gaps: 109 });
     expect(ladder.proposals).toEqual({ cells: 511, covered: 0, noBar: 0, gap: 0, noClass: 510, impossible: 1, gaps: 510 });
-    expect(ladder.total).toEqual({ cells: 651, covered: 37, noBar: 0, gap: 103, noClass: 510, impossible: 1, gaps: 613 });
+    expect(ladder.total).toEqual({ cells: 658, covered: 38, noBar: 1, gap: 108, noClass: 510, impossible: 1, gaps: 619 });
     const impossible = ladder.rows.flatMap((row) => row.cells.filter((cell) => cell.state === "impossible").map((cell) => [row.id, cell.layer]));
     expect(impossible).toEqual([["link.duplex", "E4"]]);
     const covered = ladder.rows.flatMap((row) => row.cells).filter((cell) => cell.state === "covered");
@@ -240,12 +241,12 @@ describe("coverageMarkdown", () => {
 
   it("gives the line of the counts first, with the gaps of the classes and of the proposed classes", () => {
     expect(lines[0]).toBe(
-      "- **613 gaps** in 651 cells: 93 classes on 7 layers. The classes of the catalog have 103 gaps, and the proposed classes have 510 gaps. 37 cells covered, and 1 cell impossible. The work ends only at zero gaps.",
+      "- **619 gaps** in 658 cells: 94 classes on 7 layers. The classes of the catalog have 109 gaps, and the proposed classes have 510 gaps. 38 cells covered, and 1 cell impossible. The work ends only at zero gaps.",
     );
   });
 
   it("gives a line for each row of the ladder, with a column for each layer", () => {
-    expect(table).toHaveLength(2 + 20 + 2 + 73);
+    expect(table).toHaveLength(2 + 21 + 2 + 73);
     for (const line of table) expect(line.split("|").length - 2, line).toBe(2 + LAB_LAYERS.length);
     expect(table[0]).toBe("| Class | Layer | E0 | E1 | E2 | E3 | E4 | E5 | E6 |");
   });

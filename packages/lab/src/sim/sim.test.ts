@@ -100,7 +100,7 @@ describe("the plan of the simulated world", () => {
   it("has the cases of each class of the catalog that a fault gives, and of none", () => {
     expect(SIM_CLASSES).toContain(NO_FAULT);
     expect(SIM_CLASSES).not.toContain("unknown");
-    expect(SIM_CLASSES).toHaveLength(21);
+    expect(SIM_CLASSES).toHaveLength(22);
     expect(plan).toHaveLength(SIM_CLASSES.length * CASES_PER_CLASS);
     expect(new Set(plan.map((each) => each.id)).size).toBe(plan.length);
   });
