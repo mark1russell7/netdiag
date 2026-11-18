@@ -123,7 +123,7 @@
         "cause": 2,
         "variant": 1
       },
-      "brier": 0.0222
+      "brier": 0.0223
     },
     {
       "calibration": {
@@ -137,14 +137,14 @@
         "cause": 4,
         "variant": 1
       },
-      "brier": 0.0525
+      "brier": 0.0526
     },
     {
       "calibration": {
         "cause": 5.657,
         "variant": 1
       },
-      "brier": 0.0682
+      "brier": 0.0683
     },
     {
       "calibration": {
@@ -158,14 +158,14 @@
         "cause": 11.314,
         "variant": 1
       },
-      "brier": 0.0922
+      "brier": 0.0923
     },
     {
       "calibration": {
         "cause": 16,
         "variant": 1
       },
-      "brier": 0.0989
+      "brier": 0.099
     },
     {
       "calibration": {
