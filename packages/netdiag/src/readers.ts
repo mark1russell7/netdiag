@@ -65,7 +65,7 @@ export interface ReadOptions {
   readonly gateway?: string | undefined;
   /**
    * The keyed hash of the history of the caller. A baseline fact gives a comparison only with a hasher of its key. With no
-   * hasher, or with a different key, the features of the history have no value, never `changed`.
+   * hasher, or with a different key, the features of the history have no value. They do not have the value `changed`.
    */
   readonly history?: HistoryHasher | undefined;
 }
@@ -269,8 +269,9 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - A Wi-Fi fact of a connected interface gives `wifi.signal`, one for each interface. A quality of Windows changes to dBm.
  * - A Wi-Fi fact of a connected interface gives `wifi.state` `connected`. A fact `wifi.interfaces` gives `none` when no
  *   fact tells of a connected interface. Only the list of the interfaces tells that a computer has no Wi-Fi link.
- * - A fact with the value of a key of `HISTORY_KEYS` and a baseline of that key and host gives the feature of the key:
- *   `same` when the baseline has the value, and `changed` when it does not. For example, a handshake gives `tls.root`.
+ * - A fact with the value of a key of `HISTORY_KEYS` and a baseline of that key and host gives the feature of the key.
+ *   The feature is `same` when the baseline has the value, and `changed` when it does not. For example, a handshake
+ *   gives `tls.root`.
  * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
  */
 export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {

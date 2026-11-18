@@ -67,7 +67,8 @@ export interface ReportOptions {
  * the gate holds.
  */
 export function bandLine(band: AlikeBand): string {
-  const inner = band.innerCase === undefined ? "No record has an alike cause" : `The largest distance of an alike cause is ${band.inner.toExponential(2)} (\`${band.innerCase}\`)`;
+  const count = band.alike === 1 ? "1 record has an alike cause" : `${String(band.alike)} records have an alike cause`;
+  const inner = band.innerCase === undefined ? "No record has an alike cause" : `${count}. The largest distance of an alike cause is ${band.inner.toExponential(2)} (\`${band.innerCase}\`)`;
   const outer = band.outer === undefined ? "no record has another cause" : `the smallest distance of another cause is ${band.outer.toExponential(3)} (\`${band.outerCase ?? "?"}\` to \`${band.nearest ?? "?"}\`)`;
   return `${inner}, and ${outer}. The gate holds the band from ${(ALIKE_EPSILON / ALIKE_MARGIN).toExponential(0)} to ${(ALIKE_EPSILON * ALIKE_MARGIN).toExponential(0)} empty.`;
 }

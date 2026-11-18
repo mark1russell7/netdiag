@@ -7,8 +7,8 @@ import type { SimHistory } from "./cases.ts";
 // gains, and the gap shows with its cause and its end.
 
 /**
- * A known gap: the cases of one class with one fault of the grammar and a history that matches, the cause of the failure,
- * and the work that ends it.
+ * A known gap of the simulated world. It has the cases of one class with one fault of the grammar and a matching history.
+ * It also has the cause of the failure and the work that ends it.
  */
 export interface SimGap {
   /** The id of the gap, for example `none/private-root`. */

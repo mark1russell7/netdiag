@@ -4,6 +4,7 @@ import { realClock } from "@mark1russell7/algebra/clock";
 import { authority, fakeToolHost, listen, startDnsServer, type Authority, type FakeRule, type Pems, type Zone } from "@netdiag/fixtures";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
+  BASELINE_KINDS,
   CYMRU_ZONES,
   DNS_ANSWER,
   HTTP_RESPONSE,
@@ -181,6 +182,19 @@ describe("the visit of a target", () => {
     expect(tools.calls).toEqual([]);
     const alone = await visit({ target: { host: NAME }, grants: [] }, { interfaces: () => ({ lo: TABLE["lo"] }) });
     expect(alone[0]?.kind === "fact" && isFactOf(LINK_STATE, alone[0].fact) && alone[0].fact.value.state).toBe("down");
+  });
+
+  it("reads the history of a host before its first probe, with the port of the host, and sends no packet for it", async () => {
+    const tools = pingHost([]);
+    const history = { checked: "2026-11-18T12:00:00.000Z", key: "0123456789abcdef", values: { "tls.root": ["a".repeat(64)] } };
+    const steps = await visit({ target: { host: NAME, port: 8443, history }, gateway: "192.0.2.1", grants: [] }, { tools, pingCount: 0 });
+    const facts = steps.flatMap((step) => (step.kind === "fact" && step.role === "target" ? [step.fact] : []));
+    expect(facts[0]?.kind).toBe(BASELINE_KINDS.tls.kind);
+    expect(facts[0]?.subject).toEqual(target(NAME, 8443));
+    expect(facts[0]?.value).toEqual({ feature: "tls.root", values: history.values["tls.root"], checked: history.checked, key: history.key });
+    expect(tools.calls).toEqual([]);
+    const plain = await visit({ target: { host: NAME }, gateway: "192.0.2.1", grants: [] }, { tools, pingCount: 0 });
+    expect(plain.some((step) => step.kind === "fact" && step.fact.kind === BASELINE_KINDS.tls.kind)).toBe(false);
   });
 
   it("reads the Wi-Fi link after the link, with the tool of the system, and sends no packet for it", async () => {

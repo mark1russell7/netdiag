@@ -1,4 +1,4 @@
-import { LAYERS, STANDARD_CATALOG } from "@mark1russell7/netdiag";
+import { LAYERS, STANDARD_CATALOG, type Reach } from "@mark1russell7/netdiag";
 import { checkSpace } from "@mark1russell7/strategy-space";
 import { describe, expect, it } from "vitest";
 import { FAULT_ATLAS } from "./atlas.ts";
@@ -131,7 +131,7 @@ describe("the fault grammar", () => {
   });
 
   it("gives each fault of a table entry a degree of the hypothesis of its class, and no degree to a fault of no entry", () => {
-    const reach = (): undefined => undefined;
+    const reach = (): Reach => "target";
     for (const entry of OPTION_DEGREES) {
       expect(OPTION_IDS.has(entry.option), entry.option).toBe(true);
       const params = Object.fromEntries(Object.entries(entry.when ?? {}).map(([name, values]) => [name, values[0] as string]));

@@ -100,7 +100,7 @@ export function pathOf(end: End, medium: Medium): readonly Hop[] {
 
 /**
  * The options whose fault the world applies only to the connections of the target. Each check of `SimNetwork` that
- * returns early for an end that is not the target names its option here.
+ * stops early for an end that is not the target names its option here.
  */
 export const TARGET_ONLY_OPTIONS: ReadonlySet<string> = new Set(["tls/expire", "tls/wrong", "tls/mismatch", "tcp/refuse", "http/delay", "http/refuse"]);
 
@@ -472,8 +472,9 @@ export class SimNetwork {
 
   /** The name of the certificate of an end. */
   /**
-   * This method gives the fingerprint of the root of the chain of a server that sends a full chain: the root of the
-   * authority of the epoch, a private root, or the root of an inspection device. A self-signed or short chain has no root.
+   * This method gives the fingerprint of the root of the chain of a server that sends a full chain. The root is the root
+   * of the authority of the epoch, a private root, or the root of an inspection device. A self-signed or short chain has
+   * no root.
    */
   rootOf(end: End, proxied: boolean): string {
     if (proxied) return "SIM-ROOT:inspection";
