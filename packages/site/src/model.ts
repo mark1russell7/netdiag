@@ -30,6 +30,7 @@ import {
   type ProbeChoice,
   type Reach,
 } from "@mark1russell7/netdiag/diagnosis";
+import { HISTORY_KEYS } from "@mark1russell7/netdiag/core";
 import { random } from "@mark1russell7/rigor-generators";
 
 /** The catalog of the demos: the standard catalog of netdiag. */
@@ -53,6 +54,7 @@ export const FEATURE_NAMES: Readonly<Record<string, string>> = {
   "tls.handshake": "The TLS handshake",
   "tls.ratio": "The time of the TLS handshake",
   "tls.trust": "The root of the certificate",
+  "tls.root": "The root against the last good check",
   "http.status": "The HTTP status",
   "http.ttfb": "The time to the first byte",
 };
@@ -97,12 +99,23 @@ export interface Board {
 /** An empty board. */
 export const EMPTY_BOARD: Board = { target: {}, reference: {} };
 
-/** This function gives the evidence of a board: the target first, then the second host. */
+/**
+ * This function gives the features of a host that its history explains. A key of the history that reads `same` explains
+ * the features of its `explains`, as in the reader of netdiag.
+ */
+export function explainedOf(side: Readonly<Record<string, string>>): ReadonlySet<string> {
+  return new Set(HISTORY_KEYS.filter((key) => side[key.feature] === "same").flatMap((key) => key.explains));
+}
+
+/** This function gives the evidence of a board: the target first, then the second host. It skips each explained feature. */
 export function evidenceOf(board: Board): Evidence[] {
-  return [
-    ...Object.entries(board.target).map(([feature, value]) => ({ feature, value, primary: true })),
-    ...Object.entries(board.reference).map(([feature, value]) => ({ feature, value, primary: false })),
-  ];
+  const sideOf = (side: Readonly<Record<string, string>>, primary: boolean): Evidence[] => {
+    const explained = explainedOf(side);
+    return Object.entries(side)
+      .filter(([feature]) => !explained.has(feature))
+      .map(([feature, value]) => ({ feature, value, primary }));
+  };
+  return [...sideOf(board.target, true), ...sideOf(board.reference, false)];
 }
 
 /** This function gives the value of a feature that a network with no fault gives most often. */
@@ -138,6 +151,14 @@ export const SCENARIOS: readonly Scenario[] = [
     label: "Facts that disagree",
     board: { target: { "link.state": "down", "tcp.connect": "connected", "http.status": "ok" }, reference: {} },
   },
+  {
+    label: "A private root that a good check saw",
+    board: { target: { "tls.trust": "private", "tls.root": "same" }, reference: { "tls.trust": "public", "tls.root": "same" } },
+  },
+  {
+    label: "A new private root on the target only",
+    board: { target: { "tls.trust": "private", "tls.root": "changed" }, reference: { "tls.trust": "public", "tls.root": "same" } },
+  },
 ];
 
 /** The ids of the most probable cause of each scenario, in the order of `SCENARIOS`. A test holds them. */
@@ -150,6 +171,8 @@ export const SCENARIO_CAUSES: readonly string[] = [
   "server.slow",
   "captive.portal",
   UNKNOWN,
+  NONE,
+  "tls.proxy",
 ];
 
 /** This function gives the diagnosis of a board. */

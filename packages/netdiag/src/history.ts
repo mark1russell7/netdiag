@@ -39,6 +39,11 @@ export interface HistoryKey {
   readonly read: (fact: Fact) => HistoryRead | undefined;
   /** This function tells if a good check keeps the value of a fact in the history. */
   readonly keeps: (fact: Fact) => boolean;
+  /**
+   * The features whose value in a fact is a property of the value of the key. When the key is `same`, the value of the
+   * key explains these features: they had this value in a good check. So the reader does not read them from the fact.
+   */
+  readonly explains: readonly string[];
 }
 
 /** The data of a key of the facts of one kind, with the types of the kind. The function `historyKey` makes the key. */
@@ -47,6 +52,7 @@ export interface HistoryKeySpec<V> {
   readonly kind: FactKind<V>;
   readonly read: (fact: Fact<V>) => HistoryRead | undefined;
   readonly keeps: (fact: Fact<V>) => boolean;
+  readonly explains?: readonly string[] | undefined;
 }
 
 /** This function makes a key of the history from its data. The key reads only the facts of its kind. */
@@ -56,6 +62,7 @@ export function historyKey<V>(spec: HistoryKeySpec<V>): HistoryKey {
     kind: spec.kind as FactKind<unknown>,
     read: (fact) => (isFactOf(spec.kind, fact) ? spec.read(fact) : undefined),
     keeps: (fact) => isFactOf(spec.kind, fact) && spec.keeps(fact),
+    explains: spec.explains ?? [],
   };
 }
 
@@ -63,6 +70,7 @@ export function historyKey<V>(spec: HistoryKeySpec<V>): HistoryKey {
  * The keys of the history.
  *
  * - `tls.root`: the root of the certificate chain of a TLS handshake. A good check keeps the root of each handshake `ok`.
+ *   The trust of a root is a property of the root. Thus a root of a good check explains `tls.trust` of the handshake.
  *
  * The next keys are the address of the gateway on the link, the resolver, the route and the key of the certificate.
  */
@@ -75,6 +83,7 @@ export const HISTORY_KEYS: readonly HistoryKey[] = [
       return root === undefined ? undefined : { value: root, host: fact.value.servername ?? fact.value.address, port: fact.value.port, address: fact.value.address };
     },
     keeps: (fact) => fact.value.outcome === "ok",
+    explains: ["tls.trust"],
   }),
 ];
 

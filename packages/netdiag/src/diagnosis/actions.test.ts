@@ -24,6 +24,7 @@ import {
   type Diagnosis,
   type Evidence,
 } from "./index.ts";
+import { HISTORY_KEYS } from "../history.ts";
 
 const catalog = STANDARD_CATALOG;
 
@@ -295,7 +296,8 @@ describe("the repeats of a private certificate by design", () => {
   const independent = compiled.value;
   const healthy: Evidence[] = [...STANDARD_CATALOG.features.values()].flatMap((feature) => {
     const value = Object.entries(feature.healthy).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (value === undefined || feature.id === "tls.trust") return [];
+    // A first check has no history, so it reads no feature of a key of the history.
+    if (value === undefined || feature.id === "tls.trust" || HISTORY_KEYS.some((key) => key.feature === feature.id)) return [];
     return [true, false].map((primary) => ({ feature: feature.id, value, primary }));
   });
   const evidence = (privates: number): Evidence[] => [
@@ -304,11 +306,12 @@ describe("the repeats of a private certificate by design", () => {
     ...Array.from({ length: privates }, () => ({ feature: "tls.trust", value: "private", primary: true })),
   ];
   // The two causes of a proxy share the observation, so the odds of a proxy are the odds of the two causes together.
+  // The odds are against a network with no fault. A third cause that also predicts a private root, for example the chain
+  // degree of tls.cert-invalid, takes a part of each repeat, but the odds against no fault keep the full factor.
   const proxyOdds = (model: Catalog, privates: number): number => {
-    const p = diagnose(model, evidence(privates))
-      .causes.filter((cause) => cause.id === "tls.proxy" || cause.id === "proxy.error")
-      .reduce((sum, cause) => sum + cause.probability, 0);
-    return p / (1 - p);
+    const { causes } = diagnose(model, evidence(privates));
+    const p = causes.filter((cause) => cause.id === "tls.proxy" || cause.id === "proxy.error").reduce((sum, cause) => sum + cause.probability, 0);
+    return p / (causes.find((cause) => cause.id === NONE)?.probability ?? Number.NaN);
   };
 
   it("do not reach the confidence of a proxy through the repeat alone", () => {

@@ -9,6 +9,7 @@ import {
   NONE,
   STANDARD_CATALOG,
   STANDARD_CATALOG_SPEC,
+  STANDARD_FAULTS,
   STANDARD_FEATURES,
   STRENGTHS,
   UNKNOWN,
@@ -60,6 +61,14 @@ describe("the catalog", () => {
     const priors = catalog.hypotheses.map((h) => catalog.prior(h.id));
     expect(priors.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
     expect(new Set(priors).size).toBe(1);
+  });
+
+  it("gives a changed root to each fault and degree with a private trust: a root that the clients were made to trust is a new root", () => {
+    for (const fault of STANDARD_FAULTS) {
+      for (const predicts of [fault.predicts, ...(fault.degrees ?? []).map((degree) => degree.predicts)]) {
+        if (predicts?.["tls.trust"]?.expect === "private") expect(predicts["tls.root"]?.expect, fault.id).toBe("changed");
+      }
+    }
   });
 
   it("gives each fault a summary and a step in plain words", () => {

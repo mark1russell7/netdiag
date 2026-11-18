@@ -602,7 +602,9 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
     predicts: {
       "tls.ratio": { expect: ["mid", "high"], strength: "usual" },
-      "tls.trust": { expect: "private", strength: "usual" },
+      // The device gives a certificate from a root that the client was made to trust, or from no trusted root. A public
+      // root needs a public certificate that an authority gave in error.
+      "tls.trust": { expect: "private", strength: "sure" },
       "tls.root": { expect: "changed", strength: "usual" },
       "tcp.time": { expect: "short", strength: "strong" },
     },
@@ -670,7 +672,9 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Ask the owner of the network to repair the proxy, and compare the site on a different network.",
     predicts: {
       // A device of the network can give an HTTP status for an HTTPS site only as a TLS proxy that the clients trust.
-      "tls.trust": { expect: "private", strength: "strong" },
+      // The root of that proxy is not the root of the site in a good check.
+      "tls.trust": { expect: "private", strength: "sure" },
+      "tls.root": { expect: "changed", strength: "usual" },
       "http.status": { expect: "server-error", strength: "strong" },
     },
   },

@@ -633,6 +633,16 @@ describe("the reader of the history", () => {
     expect(roots([baseline("b", "a.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)])).toEqual(["changed"]);
   });
 
+  it("reads no tls.trust of a handshake with the root of a good check, and tells why, and reads it with a changed root", () => {
+    const same = readEvidence([baseline("b", "a.test", [ROOT]), handshake("h", "192.0.2.1", ROOT)], { history: hasher });
+    expect(valuesOf(same.evidence, "tls.trust")).toEqual([]);
+    expect(valuesOf(same.evidence, "tls.handshake")).toEqual(["ok"]);
+    expect(same.skipped.find((each) => each.fact === "h")?.reason).toBe("The value of tls.root is the value of a good check, so it explains tls.trust.");
+    const changed = readEvidence([baseline("b", "a.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)], { history: hasher });
+    expect(valuesOf(changed.evidence, "tls.trust")).toEqual(["public"]);
+    expect(valuesOf(readEvidence([handshake("h", "192.0.2.1", ROOT)], { history: hasher }).evidence, "tls.trust")).toEqual(["public"]);
+  });
+
   it("gives no tls.root with no history, with no hasher, or with the hasher of a different key, and tells why", () => {
     expect(roots([handshake("h", "192.0.2.1", ROOT)])).toEqual([]);
     const facts = [baseline("b", "a.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)];

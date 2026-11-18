@@ -286,8 +286,15 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     else (sorted[entry[0]] as Fact[]).push(fact);
   }
 
+  /** For a fact and a feature that a key of the history explains, the feature of the key. */
+  const explained = new Map<string, string>();
   /** This function puts a value in the slot of a feature and a group. A `sticky` value stays when a later fact disagrees. */
   const note = (feature: string, group: string, fact: Fact, value: string, sticky?: string): void => {
+    const by = explained.get(`${fact.id}\u0000${feature}`);
+    if (by !== undefined) {
+      skipped.push({ fact: fact.id, reason: `The value of ${by} is the value of a good check, so it explains ${feature}.` });
+      return;
+    }
     const primary = primaryOf(fact);
     const key = `${feature}\u0000${primary ? 1 : 0}\u0000${group}`;
     const slot = slots.get(key);
@@ -356,23 +363,9 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
   // Karn's rule: the time of a connect that sent its SYN again is not a round trip, so it gives no ratio.
   const roundTrip = (tcp: Fact<TcpConnect> | undefined): Fact<TcpConnect> | undefined => (tcp === undefined || binOf(TCP_TIME_BINS, tcp.value.ms) === "retry" ? undefined : tcp);
 
-  for (const fact of sorted.tls) {
-    const handshake = fact.value;
-    if (ofBrokenFamily(fact, handshake.address)) continue;
-    const group = `${subject(handshake)}\u0000${handshake.servername ?? ""}`;
-    const value = TLS_HANDSHAKE_VALUES[handshake.outcome];
-    if (value === undefined) {
-      skip(fact, "tls.handshake", handshake.outcome);
-      continue;
-    }
-    note("tls.handshake", group, fact, value);
-    if (handshake.certificate !== undefined) note("tls.trust", group, fact, TLS_TRUST_VALUES[handshake.certificate.trust]);
-    const tcp = handshake.outcome === "ok" || handshake.outcome === "cert-error" ? roundTrip(connectBefore(fact, handshake)) : undefined;
-    if (tcp !== undefined) note("tls.ratio", group, fact, binOf(TLS_RATIO_BINS, ratio(handshake.ms, tcp)));
-  }
-
   // The baseline of a fact is the last baseline of its key, its host and its role. A baseline with a port compares only
   // with its port. A baseline of another key of hashes gives no comparison: a lost key gives no value, not `changed`.
+  // The history comes before the other readers: a key that is `same` explains the features of its `explains`.
   const hasher = options.history;
   for (const fact of sorted.baseline) {
     if (hasher === undefined || fact.value.key !== hasher.id) {
@@ -389,8 +382,26 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
       const host = target(read.host).host;
       const matches = baselines.filter((each) => each.subject.host === host && (each.subject.port === undefined || each.subject.port === read.port) && primaryOf(each) === primaryOf(fact));
       const baseline = matches.at(-1);
-      if (baseline !== undefined) note(key.feature, `${formatTarget(fact.subject)}\u0000${host}`, fact, baseline.value.values.includes(hasher.hash(read.value)) ? "same" : "changed");
+      if (baseline === undefined) continue;
+      const same = baseline.value.values.includes(hasher.hash(read.value));
+      note(key.feature, `${formatTarget(fact.subject)}\u0000${host}`, fact, same ? "same" : "changed");
+      if (same) for (const feature of key.explains) explained.set(`${fact.id}\u0000${feature}`, key.feature);
     }
+  }
+
+  for (const fact of sorted.tls) {
+    const handshake = fact.value;
+    if (ofBrokenFamily(fact, handshake.address)) continue;
+    const group = `${subject(handshake)}\u0000${handshake.servername ?? ""}`;
+    const value = TLS_HANDSHAKE_VALUES[handshake.outcome];
+    if (value === undefined) {
+      skip(fact, "tls.handshake", handshake.outcome);
+      continue;
+    }
+    note("tls.handshake", group, fact, value);
+    if (handshake.certificate !== undefined) note("tls.trust", group, fact, TLS_TRUST_VALUES[handshake.certificate.trust]);
+    const tcp = handshake.outcome === "ok" || handshake.outcome === "cert-error" ? roundTrip(connectBefore(fact, handshake)) : undefined;
+    if (tcp !== undefined) note("tls.ratio", group, fact, binOf(TLS_RATIO_BINS, ratio(handshake.ms, tcp)));
   }
 
   for (const fact of sorted.http) {
