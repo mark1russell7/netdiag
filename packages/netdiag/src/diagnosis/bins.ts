@@ -1,6 +1,6 @@
 /**
- * The bins that change a number of a fact into a value of a feature. The catalog uses the bins of the loss, because the
- * predictions of a loss come from the count of the echo requests and the limits of the bins.
+ * This module holds the bins that change the number in a fact into the value of a feature. The catalog uses the bins
+ * of a loss. The predictions of a loss come from the count of the echo requests and the limits of these bins.
  */
 
 /** A bin of a number. A number below `below` gets `value`. The last bin has no limit. */

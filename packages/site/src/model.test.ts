@@ -1,5 +1,5 @@
 import { featuresOf } from "@mark1russell7/netdiag";
-import { GAIN_RESOLUTION, MAX_JOINT_VALUES, NONE, UNKNOWN } from "@mark1russell7/netdiag/diagnosis";
+import { GAIN_RESOLUTION, LOSS_DEGREES, MAX_JOINT_VALUES, NONE, UNKNOWN } from "@mark1russell7/netdiag/diagnosis";
 import { describe, expect, it } from "vitest";
 import {
   CATALOG,
@@ -93,9 +93,11 @@ describe("the probes", () => {
     const seeds = Array.from({ length: 200 }, (_, i) => String(i));
     const degrees = seeds.map((seed) => worldDegree("path.loss", seed));
     expect(seeds.map((seed) => worldDegree("path.loss", seed))).toEqual(degrees);
-    const heavy = degrees.filter((degree) => degree === "heavy").length;
-    expect(degrees.filter((degree) => degree === "light").length + heavy).toBe(seeds.length);
-    // The degree heavy has 1 part of 4. With 200 worlds, its count is from 30 to 70 in more than 99 of 100 draws.
+    const ids = new Set(LOSS_DEGREES.map((degree) => degree.id));
+    for (const degree of degrees) expect(ids.has(degree ?? ""), degree).toBe(true);
+    const large = new Set(LOSS_DEGREES.filter((degree) => degree.loss >= 0.5).map((degree) => degree.id));
+    const heavy = degrees.filter((degree) => large.has(degree ?? "")).length;
+    // The degrees with a loss of 0.5 or more have 1 part of 4. With 200 worlds, their count is from 30 to 70 in more than 99 of 100 draws.
     expect(heavy).toBeGreaterThanOrEqual(30);
     expect(heavy).toBeLessThanOrEqual(70);
     expect(worldDegree("port.closed", "1")).toBeUndefined();

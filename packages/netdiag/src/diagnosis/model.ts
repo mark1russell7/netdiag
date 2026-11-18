@@ -109,9 +109,9 @@ export interface Fault {
   readonly prior?: number | undefined;
   readonly predicts: Readonly<Record<string, Prediction>>;
   /**
-   * The degrees of the fault. A degree is a severity or a mode that the facts do not tell directly, for example a light
-   * or a heavy loss, or a silent or an absent resolver. A mode is the same on each subject of a visit, so a degree with
-   * one expected value counts it once. With no degrees, the fault has one degree. The model sums the variants of each
+   * The degrees of the fault. A degree is a severity or a mode that the facts do not tell directly. Examples are a small
+   * or a large loss, and a silent or an absent resolver. A mode is the same on each subject of a visit, so a degree
+   * with one expected value counts it once. With no degrees, the fault has one degree. The model sums the variants of each
    * degree and each reach.
    */
   readonly degrees?: readonly Degree[] | undefined;
