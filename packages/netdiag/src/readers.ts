@@ -261,6 +261,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - The reader gives one evidence for each feature, subject and role. When a subject has more facts, the last fact decides.
  * - For `dns.answer`, one answer `ok` of a name and a resolver decides. For `dns.address`, one private address decides.
  * - The order of the facts is the order of the runner. A ratio uses the last TCP connect before the handshake or the request.
+ * - A connect in the bin `retry` sent its SYN again, so its time is not a round trip (Karn's rule). It gives no ratio.
  * - An ICMP echo fact gives `gateway.reply` for the gateway, and `icmp.reply` for each other address.
  * - The loss to the gateway, from ping or from mtr, gives `gateway.loss`, not `path.loss`. Thus a loss past the
  *   gateway shows as a loss of the path with no loss to the gateway.
@@ -355,6 +356,8 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     return best;
   };
   const ratio = (ms: number, tcp: Fact<TcpConnect>): number => ms / Math.max(tcp.value.ms, MIN_CONNECT_MS);
+  // Karn's rule: the time of a connect that sent its SYN again is not a round trip, so it gives no ratio.
+  const roundTrip = (tcp: Fact<TcpConnect> | undefined): Fact<TcpConnect> | undefined => (tcp === undefined || binOf(TCP_TIME_BINS, tcp.value.ms) === "retry" ? undefined : tcp);
 
   for (const fact of sorted.tls) {
     const handshake = fact.value;
@@ -367,7 +370,7 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     }
     note("tls.handshake", group, fact, value);
     if (handshake.certificate !== undefined) note("tls.trust", group, fact, TLS_TRUST_VALUES[handshake.certificate.trust]);
-    const tcp = handshake.outcome === "ok" || handshake.outcome === "cert-error" ? connectBefore(fact, handshake) : undefined;
+    const tcp = handshake.outcome === "ok" || handshake.outcome === "cert-error" ? roundTrip(connectBefore(fact, handshake)) : undefined;
     if (tcp !== undefined) note("tls.ratio", group, fact, binOf(TLS_RATIO_BINS, ratio(handshake.ms, tcp)));
   }
 
@@ -381,7 +384,7 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
       continue;
     }
     note("http.status", group, fact, status);
-    const tcp = response.ttfbMs === undefined ? undefined : connectBefore(fact, response);
+    const tcp = response.ttfbMs === undefined ? undefined : roundTrip(connectBefore(fact, response));
     if (tcp !== undefined && response.ttfbMs !== undefined) note("http.ttfb", group, fact, binOf(HTTP_TTFB_BINS, ratio(response.ttfbMs, tcp)));
   }
 

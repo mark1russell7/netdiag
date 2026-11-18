@@ -240,7 +240,9 @@ A fault can have more than one reach. For example, a loss can be in the local ne
 
 A fault can also have degrees, for example a light loss and a heavy loss. Each degree has a part of the prior of the fault, and predictions that replace the predictions of the fault. A heavy loss makes DNS, TCP and HTTP time out together, and a light loss does not. Thus the model sees the timeouts together. The variants of a fault are each pair of a reach and a degree. `Cause.degrees` gives the probability of each degree.
 
-The standard catalog `STANDARD_CATALOG` has 15 features and 20 faults. The rules of practice give its first likelihoods, and each hypothesis has the same prior. The lab runs (ND-7) then fit these numbers.
+The predictions of the two degrees of a loss come from the tries of each step of a visit, in `LOSS_STEPS`. `EXCHANGE_LOSS` gives the chance q that one exchange loses a packet: 0.25 for a light loss and 0.7 for a heavy loss. A step with k tries times out with the chance q^k. A step that passes was late when it lost its first try. Its time then lands in the late bins of the step. An echo request is one exchange, so `path.loss` follows from q and the count of the requests.
+
+The standard catalog `STANDARD_CATALOG` has 18 features and 21 faults. The rules of practice give its first likelihoods, and each hypothesis has the same prior. The lab runs (ND-7) then fit these numbers.
 
 ```ts
 import { STANDARD_CATALOG, diagnose } from "@mark1russell7/netdiag/diagnosis";
@@ -263,8 +265,8 @@ const result = diagnose(STANDARD_CATALOG, [
 | `ip.family` | The TCP connects to the IPv4 and the IPv6 addresses of one name. When one family is broken, the other facts of its addresses give no second feature. |
 | `tcp.connect`, `tcp.time` | The outcome and the time of each TCP connect. A time of 900 ms or more tells that the SYN went again. |
 | `tls.handshake`, `tls.trust` | The outcome of the handshake and the root of the certificate chain. A chain with no root of the store gives `private`. |
-| `tls.ratio` | The time of the handshake divided by the time of the last TCP connect to the same address and port. |
-| `http.status`, `http.ttfb` | The class of the status, and the time to the first byte divided by the time of the TCP connect. |
+| `tls.ratio` | The time of the handshake divided by the time of the last TCP connect to the same address and port. A connect that sent its SYN again gives no ratio, because its time is not a round trip (Karn's rule). |
+| `http.status`, `http.ttfb` | The class of the status, and the time to the first byte divided by the time of the TCP connect. A connect that sent its SYN again gives no ratio (Karn's rule). |
 | `link.state` | The link fact of each gateway. An interface that is up on the network of the gateway gives `up`. With no gateway, an interface that is up and not loopback gives `up`. |
 | `gateway.reply` | The echo requests to the address of the option `gateway`. An unreachable gateway gives `none`. |
 | `gateway.loss` | The share of the echo requests to the gateway with a reply, with the bins of `path.loss`. A report of `mtr` to the gateway gives it too. |

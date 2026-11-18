@@ -354,9 +354,9 @@ The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
 
 | Class | Hits | The other answers | The cause |
 | --- | --- | --- | --- |
-| `path.loss` | 98 % | `ipv6.broken`, `none`, `server.slow` | Three losses from 44 % to 83 % lost each packet of one IP family. Two light losses of 16 % gave no sign. One visit read only DNS. A loss of 48 % made the TLS handshake slow, and read as a slow server. |
+| `path.loss` | 99 % | `none` | Three visits lost 1 ping of 20, with each other value on time. Then a light loss and no loss have almost the same probability. One visit lost the `A` query of each name, and the `AAAA` answers hid the timeouts. Two visits lost pings to only one of two hosts. |
 
-Thirteen changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last eleven with 80:
+Fourteen changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last twelve with 80:
 
 - A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
 - When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.
@@ -371,3 +371,4 @@ Thirteen changes of ND-17 closed weak points. The first two are measures with 12
 - A prediction gives the rest of its mass to the other values as the healthy distribution, with the floor for each value. Before, `name.missing` gave `servfail` the same 0.02 as a healthy answer. `resolver.failing` went from 99 % to 100 %. One case of `path.loss` at a near tie (0.57 to 0.43) went to `wifi.weak`.
 - The loss to the gateway is the new feature `gateway.loss`. The new reach `upstream` changes each host past the gateway, but not the local features. `path.loss` has the reaches `shared`, `upstream` and `target`, with the shares 1, 1 and 2 of its prior. `wifi.weak` needs a connected Wi-Fi interface. `path.loss` went from 388 to 387 hits, and `wifi.weak` from 392 to 397. Before, 2 wired cases read as `wifi.weak`, and 0 do so after the change.
 - A loss does the same to TCP and HTTP at each place where it starts. Thus `wifi.weak` and `path.loss` take the signs of a loss in `tcp.time` and `http.ttfb` from one place. Before, `wifi.weak` expected a slow connect. `path.loss` went from 387 to 393 hits of 400, and `wifi.weak` from 397 to 400.
+- The signs of a loss come from the tries of each step. A step with k tries times out with the chance q^k, under the chance q of a loss of one exchange. A connect that sent its SYN again gives no `tls.ratio` and no `http.ttfb` (Karn's rule). Before, a slow first byte after a late connect read as a slow server. `path.loss` went from 393 to 394 hits of 400. On the seeds 6 to 10, which are not in the fit, it went from 390 to 394.

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { DNS_TRIES, STANDARD_CATALOG, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
+import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { random } from "@mark1russell7/rigor-generators";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
@@ -7,6 +7,7 @@ import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
 import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
+import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
 import { barsText, placeHits, silentVisits, simRuns } from "./report.ts";
 import { SIM_VISITS, simVisit, visitSim } from "./world.ts";
 
@@ -92,6 +93,20 @@ describe("the visits of the simulated world", () => {
     expect(values(missing, "dns.answer").filter((each) => each["name"] === "www.shop-lab.net").map((each) => each["outcome"])).toEqual(["nxdomain", "nxdomain"]);
     const chain = await visitSim(simCase(fault("tls/wrong", { place: "server", kind: "chain" })));
     expect(values(chain, "tls.handshake", TARGET)[0]).toMatchObject({ outcome: "cert-error", certificate: { trust: "none" } });
+  });
+});
+
+describe("the loss model of the catalog", () => {
+  it("has the tries of the probes of the simulated world", () => {
+    const tries = (feature: string): number | undefined => LOSS_STEPS.find((step) => step.feature === feature)?.tries;
+    const syns = SYN_TRIES_MS.filter((at) => at < DEFAULT_TIMEOUT_MS);
+    // A TLS or HTTP exchange sends again after an RTO from MIN_RTO_MS that doubles, in the time after the last SYN.
+    const rest = DEFAULT_TIMEOUT_MS - Math.max(...syns);
+    const sends = Array.from({ length: 10 }, (_, index) => MIN_RTO_MS * (2 ** index - 1)).filter((at) => at < rest);
+    expect(tries("dns.answer")).toBe(DNS_TRIES);
+    expect(tries("tcp.connect")).toBe(syns.length);
+    expect(tries("tls.handshake")).toBe(sends.length);
+    expect(tries("http.status")).toBe(sends.length);
   });
 });
 
