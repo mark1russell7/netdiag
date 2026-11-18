@@ -2044,7 +2044,7 @@ interface Catalog {
   readonly features: ReadonlyMap<string, Feature>;
   readonly hypotheses: readonly Hypothesis[];
   likelihood(hypothesis: string, feature: string, value: string, primary: boolean, reach?: Reach, degree?: string): number;
-  prior(hypothesis: string, degree?: string): number;
+  prior(hypothesis: string, degree?: string, reach?: Reach): number;
 }
 
 ### build/index.chunk2.d.ts#CatalogSpec
@@ -2129,6 +2129,7 @@ interface Fault {
   readonly part: Part;
   readonly layer: Layer;
   readonly reach: Reach | readonly Reach[];
+  readonly reachShares?: Partial<Readonly<Record<Reach, number>>> | undefined;
   readonly summary: string;
   readonly step: string;
   readonly prior?: number | undefined;
@@ -2143,6 +2144,7 @@ interface Feature {
   readonly summary: string;
   readonly values: readonly string[];
   readonly healthy: Distribution;
+  readonly local?: boolean | undefined;
 }
 
 ### build/index.chunk2.d.ts#GAIN_RESOLUTION
@@ -2268,7 +2270,7 @@ interface RankOptions {
 }
 
 ### build/index.chunk2.d.ts#Reach
-type Reach = "shared" | "target";
+type Reach = "shared" | "upstream" | "target";
 
 ### build/index.chunk2.d.ts#ReachShare
 interface ReachShare {

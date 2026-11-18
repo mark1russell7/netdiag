@@ -220,9 +220,10 @@ describe("the tables of the readers", () => {
     expect(featuresOf([TCP_CONNECT.kind])).toEqual(["tcp.connect", "tcp.time"]);
     expect(featuresOf([TLS_HANDSHAKE.kind])).toEqual(["tls.handshake", "tls.trust"]);
     expect(featuresOf([TLS_HANDSHAKE.kind, TCP_CONNECT.kind])).toEqual(["tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio"]);
-    expect(featuresOf([ICMP_ECHO.kind], { gateway: true })).toEqual(["gateway.reply", "path.loss"]);
+    expect(featuresOf([ICMP_ECHO.kind], { gateway: true })).toEqual(["gateway.reply", "gateway.loss"]);
     expect(featuresOf([ICMP_ECHO.kind], { gateway: false })).toEqual(["icmp.reply", "path.loss"]);
-    expect(featuresOf([PATH_REPORT.kind, PATH_TRACE.kind])).toEqual(["path.loss"]);
+    expect(featuresOf([PATH_REPORT.kind, PATH_TRACE.kind])).toEqual(["gateway.loss", "path.loss"]);
+    expect(featuresOf([PATH_REPORT.kind], { gateway: false })).toEqual(["path.loss"]);
     expect(featuresOf([LINK_STATE.kind])).toEqual(["link.state"]);
     expect(featuresOf([PATH_MTU.kind])).toEqual(["path.mtu"]);
     expect(featuresOf([WIFI_LINK.kind])).toEqual(["wifi.signal", "wifi.state"]);
@@ -341,6 +342,18 @@ describe("readEvidence", () => {
     const n = LOSS_MIN_SENT;
     const facts = factsOf([echo("192.0.2.1", "reply", n, n), echo("192.0.2.2", "reply", n, n - 1), echo("192.0.2.3", "reply", n, n - 2), echo("192.0.2.4", "reply", n - 1, 1), echo("192.0.2.5", "none", n)]);
     expect(valuesOf(readEvidence(facts).evidence, "path.loss")).toEqual(["none", "some", "high"]);
+  });
+
+  it("gives gateway.loss for the loss to the gateway, from ping or from mtr, and path.loss for each other address", () => {
+    const n = LOSS_MIN_SENT;
+    const gateway = "192.0.2.1";
+    const facts = factsOf([echo(gateway, "reply", n, n - 1), echo("198.51.100.7", "reply", n, n)]);
+    expect(valuesOf(readEvidence(facts, { gateway }).evidence, "gateway.loss")).toEqual(["some"]);
+    expect(valuesOf(readEvidence(facts, { gateway }).evidence, "path.loss")).toEqual(["none"]);
+    expect(valuesOf(readEvidence(facts).evidence, "path.loss")).toEqual(["some", "none"]);
+    const mtr = readEvidence(factsOf([report(gateway, "reached", n, n - 1)]), { gateway }).evidence;
+    expect(valuesOf(mtr, "gateway.loss")).toEqual(["some"]);
+    expect(valuesOf(mtr, "path.loss")).toEqual([]);
   });
 
   it("gives path.loss from the last hop of a report of mtr, and the last fact of ping or mtr decides", () => {

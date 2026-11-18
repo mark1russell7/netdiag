@@ -133,6 +133,21 @@ describe("the catalog", () => {
         ],
     ),
     ...[
+      ["a share of a reach that the fault does not have", { shared: 1 }],
+      ["a reach with a share of 0", { target: 0 }],
+      ["a reach with a share that is not a number", { target: Number.NaN }],
+    ].map(
+      ([name, reachShares]): [string, CatalogSpec] =>
+        [
+          `a fault with ${String(name)}`,
+          {
+            version: "t",
+            features: [tcp],
+            faults: [{ id: "x", part: "service", layer: "tcp", reach: "target", reachShares: reachShares as Partial<Record<Reach, number>>, summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } } }],
+          },
+        ],
+    ),
+    ...[
       ["an empty list of degrees", []],
       ["a repeated degree", [{ id: "heavy", summary: "", share: 1 }, { id: "heavy", summary: "", share: 1 }]],
       ["a degree with an invalid id", [{ id: "Heavy Loss", summary: "", share: 1 }]],
@@ -327,6 +342,39 @@ describe("a fault with two reaches", () => {
   });
 });
 
+describe("a fault with three reaches and their shares", () => {
+  const reachOf = (evidence: readonly Evidence[], reach: string): number =>
+    diagnose(catalog, evidence).causes.find((cause) => cause.id === "path.loss")?.reaches?.find((share) => share.reach === reach)?.probability ?? Number.NaN;
+
+  it("keeps the local features healthy under the reach upstream, and changes the others on each host", () => {
+    expect(catalog.likelihood("path.loss", "gateway.loss", "none", true, "upstream")).toBe(catalog.likelihood(NONE, "gateway.loss", "none", true));
+    expect(catalog.likelihood("path.loss", "gateway.loss", "none", true, "shared")).toBeLessThan(catalog.likelihood(NONE, "gateway.loss", "none", true));
+    expect(catalog.likelihood("path.loss", "path.loss", "some", false, "upstream")).toBe(catalog.likelihood("path.loss", "path.loss", "some", true, "upstream"));
+    expect(catalog.likelihood("path.loss", "path.loss", "some", false, "target")).toBe(catalog.likelihood(NONE, "path.loss", "some", false));
+  });
+
+  it("gives each reach its share of the prior, and the mean of the reaches by their shares", () => {
+    const whole = catalog.prior("path.loss");
+    expect(catalog.prior("path.loss", undefined, "shared")).toBeCloseTo(whole / 4, 12);
+    expect(catalog.prior("path.loss", undefined, "upstream")).toBeCloseTo(whole / 4, 12);
+    expect(catalog.prior("path.loss", undefined, "target")).toBeCloseTo(whole / 2, 12);
+    expect(catalog.prior("path.loss", "light", "target")).toBeCloseTo(catalog.prior("path.loss", "light") / 2, 12);
+    expect(catalog.prior("tls.proxy", undefined, "target")).toBeCloseTo(catalog.prior("tls.proxy") / 2, 12);
+    expect(catalog.prior("server.slow", undefined, "upstream")).toBe(0);
+    const of = (reach: Reach): number => catalog.likelihood("path.loss", "gateway.loss", "none", false, reach);
+    expect(catalog.likelihood("path.loss", "gateway.loss", "none", false)).toBeCloseTo(of("shared") / 4 + of("upstream") / 4 + of("target") / 2, 12);
+  });
+
+  it("finds where a loss starts: before the gateway or past it", () => {
+    const past = [e("gateway.loss", "none"), e("path.loss", "some"), e("path.loss", "some", false)];
+    expect(top(past)).toBe("path.loss");
+    expect(reachOf(past, "upstream")).toBeGreaterThan(reachOf(past, "shared"));
+    expect(reachOf(past, "upstream")).toBeGreaterThan(reachOf(past, "target"));
+    const before = [e("gateway.loss", "some"), e("path.loss", "some"), e("path.loss", "some", false)];
+    expect(reachOf(before, "shared")).toBeGreaterThan(reachOf(before, "upstream"));
+  });
+});
+
 describe("a fault with degrees", () => {
   // A read of the simulated world: a loss of 76 % at the gateway. Each DNS try fails at the target and at the reference.
   const heavy = [
@@ -403,7 +451,7 @@ describe("a fault with degrees", () => {
     expect((cause?.degrees ?? []).reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(p, 12);
     expect((cause?.reaches ?? []).reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(p, 12);
     const variants = cause === undefined ? [] : causeVariants(cause);
-    expect(variants.map((variant) => `${variant.degree ?? ""}/${variant.reach ?? ""}`)).toEqual(["light/shared", "light/target", "heavy/shared", "heavy/target"]);
+    expect(variants.map((variant) => `${variant.degree ?? ""}/${variant.reach ?? ""}`)).toEqual(["light/shared", "light/upstream", "light/target", "heavy/shared", "heavy/upstream", "heavy/target"]);
     expect(variants.reduce((sum, variant) => sum + variant.probability, 0)).toBeCloseTo(p, 12);
     const slow = diagnose(catalog, heavy).causes.find((each) => each.id === "server.slow");
     expect(slow?.degrees).toBeUndefined();
