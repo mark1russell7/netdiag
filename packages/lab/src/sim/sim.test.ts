@@ -6,6 +6,7 @@ import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termCla
 import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
 import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
+import { gapOf, SIM_GAPS } from "./gaps.ts";
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
 import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
 import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
@@ -17,6 +18,9 @@ import {
   actionsText,
   barsText,
   calibrationText,
+  closedGaps,
+  gapsText,
+  gateCalibration,
   limitProblems,
   placeHits,
   SIM_HARM_LIMIT,
@@ -230,6 +234,8 @@ describe("the bars of the simulated world", () => {
     expect(runs.bars.tag).toBe("ok");
     if (runs.bars.tag !== "ok") return;
     expect(barsText(runs.bars.value)).toBe(readFileSync(new URL("sim.json", BARS_FOLDER), "utf8"));
+    // Each known gap has its own bars, its cause and its end in bars/sim-gaps.json.
+    expect(gapsText(runs)).toBe(readFileSync(new URL("sim-gaps.json", BARS_FOLDER), "utf8"));
     // A change of the world that makes the faults silent more often changes this count. Tell the reason in the PR.
     expect(silentVisits(runs.outcomes)).toBe(20);
     const labels = new Set(placeHits(runs.outcomes).map((each) => each.label));
@@ -242,8 +248,29 @@ describe("the bars of the simulated world", () => {
     // The limits of the correct low end and of the calibration errors come from five seed sets. Change them only with --limits and a reason in the PR.
     expect(calibrationText(runs.outcomes)).toBe(readFileSync(new URL("calibration.json", BARS_FOLDER), "utf8"));
     const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
-    expect(limitProblems(rates, actionCalibration(runs.outcomes), limits)).toEqual([]);
+    expect(limitProblems(rates, gateCalibration(runs.outcomes), limits)).toEqual([]);
   }, 180_000);
+});
+
+describe("the known gaps of the simulated world", () => {
+  const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
+  const brokenChain = fault("tls/wrong", { place: "server", kind: "chain" });
+
+  it("hold the healthy cases with a private root, and no case of another class or of another kind", () => {
+    expect(gapOf(simCase(privateRoot))?.id).toBe("none/private-root");
+    expect(gapOf(simCase(brokenChain))).toBeUndefined();
+    expect(gapOf(simCase(HEALTHY))).toBeUndefined();
+    expect(gapOf({ truth: "tls.proxy", term: privateRoot })).toBeUndefined();
+  });
+
+  it("give a problem when the bar of a gap gets to the bar of its class", () => {
+    const gap = SIM_GAPS[0];
+    if (gap === undefined) throw new Error("SIM_GAPS has no gap.");
+    const runsOf = (bar: number) => [{ gap, scores: [], bars: { tag: "ok" as const, value: { [gap.label]: bar } } }];
+    const bars = { tag: "ok" as const, value: { [gap.label]: 0.95 } };
+    expect(closedGaps(bars, runsOf(0))).toEqual([]);
+    expect(closedGaps(bars, runsOf(0.95))).toEqual([`The gap ${gap.id} is closed: its bar 0.95 is at the bar 0.95 of its class or over it. Remove it from SIM_GAPS.`]);
+  });
 });
 
 describe("the limits of the actions", () => {
