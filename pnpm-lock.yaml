@@ -182,8 +182,8 @@ importers:
         specifier: ^0.5.6
         version: 0.5.6
       '@mark1russell7/boundaries':
-        specifier: ^0.2.1
-        version: 0.2.1(@swc/core@1.16.22)(dependency-cruiser@18.7.2)
+        specifier: ^0.3.1
+        version: 0.3.1(@swc/core@1.16.22)(dependency-cruiser@18.7.2)
       '@mark1russell7/conventions':
         specifier: ^0.41.9
         version: 0.41.9
@@ -191,8 +191,8 @@ importers:
         specifier: ^2.0.0
         version: 2.1.4
       '@mark1russell7/ste-lint':
-        specifier: ^0.3.0
-        version: 0.3.2
+        specifier: ^0.4.0
+        version: 0.4.0
       '@mark1russell7/template-cli':
         specifier: ^0.1.7
         version: 0.1.9
@@ -420,8 +420,8 @@ importers:
         specifier: ^0.1.16
         version: 0.1.16
       '@mark1russell7/site-pages':
-        specifier: ^0.7.0
-        version: 0.7.0
+        specifier: ^0.8.0
+        version: 0.8.0
       '@netdiag/lab':
         specifier: workspace:*
         version: link:../lab
@@ -704,8 +704,8 @@ packages:
     engines: {node: '>=22'}
     hasBin: true
 
-  '@mark1russell7/boundaries@0.2.1':
-    resolution: {integrity: sha512-ZaNTU/VEDJddvBEHyCtYhrPippjOWoWWWpgVs/zpYOfu4QujMz+JfQfmyCE1IGgb6SJq9Rsb5RlujAgTrP6qOw==}
+  '@mark1russell7/boundaries@0.3.1':
+    resolution: {integrity: sha512-i+nP6fCD+WIDPzVrOsMcS9y9J+Gdtyoj/ZF9OKT3s01Wn4TojgRBalB0xbwSuBM9QK7dJaGdbP4Rrs8WSw8FKw==}
     engines: {node: '>=22'}
     peerDependencies:
       '@swc/core': ^1.10.0
@@ -736,6 +736,10 @@ packages:
     resolution: {integrity: sha512-+EEUBpLrTBcJoMIOF3C5XMVpzO7eYrermtdleEvWLGNJK9/HGPT9o6GgbsW+Vl+s3/0QrXksc0qOIUlE70HI9Q==}
     engines: {node: '>=22'}
     hasBin: true
+
+  '@mark1russell7/files@0.0.4':
+    resolution: {integrity: sha512-Pb978ZnvlAxzcdWtRtqTGb7mZFCvlNrdKnpZqhxQ7gafzeNGf1JqYFuB4RWiLbJzRuFUWjEoAVG5f2TndCIlSg==}
+    engines: {node: '>=22'}
 
   '@mark1russell7/harness@0.16.10':
     resolution: {integrity: sha512-HFxm6myRf4LG5Ddw2uWZrn4XQCTVABz9r/Qpc2r7lPnnkURBv7sSRY2WuCt9TZZITIOmObDKOuTWDxUsF+w4Bw==}
@@ -937,8 +941,8 @@ packages:
       zod:
         optional: true
 
-  '@mark1russell7/site-pages@0.7.0':
-    resolution: {integrity: sha512-nFiaxs1D/IAxj54KUow0AkU35fxWj6iCHAcQ2GG2ISv0yD+YwnOoDHNmO1mV1g+roRV7G5czJNZlzv+3lcT2vg==}
+  '@mark1russell7/site-pages@0.8.0':
+    resolution: {integrity: sha512-OlqsZfj5yNovI1ysfPJEIVsRnON3KgEP9ELMIH5CO+kP9FY5Vu873oCY+Zja5dKB8wTVgU3YewEcTqH9ncDurg==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -946,8 +950,8 @@ packages:
     resolution: {integrity: sha512-/Mv/xg+Djnb7uBaL3MyfsjCqKi0CqNWjLxccx5V1Wgr4mMVcTX1xQ13rovnczTz8l1WsTY8tfkpzk4kzl+DM0A==}
     engines: {node: '>=22.13'}
 
-  '@mark1russell7/ste-lint@0.3.2':
-    resolution: {integrity: sha512-0WRNon1oYKX1mmTP/AhrPnpoGAGolmpkJWHaTkHXc4SKe1tQhUvPrY/0TQ4gvu7aN+TEPpypiZDIkOjYZG8qBA==}
+  '@mark1russell7/ste-lint@0.4.0':
+    resolution: {integrity: sha512-V58Mtpt7WOW2wRBreSuuIO4am0WOdrJq8603+NNtqyI5EY0/LpPiQFxEDx+yNOgkN5ddnpPTkjalRTmBF+9GXQ==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -2970,7 +2974,7 @@ snapshots:
     dependencies:
       '@mark1russell7/conventions': 0.41.9
 
-  '@mark1russell7/boundaries@0.2.1(@swc/core@1.16.22)(dependency-cruiser@18.7.2)':
+  '@mark1russell7/boundaries@0.3.1(@swc/core@1.16.22)(dependency-cruiser@18.7.2)':
     optionalDependencies:
       '@swc/core': 1.16.22
       dependency-cruiser: 18.7.2
@@ -3003,6 +3007,8 @@ snapshots:
       yaml: 2.9.1
 
   '@mark1russell7/cue@2.1.4': {}
+
+  '@mark1russell7/files@0.0.4': {}
 
   '@mark1russell7/harness@0.16.10(@mark1russell7/rigor-generators@0.1.16)(@mark1russell7/rigor-proxy@0.2.1(zod@4.6.7))(@opentelemetry/api@1.10.0)(bare-buffer@3.7.2)(esbuild@0.28.2)(fast-check@4.10.2)(supports-color@7.2.0)(zod@4.6.7)':
     dependencies:
@@ -3132,14 +3138,15 @@ snapshots:
       ws: 8.23.0
       zod: 4.6.7
 
-  '@mark1russell7/site-pages@0.7.0':
+  '@mark1russell7/site-pages@0.8.0':
     dependencies:
       '@mark1russell7/rigor-statistics': 0.2.10
 
   '@mark1russell7/sqlite@0.3.7': {}
 
-  '@mark1russell7/ste-lint@0.3.2':
+  '@mark1russell7/ste-lint@0.4.0':
     dependencies:
+      '@mark1russell7/files': 0.0.4
       typescript: 6.0.3
 
   '@mark1russell7/strategy-space@0.1.1':
