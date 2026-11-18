@@ -132,10 +132,12 @@ describe("the command of ping with do not fragment", () => {
 
   it("refuses a size out of the bounds, a name and limits that are not valid", () => {
     expect(mtuCommand("linux", { address: "192.0.2.1", ceiling: 9000 }, 9000)?.args).toContain("8972");
+    // A search over IPv6 tries a plain echo request of 104 bytes when 1280 bytes fail.
+    expect(mtuCommand("linux", { address: "2001:db8::1" }, 104)?.args).toContain("56");
     for (const [input, size] of [
       [{ address: "192.0.2.1" }, 67],
       [{ address: "192.0.2.1" }, 1501],
-      [{ address: "2001:db8::1" }, 1279],
+      [{ address: "2001:db8::1" }, 103],
       [{ address: "example.com" }, 1500],
       [{ address: "192.0.2.1", count: 0 }, 1500],
       [{ address: "192.0.2.1", count: 11 }, 1500],
@@ -231,7 +233,7 @@ describe("the probe path.mtu", () => {
     const clock = fakeClock(1000);
     const host = fakeHost("linux", clock, [VERSION, [(args) => sizeOf(args, "-s") <= 1400, ok(LINUX_REPLY)], [() => true, failed(LINUX_FRAG)]]);
     const fact = await measured(host, clock);
-    expect(fact).toMatchObject({ kind: "path.mtu", layer: "path", subject: { host: "192.0.2.1" }, source: { probe: "path.mtu", version: "1", tool: "ping" } });
+    expect(fact).toMatchObject({ kind: "path.mtu", layer: "path", subject: { host: "192.0.2.1" }, source: { probe: "path.mtu", version: "2", tool: "ping" } });
     expect(fact.value).toMatchObject({ address: "192.0.2.1", outcome: "measured", mtu: 1400, stop: "message", ceiling: 1500 });
     expect(fact.value.tries.map((each) => [each.size, each.result])).toEqual([
       [1500, "too-big"],

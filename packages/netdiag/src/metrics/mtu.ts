@@ -14,16 +14,24 @@ export const IPV6_MIN_MTU = 1280;
 
 /** The smallest and the largest size of a search for the MTU. Each size is the size of an IP packet in bytes. */
 export interface MtuBounds {
-  /** The smallest size. A path that does not pass it does not answer echo requests. */
+  /** The smallest MTU of the family. Each link of a correct path passes this size. */
   readonly floor: number;
+  /**
+   * The size of a small echo request, below `floor`. The search tries this size when `floor` fails. When it passes, a
+   * link of the path has an MTU below the floor, and the search finds that MTU. With no `least`, the search ends at `floor`.
+   */
+  readonly least?: number | undefined;
   /** The largest size. */
   readonly ceiling: number;
 }
 
 function checkBounds(bounds: MtuBounds): void {
-  const { floor, ceiling } = bounds;
+  const { floor, least, ceiling } = bounds;
   if (!Number.isInteger(floor) || !Number.isInteger(ceiling) || floor < 1 || ceiling < floor) {
     throw new RangeError(`The bounds ${floor} and ${ceiling} are not two sizes in bytes with the floor at or below the ceiling.`);
+  }
+  if (least !== undefined && (!Number.isInteger(least) || least < 1 || least >= floor)) {
+    throw new RangeError(`The size ${least} is not a size in bytes below the floor ${floor}.`);
   }
 }
 
@@ -49,16 +57,19 @@ function foundOf(tries: readonly MtuTry[]): Found {
  * This function gives the next size of a search for the MTU, or `undefined` when the search ends.
  *
  * 1. The first size is the ceiling. Most paths pass it, so most searches end after one try.
- * 2. The second size is the floor. A path that does not pass the floor does not answer, so the search ends.
- * 3. A message can tell an MTU between the largest size that passed and the smallest size that failed. That MTU is the next size.
- * 4. When the told MTU passes, the next size is one byte above it. Thus a true message ends the search in two tries.
- * 5. Each other size is the middle of the largest size that passed and the smallest size above it that failed.
+ * 2. The second size is the floor. Each link of a correct path passes it.
+ * 3. When the floor fails, the next size is `least`. A path that does not pass `least` does not answer, so the search ends.
+ *    With no `least`, the search ends when the floor fails.
+ * 4. A message can tell an MTU between the largest size that passed and the smallest size that failed. That MTU is the next size.
+ * 5. When the told MTU passes, the next size is one byte above it. Thus a true message ends the search in two tries.
+ * 6. Each other size is the middle of the largest size that passed and the smallest size above it that failed.
  *
  * When a told MTU fails, a message was false. After that, the search uses no message, and each size is a middle. Thus
  * false messages cannot make the search long.
  *
  * An error ends the search. The search also ends when the two sizes are next to each other. The function does not give a
  * size that the search tried, so each search ends. A search has at most `4 + 3 * ceil(log2(ceiling - floor))` tries.
+ * With `least`, the search has one more try, and `least` replaces `floor` in the formula.
  */
 export function nextMtuSize(tries: readonly MtuTry[], bounds: MtuBounds): number | undefined {
   checkBounds(bounds);
@@ -68,6 +79,7 @@ export function nextMtuSize(tries: readonly MtuTry[], bounds: MtuBounds): number
   const { passed, failed } = foundOf(tries);
   if (passed !== undefined && passed >= bounds.ceiling) return undefined;
   if (!tried(bounds.floor)) return bounds.floor;
+  if (passed === undefined && bounds.least !== undefined && !tried(bounds.least)) return bounds.least;
   if (passed === undefined || failed === undefined || failed.size - passed <= 1) return undefined;
   const told = new Set(tries.flatMap((each) => (each.result === "too-big" && each.mtu !== undefined ? [each.mtu] : [])));
   const trusted = !tries.some((each) => each.result !== "reply" && told.has(each.size));
