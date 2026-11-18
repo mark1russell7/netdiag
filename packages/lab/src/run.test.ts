@@ -1,6 +1,6 @@
 import { STANDARD_CATALOG, type Fact } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
-import { readVisit, reportMarkdown, labReport, runRounds, type CaseBase, type CaseRun, type LabRound, type Visit } from "./index.ts";
+import { LAB_VISITS, readVisit, reportMarkdown, labReport, runRounds, visitAgain, type CaseBase, type CaseRun, type LabRound, type Visit } from "./index.ts";
 
 // The case loop with fake rounds: no world starts, and no assertion examines a time.
 
@@ -37,7 +37,7 @@ describe("readVisit", () => {
     const problem = readVisit(REFUSED, 0, visited([connect("f1", "refused")], ["The ping of x did not end."]), STANDARD_CATALOG);
     expect(problem).toMatchObject({ status: "no-read", reason: "The ping of x did not end." });
     const none = readVisit(REFUSED, 0, { status: "no-visit", reason: "no world" }, STANDARD_CATALOG);
-    expect(none).toEqual({ status: "no-read", case: "port.closed", round: 0, reason: "no world", evidence: [] });
+    expect(none).toEqual({ status: "no-read", case: "port.closed", round: 0, visits: 1, reason: "no world", evidence: [] });
   });
 });
 
@@ -82,6 +82,38 @@ describe("runRounds", () => {
       "port.closed#1: The visit did not end: the agent stopped",
     ]);
     expect(log.at(-1)).toBe("close 1");
+  });
+
+  it("visits a case again when its world does not show each sign, LAB_VISITS times or fewer", async () => {
+    // The world of port.closed shows the sign at the second visit. The world of none never shows it.
+    const log: string[] = [];
+    const counts = new Map<string, number>();
+    const start = (): Promise<LabRound<CaseBase>> =>
+      Promise.resolve({
+        visit: (labCase: CaseBase) => {
+          const count = (counts.get(labCase.id) ?? 0) + 1;
+          counts.set(labCase.id, count);
+          log.push(`visit ${labCase.id}`);
+          if (labCase.id === "port.closed") return Promise.resolve(visited([connect("f1", count >= 2 ? "refused" : "connected")]));
+          return Promise.resolve(visited([connect("f2", "refused")]));
+        },
+        close: () => Promise.resolve(),
+      });
+    const runs = await runRounds([REFUSED, OPEN], 1, start, STANDARD_CATALOG);
+    expect(log).toEqual(["visit port.closed", "visit port.closed", ...Array.from({ length: LAB_VISITS }, () => "visit none")]);
+    expect(runs.map((run) => `${run.case} ${run.status} ${run.visits}`)).toEqual(["port.closed read 2", `none no-read ${LAB_VISITS}`]);
+    const report = labReport(STANDARD_CATALOG, runs, 1, 2);
+    expect(report.revisited).toBe(2);
+    expect(reportMarkdown(report)).toContain("2 runs visited their case again");
+  });
+
+  it("does not visit a case again after a problem of a probe or a visit that throws", async () => {
+    const { log, start } = fakeRounds({ "port.closed": visited([connect("f1", "connected")], ["The ping of x did not end."]), none: new Error("the agent stopped") });
+    const runs = await runRounds([REFUSED, OPEN], 1, start, STANDARD_CATALOG);
+    expect(log).toEqual(["start 0", "visit port.closed", "visit none", "close 0"]);
+    expect(runs.map((run) => run.visits)).toEqual([1, 1]);
+    expect(visitAgain(REFUSED, visited([connect("f1", "connected")]))).toBe(true);
+    expect(visitAgain(REFUSED, { status: "no-visit", reason: "no world" })).toBe(false);
   });
 
   it("refuses a number of rounds that is not a positive integer", async () => {

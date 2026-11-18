@@ -30,16 +30,23 @@ export const DNS_TIMEOUT_MS = 2000;
 export const HTTP_TIMEOUT_MS = 5000;
 
 /**
+ * The most visits of one case in a round. A random fault does not show each sign in each visit. For example, a loss of
+ * 20 % keeps 19 or 20 of 20 pings in 7 of 100 visits. Then the case loop visits the case again.
+ */
+export const LAB_VISITS = 3;
+
+/**
  * The result of one run of a case.
  *
  * - `read`: the world showed each sign of the fault, and the record has the diagnosis.
  * - `no-read`: the world did not start, a probe did not end, or a sign is missing. The reason tells which.
  *
- * `evidence` has the evidence of the run as `feature=value`, with `@target` or `@reference`.
+ * `evidence` has the evidence of the run as `feature=value`, with `@target` or `@reference`. `visits` is the count of the
+ * visits of the case in the round. The run has the last visit.
  */
 export type CaseRun =
-  | { readonly status: "read"; readonly case: string; readonly round: number; readonly record: LabRecord; readonly evidence: readonly string[] }
-  | { readonly status: "no-read"; readonly case: string; readonly round: number; readonly reason: string; readonly evidence: readonly string[] };
+  | { readonly status: "read"; readonly case: string; readonly round: number; readonly visits: number; readonly record: LabRecord; readonly evidence: readonly string[] }
+  | { readonly status: "no-read"; readonly case: string; readonly round: number; readonly visits: number; readonly reason: string; readonly evidence: readonly string[] };
 
 /** The part of a case that the case loop uses: its id, its true class and the signs that its world must show. */
 export interface CaseBase {
@@ -105,10 +112,10 @@ export function missingSigns(signs: readonly CaseSign[], evidence: readonly Evid
 
 /**
  * This function changes the visit of a case into a run. A run has a read only when each probe ended and the evidence
- * shows each sign of the case. The read has the diagnosis of the catalog.
+ * shows each sign of the case. The read has the diagnosis of the catalog. `visits` is the count of the visits of the case.
  */
-export function readVisit(labCase: CaseBase, round: number, visit: Visit, catalog: Catalog): CaseRun {
-  const noRead = (reason: string, evidence: readonly string[] = []): CaseRun => ({ status: "no-read", case: labCase.id, round, reason, evidence });
+export function readVisit(labCase: CaseBase, round: number, visit: Visit, catalog: Catalog, visits = 1): CaseRun {
+  const noRead = (reason: string, evidence: readonly string[] = []): CaseRun => ({ status: "no-read", case: labCase.id, round, visits, reason, evidence });
   if (visit.status === "no-visit") return noRead(visit.reason);
   const reading = readEvidence(visit.facts, visit.read);
   const evidence = reading.evidence.map(labelOf);
@@ -118,7 +125,16 @@ export function readVisit(labCase: CaseBase, round: number, visit: Visit, catalo
   if (problems.length > 0) return noRead(problems.join(" "), evidence);
   const record = labRecordOf(catalog, `${labCase.id}#${round}`, labCase.truth, diagnose(catalog, reading.evidence));
   if (record.tag === "err") return noRead(record.error, evidence);
-  return { status: "read", case: labCase.id, round, record: record.value, evidence };
+  return { status: "read", case: labCase.id, round, visits, record: record.value, evidence };
+}
+
+/**
+ * This function tells if the case loop visits a case again: each probe ended, but the evidence does not show each sign
+ * of the case. A visit with a problem does not get a new visit, because a problem is a fault of the lab.
+ */
+export function visitAgain(labCase: CaseBase, visit: Visit): boolean {
+  if (visit.status !== "visited" || visit.problems.length > 0) return false;
+  return missingSigns(labCase.signs, readEvidence(visit.facts, visit.read).evidence).length > 0;
 }
 
 /** This function gives the cases in the order of a round: round `r` starts at case `r`, so no case is always first. */
@@ -129,17 +145,19 @@ export function roundOrder<T>(cases: readonly T[], round: number): T[] {
 }
 
 /**
- * This function is the loop of the rounds of each lab. It starts each round, visits each case once in the order of the
+ * This function is the loop of the rounds of each lab. It starts each round, visits each case in the order of the
  * round, and stops the round. `read` changes each visit into a run. The function gives the runs in the order of their start.
  *
- * A round that does not start gives a visit `no-visit` for each of its cases. A visit that throws gives a visit `no-visit`.
+ * - A round that does not start gives a visit `no-visit` for each of its cases. A visit that throws gives a visit `no-visit`.
+ * - When `again` is true for a visit, the function visits the case again, `LAB_VISITS` times or fewer. `read` gets the last visit.
  */
 export async function visitRounds<C, R>(
   cases: readonly C[],
   rounds: number,
   startRound: (round: number) => Promise<LabRound<C>>,
-  read: (labCase: C, round: number, visit: Visit) => R,
+  read: (labCase: C, round: number, visit: Visit, visits: number) => R,
   onRun?: (run: R) => void,
+  again: (labCase: C, visit: Visit) => boolean = () => false,
 ): Promise<R[]> {
   if (!Number.isInteger(rounds) || rounds < 1) throw new RangeError(`The number of rounds ${rounds} is not a positive integer.`);
   const runs: R[] = [];
@@ -153,18 +171,22 @@ export async function visitRounds<C, R>(
     try {
       labRound = await startRound(round);
     } catch (thrown) {
-      for (const labCase of order) keep(read(labCase, round, { status: "no-visit", reason: `The round did not start: ${errorMessage(thrown)}` }));
+      for (const labCase of order) keep(read(labCase, round, { status: "no-visit", reason: `The round did not start: ${errorMessage(thrown)}` }, 0));
       continue;
     }
     try {
       for (const labCase of order) {
-        let visit: Visit;
-        try {
-          visit = await labRound.visit(labCase);
-        } catch (thrown) {
-          visit = { status: "no-visit", reason: `The visit did not end: ${errorMessage(thrown)}` };
+        for (let visits = 1; ; visits++) {
+          let visit: Visit;
+          try {
+            visit = await labRound.visit(labCase);
+          } catch (thrown) {
+            visit = { status: "no-visit", reason: `The visit did not end: ${errorMessage(thrown)}` };
+          }
+          if (visits < LAB_VISITS && again(labCase, visit)) continue;
+          keep(read(labCase, round, visit, visits));
+          break;
         }
-        keep(read(labCase, round, visit));
       }
     } finally {
       await labRound.close();
@@ -175,7 +197,8 @@ export async function visitRounds<C, R>(
 
 /**
  * This function is the case loop of the labs that diagnose each case. It is `visitRounds` with `readVisit` of the
- * catalog, so each run has the diagnosis of its case, or no read.
+ * catalog, so each run has the diagnosis of its case, or no read. A visit that does not show each sign of its case
+ * gets a new visit (`visitAgain`). Thus a read is a diagnosis of a world that showed its fault, as in the simulated world.
  */
 export function runRounds<C extends CaseBase>(
   cases: readonly C[],
@@ -184,7 +207,7 @@ export function runRounds<C extends CaseBase>(
   catalog: Catalog,
   onRun?: (run: CaseRun) => void,
 ): Promise<CaseRun[]> {
-  return visitRounds(cases, rounds, startRound, (labCase, round, visit) => readVisit(labCase, round, visit, catalog), onRun);
+  return visitRounds(cases, rounds, startRound, (labCase, round, visit, visits) => readVisit(labCase, round, visit, catalog, visits), onRun, visitAgain);
 }
 
 /**
