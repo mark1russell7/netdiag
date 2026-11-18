@@ -242,6 +242,7 @@ type RunnerOptions: build/core.chunk.d.ts#RunnerOptions
 STANDARD_ACTIONS: build/index.chunk2.d.ts#STANDARD_ACTIONS
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_CONCENTRATIONS: build/index.chunk2.d.ts#STANDARD_CONCENTRATIONS
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
 STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STANDARD_POLICY: build/index.chunk2.d.ts#STANDARD_POLICY
@@ -621,6 +622,7 @@ type RunnerOptions: build/core.chunk.d.ts#RunnerOptions
 STANDARD_ACTIONS: build/index.chunk2.d.ts#STANDARD_ACTIONS
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_CONCENTRATIONS: build/index.chunk2.d.ts#STANDARD_CONCENTRATIONS
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
 STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STANDARD_POLICY: build/index.chunk2.d.ts#STANDARD_POLICY
@@ -849,6 +851,7 @@ type RuledVariant: build/index.chunk2.d.ts#RuledVariant
 STANDARD_ACTIONS: build/index.chunk2.d.ts#STANDARD_ACTIONS
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
+STANDARD_CONCENTRATIONS: build/index.chunk2.d.ts#STANDARD_CONCENTRATIONS
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
 STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STANDARD_POLICY: build/index.chunk2.d.ts#STANDARD_POLICY
@@ -2190,6 +2193,7 @@ interface ActionChoice {
 interface ActionCosts {
   readonly none: number;
   readonly useless: number;
+  readonly needless: number;
   readonly harmful: number;
 }
 
@@ -2348,6 +2352,7 @@ interface Feature {
   readonly values: readonly string[];
   readonly healthy: Distribution;
   readonly local?: boolean | undefined;
+  readonly concentration?: number | undefined;
 }
 
 ### build/index.chunk2.d.ts#GAIN_RESOLUTION
@@ -2496,7 +2501,6 @@ type Prediction = Distribution | Expectation;
 interface ProbeChoice {
   readonly candidate: Candidate;
   readonly gain: number;
-  readonly counted: readonly Observable[];
 }
 
 ### build/index.chunk2.d.ts#REACHES
@@ -2530,6 +2534,9 @@ declare const STANDARD_CATALOG: Catalog;
 
 ### build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
 declare const STANDARD_CATALOG_SPEC: CatalogSpec;
+
+### build/index.chunk2.d.ts#STANDARD_CONCENTRATIONS
+declare const STANDARD_CONCENTRATIONS: Readonly<Record<string, number>>;
 
 ### build/index.chunk2.d.ts#STANDARD_FAULTS
 declare const STANDARD_FAULTS: readonly Fault[];
