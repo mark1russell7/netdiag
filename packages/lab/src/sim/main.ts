@@ -17,7 +17,7 @@ const summary = simSummary(runs);
 if (values.out !== undefined) {
   await mkdir(values.out, { recursive: true });
   await writeFile(join(values.out, "summary.md"), summary);
-  const outcomes = runs.outcomes.map((each) => ({ seed: each.seed, case: each.case.id, term: each.case.term, medium: each.case.medium, ipv6: each.case.ipv6, predicted: each.predicted ?? null, reason: each.reason ?? null }));
+  const outcomes = runs.outcomes.map((each) => ({ seed: each.seed, case: each.case.id, term: each.case.term, medium: each.case.medium, ipv6: each.case.ipv6, predicted: each.predicted ?? null, reason: each.reason ?? null, visits: each.visits }));
   await writeFile(join(values.out, "outcomes.json"), `${JSON.stringify(outcomes, null, 2)}\n`);
 }
 process.stdout.write(summary);

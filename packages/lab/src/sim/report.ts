@@ -3,9 +3,9 @@ import type { Result } from "@mark1russell7/optional";
 import { countOf } from "@mark1russell7/text";
 import { faultsOf, faultValues } from "../grammar.ts";
 import { labReport } from "../report.ts";
-import { runRounds } from "../run.ts";
+import { runRounds, type LabRound } from "../run.ts";
 import { SIM_BANDS, simCases, type SimCase } from "./cases.ts";
-import { SIM_ROUND } from "./world.ts";
+import { simVisit } from "./world.ts";
 
 // The runs of the simulated world (ND-17, the layer E0). Each seed draws a new plan of cases, and each case is one
 // visit of netdiag on the model. The bars come from `labBars` over the scores of the seeds.
@@ -13,12 +13,16 @@ import { SIM_ROUND } from "./world.ts";
 /** The number of seeds of the bars of the simulated world. `labBars` needs 5 runs or more. */
 export const SIM_SEEDS = 5;
 
-/** The result of one case in one seed: the class that netdiag gave, or the reason of a visit with no read. */
+/**
+ * The result of one case in one seed: the class that netdiag gave, or the reason of a visit with no read. `visits` is 1,
+ * or more when a fault passed each of its draws in a visit.
+ */
 export interface SimOutcome {
   readonly seed: number;
   readonly case: SimCase;
   readonly predicted: string | undefined;
   readonly reason?: string | undefined;
+  readonly visits: number;
 }
 
 /** The runs of the seeds: the outcome of each case, the score of each seed, the bars, and the problems. */
@@ -37,12 +41,23 @@ export async function simRuns(seeds: number = SIM_SEEDS): Promise<SimRuns> {
   for (let seed = 1; seed <= seeds; seed++) {
     const cases = simCases(seed);
     const byId = new Map(cases.map((each) => [each.id, each]));
-    const runs = await runRounds(cases, 1, () => Promise.resolve(SIM_ROUND), STANDARD_CATALOG);
+    const visits = new Map<string, number>();
+    // The round of the simulated world starts no process, so `close` has no work.
+    const round: LabRound<SimCase> = {
+      visit: async (labCase) => {
+        const result = await simVisit(labCase);
+        visits.set(labCase.id, result.visits);
+        return result.visit;
+      },
+      close: () => Promise.resolve(),
+    };
+    const runs = await runRounds(cases, 1, () => Promise.resolve(round), STANDARD_CATALOG);
     const report = labReport(STANDARD_CATALOG, runs, 1, cases.length);
     for (const run of runs) {
       const labCase = byId.get(run.case);
       if (labCase === undefined) continue;
-      outcomes.push(run.status === "read" ? { seed, case: labCase, predicted: run.record.predicted } : { seed, case: labCase, predicted: undefined, reason: run.reason });
+      const count = visits.get(run.case) ?? 1;
+      outcomes.push(run.status === "read" ? { seed, case: labCase, predicted: run.record.predicted, visits: count } : { seed, case: labCase, predicted: undefined, reason: run.reason, visits: count });
     }
     if (report.noReads.length > 0) problems.push(`The seed ${seed} has ${countOf(report.noReads.length, "case")} with no read.`);
     for (const problem of report.problems) problems.push(`The seed ${seed}: ${problem}`);
@@ -60,6 +75,11 @@ export interface SimPlaceHits {
   readonly place: string;
   readonly hits: number;
   readonly cases: number;
+}
+
+/** This function gives the number of silent visits: the visits where a fault passed each of its draws. */
+export function silentVisits(outcomes: readonly SimOutcome[]): number {
+  return outcomes.reduce((sum, each) => sum + each.visits - 1, 0);
 }
 
 /** This function gives the hits of each option at each place, in the order of the class, the option and the place. */
@@ -86,7 +106,12 @@ export function simSummary(runs: SimRuns, seeds: number = SIM_SEEDS): string {
   const { outcomes } = runs;
   const lines: string[] = ["# The simulated world (E0)", "", `${countOf(outcomes.length, "visit")}: ${countOf(seeds, "seed")} of ${countOf(outcomes.length / seeds, "case")}.`, ""];
   const bars = runs.bars.tag === "ok" ? runs.bars.value : {};
-  lines.push("| Class | Hits | Bar | The other answers |", "| --- | --- | --- | --- |");
+  lines.push(
+    `A silent visit is a visit where a fault passed each of its draws. It has no sign of the fault, so the world visits the case again with a new seed. The seeds have ${countOf(silentVisits(outcomes), "silent visit")}.`,
+    "",
+    "| Class | Hits | Bar | Silent visits | The other answers |",
+    "| --- | --- | --- | --- | --- |",
+  );
   for (const label of [...new Set(outcomes.map((each) => each.case.truth))]) {
     const mine = outcomes.filter((each) => each.case.truth === label);
     const hits = mine.filter((each) => each.predicted === label).length;
@@ -97,7 +122,7 @@ export function simSummary(runs: SimRuns, seeds: number = SIM_SEEDS): string {
       others.set(answer, (others.get(answer) ?? 0) + 1);
     }
     const list = [...others].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`);
-    lines.push(`| ${label} | ${percent(hits, mine.length)} | ${bars[label] ?? "–"} | ${list.join(", ")} |`);
+    lines.push(`| ${label} | ${percent(hits, mine.length)} | ${bars[label] ?? "–"} | ${silentVisits(mine)} | ${list.join(", ")} |`);
   }
   lines.push("", "## The hits of each option at each place", "", "| Class | Option | Place | Hits | Cases |", "| --- | --- | --- | --- | --- |");
   for (const group of placeHits(outcomes)) lines.push(`| ${group.label} | ${group.option} | ${group.place} | ${percent(group.hits, group.cases)} | ${group.cases} |`);

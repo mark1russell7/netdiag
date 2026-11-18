@@ -3,9 +3,9 @@ import { visitTarget, type Fact, type Grant, type LabBars, type VisitInput, type
 import { random } from "@mark1russell7/rigor-generators";
 import { REFERENCE_NAME, TARGET_NAME } from "../cases.ts";
 import type { CoverageWorld } from "../coverage.ts";
-import { DNS_TIMEOUT_MS, HTTP_TIMEOUT_MS, type LabRound, type Visit } from "../run.ts";
+import { DNS_TIMEOUT_MS, HTTP_TIMEOUT_MS, type Visit } from "../run.ts";
 import { SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
-import { SIM_ADDRESSES, SIM_RANGES, SimNetwork } from "./network.ts";
+import { SIM_ADDRESSES, SIM_RANGES, SimNetwork, type PlacedFault } from "./network.ts";
 import { interfacesOf, simDnsProbe, simHttpProbe } from "./probes.ts";
 import { simTools } from "./tools.ts";
 
@@ -29,10 +29,45 @@ export const SIM_INPUT: VisitInput = {
   grants,
 };
 
-/** This function visits one case of the simulated world. The random source of the network comes from the seed of the case. */
+/**
+ * The most visits of one case. A fault in its band passes each of its draws in 1 of 20 visits or fewer. Thus 10 visits
+ * leave a silent fault in fewer than 1 of 10^13 cases.
+ */
+export const SIM_VISITS = 10;
+
+/** A visit of a case, the number of visits of the case, and the faults that passed each of their draws in the last visit. */
+export interface SimVisit {
+  readonly visit: Visit;
+  readonly visits: number;
+  readonly silent: readonly PlacedFault[];
+}
+
+/**
+ * This function visits one case of the simulated world. When a fault of the case passes each of its draws, the visit
+ * has no sign of the fault. Thus no diagnosis can name the fault, and the function visits the case again with a new
+ * seed, `SIM_VISITS` times or fewer. A fault that is silent in each visit gives a problem, so the case has no read.
+ */
+export async function simVisit(labCase: SimCase): Promise<SimVisit> {
+  for (let visits = 1; ; visits += 1) {
+    const { visit, silent } = await visitOnce(labCase, visits === 1 ? labCase.seed : `${labCase.seed}/visit-${visits}`);
+    if (silent.length === 0) return { visit, visits, silent };
+    if (visits >= SIM_VISITS) {
+      const names = silent.map((fault) => `${fault.option} at ${fault.place}`).join(", ");
+      const problem = `The faults ${names} passed each of their draws in ${SIM_VISITS} visits.`;
+      return { visit: visit.status === "visited" ? { ...visit, problems: [...visit.problems, problem] } : visit, visits, silent };
+    }
+  }
+}
+
+/** This function visits one case of the simulated world as `simVisit` does, and gives only the last visit. */
 export async function visitSim(labCase: SimCase): Promise<Visit> {
+  return (await simVisit(labCase)).visit;
+}
+
+/** This function visits one case once. The random source of the network comes from the seed. */
+async function visitOnce(labCase: SimCase, seed: string): Promise<{ visit: Visit; silent: readonly PlacedFault[] }> {
   const clock = fakeClock(0);
-  const net = new SimNetwork({ term: labCase.term, medium: labCase.medium, ipv6: labCase.ipv6 }, random(labCase.seed));
+  const net = new SimNetwork({ term: labCase.term, medium: labCase.medium, ipv6: labCase.ipv6 }, random(seed));
   const facts: Fact[] = [];
   const primary = new Set<string>();
   const problems: string[] = [];
@@ -59,11 +94,8 @@ export async function visitSim(labCase: SimCase): Promise<Visit> {
       if (step.role === "target") primary.add(step.fact.id);
     }
   }
-  return { status: "visited", facts, read: { primary: (fact) => primary.has(fact.id), gateway: SIM_INPUT.gateway }, problems, steps };
+  return { visit: { status: "visited", facts, read: { primary: (fact) => primary.has(fact.id), gateway: SIM_INPUT.gateway }, problems, steps }, silent: net.silent() };
 }
-
-/** The round of the simulated world. It starts no process, so `close` has no work. */
-export const SIM_ROUND: LabRound<SimCase> = { visit: visitSim, close: () => Promise.resolve() };
 
 /** This function gives the coverage world of the simulated network, with the cases of the plan of `SIM_PLAN_SEED`. */
 export function simWorld(bars: LabBars): CoverageWorld {
