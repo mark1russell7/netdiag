@@ -374,8 +374,13 @@ export class SimNetwork {
     if (end !== "target") return undefined;
     if (this.has("tls/expire", "host", "server") !== undefined) return "expired";
     const wrong = this.has("tls/wrong", "remote", "server");
-    if (wrong !== undefined) return wrong.values["kind"] === "chain" ? "untrusted" : "name";
-    return undefined;
+    if (wrong === undefined || wrong.values["kind"] === "private") return undefined;
+    return wrong.values["kind"] === "chain" ? "untrusted" : "name";
+  }
+
+  /** The certificate of an end comes from a private root that the client trusts, by design: no fault alone. */
+  privateRoot(end: End): boolean {
+    return end === "target" && this.has("tls/wrong", "remote", "server")?.values["kind"] === "private";
   }
 
   /** The TLS versions of the client and the server have nothing in common. */

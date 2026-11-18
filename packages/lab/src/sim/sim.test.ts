@@ -112,6 +112,11 @@ describe("the visits of the simulated world", () => {
     expect(values(missing, "dns.answer").filter((each) => each["name"] === "www.shop-lab.net").map((each) => each["outcome"])).toEqual(["nxdomain", "nxdomain"]);
     const chain = await visitSim(simCase(fault("tls/wrong", { place: "server", kind: "chain" })));
     expect(values(chain, "tls.handshake", TARGET)[0]).toMatchObject({ outcome: "cert-error", certificate: { trust: "none" } });
+    // A private root that the client trusts by design is no fault: the handshake passes, and the trust is private.
+    const term = fault("tls/wrong", { place: "server", kind: "private" });
+    expect(termClasses(term)).toEqual([NO_FAULT]);
+    const own = await visitSim(simCase(term));
+    expect(values(own, "tls.handshake", TARGET)[0]).toMatchObject({ outcome: "ok", certificate: { trust: "private", issuer: "CN=Sim Private Root" } });
   });
 });
 

@@ -67,12 +67,15 @@ export interface ActionRule {
  * The cost of an action for one variant, relative to the cost of `none`. The correct action of the variant costs 0.
  *
  * - `none`: the usual backoff of the service, when the variant has a different action. This cost is the unit.
- * - `useless`: an action that is not correct and not harmful. It does not help, and it does no harm.
+ * - `useless`: an action that is not correct and not harmful, for a variant with a fault. It does not help, and it does no harm.
+ * - `needless`: an action that is not harmful, for a variant whose action is `none`. The network has no fault, thus the
+ *   action only slows the service. It costs as much as a useless action or more.
  * - `harmful`: an action that is harmful for the variant. It is worse than `none`, thus it costs more.
  */
 export interface ActionCosts {
   readonly none: number;
   readonly useless: number;
+  readonly needless: number;
   readonly harmful: number;
 }
 
@@ -93,8 +96,9 @@ export const NO_CALIBRATION: Calibration = { cause: 1, variant: 1 };
 /**
  * The policy of `chooseAction`: the calibration map of the probabilities, and the costs of the actions.
  *
- * A harmful cost of `h` makes the choice take a harmful kind only at a probability of about `h / (h + 1)` or more.
- * Thus the costs replace the floors of the kinds.
+ * A harmful cost of `h` makes the choice take a harmful kind only at a probability of approximately `h / (h + 1)` or
+ * more. A needless cost of `n` has a similar effect. The choice takes a kind that is not harmful only at approximately
+ * `n` times the probability of `none`, or more. Thus the costs replace the floors of the kinds.
  */
 export interface ActionPolicy {
   readonly calibration: Calibration;
@@ -106,6 +110,7 @@ export interface ActionPolicy {
  *
  * - Each temperature is a finite number over 0.
  * - The cost of `none` is over 0. A useless action costs as much as `none` or more. A harmful action costs more than a useless action.
+ * - A needless action costs as much as a useless action or more, and not more than a harmful action.
  */
 export function checkPolicy(policy: ActionPolicy): string[] {
   const problems: string[] = [];
@@ -116,6 +121,9 @@ export function checkPolicy(policy: ActionPolicy): string[] {
   if (!(costs.none > 0) || !Number.isFinite(costs.none)) problems.push(`The cost of none is ${costs.none}. It must be a finite number over 0.`);
   if (!(costs.useless >= costs.none) || !Number.isFinite(costs.useless)) problems.push(`The cost of a useless action is ${costs.useless}. It must be finite, and not less than the cost of none.`);
   if (!(costs.harmful > costs.useless) || !Number.isFinite(costs.harmful)) problems.push(`The cost of a harmful action is ${costs.harmful}. It must be finite, and more than the cost of a useless action.`);
+  if (!(costs.needless >= costs.useless && costs.needless <= costs.harmful) || !Number.isFinite(costs.needless)) {
+    problems.push(`The cost of a needless action is ${costs.needless}. It must be finite, not less than the cost of a useless action, and not more than the cost of a harmful action.`);
+  }
   return problems;
 }
 
@@ -257,11 +265,15 @@ export function checkActions(catalog: Catalog, rules: readonly ActionRule[]): st
   return problems;
 }
 
-/** This function gives the cost of the action kind `kind` for the variants of a rule, with the costs of a policy. */
+/**
+ * This function gives the cost of the action kind `kind` for the variants of a rule, with the costs of a policy. A kind
+ * that is not harmful and not `none` costs `costs.needless` when the action of the rule is `none`, and `costs.useless` for other rules.
+ */
 export function actionCost(catalog: Catalog, rule: ActionRule, kind: ActionKind, costs: ActionCosts): number {
   if (kind === rule.action.kind) return 0;
   if (harmfulOf(catalog, rule).includes(kind)) return costs.harmful;
-  return kind === "none" ? costs.none : costs.useless;
+  if (kind === "none") return costs.none;
+  return rule.action.kind === "none" ? costs.needless : costs.useless;
 }
 
 /** The rule of one variant of a diagnosis, and its probability after the calibration map. */
