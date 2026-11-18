@@ -109,8 +109,10 @@ export interface Fault {
   readonly prior?: number | undefined;
   readonly predicts: Readonly<Record<string, Prediction>>;
   /**
-   * The degrees of the fault. A degree is a severity that the facts do not tell directly, for example a light or a heavy
-   * loss. With no degrees, the fault has one degree. The model sums the variants of each degree and each reach.
+   * The degrees of the fault. A degree is a severity or a mode that the facts do not tell directly, for example a light
+   * or a heavy loss, or a silent or an absent resolver. A mode is the same on each subject of a visit, so a degree with
+   * one expected value counts it once. With no degrees, the fault has one degree. The model sums the variants of each
+   * degree and each reach.
    */
   readonly degrees?: readonly Degree[] | undefined;
 }
@@ -277,8 +279,8 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
       ...(degree !== undefined ? { degree } : {}),
     });
     const table = tableOf(fault.id, fault.predicts, features, problems);
-    if (table.size === 0) problems.push(`The fault ${fault.id} predicts no feature.`);
     if (fault.degrees === undefined) {
+      if (table.size === 0) problems.push(`The fault ${fault.id} predicts no feature.`);
       forms.set(fault.id, [{ id: undefined, share: 1, table }]);
       continue;
     }
@@ -288,7 +290,9 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
       fault.id,
       fault.degrees.map((each) => {
         const own = tableOf(`${fault.id} (${each.id})`, each.predicts ?? {}, features, problems);
-        return { id: each.id, share: each.share / total, table: new Map([...table, ...own]) };
+        const merged = new Map([...table, ...own]);
+        if (merged.size === 0) problems.push(`The fault ${fault.id} (${each.id}) predicts no feature.`);
+        return { id: each.id, share: each.share / total, table: merged };
       }),
     );
   }

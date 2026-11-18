@@ -1,4 +1,6 @@
-import { compileCatalog, type Catalog, type CatalogSpec, type Degree, type Distribution, type Feature, type Fault, type Prediction } from "./model.ts";
+import { poissonBinomial } from "@mark1russell7/rigor-statistics";
+import { binOf, LOSS_MIN_SENT, PATH_LOSS_BINS } from "./bins.ts";
+import { compileCatalog, FLOOR, STRENGTHS, type Catalog, type CatalogSpec, type Degree, type Distribution, type Feature, type Fault, type Prediction } from "./model.ts";
 
 /**
  * The features of the standard catalog.
@@ -45,15 +47,15 @@ export const STANDARD_FEATURES: readonly Feature[] = [
     layer: "route",
     local: true,
     summary: "The packet loss to the gateway, with the bins and the healthy distribution of `path.loss`.",
-    values: ["none", "some", "high"],
-    healthy: { none: 0.9, some: 0.08, high: 0.02 },
+    values: ["none", "some", "high", "most"],
+    healthy: { none: 0.9, some: 0.08, high: 0.018, most: 0.002 },
   },
   {
     id: "path.loss",
     layer: "path",
-    summary: "The packet loss on the path: none, some (up to 5 %) or high (more than 5 %).",
-    values: ["none", "some", "high"],
-    healthy: { none: 0.9, some: 0.08, high: 0.02 },
+    summary: "The packet loss on the path: none, some (up to 5 %), high (more than 5 %) or most (more than half).",
+    values: ["none", "some", "high", "most"],
+    healthy: { none: 0.9, some: 0.08, high: 0.018, most: 0.002 },
   },
   {
     id: "path.mtu",
@@ -141,11 +143,29 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   },
 ];
 
+/** A degree of a loss: the chance that one exchange loses a packet, and the weight of the degree in the prior. */
+export interface LossDegree {
+  readonly id: string;
+  /** The chance that one exchange loses a packet. An exchange is a packet and its answer. */
+  readonly loss: number;
+  /** The relative weight of the degree in the prior of the fault. */
+  readonly share: number;
+}
+
 /**
- * The chance that one exchange loses a packet, for each degree of a loss. An exchange is a packet and its answer.
- * Under a loss s in both directions, an exchange loses a packet with the probability 1 - (1 - s)^2.
+ * The degrees of a loss: a grid of the chance q that one exchange loses a packet. Under a loss s in both directions, an
+ * exchange loses a packet with the probability 1 - (1 - s)^2. The grid goes from a loss that shows only in the echo
+ * requests to a loss that stops most exchanges. Most losses in the field are light. Thus the three degrees below q 0.5
+ * each have 3 parts of the prior, and the three others each have 1.
  */
-export const EXCHANGE_LOSS: Readonly<Record<"light" | "heavy", number>> = { light: 0.25, heavy: 0.7 };
+export const LOSS_DEGREES: readonly LossDegree[] = [
+  { id: "loss-5", loss: 0.05, share: 3 },
+  { id: "loss-15", loss: 0.15, share: 3 },
+  { id: "loss-30", loss: 0.3, share: 3 },
+  { id: "loss-50", loss: 0.5, share: 1 },
+  { id: "loss-70", loss: 0.7, share: 1 },
+  { id: "loss-90", loss: 0.9, share: 1 },
+];
 
 /** A step of a visit that a loss changes: its feature, its tries, and the time feature of a step that passes. */
 export interface LossStep {
@@ -173,12 +193,16 @@ export interface LossStep {
  *   1 + max(200 ms / rtt, 3), so 4 or more: `mid`, or `high` for a short round trip. The split is even until the lab
  *   runs fit it. A connect that sent its SYN again gives no ratio (Karn's rule), so a late connect does not make a
  *   ratio low.
+ * - The echo requests to an address are a step with `LOSS_MIN_SENT` tries. The address gives no reply when the loss
+ *   takes each request.
  */
 export const LOSS_STEPS: readonly LossStep[] = [
   { feature: "dns.answer", timeout: "timeout", tries: 3 },
   { feature: "tcp.connect", timeout: "timeout", tries: 3, time: "tcp.time", late: { retry: 1 } },
   { feature: "tls.handshake", timeout: "timeout", tries: 4, time: "tls.ratio", late: { mid: 0.5, high: 0.5 } },
   { feature: "http.status", timeout: "none", tries: 4, time: "http.ttfb", late: { mid: 0.5, high: 0.5 } },
+  { feature: "icmp.reply", timeout: "none", tries: LOSS_MIN_SENT },
+  { feature: "gateway.reply", timeout: "none", tries: LOSS_MIN_SENT },
 ];
 
 /**
@@ -189,6 +213,9 @@ export const LOSS_STEPS: readonly LossStep[] = [
  * - A step that passes was late when it lost its first try: (loss - loss^k) / (1 - loss^k). A late step lands in the
  *   bins `late` of its time feature. A step on time keeps the healthy distribution of the time feature.
  * - The connects of each address family fail on their own. Thus one family can fail alone, as under `ipv6.broken`.
+ * - The share of the echo requests with a reply lands in the bins of `path.loss` and `gateway.loss`. The count of the
+ *   requests is `LOSS_MIN_SENT`, the least count that gives a bin. The reader gives no bin with no reply. Thus the
+ *   chances are of the visits with one reply or more.
  */
 function lossSigns(loss: number): Record<string, Prediction> {
   const signs: Record<string, Prediction> = {};
@@ -210,6 +237,16 @@ function lossSigns(loss: number): Record<string, Prediction> {
   // When each family fails, the visit reads no family. So the shares are of the visits that read a family.
   const read = family.both + family["ipv4-only"] + family["ipv6-only"];
   signs["ip.family"] = Object.fromEntries(Object.entries(family).map(([value, p]) => [value, p / read]));
+  const sent = LOSS_MIN_SENT;
+  const lost = poissonBinomial(Array.from({ length: sent }, () => loss));
+  const replied = 1 - (lost[sent] ?? 0);
+  const bins: Record<string, number> = {};
+  for (let count = 0; count < sent; count += 1) {
+    const value = binOf(PATH_LOSS_BINS, (sent - count) / sent);
+    bins[value] = (bins[value] ?? 0) + (lost[count] ?? 0) / replied;
+  }
+  signs["path.loss"] = moved("path.loss", STRENGTHS.sure, bins);
+  signs["gateway.loss"] = moved("gateway.loss", STRENGTHS.sure, bins);
   return signs;
 }
 
@@ -220,11 +257,19 @@ function healthyOf(feature: string): Distribution {
   return healthy;
 }
 
-/** This function gives the healthy distribution of a feature, with the share `share` moved to the bins `to`. */
+/**
+ * This function gives the healthy distribution of a feature, with the share `share` moved to the bins `to`. As in an
+ * expectation, each value keeps `FLOOR` or more. The values above the floor give the missing mass, in proportion to
+ * their part above the floor.
+ */
 function moved(feature: string, share: number, to: Distribution): Distribution {
   const healthy = healthyOf(feature);
   for (const value of Object.keys(to)) if (!(value in healthy)) throw new Error(`The feature ${feature} has no value ${value}.`);
-  return Object.fromEntries(Object.entries(healthy).map(([value, p]) => [value, (1 - share) * p + share * (to[value] ?? 0)]));
+  const mixed = Object.entries(healthy).map(([value, p]) => [value, (1 - share) * p + share * (to[value] ?? 0)] as const);
+  const missing = mixed.reduce((sum, [, p]) => sum + Math.max(0, FLOOR - p), 0);
+  if (missing === 0) return Object.fromEntries(mixed);
+  const above = mixed.reduce((sum, [, p]) => sum + Math.max(0, p - FLOOR), 0);
+  return Object.fromEntries(mixed.map(([value, p]) => [value, p < FLOOR ? FLOOR : p - (missing * (p - FLOOR)) / above]));
 }
 
 /**
@@ -232,32 +277,20 @@ function moved(feature: string, share: number, to: Distribution): Distribution {
  * A loss does the same to TCP and HTTP at each place where it starts. The place can be the radio, the local network
  * or a network on the path. So each fault with a loss takes these degrees.
  *
- * Under a light loss, each try passes after a few repeats, so DNS, TCP and HTTP succeed. Under a heavy loss, each DNS
- * try, each SYN and each request can fail. Thus the timeouts come together with the loss, at each host that the loss
- * reaches. Most losses in the field are light, so the degree light has 3 parts of the prior and the degree heavy 1.
+ * Under a small q, each try passes after a few repeats, so DNS, TCP and HTTP succeed. Under a large q, each DNS try,
+ * each SYN and each request can fail. Thus the timeouts come together with the loss, at each host that the loss
+ * reaches. Each degree is one q of `LOSS_DEGREES`, so the facts of a visit agree on one q.
  *
  * The signs of a loss in the steps of a visit come from the tries of each step (`lossSigns`). A broken family
  * leaves the other family with no loss, but a loss changes each family.
  */
 function lossDegrees(): readonly Degree[] {
-  return [
-    {
-      id: "light",
-      summary: "A small share of the packets is lost. Each try passes after a few repeats.",
-      share: 3,
-      predicts: lossSigns(EXCHANGE_LOSS.light),
-    },
-    {
-      id: "heavy",
-      summary: "A large share of the packets is lost, so DNS, TCP and HTTP can time out.",
-      share: 1,
-      predicts: {
-        ...lossSigns(EXCHANGE_LOSS.heavy),
-        "path.loss": { expect: "high", strength: "strong" },
-        "gateway.loss": { expect: "high", strength: "strong" },
-      },
-    },
-  ];
+  return LOSS_DEGREES.map((degree) => ({
+    id: degree.id,
+    summary: `Each exchange loses a packet with the chance ${degree.loss}.`,
+    share: degree.share,
+    predicts: lossSigns(degree.loss),
+  }));
 }
 
 /**
@@ -275,11 +308,31 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     predicts: {
       "link.state": { expect: "down", strength: "sure" },
       "gateway.reply": { expect: "none", strength: "sure" },
-      // With no route, c-ares cannot send the query and gives ECONNREFUSED. A link with no carrier keeps its routes, so its queries time out.
-      "dns.answer": { expect: ["unreachable", "timeout"], strength: "strong" },
-      "icmp.reply": { expect: ["none", "unreachable"], strength: "sure" },
-      "tcp.connect": { expect: ["unreachable", "timeout"], strength: "sure" },
     },
+    degrees: [
+      {
+        id: "no-route",
+        summary: "The interface is down, so the computer has no route. Each send fails at once.",
+        share: 1,
+        predicts: {
+          // With no route, c-ares cannot send the query and gives ECONNREFUSED.
+          "dns.answer": { expect: "unreachable", strength: "strong" },
+          "icmp.reply": { expect: "unreachable", strength: "sure" },
+          "tcp.connect": { expect: "unreachable", strength: "sure" },
+        },
+      },
+      {
+        id: "no-carrier",
+        summary: "The interface has no carrier, but it keeps its routes. Thus the DNS queries time out.",
+        share: 1,
+        predicts: {
+          "dns.answer": { expect: "timeout", strength: "strong" },
+          // No world of the labs makes this mode yet. The failed ARP search for the gateway can give "unreachable".
+          "icmp.reply": { expect: ["none", "unreachable"], strength: "sure" },
+          "tcp.connect": { expect: ["timeout", "unreachable"], strength: "sure" },
+        },
+      },
+    ],
   },
   {
     id: "wifi.weak",
@@ -292,11 +345,9 @@ export const STANDARD_FAULTS: readonly Fault[] = [
       "wifi.signal": { expect: "weak", strength: "strong" },
       // A weak Wi-Fi needs a Wi-Fi link. With no connected Wi-Fi interface, only a wrong read gives this fault.
       "wifi.state": { connected: 0.999, none: 0.001 },
-      // The radio is the first link, so the loss starts before the gateway.
-      "path.loss": { expect: ["some", "high"], strength: "usual" },
-      "gateway.loss": { expect: ["some", "high"], strength: "usual" },
     },
-    // A frame that the radio loses is a lost packet for TCP, so the signs of the loss in TCP and HTTP are those of `path.loss`.
+    // A frame that the radio loses is a lost packet for TCP, so the signs of the loss are those of `path.loss`. The radio
+    // is the first link, so the loss starts before the gateway.
     degrees: lossDegrees(),
   },
   {
@@ -309,9 +360,27 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     predicts: {
       "gateway.reply": { expect: "none", strength: "strong" },
       "dns.answer": { expect: "timeout", strength: "strong" },
-      "icmp.reply": { expect: ["none", "unreachable"], strength: "strong" },
-      "tcp.connect": { expect: ["timeout", "unreachable"], strength: "strong" },
     },
+    degrees: [
+      {
+        id: "silent",
+        summary: "The gateway drops each packet.",
+        share: 1,
+        predicts: {
+          "icmp.reply": { expect: "none", strength: "strong" },
+          "tcp.connect": { expect: "timeout", strength: "strong" },
+        },
+      },
+      {
+        id: "unreachable",
+        summary: "The gateway or the computer answers that each host past the gateway is unreachable.",
+        share: 1,
+        predicts: {
+          "icmp.reply": { expect: "unreachable", strength: "strong" },
+          "tcp.connect": { expect: "unreachable", strength: "strong" },
+        },
+      },
+    ],
   },
   {
     id: "captive.portal",
@@ -333,9 +402,21 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     reach: "shared",
     summary: "The DNS resolver does not answer.",
     step: "Use a different DNS resolver, or examine the resolver of the router.",
-    predicts: {
-      "dns.answer": { expect: ["timeout", "unreachable"], strength: "strong" },
-    },
+    predicts: {},
+    degrees: [
+      {
+        id: "silent",
+        summary: "The resolver drops each query.",
+        share: 1,
+        predicts: { "dns.answer": { expect: "timeout", strength: "strong" } },
+      },
+      {
+        id: "absent",
+        summary: "No DNS service listens on the resolver, so its host answers that the port is unreachable.",
+        share: 1,
+        predicts: { "dns.answer": { expect: "unreachable", strength: "strong" } },
+      },
+    ],
   },
   {
     id: "resolver.failing",
@@ -344,9 +425,21 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     reach: "shared",
     summary: "The DNS resolver answers with an error for each name.",
     step: "Use a different DNS resolver, and examine the DNSSEC settings of the resolver.",
-    predicts: {
-      "dns.answer": { expect: ["servfail", "refused"], strength: "strong" },
-    },
+    predicts: {},
+    degrees: [
+      {
+        id: "servfail",
+        summary: "The resolver answers SERVFAIL, for example when it reaches no authoritative server.",
+        share: 1,
+        predicts: { "dns.answer": { expect: "servfail", strength: "strong" } },
+      },
+      {
+        id: "refused",
+        summary: "The resolver answers REFUSED, for example to a client that is not in its networks.",
+        share: 1,
+        predicts: { "dns.answer": { expect: "refused", strength: "strong" } },
+      },
+    ],
   },
   {
     id: "name.missing",
@@ -377,10 +470,27 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     reach: "target",
     summary: "The host is down.",
     step: "Start the host, or examine its network link.",
-    predicts: {
-      "tcp.connect": { expect: ["timeout", "unreachable"], strength: "strong" },
-      "icmp.reply": { expect: ["none", "unreachable"], strength: "strong" },
-    },
+    predicts: {},
+    degrees: [
+      {
+        id: "silent",
+        summary: "The host, or a filter near it, drops each packet.",
+        share: 1,
+        predicts: {
+          "tcp.connect": { expect: "timeout", strength: "strong" },
+          "icmp.reply": { expect: "none", strength: "strong" },
+        },
+      },
+      {
+        id: "unreachable",
+        summary: "The last router answers that the host is unreachable, because the host does not answer its ARP search.",
+        share: 1,
+        predicts: {
+          "tcp.connect": { expect: "unreachable", strength: "strong" },
+          "icmp.reply": { expect: "unreachable", strength: "strong" },
+        },
+      },
+    ],
   },
   {
     id: "filter.drop",
@@ -427,10 +537,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     reachShares: { target: 2 },
     summary: "A network on the path loses packets.",
     step: "Find the first hop with loss, and tell the provider of that network.",
-    predicts: {
-      "path.loss": { expect: ["some", "high"], strength: "strong" },
-      "gateway.loss": { expect: ["some", "high"], strength: "strong" },
-    },
+    predicts: {},
     degrees: lossDegrees(),
   },
   {
@@ -533,7 +640,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "11",
+  version: "12",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

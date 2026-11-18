@@ -11,7 +11,7 @@ AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
 type Availability: build/counts.chunk.d.ts#Availability
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
-Bin: build/core.chunk.d.ts#Bin
+type Bin: build/core.chunk.d.ts#Bin
 CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
@@ -58,7 +58,6 @@ DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
 type DnsRaw: build/index.d.ts#DnsRaw
 ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
 ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
-EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
 EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk2.d.ts#Evidence
@@ -109,6 +108,7 @@ LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LINK_SUBJECT: build/index.d.ts#LINK_SUBJECT
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
+LOSS_DEGREES: build/index.chunk2.d.ts#LOSS_DEGREES
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
@@ -128,6 +128,7 @@ LinkInterface: build/counts.chunk.d.ts#LinkInterface
 type LinkRaw: build/index.d.ts#LinkRaw
 LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
+type LossDegree: build/index.chunk2.d.ts#LossDegree
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
@@ -391,7 +392,7 @@ AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
 type Availability: build/counts.chunk.d.ts#Availability
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
-Bin: build/core.chunk.d.ts#Bin
+type Bin: build/core.chunk.d.ts#Bin
 CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
@@ -427,7 +428,6 @@ DnsAnswer: build/counts.chunk.d.ts#DnsAnswer
 DnsOutcome: build/counts.chunk.d.ts#DnsOutcome
 ECHO_OUTCOMES: build/counts.chunk.d.ts#ECHO_OUTCOMES
 ETHERNET_MTU: build/counts.chunk.d.ts#ETHERNET_MTU
-EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type EchoMetrics: build/core.chunk.d.ts#EchoMetrics
 EchoOutcome: build/counts.chunk.d.ts#EchoOutcome
 type Evidence: build/index.chunk2.d.ts#Evidence
@@ -469,6 +469,7 @@ LINK_STATES: build/counts.chunk.d.ts#LINK_STATES
 LINK_STATE_VALUES: build/core.chunk.d.ts#LINK_STATE_VALUES
 LOCAL_SUFFIXES: build/core.chunk.d.ts#LOCAL_SUFFIXES
 LOOKUP_KINDS: build/counts.chunk.d.ts#LOOKUP_KINDS
+LOSS_DEGREES: build/index.chunk2.d.ts#LOSS_DEGREES
 LOSS_MIN_SENT: build/core.chunk.d.ts#LOSS_MIN_SENT
 LOSS_START_LEVEL: build/core.chunk.d.ts#LOSS_START_LEVEL
 LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
@@ -486,6 +487,7 @@ type Layer: build/layer.chunk.d.ts#Layer
 LinkInterface: build/counts.chunk.d.ts#LinkInterface
 LinkState: build/counts.chunk.d.ts#LinkState
 LinkStateValue: build/counts.chunk.d.ts#LinkStateValue
+type LossDegree: build/index.chunk2.d.ts#LossDegree
 type LossEstimate: build/core.chunk.d.ts#LossEstimate
 type LossHop: build/core.chunk.d.ts#LossHop
 type LossNetwork: build/core.chunk.d.ts#LossNetwork
@@ -723,7 +725,6 @@ type Degree: build/index.chunk2.d.ts#Degree
 type DegreeShare: build/index.chunk2.d.ts#DegreeShare
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Distribution: build/index.chunk2.d.ts#Distribution
-EXCHANGE_LOSS: build/index.chunk2.d.ts#EXCHANGE_LOSS
 type Evidence: build/index.chunk2.d.ts#Evidence
 type Expectation: build/index.chunk2.d.ts#Expectation
 FLOOR: build/index.chunk2.d.ts#FLOOR
@@ -734,6 +735,7 @@ type Hypothesis: build/index.chunk2.d.ts#Hypothesis
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
+LOSS_DEGREES: build/index.chunk2.d.ts#LOSS_DEGREES
 LOSS_STEPS: build/index.chunk2.d.ts#LOSS_STEPS
 type LabBars: build/index.chunk2.d.ts#LabBars
 type LabBarsOptions: build/index.chunk2.d.ts#LabBarsOptions
@@ -746,6 +748,7 @@ type LabScore: build/index.chunk2.d.ts#LabScore
 type LabStatus: build/index.chunk2.d.ts#LabStatus
 type LabVerdict: build/index.chunk2.d.ts#LabVerdict
 type Layer: build/layer.chunk.d.ts#Layer
+type LossDegree: build/index.chunk2.d.ts#LossDegree
 type LossStep: build/index.chunk2.d.ts#LossStep
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 NONE: build/index.chunk2.d.ts#NONE
@@ -2115,9 +2118,6 @@ interface Diagnosis {
 ### build/index.chunk2.d.ts#Distribution
 type Distribution = Readonly<Record<string, number>>;
 
-### build/index.chunk2.d.ts#EXCHANGE_LOSS
-declare const EXCHANGE_LOSS: Readonly<Record<"light" | "heavy", number>>;
-
 ### build/index.chunk2.d.ts#Evidence
 interface Evidence {
   readonly feature: string;
@@ -2179,6 +2179,9 @@ declare const LAB_BAR_STEP = .001;
 
 ### build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 declare const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
+
+### build/index.chunk2.d.ts#LOSS_DEGREES
+declare const LOSS_DEGREES: readonly LossDegree[];
 
 ### build/index.chunk2.d.ts#LOSS_STEPS
 declare const LOSS_STEPS: readonly LossStep[];
@@ -2246,6 +2249,13 @@ interface LabVerdict {
   readonly bar: number;
   readonly low: number | undefined;
   readonly support: number;
+}
+
+### build/index.chunk2.d.ts#LossDegree
+interface LossDegree {
+  readonly id: string;
+  readonly loss: number;
+  readonly share: number;
 }
 
 ### build/index.chunk2.d.ts#LossStep

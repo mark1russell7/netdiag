@@ -238,9 +238,13 @@ A fault with the reach `upstream` changes both hosts past the gateway. It does n
 
 A fault can have more than one reach. For example, a loss can be in the local network, past the gateway or near the target. The diagnosis then gives one variant of the fault for each reach, with its share of the prior from `Fault.reachShares`, or an equal share. The probability of the fault is the sum of its variants. `Cause.reaches` gives the probability of each reach, and `causeVariants` gives the variants of a cause. The choice of the next probe and `predictive` use these variants.
 
-A fault can also have degrees, for example a light loss and a heavy loss. Each degree has a part of the prior of the fault, and predictions that replace the predictions of the fault. A heavy loss makes DNS, TCP and HTTP time out together, and a light loss does not. Thus the model sees the timeouts together. The variants of a fault are each pair of a reach and a degree. `Cause.degrees` gives the probability of each degree.
+A fault can also have degrees. A degree is a severity, for example the size of a loss, or a mode, for example a silent or an absent resolver. Each degree has a part of the prior of the fault, and predictions that replace the predictions of the fault. A large loss makes DNS, TCP and HTTP time out together, and a small loss does not. Thus the model sees the timeouts together. The variants of a fault are each pair of a reach and a degree. `Cause.degrees` gives the probability of each degree.
 
-The predictions of the two degrees of a loss come from the tries of each step of a visit, in `LOSS_STEPS`. `EXCHANGE_LOSS` gives the chance q that one exchange loses a packet: 0.25 for a light loss and 0.7 for a heavy loss. A step with k tries times out with the chance q^k. A step that passes was late when it lost its first try. Its time then lands in the late bins of the step. An echo request is one exchange, so `path.loss` follows from q and the count of the requests.
+A mode is the same on each subject of a visit. A down resolver drops each query, or its host refuses each query. Thus each mode is a degree with one expected value, and the model counts the mode once for each visit. `interface.down`, `gateway.down`, `resolver.down`, `resolver.failing` and `host.down` each have two modes.
+
+The degrees of a loss are a grid of the chance q that one exchange loses a packet, in `LOSS_DEGREES`: 0.05, 0.15, 0.3, 0.5, 0.7 and 0.9. Each degree below 0.5 has 3 parts of the prior, and each other degree has 1. The predictions of each degree come from the tries of each step of a visit, in `LOSS_STEPS`. A step with k tries times out with the chance q^k. A step that passes was late when it lost its first try. Its time then lands in the late bins of the step.
+
+An echo request is one exchange. Thus the bins of `path.loss` and `gateway.loss` follow the binomial distribution of the lost requests of 20, for the visits with one reply or more. One lost request of 20 is a weak sign of a loss. A loss of 0.05 gives it in 38 of 100 visits, and a healthy path gives it in 8 of 100.
 
 The standard catalog `STANDARD_CATALOG` has 18 features and 21 faults. The rules of practice give its first likelihoods, and each hypothesis has the same prior. The lab runs (ND-7) then fit these numbers.
 
@@ -272,7 +276,7 @@ const result = diagnose(STANDARD_CATALOG, [
 | `gateway.loss` | The share of the echo requests to the gateway with a reply, with the bins of `path.loss`. A report of `mtr` to the gateway gives it too. |
 | `icmp.reply` | The echo requests to each other address: `reply`, `none` or `unreachable`. |
 | `path.mtu` | A measured MTU: `full` at the ceiling, `reduced` with a message of a router, `silent` with no message. `silent` tells an MTU black hole. |
-| `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. The gateway gives `gateway.loss` in its place. |
+| `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss), `high` or `most` (more than half lost). A report of `mtr` that reached the address gives it from its last hop. The gateway gives `gateway.loss` in its place. |
 | `wifi.signal` | The signal level of each connected Wi-Fi interface: `strong` at -60 dBm or more, `weak` below -75 dBm. The quality of Windows changes to dBm. |
 | `wifi.state` | `connected` when a Wi-Fi fact tells of a connected interface. A fact `wifi.interfaces` with no connected interface gives `none`. Then `wifi.weak` is not the cause. |
 
