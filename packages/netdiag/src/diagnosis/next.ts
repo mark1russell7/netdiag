@@ -82,7 +82,7 @@ function tableOf(catalog: Catalog, groups: readonly (readonly Cause[])[], counte
       // A group with a probability of 0 adds nothing to the gain. Its row is the mean of the rows of its variants.
       const weight = mass > 0 ? variant.probability / mass : 1 / (group.length * causeVariants(cause).length);
       // The probabilities of each value of each feature for the variant of the cause.
-      const rows = columns.map((column) => column.values.map((value) => catalog.likelihood(cause.id, column.feature, value, column.primary, variant.reach)));
+      const rows = columns.map((column) => column.values.map((value) => catalog.likelihood(cause.id, column.feature, value, column.primary, variant.reach, variant.degree)));
       const walk = (depth: number, index: number, p: number): void => {
         const probabilities = rows[depth];
         if (probabilities === undefined) {

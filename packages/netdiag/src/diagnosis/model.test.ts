@@ -14,6 +14,7 @@ import {
   explain,
   predictive,
   type CatalogSpec,
+  type Degree,
   type Evidence,
   type Feature,
   type Reach,
@@ -124,6 +125,25 @@ describe("the catalog", () => {
           },
         ],
     ),
+    ...[
+      ["an empty list of degrees", []],
+      ["a repeated degree", [{ id: "heavy", summary: "", share: 1 }, { id: "heavy", summary: "", share: 1 }]],
+      ["a degree with an invalid id", [{ id: "Heavy Loss", summary: "", share: 1 }]],
+      ["a degree with a share of 0", [{ id: "heavy", summary: "", share: 0 }]],
+      ["a degree with a share that is not a number", [{ id: "heavy", summary: "", share: Number.NaN }]],
+      ["a degree that predicts an unknown feature", [{ id: "heavy", summary: "", share: 1, predicts: { "dns.answer": { expect: "ok", strength: "weak" } } }]],
+      ["a degree with a sum that is not 1", [{ id: "heavy", summary: "", share: 1, predicts: { "tcp.connect": { connected: 0.5, refused: 0.1, timeout: 0.1 } } }]],
+    ].map(
+      ([name, degrees]): [string, CatalogSpec] =>
+        [
+          `a fault with ${String(name)}`,
+          {
+            version: "t",
+            features: [tcp],
+            faults: [{ id: "x", part: "service", layer: "tcp", reach: "target", summary: "", step: "", predicts: { "tcp.connect": { expect: "refused", strength: "weak" } }, degrees: degrees as readonly Degree[] }],
+          },
+        ],
+    ),
   ])("refuses %s", (_name, spec) => {
     expect(compileCatalog(spec).tag).toBe("err");
   });
@@ -133,6 +153,7 @@ describe("the catalog", () => {
       for (const feature of STANDARD_FEATURES) {
         for (const value of feature.values) {
           expect(catalog.likelihood(h.id, feature.id, value, true)).toBeGreaterThanOrEqual(FLOOR);
+          for (const degree of h.degree ?? []) expect(catalog.likelihood(h.id, feature.id, value, true, undefined, degree)).toBeGreaterThanOrEqual(FLOOR);
         }
       }
     }
@@ -290,6 +311,97 @@ describe("a fault with two reaches", () => {
   });
 });
 
+describe("a fault with degrees", () => {
+  // A read of the simulated world: a loss of 76 % at the gateway. Each DNS try fails at the target and at the reference.
+  const heavy = [
+    e("dns.answer", "timeout"),
+    e("dns.answer", "timeout", false),
+    e("gateway.reply", "reply", false),
+    e("path.loss", "high", false),
+    e("link.state", "up", false),
+    e("wifi.signal", "strong", false),
+    e("wifi.state", "connected", false),
+  ];
+  const lossOf = (evidence: readonly Evidence[]) => diagnose(catalog, evidence).causes.find((cause) => cause.id === "path.loss");
+  const degreeOf = (evidence: readonly Evidence[], degree: string): number => lossOf(evidence)?.degrees?.find((share) => share.degree === degree)?.probability ?? Number.NaN;
+
+  it("names a heavy loss when each DNS try fails and the reference loses packets", () => {
+    expect(top(heavy)).toBe("path.loss");
+    expect(degreeOf(heavy, "heavy")).toBeGreaterThan(degreeOf(heavy, "light"));
+  });
+
+  it("names a weak Wi-Fi signal with a heavy loss when DNS times out", () => {
+    const weak = heavy.map((item) => (item.feature === "wifi.signal" ? e("wifi.signal", "weak", false) : item));
+    expect(top(weak)).toBe("wifi.weak");
+  });
+
+  it("names a heavy loss on the path to the target when the connect times out and ping loses packets", () => {
+    // A read of the simulated world: a loss of 38 % in each direction near the target.
+    const target = [
+      e("dns.answer", "ok"),
+      e("dns.answer", "ok", false),
+      e("tcp.connect", "timeout"),
+      e("tcp.connect", "connected", false),
+      e("tcp.time", "short", false),
+      e("http.status", "ok", false),
+      e("icmp.reply", "reply"),
+      e("icmp.reply", "reply", false),
+      e("path.loss", "high"),
+      e("path.loss", "none", false),
+    ];
+    expect(top(target)).toBe("path.loss");
+    expect(degreeOf(target, "heavy")).toBeGreaterThan(degreeOf(target, "light"));
+  });
+
+  it("gives the table of each degree, and their mean with the shares without a degree", () => {
+    const light = catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared", "light");
+    const severe = catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared", "heavy");
+    expect(light).toBe(catalog.likelihood(NONE, "dns.answer", "timeout", true));
+    expect(severe).toBeCloseTo(0.45, 12);
+    expect(catalog.likelihood("path.loss", "dns.answer", "timeout", true, "shared")).toBeCloseTo(0.75 * light + 0.25 * severe, 12);
+    // A degree keeps each prediction of the fault that it does not replace.
+    expect(catalog.likelihood("path.loss", "http.ttfb", "high", true, "shared", "heavy")).toBe(catalog.likelihood("path.loss", "http.ttfb", "high", true, "shared", "light"));
+    // A fault of the target uses the healthy distribution on a reference host for each degree.
+    expect(catalog.likelihood("path.loss", "dns.answer", "timeout", false, "target", "heavy")).toBe(catalog.likelihood(NONE, "dns.answer", "timeout", false));
+  });
+
+  it("gives the part of the prior of each degree", () => {
+    const whole = catalog.prior("path.loss");
+    expect(catalog.prior("path.loss", "light")).toBeCloseTo(0.75 * whole, 12);
+    expect(catalog.prior("path.loss", "heavy")).toBeCloseTo(0.25 * whole, 12);
+    expect(catalog.prior("path.loss", "medium")).toBe(0);
+  });
+
+  it("gives no number for a degree that the hypothesis does not have", () => {
+    expect(catalog.likelihood("path.loss", "dns.answer", "timeout", true, undefined, "medium")).toBeNaN();
+    expect(catalog.likelihood("server.slow", "http.ttfb", "high", true, undefined, "heavy")).toBeNaN();
+    expect(catalog.likelihood(NONE, "http.ttfb", "high", true, undefined, "heavy")).toBeNaN();
+    expect(catalog.hypotheses.find((h) => h.id === "path.loss")?.degree).toEqual(["light", "heavy"]);
+    expect(catalog.hypotheses.find((h) => h.id === "server.slow")?.degree).toBeUndefined();
+  });
+
+  it("gives the probability of each degree and each variant, with a sum of the probability of the cause", () => {
+    const cause = lossOf(heavy);
+    const p = cause?.probability ?? Number.NaN;
+    expect(cause?.degrees?.map((share) => share.degree)).toEqual(["light", "heavy"]);
+    expect((cause?.degrees ?? []).reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(p, 12);
+    expect((cause?.reaches ?? []).reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(p, 12);
+    const variants = cause === undefined ? [] : causeVariants(cause);
+    expect(variants.map((variant) => `${variant.degree ?? ""}/${variant.reach ?? ""}`)).toEqual(["light/shared", "light/target", "heavy/shared", "heavy/target"]);
+    expect(variants.reduce((sum, variant) => sum + variant.probability, 0)).toBeCloseTo(p, 12);
+    const slow = diagnose(catalog, heavy).causes.find((each) => each.id === "server.slow");
+    expect(slow?.degrees).toBeUndefined();
+    expect(slow?.variants).toBeUndefined();
+  });
+
+  it("explains a fault by its most probable degree", () => {
+    // Under the degree heavy, a DNS timeout has the same probability as under a down resolver.
+    const why = explain(catalog, heavy, "path.loss", "resolver.down");
+    expect(why.find((item) => item.evidence.feature === "dns.answer" && item.evidence.primary)?.weight).toBeCloseTo(0, 12);
+    expect(why[0]?.evidence.feature).toBe("path.loss");
+  });
+});
+
 describe("the evidence", () => {
   it("ignores an unknown feature or value, with the reason", () => {
     const result = diagnose(catalog, [e("tcp.connect", "refused"), e("smtp.banner", "ok"), e("tcp.connect", "maybe")]);
@@ -298,7 +410,10 @@ describe("the evidence", () => {
   });
 
   it("gives the priors when there is no evidence", () => {
-    for (const cause of diagnose(catalog, []).causes) expect(cause.probability).toBeCloseTo(catalog.prior(cause.id), 12);
+    for (const cause of diagnose(catalog, []).causes) {
+      expect(cause.probability).toBeCloseTo(catalog.prior(cause.id), 12);
+      for (const share of cause.degrees ?? []) expect(share.probability).toBeCloseTo(catalog.prior(cause.id, share.degree), 12);
+    }
   });
 
   it("explains a cause by the weight of each observation", () => {
@@ -335,6 +450,8 @@ describe("the properties of the model", () => {
           const p = causes[i]?.probability ?? Number.NaN;
           const reaches = causes[i]?.reaches;
           if (reaches !== undefined) expect(reaches.reduce((a, share) => a + share.probability, 0)).toBeCloseTo(p, 12);
+          const degrees = causes[i]?.degrees;
+          if (degrees !== undefined) expect(degrees.reduce((a, share) => a + share.probability, 0)).toBeCloseTo(p, 12);
           expect(p).toBeGreaterThanOrEqual(0);
           expect(p).toBeLessThanOrEqual(1);
           if (i > 0) expect(p).toBeLessThanOrEqual(causes[i - 1]?.probability ?? Number.NaN);
@@ -354,7 +471,7 @@ describe("the properties of the model", () => {
     );
   });
 
-  // For a fault with two reaches, the factor of one more observation is its likelihood under the posterior of the reaches.
+  // For a fault with two or more variants, the factor of one more observation is its likelihood under the posterior of the variants.
   it("changes the odds of two causes by the ratio of their likelihoods for one more observation", () => {
     const ids = catalog.hypotheses.map((h) => h.id);
     fc.assert(
@@ -367,7 +484,7 @@ describe("the properties of the model", () => {
         const factor = (id: string): number => {
           const cause = causes.find((c) => c.id === id);
           if (cause === undefined) return Number.NaN;
-          const sum = causeVariants(cause).reduce((s, v) => s + v.probability * catalog.likelihood(id, extra.feature, extra.value, extra.primary, v.reach), 0);
+          const sum = causeVariants(cause).reduce((s, v) => s + v.probability * catalog.likelihood(id, extra.feature, extra.value, extra.primary, v.reach, v.degree), 0);
           return sum / cause.probability;
         };
         const ratio = Math.log(factor(a)) - Math.log(factor(b));

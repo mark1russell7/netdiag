@@ -21,6 +21,8 @@ export {
   type Cause,
   type CauseVariant,
   type Contribution,
+  type Degree,
+  type DegreeShare,
   type Diagnosis,
   type Distribution,
   type Evidence,
