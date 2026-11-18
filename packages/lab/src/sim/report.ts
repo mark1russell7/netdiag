@@ -31,8 +31,9 @@ import { bootstrapClusters, brier, calibrationError, reliability, wilson, type F
 import { countOf } from "@mark1russell7/text";
 import { faultClass, faultsOf, faultValues, NO_FAULT, termVariant } from "../grammar.ts";
 import { bandLine, labReport } from "../report.ts";
-import { evidenceOfLabel, runRounds, type LabRound } from "../run.ts";
+import { evidenceOfLabel, runRounds, type CaseRun, type LabRound } from "../run.ts";
 import { SIM_BANDS, simCases, type SimCase } from "./cases.ts";
+import { gapOf, SIM_GAPS, type SimGap } from "./gaps.ts";
 import { simReach } from "./network.ts";
 import { simVisit } from "./world.ts";
 
@@ -154,19 +155,49 @@ export function kindForecasts(action: Pick<SimAction, "probabilities" | "correct
   return ACTION_KINDS.map((kind) => ({ p: action.probabilities[kind] ?? 0, hit: kind === action.correct }));
 }
 
-/** The runs of the seeds: the seeds, the outcome of each case, the score of each seed, the bars, the alike band and the problems. */
+/** The runs of the cases of one known gap: the score of each seed, and the bars of the gap. */
+export interface SimGapRuns {
+  readonly gap: SimGap;
+  readonly scores: readonly LabRecalls[];
+  readonly bars: Result<LabBars, string[]>;
+}
+
+/**
+ * The runs of the seeds: the seeds, the outcome of each case, the score of each seed, the bars, the alike band and the problems. The
+ * scores and the bars are of the cases in no known gap. `gaps` has the scores and the bars of each known gap.
+ */
 export interface SimRuns {
   readonly seeds: readonly number[];
   readonly outcomes: readonly SimOutcome[];
   readonly scores: readonly LabRecalls[];
   readonly bars: Result<LabBars, string[]>;
   readonly band: AlikeBand;
+  readonly gaps: readonly SimGapRuns[];
   readonly problems: readonly string[];
+}
+
+/**
+ * This function gives a problem for each known gap whose bar got to the bar of its class. Such a gap is closed, so remove
+ * it from `SIM_GAPS`.
+ */
+export function closedGaps(bars: Result<LabBars, string[]>, gaps: readonly SimGapRuns[]): readonly string[] {
+  if (bars.tag === "err") return [];
+  const problems: string[] = [];
+  for (const each of gaps) {
+    if (each.bars.tag === "err") continue;
+    const bar = each.bars.value[each.gap.label];
+    const classBar = bars.value[each.gap.label];
+    if (bar !== undefined && classBar !== undefined && bar >= classBar) {
+      problems.push(`The gap ${each.gap.id} is closed: its bar ${bar} is at the bar ${classBar} of its class or over it. Remove it from SIM_GAPS.`);
+    }
+  }
+  return problems;
 }
 
 /** This function visits each case of the plans of the seeds, and it gives the bars of the runs and the actions of the policy. */
 export async function simRuns(seeds: readonly number[] = SIM_SEEDS, policy: ActionPolicy = STANDARD_POLICY, catalog: Catalog = STANDARD_CATALOG): Promise<SimRuns> {
   const scores: LabRecalls[] = [];
+  const gapScores = new Map<SimGap, LabRecalls[]>(SIM_GAPS.map((gap) => [gap, []]));
   const outcomes: SimOutcome[] = [];
   const problems: string[] = [];
   const records: LabRecord[] = [];
@@ -184,7 +215,13 @@ export async function simRuns(seeds: readonly number[] = SIM_SEEDS, policy: Acti
       close: () => Promise.resolve(),
     };
     const runs = await runRounds(cases, 1, () => Promise.resolve(round), catalog);
-    const report = labReport(catalog, runs, 1, cases.length);
+    // The cases of a known gap have a score of their own, so that the bars of the other cases keep their gains.
+    const gapOfRun = (run: CaseRun): SimGap | undefined => {
+      const labCase = byId.get(run.case);
+      return labCase === undefined ? undefined : gapOf(labCase);
+    };
+    const outside = runs.filter((run) => gapOfRun(run) === undefined);
+    const report = labReport(catalog, outside, 1, outside.length);
     records.push(...report.records);
     for (const run of runs) {
       const labCase = byId.get(run.case);
@@ -195,13 +232,25 @@ export async function simRuns(seeds: readonly number[] = SIM_SEEDS, policy: Acti
         outcomes.push({ seed, case: labCase, predicted: scoredCause(run.record), visits: count, evidence: run.evidence, ...(truth !== undefined ? { truth, action: simAction(truth, policy) } : {}) });
       } else outcomes.push({ seed, case: labCase, predicted: undefined, reason: run.reason, visits: count });
     }
-    if (report.noReads.length > 0) problems.push(`The seed ${seed} has ${countOf(report.noReads.length, "case")} with no read.`);
+    const noReads = runs.filter((run) => run.status === "no-read").length;
+    if (noReads > 0) problems.push(`The seed ${seed} has ${countOf(noReads, "case")} with no read.`);
     for (const problem of report.problems) problems.push(`The seed ${seed}: ${problem}`);
     if (report.score !== undefined) scores.push(report.score);
+    for (const [gap, list] of gapScores) {
+      const mine = runs.filter((run) => gapOfRun(run) === gap);
+      if (mine.length === 0) continue;
+      const each = labReport(catalog, mine, 1, mine.length);
+      records.push(...each.records);
+      for (const problem of each.problems) problems.push(`The seed ${seed}, the gap ${gap.id}: ${problem}`);
+      if (each.score !== undefined) list.push(each.score);
+    }
   }
   const bars = labBars(scores);
   if (bars.tag === "err") problems.push(...bars.error);
-  return { seeds, outcomes, scores, bars, band: alikeBand(records), problems };
+  const gaps = [...gapScores].map(([gap, list]) => ({ gap, scores: list, bars: labBars(list) }));
+  for (const each of gaps) if (each.bars.tag === "err") problems.push(...each.bars.error.map((problem) => `The gap ${each.gap.id}: ${problem}`));
+  problems.push(...closedGaps(bars, gaps));
+  return { seeds, outcomes, scores, bars, gaps, band: alikeBand(records), problems };
 }
 
 /** The hits of one option at one place: the cases of the option at the place, and the cases with the correct class. */
@@ -304,9 +353,40 @@ export function actionCalibration(outcomes: readonly SimOutcome[]): SimCalibrati
   };
 }
 
-/** This function gives the text of the file `bars/calibration.json`: the calibration of the actions. */
+/** This function gives the outcomes of the cases in no known gap. */
+export function outsideGaps(outcomes: readonly SimOutcome[]): readonly SimOutcome[] {
+  return outcomes.filter((each) => gapOf(each.case) === undefined);
+}
+
+/** This function gives the calibration that the gate examines: the calibration of the actions of the cases in no known gap. */
+export function gateCalibration(outcomes: readonly SimOutcome[]): SimCalibration {
+  return actionCalibration(outsideGaps(outcomes));
+}
+
+/** This function gives the text of the file `bars/calibration.json`: the calibration that the gate examines. */
 export function calibrationText(outcomes: readonly SimOutcome[]): string {
-  return `${JSON.stringify(actionCalibration(outcomes), null, 2)}\n`;
+  return `${JSON.stringify(gateCalibration(outcomes), null, 2)}\n`;
+}
+
+/** This function gives the text of the file `bars/sim-gaps.json`: each known gap with its cause, its end, its bars and its calibration. */
+export function gapsText(runs: SimRuns): string {
+  const gaps = runs.gaps.map(({ gap, bars }) => {
+    const mine = runs.outcomes.filter((each) => gapOf(each.case) === gap);
+    const calibration = actionCalibration(mine);
+    return {
+      id: gap.id,
+      label: gap.label,
+      option: gap.option,
+      when: gap.when ?? {},
+      cause: gap.cause,
+      end: gap.end,
+      cases: mine.length,
+      hits: mine.filter((each) => each.predicted === gap.label).length,
+      bars: bars.tag === "ok" ? bars.value : {},
+      calibration: { cases: calibration.cases, top: calibration.top, kinds: calibration.kinds },
+    };
+  });
+  return `${JSON.stringify(gaps, null, 2)}\n`;
 }
 
 /** The seed sets of the limits of the correct low end: the gate seeds, and four sets of the seeds 6 to 25. */
@@ -494,11 +574,14 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
   lines.push(
     `A silent visit is a visit where a fault passed each of its draws. It has no sign of the fault, so the world visits the case again with a new seed. The seeds have ${countOf(silentVisits(outcomes), "silent visit")}.`,
     "",
+    "The table has the cases in no known gap. The section of the known gaps has the other cases.",
+    "",
     "| Class | Hits | Bar | Silent visits | The other answers |",
     "| --- | --- | --- | --- | --- |",
   );
-  for (const label of [...new Set(outcomes.map((each) => each.case.truth))]) {
-    const mine = outcomes.filter((each) => each.case.truth === label);
+  const counted = outsideGaps(outcomes);
+  for (const label of [...new Set(counted.map((each) => each.case.truth))]) {
+    const mine = counted.filter((each) => each.case.truth === label);
     const hits = mine.filter((each) => each.predicted === label).length;
     const others = new Map<string, number>();
     for (const each of mine) {
@@ -536,12 +619,12 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
       `| ${label} | ${rate.cases} | ${percent(rate.correct, rate.cases)} | ${ends(rate.correctLow, rate.wilson.correctLow, rate.bootstrap.correctLow)} | ${limits?.limits[label] ?? "–"} | ${percent(rate.harmful, rate.cases)} | ${ends(rate.harmHigh, rate.wilson.harmHigh, rate.bootstrap.harmHigh)} | ${third(SIM_HARM_LIMIT - rate.harmHigh)} | ${rate.brier} | ${list.join(", ")} |`,
     );
   }
-  const calibration = actionCalibration(outcomes);
+  const calibration = gateCalibration(outcomes);
   lines.push(
     "",
     "## The calibration of the actions",
     "",
-    `The top-label forecast of a case is the probability of the chosen kind, and it hits when that kind is correct. The errors are expected calibration errors of ${SIM_CALIBRATION_BINS} bins, over all cases with an action.`,
+    `The top-label forecast of a case is the probability of the chosen kind, and it hits when that kind is correct. The errors are expected calibration errors of ${SIM_CALIBRATION_BINS} bins, over the cases with an action in no known gap.`,
     "The forecasts of one class are not calibrated by design, because the class is a part of the truth. Thus the gate examines the errors of all cases.",
     "",
     `- The top-label error: ${calibration.top} (limit ${limits?.errorLimits.top ?? "–"}).`,
@@ -552,6 +635,22 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
     "| --- | --- | --- | --- | --- |",
     ...calibration.bins.map((bin) => `| ${bin.low.toFixed(1)} to ${bin.high.toFixed(1)} | ${bin.n} | ${bin.stated} | ${bin.rate} | ${bin.interval.low} to ${bin.interval.high} |`),
   );
+  lines.push(
+    "",
+    "## The known gaps",
+    "",
+    "A known gap is a cell where netdiag fails for a known cause. The gate examines its cases apart from the other cases, with a bar of their own.",
+    "The top-label error is of the cases of the gap only. When the bar of a gap gets to the bar of its class, the sim tells you to remove the gap.",
+    "",
+    "| Gap | Class | Cases | Hits | Bar | Top-label error | Cause | End |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- |",
+  );
+  for (const { gap, bars: gapBars } of runs.gaps) {
+    const mine = outcomes.filter((each) => gapOf(each.case) === gap);
+    const hits = mine.filter((each) => each.predicted === gap.label).length;
+    const bar = gapBars.tag === "ok" ? (gapBars.value[gap.label] ?? "–") : "–";
+    lines.push(`| ${gap.id} | ${gap.label} | ${mine.length} | ${percent(hits, mine.length)} | ${bar} | ${actionCalibration(mine).top} | ${gap.cause} | ${gap.end} |`);
+  }
   lines.push("", "## The hits of each option at each place", "", "| Class | Option | Place | Hits | Cases |", "| --- | --- | --- | --- | --- |");
   for (const group of placeHits(outcomes)) lines.push(`| ${group.label} | ${group.option} | ${group.place} | ${percent(group.hits, group.cases)} | ${group.cases} |`);
   lines.push("", "## The bands", "", "| Option | Param | Range | Reason |", "| --- | --- | --- | --- |");

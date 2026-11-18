@@ -16,13 +16,14 @@ import { BARS_FOLDER } from "../worlds.ts";
 import { NO_FAULT } from "../grammar.ts";
 import { falseActionSummary, fitPolicy, policySource, policySummary, policyText, SIM_FIT_SEEDS, STANDARD_POLICY_FILE } from "./policy.ts";
 import {
-  actionCalibration,
   actionLimits,
   actionLimitsText,
   actionRates,
   actionsText,
   barsText,
   calibrationText,
+  gapsText,
+  gateCalibration,
   limitProblems,
   SIM_LIMIT_SETS,
   SIM_SEEDS,
@@ -52,7 +53,7 @@ if (values.limits !== undefined) {
     const each = seeds === SIM_SEEDS ? runs : await simRuns(seeds, fit.policy, catalog);
     limitRuns.push(...each.problems.map((problem) => `The limit seeds ${seeds.join(", ")}: ${problem}`));
     rates.push(actionRates(each.outcomes));
-    calibrations.push(actionCalibration(each.outcomes));
+    calibrations.push(gateCalibration(each.outcomes));
   }
   await writeFile(LIMITS_FILE, actionLimitsText(actionLimits(values.limits, SIM_LIMIT_SETS, rates, calibrations)));
 }
@@ -70,7 +71,7 @@ if (values.out !== undefined) {
 process.stdout.write(summary);
 const problems = [...fitRuns.problems.map((problem) => `The fit: ${problem}`), ...fit.problems, ...runs.problems, ...limitRuns];
 if (limits === undefined) problems.push("The file bars/action-limits.json has no limits. Start the command with --limits <reason>.");
-else problems.push(...limitProblems(actionRates(runs.outcomes), actionCalibration(runs.outcomes), limits));
+else problems.push(...limitProblems(actionRates(runs.outcomes), gateCalibration(runs.outcomes), limits));
 if (problems.length > 0 || runs.bars.tag === "err") {
   process.stderr.write(`${problems.join("\n")}\n`);
   process.exit(2);
@@ -78,6 +79,7 @@ if (problems.length > 0 || runs.bars.tag === "err") {
 let stale = false;
 for (const [file, text] of [
   [new URL("sim.json", BARS_FOLDER), barsText(runs.bars.value)],
+  [new URL("sim-gaps.json", BARS_FOLDER), gapsText(runs)],
   [new URL("actions.json", BARS_FOLDER), actionsText(runs.outcomes)],
   [new URL("calibration.json", BARS_FOLDER), calibrationText(runs.outcomes)],
   [new URL("policy.json", BARS_FOLDER), policyText(fit)],

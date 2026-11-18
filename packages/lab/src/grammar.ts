@@ -449,6 +449,11 @@ function matches(values: Readonly<Record<string, ParamValue>>, when: Readonly<Re
   });
 }
 
+/** This function tells if a fault is of the option, and if its values match each condition of `when`. */
+export function faultMatches(choice: StageChoice, option: string, when?: Readonly<Record<string, readonly ParamValue[]>>): boolean {
+  return choice.option === option && matches(faultValues(choice), when);
+}
+
 /** This function gives the class of one fault: the label of the first rule of its option that matches. */
 export function faultClass(choice: StageChoice): string {
   const option = OPTIONS.get(choice.option);
