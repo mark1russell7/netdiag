@@ -279,6 +279,7 @@ The probabilities go through a calibration map first. `calibration.cause` temper
 - The two temperatures give the least Brier score of the probabilities of the kinds, on the cases of all five sets.
 - The harmful cost is the least cost that keeps the harm of each class at 0.05 or under it, on each set.
 - The harm of a class is the higher high end of two intervals. One is a Wilson interval. The other is a bootstrap that draws the terms again.
+- The gate of the sim also holds the correct low end of each class, and the calibration error of the chosen kinds of all cases.
 
 ## Readers
 

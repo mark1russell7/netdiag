@@ -1,5 +1,5 @@
 {
-  "set": "Set on 2026-11-18 after the first look at the rates of five seed sets: the worst correct low end of each class minus the spread of its low ends, rounded down.",
+  "set": "Set on 2026-11-18 after the first look at the rates of five seed sets. A correct limit is the worst low end of a class minus the spread of its low ends, rounded down. An error limit is the highest error plus the spread of the errors, rounded up.",
   "sets": [
     [
       1,
@@ -372,5 +372,40 @@
     "tls.mismatch": 0.99,
     "tls.proxy": 0.45,
     "wifi.weak": 0.602
+  },
+  "unsureCases": [
+    573,
+    582,
+    567,
+    603,
+    560
+  ],
+  "errors": {
+    "top": [
+      0.0053,
+      0.0047,
+      0.0046,
+      0.0053,
+      0.0058
+    ],
+    "kinds": [
+      0.0016,
+      0.0011,
+      0.0012,
+      0.0015,
+      0.0016
+    ],
+    "unsure": [
+      0.0638,
+      0.0506,
+      0.0522,
+      0.0463,
+      0.0584
+    ]
+  },
+  "errorLimits": {
+    "top": 0.007,
+    "kinds": 0.0021,
+    "unsure": 0.0813
   }
 }
