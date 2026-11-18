@@ -10,7 +10,10 @@ import {
   GRAMMAR_OPTIONS,
   GRAMMAR_REASONS,
   NO_FAULT,
+  OPTION_DEGREES,
   fault,
+  faultClass,
+  faultVariant,
   faults,
   faultsOf,
   grammarCounts,
@@ -125,5 +128,21 @@ describe("the fault grammar", () => {
     expect(lines.filter((line) => line.startsWith("| `"))).toHaveLength(FAULT_MODES.length);
     expect(lines).toContain(`| Mode | ${LAYERS.join(" | ")} |`);
     for (const [at, text] of Object.values(GRAMMAR_REASONS).entries()) expect(lines).toContain(`  ${String(at + 1)}. ${text}`);
+  });
+
+  it("gives each fault of a table entry a degree of the hypothesis of its class, and no degree to a fault of no entry", () => {
+    const reach = (): undefined => undefined;
+    for (const entry of OPTION_DEGREES) {
+      expect(OPTION_IDS.has(entry.option), entry.option).toBe(true);
+      const params = Object.fromEntries(Object.entries(entry.when ?? {}).map(([name, values]) => [name, values[0] as string]));
+      const [choice] = faultsOf(fault(entry.option, params));
+      if (choice === undefined) throw new Error(`The fault ${entry.option} has no choice.`);
+      const hypothesis = STANDARD_CATALOG.hypotheses.find((each) => each.id === faultClass(choice));
+      expect(hypothesis?.degree, entry.option).toContain(entry.degree);
+      expect(faultVariant(choice, reach).degree).toBe(entry.degree);
+    }
+    const [mismatch] = faultsOf(fault("tls/mismatch"));
+    if (mismatch === undefined) throw new Error("The fault tls/mismatch has no choice.");
+    expect(faultVariant(mismatch, reach).degree).toBeUndefined();
   });
 });

@@ -1,4 +1,5 @@
 import { defineFactKind, isPort, isRecord, isText, type FactKind } from "./fact.ts";
+import { LAYERS, type Layer } from "./layer.ts";
 
 // The fact kinds of the native probes. This module imports no `node:` module, so a browser can read a record of facts.
 
@@ -136,6 +137,11 @@ export interface TlsCertificate {
   readonly chain: number;
   /** The root that the chain ends at. A failed check of the certificate does not change it. */
   readonly trust: Trust;
+  /**
+   * The SHA-256 fingerprint of the last certificate of the chain: the root of the store, or the top certificate that the
+   * server sent. A new issuing authority of the same root does not change it.
+   */
+  readonly root?: string | undefined;
   readonly problem?: CertProblem | undefined;
 }
 
@@ -170,6 +176,7 @@ function isCertificate(value: unknown): value is TlsCertificate {
     Number.isInteger(value["chain"]) &&
     value["chain"] >= 1 &&
     isOneOf(TRUSTS, value["trust"]) &&
+    optional(value["root"], isText) &&
     optional(value["problem"], (problem) => isOneOf(CERT_PROBLEMS, problem))
   );
 }
@@ -192,6 +199,37 @@ export const TLS_HANDSHAKE: FactKind<TlsHandshake> = defineFactKind<TlsHandshake
     optional(value["code"], isText) &&
     optional(value["certificate"], isCertificate),
 });
+
+/** The value of a baseline fact: the values of one key of the facts of a host in its good checks. */
+export interface Baseline {
+  /** The feature that compares the key with the history, for example `tls.root`. A key of `HISTORY_KEYS` names it. */
+  readonly feature: string;
+  /**
+   * The keyed hashes of the values of the key in the good checks of the host. A host behind a content delivery network
+   * can have more than one.
+   */
+  readonly values: readonly string[];
+  /** The time of the last good check, as an ISO 8601 time. */
+  readonly checked: string;
+  /** The id of the key of the hashes. */
+  readonly key: string;
+}
+
+/**
+ * The fact kinds of the baselines, one for each layer, for example `tls.baseline`. The subject of a baseline fact is the
+ * host of the visit, a DNS name or an IP address. The history probe gives these facts from the history of the caller.
+ */
+export const BASELINE_KINDS: Readonly<Record<Layer, FactKind<Baseline>>> = Object.fromEntries(
+  LAYERS.map((layer) => [
+    layer,
+    defineFactKind<Baseline>({
+      kind: `${layer}.baseline`,
+      layer,
+      summary: `The values of a key of the ${layer} facts of a host in its good checks, from the history of the caller.`,
+      check: (value): value is Baseline => isRecord(value) && isText(value["feature"]) && isTextList(value["values"]) && value["values"].length > 0 && isText(value["checked"]) && isText(value["key"]),
+    }),
+  ]),
+) as Record<Layer, FactKind<Baseline>>;
 
 /**
  * The outcomes of an HTTP request.

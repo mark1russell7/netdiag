@@ -2,6 +2,7 @@ import { uniformDouble } from "@mark1russell7/rigor-testkit/arbitrary";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
+  BASELINE_KINDS,
   CONNECT_OUTCOMES,
   DNS_ANSWER,
   DNS_ANSWER_VALUES,
@@ -44,6 +45,7 @@ import {
   isLocalName,
   readEvidence,
   target,
+  type Baseline,
   type Bin,
   type DnsAnswer,
   type Evidence,
@@ -55,11 +57,13 @@ import {
   type PathMtu,
   type PathReport,
   type PathTrace,
+  type ReadOptions,
   type TcpConnect,
   type TlsHandshake,
   type Trust,
   type WifiLink,
 } from "./index.ts";
+import { HISTORY_KEY_BYTES, machineHasher } from "./history-key.ts";
 
 type Entry = readonly [FactKind<unknown>, unknown, number?];
 
@@ -209,7 +213,7 @@ describe("the tables of the readers", () => {
   });
 
   it("name only features of the catalog, with the fact kinds of the readers", () => {
-    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE, PATH_MTU, WIFI_LINK, WIFI_INTERFACES].map((kind) => kind.kind);
+    const kinds = [DNS_ANSWER, TCP_CONNECT, TLS_HANDSHAKE, HTTP_RESPONSE, ICMP_ECHO, PATH_REPORT, LINK_STATE, PATH_MTU, WIFI_LINK, WIFI_INTERFACES, ...Object.values(BASELINE_KINDS)].map((kind) => kind.kind);
     for (const [feature, sources] of Object.entries(FEATURE_SOURCES)) {
       expect(STANDARD_FEATURES.map((f) => f.id)).toContain(feature);
       for (const source of sources) for (const kind of source) expect(kinds).toContain(kind);
@@ -603,5 +607,56 @@ describe("the reader of the Wi-Fi link", () => {
       }),
       { seed: 20261115, numRuns: 500 },
     );
+  });
+});
+
+describe("the reader of the history", () => {
+  const hasher = machineHasher(new Uint8Array(HISTORY_KEY_BYTES).fill(3));
+  const ROOT = "AB:CD";
+  const fact = (id: string, kind: FactKind<unknown>, subject: string, port: number | undefined, value: unknown): Fact => ({
+    id,
+    kind: kind.kind,
+    layer: kind.layer,
+    subject: target(subject, port),
+    time: { start: 0, end: 1 },
+    source: { probe: "test", version: "1" },
+    value,
+  });
+  const handshake = (id: string, address: string, root: string, servername = "a.test", port = 443): Fact =>
+    fact(id, TLS_HANDSHAKE, address, port, { address, port, servername, outcome: "ok", ms: 20, certificate: { ...certificate("public"), root } } satisfies TlsHandshake);
+  const baseline = (id: string, host: string, roots: readonly string[], port?: number, key = hasher.id): Fact =>
+    fact(id, BASELINE_KINDS.tls, host, port, { feature: "tls.root", values: roots.map(hasher.hash), checked: "2026-11-18T12:00:00.000Z", key } satisfies Baseline);
+  const roots = (facts: readonly Fact[], options: ReadOptions = { history: hasher }): string[] => valuesOf(readEvidence(facts, options).evidence, "tls.root");
+
+  it("gives tls.root same for a root of the history, and changed for a different root", () => {
+    expect(roots([baseline("b", "a.test", [ROOT, "EE:FF"]), handshake("h", "192.0.2.1", ROOT)])).toEqual(["same"]);
+    expect(roots([baseline("b", "a.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)])).toEqual(["changed"]);
+  });
+
+  it("gives no tls.root with no history, with no hasher, or with the hasher of a different key, and tells why", () => {
+    expect(roots([handshake("h", "192.0.2.1", ROOT)])).toEqual([]);
+    const facts = [baseline("b", "a.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)];
+    const plain = readEvidence(facts);
+    expect(valuesOf(plain.evidence, "tls.root")).toEqual([]);
+    expect(plain.skipped.find((each) => each.fact === "b")?.reason).toContain("no hasher");
+    const other = machineHasher(new Uint8Array(HISTORY_KEY_BYTES).fill(4));
+    const rotated = readEvidence(facts, { history: other });
+    expect(valuesOf(rotated.evidence, "tls.root")).toEqual([]);
+    expect(rotated.skipped.find((each) => each.fact === "b")?.reason).toContain("not the key");
+    expect(roots([baseline("b", "a.test", [ROOT], undefined, other.id), baseline("c", "a.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)])).toEqual(["changed"]);
+  });
+
+  it("compares a handshake only with the baseline of its host, its port and its role", () => {
+    expect(roots([baseline("b", "b.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)])).toEqual([]);
+    expect(roots([baseline("b", "a.test", ["EE:FF"], 8443), handshake("h", "192.0.2.1", ROOT)])).toEqual([]);
+    expect(roots([baseline("b", "a.test", ["EE:FF"], 443), handshake("h", "192.0.2.1", ROOT)])).toEqual(["changed"]);
+    const reference = (each: Fact): boolean => each.id !== "h";
+    expect(roots([baseline("b", "a.test", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT)], { history: hasher, primary: reference })).toEqual([]);
+    expect(roots([baseline("b", "192.0.2.1", ["EE:FF"]), handshake("h", "192.0.2.1", ROOT, undefined)].map((each) => (each.id === "h" ? { ...each, value: { ...(each.value as TlsHandshake), servername: undefined } } : each)))).toEqual(["changed"]);
+  });
+
+  it("takes the last baseline of a host, and gives one value for each address of the host", () => {
+    const facts = [baseline("b1", "a.test", [ROOT]), baseline("b2", "a.test", ["EE:FF"]), handshake("h1", "192.0.2.1", ROOT), handshake("h2", "192.0.2.2", "EE:FF")];
+    expect(roots(facts)).toEqual(["changed", "same"]);
   });
 });

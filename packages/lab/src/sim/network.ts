@@ -30,6 +30,11 @@ export interface SimSetup {
   readonly term: FaultTerm;
   readonly medium: Medium;
   readonly ipv6: boolean;
+  /**
+   * The epoch of the roots of the certificate authorities. A root changes from one epoch to the next, as when an authority
+   * moves to a new root. The default is 0.
+   */
+  readonly epoch?: number | undefined;
 }
 
 /** The addresses of each host of the world, for each family. */
@@ -466,6 +471,16 @@ export class SimNetwork {
   }
 
   /** The name of the certificate of an end. */
+  /**
+   * This method gives the fingerprint of the root of the chain of a server that sends a full chain: the root of the
+   * authority of the epoch, a private root, or the root of an inspection device. A self-signed or short chain has no root.
+   */
+  rootOf(end: End, proxied: boolean): string {
+    if (proxied) return "SIM-ROOT:inspection";
+    const epoch = this.setup.epoch ?? 0;
+    return this.privateRoot(end) ? `SIM-ROOT:private:${epoch}` : `SIM-ROOT:public:${epoch}`;
+  }
+
   certificateName(end: End): string {
     if (end === "portal") return PORTAL_NAME;
     return end === "reference" ? REFERENCE_NAME : TARGET_NAME;

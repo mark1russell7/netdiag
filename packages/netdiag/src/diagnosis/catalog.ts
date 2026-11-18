@@ -129,6 +129,13 @@ const FEATURES: readonly Feature[] = [
     healthy: { public: 0.97, private: 0.03 },
   },
   {
+    id: "tls.root",
+    layer: "tls",
+    summary: "The root of the certificate chain, compared with the roots of the good checks of the host: the same root, or a changed root.",
+    values: ["same", "changed"],
+    healthy: { same: 0.98, changed: 0.02 },
+  },
+  {
     id: "http.status",
     layer: "http",
     summary: "The class of the HTTP status: ok (2xx and 3xx), client-error (4xx), server-error (5xx), or none.",
@@ -403,6 +410,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
       "dns.address": { expect: "private", strength: "usual" },
       "tls.handshake": { expect: "cert-error", strength: "strong" },
       "tls.trust": { expect: "private", strength: "usual" },
+      "tls.root": { expect: "changed", strength: "usual" },
     },
   },
   {
@@ -595,6 +603,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     predicts: {
       "tls.ratio": { expect: ["mid", "high"], strength: "usual" },
       "tls.trust": { expect: "private", strength: "usual" },
+      "tls.root": { expect: "changed", strength: "usual" },
       "tcp.time": { expect: "short", strength: "strong" },
     },
   },
@@ -603,11 +612,20 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     part: "service",
     layer: "tls",
     reach: "target",
-    summary: "The certificate of the server is not valid: it expired, or it is for a different name.",
-    step: "Renew the certificate of the server, or correct its names.",
+    summary: "The certificate of the server is not valid: it expired, it is for a different name, or its chain ends at no trusted root.",
+    step: "Renew the certificate of the server, or correct its names and its chain.",
     predicts: {
       "tls.handshake": { expect: "cert-error", strength: "strong" },
     },
+    degrees: [
+      { id: "kept-root", summary: "A certificate of the chain expired, or the certificate is for a different name. The root of the chain does not change.", share: 2 },
+      {
+        id: "chain",
+        summary: "The chain of the certificate ends at a root that the client does not trust.",
+        share: 1,
+        predicts: { "tls.trust": { expect: "private", strength: "usual" }, "tls.root": { expect: "changed", strength: "usual" } },
+      },
+    ],
   },
   {
     id: "tls.mismatch",
@@ -660,7 +678,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "13",
+  version: "14",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

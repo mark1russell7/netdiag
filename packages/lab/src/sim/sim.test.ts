@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
-import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CONCENTRATIONS, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
+import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, readEvidence, STANDARD_CATALOG, STANDARD_CONCENTRATIONS, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { random } from "@mark1russell7/rigor-generators";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
+import { REFERENCE_NAME, TARGET_NAME } from "../cases.ts";
 import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
-import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
+import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_HISTORY_SHARES, SIM_PING_COUNT, simCases, type SimCase, type SimHistory } from "./cases.ts";
 import { gapOf, SIM_GAPS } from "./gaps.ts";
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
 import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
@@ -32,14 +33,14 @@ import {
   type SimActionRate,
   type SimCalibration,
 } from "./report.ts";
-import { SIM_VISITS, simVisit, visitSim } from "./world.ts";
+import { caseHistory, SIM_HASHER, SIM_VISITS, simVisit, visitSim } from "./world.ts";
 
 /** The term with no fault. */
 const HEALTHY: FaultTerm = { space: GRAMMAR_ENGINE, stages: {} };
 
 /** This function gives a case of the simulated world for one term. */
-function simCase(term: FaultTerm, medium: Medium = "wired", ipv6 = false): SimCase {
-  return { id: "test", truth: termClasses(term)[0] ?? NO_FAULT, signs: [], term, medium, ipv6, seed: "sim-test:1" };
+function simCase(term: FaultTerm, medium: Medium = "wired", ipv6 = false, history: SimHistory = "unknown"): SimCase {
+  return { id: "test", truth: termClasses(term)[0] ?? NO_FAULT, signs: [], term, medium, ipv6, history, seed: "sim-test:1" };
 }
 
 /** This function gives the values of the facts of one kind, for one address or for each address. */
@@ -256,8 +257,11 @@ describe("the known gaps of the simulated world", () => {
   const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
   const brokenChain = fault("tls/wrong", { place: "server", kind: "chain" });
 
-  it("hold the healthy cases with a private root, and no case of another class or of another kind", () => {
+  it("hold the healthy cases with a private root and no history or a rotated history, and no case of another class or of another kind", () => {
     expect(gapOf(simCase(privateRoot))?.id).toBe("none/private-root");
+    expect(gapOf(simCase(privateRoot, "wired", false, "rotated"))?.id).toBe("none/private-root");
+    expect(gapOf(simCase(privateRoot, "wired", false, "known"))).toBeUndefined();
+    expect(gapOf({ truth: NO_FAULT, term: privateRoot })?.id).toBe("none/private-root");
     expect(gapOf(simCase(brokenChain))).toBeUndefined();
     expect(gapOf(simCase(HEALTHY))).toBeUndefined();
     expect(gapOf({ truth: "tls.proxy", term: privateRoot })).toBeUndefined();
@@ -270,6 +274,56 @@ describe("the known gaps of the simulated world", () => {
     const bars = { tag: "ok" as const, value: { [gap.label]: 0.95 } };
     expect(closedGaps(bars, runsOf(0))).toEqual([]);
     expect(closedGaps(bars, runsOf(0.95))).toEqual([`The gap ${gap.id} is closed: its bar 0.95 is at the bar 0.95 of its class or over it. Remove it from SIM_GAPS.`]);
+  });
+});
+
+describe("the history of the simulated world", () => {
+  const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
+  const proxy = fault("tls/intercept", { place: "remote" });
+
+  /** This function gives the values of a feature in the evidence of a visit of a case. */
+  async function featureValues(labCase: SimCase, feature: string): Promise<string[]> {
+    const visit = await visitSim(labCase);
+    if (visit.status !== "visited") throw new Error("The case has no visit.");
+    return readEvidence(visit.facts, visit.read).evidence.filter((each) => each.feature === feature).map((each) => each.value);
+  }
+
+  it("draws each history in each class, near its share, from a source that does not change the other draws", () => {
+    const cases = simCases(1, 40);
+    for (const label of SIM_CLASSES) {
+      const mine = cases.filter((each) => each.truth === label);
+      expect(new Set(mine.map((each) => each.history)).has("unknown"), label).toBe(true);
+      expect(new Set(mine.map((each) => each.history)).has("known"), label).toBe(true);
+    }
+    for (const history of ["unknown", "known", "rotated"] as const) {
+      const share = cases.filter((each) => each.history === history).length / cases.length;
+      expect(Math.abs(share - SIM_HISTORY_SHARES[history]), history).toBeLessThan(0.05);
+    }
+    const strip = (each: SimCase) => ({ ...each, history: undefined });
+    expect(simCases(1, 40).map(strip)).toEqual(cases.map(strip));
+  });
+
+  it("gives no history to a case with the history unknown, and the hashes of the roots of a good check to a known case", async () => {
+    expect((await caseHistory(simCase(HEALTHY))).size).toBe(0);
+    const known = await caseHistory(simCase(proxy, "wired", false, "known"));
+    expect([...known.keys()].sort()).toEqual([REFERENCE_NAME, TARGET_NAME].sort());
+    for (const history of known.values()) expect(history).toEqual({ checked: "2026-11-16T00:00:00.000Z", key: SIM_HASHER.id, values: { "tls.root": [SIM_HASHER.hash("SIM-ROOT:public:0")] } });
+    // The good check of a world keeps its parts that are no fault: a private root that the clients trust.
+    const own = await caseHistory(simCase(privateRoot, "wired", false, "known"));
+    expect([...own.values()].map((each) => each.values["tls.root"])).toContainEqual([SIM_HASHER.hash("SIM-ROOT:private:0")]);
+    const rotated = await caseHistory(simCase(proxy, "wired", false, "rotated"));
+    for (const history of rotated.values()) expect(history.values["tls.root"]).toEqual([SIM_HASHER.hash("SIM-ROOT:public:1")]);
+  });
+
+  it("reads the root as the same in a healthy case with a private root, and as changed under an interception or a short chain", async () => {
+    const own = await featureValues(simCase(privateRoot, "wired", false, "known"), "tls.root");
+    expect(own.length).toBeGreaterThan(0);
+    expect(new Set(own)).toEqual(new Set(["same"]));
+    expect(await featureValues(simCase(privateRoot, "wired", false, "rotated"), "tls.root")).toContain("changed");
+    expect(await featureValues(simCase(proxy, "wired", false, "known"), "tls.root")).toContain("changed");
+    expect(await featureValues(simCase(fault("tls/wrong", { place: "server", kind: "chain" }), "wired", false, "known"), "tls.root")).toContain("changed");
+    expect(await featureValues(simCase(fault("tls/expire", { place: "server" }), "wired", false, "known"), "tls.root")).not.toContain("changed");
+    expect(await featureValues(simCase(privateRoot), "tls.root")).toEqual([]);
   });
 });
 

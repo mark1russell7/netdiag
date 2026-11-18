@@ -1,4 +1,6 @@
 export * from "./core.ts";
+export { HISTORY_KEY_BYTES, machineHasher } from "./history-key.ts";
+export { HISTORY_PROBE, historyProbe, type HistoryInput, type HistoryRaw } from "./probes/history.ts";
 export {
   LINK_PROBE,
   LINK_SUBJECT,
