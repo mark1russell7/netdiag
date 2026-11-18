@@ -149,7 +149,7 @@ describe("scoreLab", () => {
     // With no evidence, the diagnosis reads no feature, so each cause is alike to the truth.
     const diagnosis = diagnose(catalog, []);
     const result = labRecordOf(catalog, "lab", "port.closed", diagnosis);
-    if (result.tag !== "ok") throw new Error(result.error.join(" "));
+    if (result.tag !== "ok") throw new Error(result.error);
     expect(result.value.alike?.length).toBe(ids.length - 1);
     expect(scoredCause(result.value)).toBe(result.value.predicted);
     expect(scoredCause(result.value)).not.toBe("port.closed");
