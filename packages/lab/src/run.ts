@@ -95,6 +95,15 @@ function labelOf(evidence: Evidence): string {
   return `${evidence.feature}=${evidence.value}@${evidence.primary ? "target" : "reference"}`;
 }
 
+/** This function reads one label of the evidence of a run, `feature=value@target` or `feature=value@reference`. */
+export function evidenceOfLabel(label: string): Evidence {
+  const equals = label.indexOf("=");
+  const at = label.lastIndexOf("@");
+  const role = label.slice(at + 1);
+  if (equals < 1 || at < equals || (role !== "target" && role !== "reference")) throw new RangeError(`The label ${label} is not feature=value@target or feature=value@reference.`);
+  return { feature: label.slice(0, equals), value: label.slice(equals + 1, at), primary: role === "target" };
+}
+
 function signLabel(sign: CaseSign): string {
   return signsOf(sign)
     .map((one) => `${one.feature}=${one.value}@${one.primary ? "target" : "reference"}`)

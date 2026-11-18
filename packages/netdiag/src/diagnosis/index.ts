@@ -43,6 +43,33 @@ export {
   type Strength,
 } from "./model.ts";
 export { LOSS_DEGREES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CATALOG_SPEC, STANDARD_FAULTS, STANDARD_FEATURES, type LossDegree, type LossStep } from "./catalog.ts";
+export { STANDARD_POLICY } from "./standard-policy.ts";
+export {
+  ACTION_KINDS,
+  NO_CALIBRATION,
+  STANDARD_ACTIONS,
+  actionCost,
+  checkActions,
+  checkPolicy,
+  chooseAction,
+  chooseByCost,
+  kindProbabilities,
+  ruledVariants,
+  temper,
+  harmOf,
+  harmfulOf,
+  ruleOf,
+  type Action,
+  type ActionChoice,
+  type ActionCosts,
+  type ActionKind,
+  type ActionPolicy,
+  type ActionRule,
+  type Calibration,
+  type KindShare,
+  type RuledVariant,
+  type WaitOn,
+} from "./actions.ts";
 export { GAIN_RESOLUTION, MAX_JOINT_VALUES, rankProbes, type Candidate, type Observable, type ProbeChoice, type RankOptions } from "./next.ts";
 export {
   LAB_BAR_STEP,

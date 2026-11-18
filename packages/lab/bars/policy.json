@@ -1,0 +1,506 @@
+{
+  "sets": [
+    [
+      101,
+      102,
+      103,
+      104,
+      105
+    ],
+    [
+      106,
+      107,
+      108,
+      109,
+      110
+    ],
+    [
+      111,
+      112,
+      113,
+      114,
+      115
+    ],
+    [
+      116,
+      117,
+      118,
+      119,
+      120
+    ],
+    [
+      121,
+      122,
+      123,
+      124,
+      125
+    ]
+  ],
+  "policy": {
+    "calibration": {
+      "cause": 0.354,
+      "variant": 1
+    },
+    "costs": {
+      "none": 1,
+      "useless": 1,
+      "harmful": 12
+    }
+  },
+  "temperatures": [
+    {
+      "calibration": {
+        "cause": 0.088,
+        "variant": 1
+      },
+      "brier": 0.0044
+    },
+    {
+      "calibration": {
+        "cause": 0.063,
+        "variant": 1
+      },
+      "brier": 0.0044
+    },
+    {
+      "calibration": {
+        "cause": 0.125,
+        "variant": 1
+      },
+      "brier": 0.0044
+    },
+    {
+      "calibration": {
+        "cause": 0.177,
+        "variant": 1
+      },
+      "brier": 0.0044
+    },
+    {
+      "calibration": {
+        "cause": 0.25,
+        "variant": 1
+      },
+      "brier": 0.0044
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 1
+      },
+      "brier": 0.0044
+    },
+    {
+      "calibration": {
+        "cause": 0.5,
+        "variant": 1
+      },
+      "brier": 0.0046
+    },
+    {
+      "calibration": {
+        "cause": 0.707,
+        "variant": 1
+      },
+      "brier": 0.0052
+    },
+    {
+      "calibration": {
+        "cause": 1,
+        "variant": 1
+      },
+      "brier": 0.0071
+    },
+    {
+      "calibration": {
+        "cause": 1.414,
+        "variant": 1
+      },
+      "brier": 0.0123
+    },
+    {
+      "calibration": {
+        "cause": 2,
+        "variant": 1
+      },
+      "brier": 0.0222
+    },
+    {
+      "calibration": {
+        "cause": 2.828,
+        "variant": 1
+      },
+      "brier": 0.0363
+    },
+    {
+      "calibration": {
+        "cause": 4,
+        "variant": 1
+      },
+      "brier": 0.0525
+    },
+    {
+      "calibration": {
+        "cause": 5.657,
+        "variant": 1
+      },
+      "brier": 0.0682
+    },
+    {
+      "calibration": {
+        "cause": 8,
+        "variant": 1
+      },
+      "brier": 0.082
+    },
+    {
+      "calibration": {
+        "cause": 11.314,
+        "variant": 1
+      },
+      "brier": 0.0922
+    },
+    {
+      "calibration": {
+        "cause": 16,
+        "variant": 1
+      },
+      "brier": 0.0989
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.088
+      },
+      "brier": 0.0061
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.063
+      },
+      "brier": 0.0062
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.125
+      },
+      "brier": 0.0059
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.177
+      },
+      "brier": 0.0056
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.25
+      },
+      "brier": 0.0052
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.354
+      },
+      "brier": 0.0049
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.5
+      },
+      "brier": 0.0046
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 0.707
+      },
+      "brier": 0.0044
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 1.414
+      },
+      "brier": 0.0045
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 2
+      },
+      "brier": 0.0047
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 2.828
+      },
+      "brier": 0.0052
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 4
+      },
+      "brier": 0.0061
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 5.657
+      },
+      "brier": 0.0073
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 8
+      },
+      "brier": 0.0086
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 11.314
+      },
+      "brier": 0.01
+    },
+    {
+      "calibration": {
+        "cause": 0.354,
+        "variant": 16
+      },
+      "brier": 0.0113
+    }
+  ],
+  "costs": [
+    {
+      "harmful": 1.5,
+      "worst": "wifi.weak",
+      "harmHigh": 0.094,
+      "sets": [
+        0.07,
+        0.067,
+        0.094,
+        0.061,
+        0.058
+      ],
+      "correct": 0.976
+    },
+    {
+      "harmful": 2,
+      "worst": "wifi.weak",
+      "harmHigh": 0.085,
+      "sets": [
+        0.055,
+        0.061,
+        0.085,
+        0.061,
+        0.049
+      ],
+      "correct": 0.976
+    },
+    {
+      "harmful": 3,
+      "worst": "wifi.weak",
+      "harmHigh": 0.082,
+      "sets": [
+        0.052,
+        0.052,
+        0.082,
+        0.058,
+        0.042
+      ],
+      "correct": 0.976
+    },
+    {
+      "harmful": 4,
+      "worst": "wifi.weak",
+      "harmHigh": 0.079,
+      "sets": [
+        0.042,
+        0.049,
+        0.079,
+        0.049,
+        0.042
+      ],
+      "correct": 0.976
+    },
+    {
+      "harmful": 5,
+      "worst": "wifi.weak",
+      "harmHigh": 0.079,
+      "sets": [
+        0.042,
+        0.049,
+        0.079,
+        0.049,
+        0.042
+      ],
+      "correct": 0.976
+    },
+    {
+      "harmful": 6,
+      "worst": "wifi.weak",
+      "harmHigh": 0.076,
+      "sets": [
+        0.039,
+        0.042,
+        0.076,
+        0.045,
+        0.042
+      ],
+      "correct": 0.976
+    },
+    {
+      "harmful": 8,
+      "worst": "wifi.weak",
+      "harmHigh": 0.058,
+      "sets": [
+        0.029,
+        0.025,
+        0.058,
+        0.025,
+        0.039
+      ],
+      "correct": 0.968
+    },
+    {
+      "harmful": 10,
+      "worst": "wifi.weak",
+      "harmHigh": 0.055,
+      "sets": [
+        0.029,
+        0.022,
+        0.055,
+        0.025,
+        0.039
+      ],
+      "correct": 0.968
+    },
+    {
+      "harmful": 12,
+      "worst": "wifi.weak",
+      "harmHigh": 0.042,
+      "sets": [
+        0.029,
+        0.022,
+        0.042,
+        0.022,
+        0.032
+      ],
+      "correct": 0.968
+    },
+    {
+      "harmful": 15,
+      "worst": "wifi.weak",
+      "harmHigh": 0.042,
+      "sets": [
+        0.029,
+        0.022,
+        0.042,
+        0.018,
+        0.032
+      ],
+      "correct": 0.968
+    },
+    {
+      "harmful": 20,
+      "worst": "wifi.weak",
+      "harmHigh": 0.042,
+      "sets": [
+        0.029,
+        0.022,
+        0.042,
+        0.018,
+        0.032
+      ],
+      "correct": 0.968
+    },
+    {
+      "harmful": 25,
+      "worst": "wifi.weak",
+      "harmHigh": 0.042,
+      "sets": [
+        0.029,
+        0.022,
+        0.042,
+        0.018,
+        0.032
+      ],
+      "correct": 0.968
+    },
+    {
+      "harmful": 30,
+      "worst": "wifi.weak",
+      "harmHigh": 0.042,
+      "sets": [
+        0.025,
+        0.022,
+        0.042,
+        0.018,
+        0.032
+      ],
+      "correct": 0.967
+    },
+    {
+      "harmful": 40,
+      "worst": "wifi.weak",
+      "harmHigh": 0.039,
+      "sets": [
+        0.025,
+        0.018,
+        0.039,
+        0.018,
+        0.029
+      ],
+      "correct": 0.967
+    },
+    {
+      "harmful": 50,
+      "worst": "wifi.weak",
+      "harmHigh": 0.036,
+      "sets": [
+        0.022,
+        0.018,
+        0.036,
+        0.018,
+        0.025
+      ],
+      "correct": 0.961
+    },
+    {
+      "harmful": 70,
+      "worst": "wifi.weak",
+      "harmHigh": 0.029,
+      "sets": [
+        0.022,
+        0.018,
+        0.029,
+        0.018,
+        0.018
+      ],
+      "correct": 0.959
+    },
+    {
+      "harmful": 100,
+      "worst": "path.loss",
+      "harmHigh": 0.018,
+      "sets": [
+        0.014,
+        0.01,
+        0.018,
+        0.014,
+        0.014
+      ],
+      "correct": 0.947
+    }
+  ]
+}

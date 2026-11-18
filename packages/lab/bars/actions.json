@@ -1,0 +1,354 @@
+{
+  "captive.portal": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "filter.drop": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "filter.icmp": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "filter.reset": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "gateway.down": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "host.down": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "interface.down": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "ipv6.broken": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0.0002
+  },
+  "name.missing": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "none": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0.0004
+  },
+  "path.loss": {
+    "cases": 400,
+    "correct": 274,
+    "harmful": 5,
+    "wilson": {
+      "correctLow": 0.638,
+      "harmHigh": 0.029
+    },
+    "bootstrap": {
+      "correctLow": 0.64,
+      "harmHigh": 0.025
+    },
+    "correctLow": 0.638,
+    "harmHigh": 0.029,
+    "brier": 0.0533
+  },
+  "path.mtu": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "port.closed": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "proxy.error": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "resolver.down": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "resolver.failing": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "server.error": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "server.slow": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "tls.cert-invalid": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "tls.mismatch": {
+    "cases": 400,
+    "correct": 400,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.99,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 1,
+      "harmHigh": 0
+    },
+    "correctLow": 0.99,
+    "harmHigh": 0.01,
+    "brier": 0
+  },
+  "tls.proxy": {
+    "cases": 400,
+    "correct": 347,
+    "harmful": 0,
+    "wilson": {
+      "correctLow": 0.831,
+      "harmHigh": 0.01
+    },
+    "bootstrap": {
+      "correctLow": 0.596,
+      "harmHigh": 0
+    },
+    "correctLow": 0.596,
+    "harmHigh": 0.01,
+    "brier": 0.0005
+  },
+  "wifi.weak": {
+    "cases": 400,
+    "correct": 281,
+    "harmful": 4,
+    "wilson": {
+      "correctLow": 0.656,
+      "harmHigh": 0.025
+    },
+    "bootstrap": {
+      "correctLow": 0.655,
+      "harmHigh": 0.02
+    },
+    "correctLow": 0.655,
+    "harmHigh": 0.025,
+    "brier": 0.0455
+  }
+}

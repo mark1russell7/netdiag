@@ -1,3 +1,4 @@
+import type { Reach } from "@mark1russell7/netdiag/core";
 import type { Random } from "@mark1russell7/rigor-generators";
 import type { ParamValue } from "@mark1russell7/strategy-space";
 import { PORTAL_NAME, PROXY_DELAY_MS, REFERENCE_NAME, TARGET_NAME } from "../cases.ts";
@@ -90,6 +91,25 @@ export function pathOf(end: End, medium: Medium): readonly Hop[] {
     case "resolver":
       return shared;
   }
+}
+
+/**
+ * The options whose fault the world applies only to the connections of the target. Each check of `SimNetwork` that
+ * returns early for an end that is not the target names its option here.
+ */
+export const TARGET_ONLY_OPTIONS: ReadonlySet<string> = new Set(["tls/expire", "tls/wrong", "tls/mismatch", "tcp/refuse", "http/delay", "http/refuse"]);
+
+/**
+ * This function gives the reach of a fault in the world: the ends whose observations the fault changes.
+ *
+ * - A fault at a hop of the path to the gateway is shared. A fault of the resolver changes each lookup, so it is shared too.
+ * - A fault at a hop of the path to the reference past the gateway is upstream.
+ * - A fault at each other place, or of `TARGET_ONLY_OPTIONS`, changes only the target.
+ */
+export function simReach(option: string, place: FaultPlace): Reach {
+  if (TARGET_ONLY_OPTIONS.has(option)) return "target";
+  if (place === "resolver" || pathOf("gateway", "wired").some((hop) => hop.place === place)) return "shared";
+  return pathOf("reference", "wired").some((hop) => hop.place === place) ? "upstream" : "target";
 }
 
 /** This function gives the round trip time of a path with no jitter and no fault. The bands of `cases.ts` use it. */

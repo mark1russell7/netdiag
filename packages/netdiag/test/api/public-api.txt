@@ -6,9 +6,16 @@
 
 ## . (build/index.d.ts): names
 
+ACTION_KINDS: build/index.chunk2.d.ts#ACTION_KINDS
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
 ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
 ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
+type Action: build/index.chunk2.d.ts#Action
+type ActionChoice: build/index.chunk2.d.ts#ActionChoice
+type ActionCosts: build/index.chunk2.d.ts#ActionCosts
+type ActionKind: build/index.chunk2.d.ts#ActionKind
+type ActionPolicy: build/index.chunk2.d.ts#ActionPolicy
+type ActionRule: build/index.chunk2.d.ts#ActionRule
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
 type AlikeBand: build/index.chunk2.d.ts#AlikeBand
@@ -21,6 +28,7 @@ CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/counts.chunk.d.ts#CONNECT_OUTCOMES
 CYMRU_ZONES: build/core.chunk.d.ts#CYMRU_ZONES
+type Calibration: build/index.chunk2.d.ts#Calibration
 type Candidate: build/index.chunk2.d.ts#Candidate
 CaptureOutcome: build/counts.chunk.d.ts#CaptureOutcome
 CaptureProtocol: build/counts.chunk.d.ts#CaptureProtocol
@@ -102,6 +110,7 @@ type InterfaceAddress: build/index.d.ts#InterfaceAddress
 type InterfaceTable: build/index.d.ts#InterfaceTable
 JITTER_GAIN: build/core.chunk.d.ts#JITTER_GAIN
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
+type KindShare: build/index.chunk2.d.ts#KindShare
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
@@ -158,6 +167,7 @@ MtuTry: build/counts.chunk.d.ts#MtuTry
 MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
 NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk2.d.ts#NONE
+NO_CALIBRATION: build/index.chunk2.d.ts#NO_CALIBRATION
 ORIGIN_CONCURRENCY: build/index.d.ts#ORIGIN_CONCURRENCY
 ORIGIN_OUTCOMES: build/counts.chunk.d.ts#ORIGIN_OUTCOMES
 ORIGIN_PROBE_ID: build/index.d.ts#ORIGIN_PROBE_ID
@@ -226,12 +236,15 @@ RecordType: build/counts.chunk.d.ts#RecordType
 ReportHop: build/counts.chunk.d.ts#ReportHop
 type RtoEstimate: build/core.chunk.d.ts#RtoEstimate
 type RtoOptions: build/core.chunk.d.ts#RtoOptions
+type RuledVariant: build/index.chunk2.d.ts#RuledVariant
 type Runner: build/core.chunk.d.ts#Runner
 type RunnerOptions: build/core.chunk.d.ts#RunnerOptions
+STANDARD_ACTIONS: build/index.chunk2.d.ts#STANDARD_ACTIONS
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
 STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
+STANDARD_POLICY: build/index.chunk2.d.ts#STANDARD_POLICY
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Scope: build/core.chunk.d.ts#Scope
 type ScopeDecision: build/core.chunk.d.ts#ScopeDecision
@@ -290,6 +303,7 @@ WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
 WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
 WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
 WIFI_WIDTHS: build/counts.chunk.d.ts#WIFI_WIDTHS
+type WaitOn: build/index.chunk2.d.ts#WaitOn
 WifiBand: build/counts.chunk.d.ts#WifiBand
 type WifiChange: build/core.chunk.d.ts#WifiChange
 type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
@@ -299,6 +313,7 @@ WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
 ackSamples: build/core.chunk.d.ts#ackSamples
+actionCost: build/index.chunk2.d.ts#actionCost
 addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
@@ -314,6 +329,10 @@ canonicalAddress: build/index.chunk.d.ts#canonicalAddress
 canonicalHost: build/counts.chunk.d.ts#canonicalHost
 causeVariants: build/index.chunk2.d.ts#causeVariants
 certProblem: build/index.d.ts#certProblem
+checkActions: build/index.chunk2.d.ts#checkActions
+checkPolicy: build/index.chunk2.d.ts#checkPolicy
+chooseAction: build/index.chunk2.d.ts#chooseAction
+chooseByCost: build/index.chunk2.d.ts#chooseByCost
 cidrContains: build/index.chunk.d.ts#cidrContains
 cidrSet: build/index.chunk.d.ts#cidrSet
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
@@ -335,6 +354,8 @@ formatCidr: build/index.chunk.d.ts#formatCidr
 formatTarget: build/counts.chunk.d.ts#formatTarget
 grantProblems: build/core.chunk.d.ts#grantProblems
 handshakeOutcome: build/index.d.ts#handshakeOutcome
+harmOf: build/index.chunk2.d.ts#harmOf
+harmfulOf: build/index.chunk2.d.ts#harmfulOf
 hostKind: build/counts.chunk.d.ts#hostKind
 httpProbe: build/index.d.ts#httpProbe
 interfaceOf: build/index.d.ts#interfaceOf
@@ -343,6 +364,7 @@ ipdv: build/core.chunk.d.ts#ipdv
 isFactOf: build/counts.chunk.d.ts#isFactOf
 isLayer: build/layer.chunk.d.ts#isLayer
 isLocalName: build/core.chunk.d.ts#isLocalName
+kindProbabilities: build/index.chunk2.d.ts#kindProbabilities
 labBars: build/index.chunk2.d.ts#labBars
 labGate: build/index.chunk2.d.ts#labGate
 labRecordOf: build/index.chunk2.d.ts#labRecordOf
@@ -378,6 +400,8 @@ readOrigin: build/core.chunk.d.ts#readOrigin
 resolvedGrant: build/core.chunk.d.ts#resolvedGrant
 rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
 rtoOf: build/core.chunk.d.ts#rtoOf
+ruleOf: build/index.chunk2.d.ts#ruleOf
+ruledVariants: build/index.chunk2.d.ts#ruledVariants
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
@@ -386,6 +410,7 @@ secureBase: build/core.chunk.d.ts#secureBase
 serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
 tcpProbe: build/index.d.ts#tcpProbe
+temper: build/index.chunk2.d.ts#temper
 tlsProbe: build/index.d.ts#tlsProbe
 triesOf: build/index.d.ts#triesOf
 tryTimeoutOf: build/index.d.ts#tryTimeoutOf
@@ -397,9 +422,16 @@ wifiSignalOf: build/core.chunk.d.ts#wifiSignalOf
 
 ## ./core (build/core.d.ts): names
 
+ACTION_KINDS: build/index.chunk2.d.ts#ACTION_KINDS
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
 ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
 ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
+type Action: build/index.chunk2.d.ts#Action
+type ActionChoice: build/index.chunk2.d.ts#ActionChoice
+type ActionCosts: build/index.chunk2.d.ts#ActionCosts
+type ActionKind: build/index.chunk2.d.ts#ActionKind
+type ActionPolicy: build/index.chunk2.d.ts#ActionPolicy
+type ActionRule: build/index.chunk2.d.ts#ActionRule
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
 type AlikeBand: build/index.chunk2.d.ts#AlikeBand
@@ -412,6 +444,7 @@ CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
 CERT_PROBLEMS: build/counts.chunk.d.ts#CERT_PROBLEMS
 CONNECT_OUTCOMES: build/counts.chunk.d.ts#CONNECT_OUTCOMES
 CYMRU_ZONES: build/core.chunk.d.ts#CYMRU_ZONES
+type Calibration: build/index.chunk2.d.ts#Calibration
 type Candidate: build/index.chunk2.d.ts#Candidate
 CaptureOutcome: build/counts.chunk.d.ts#CaptureOutcome
 CaptureProtocol: build/counts.chunk.d.ts#CaptureProtocol
@@ -475,6 +508,7 @@ IPV4_MIN_MTU: build/counts.chunk.d.ts#IPV4_MIN_MTU
 IPV6_MIN_MTU: build/counts.chunk.d.ts#IPV6_MIN_MTU
 IcmpEcho: build/counts.chunk.d.ts#IcmpEcho
 JITTER_GAIN: build/core.chunk.d.ts#JITTER_GAIN
+type KindShare: build/index.chunk2.d.ts#KindShare
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
@@ -525,6 +559,7 @@ MtuTry: build/counts.chunk.d.ts#MtuTry
 MtuTryResult: build/counts.chunk.d.ts#MtuTryResult
 NATIVE_KINDS: build/counts.chunk.d.ts#NATIVE_KINDS
 NONE: build/index.chunk2.d.ts#NONE
+NO_CALIBRATION: build/index.chunk2.d.ts#NO_CALIBRATION
 ORIGIN_OUTCOMES: build/counts.chunk.d.ts#ORIGIN_OUTCOMES
 OWNER_OUTCOMES: build/counts.chunk.d.ts#OWNER_OUTCOMES
 type Observable: build/index.chunk2.d.ts#Observable
@@ -580,12 +615,15 @@ RecordType: build/counts.chunk.d.ts#RecordType
 ReportHop: build/counts.chunk.d.ts#ReportHop
 type RtoEstimate: build/core.chunk.d.ts#RtoEstimate
 type RtoOptions: build/core.chunk.d.ts#RtoOptions
+type RuledVariant: build/index.chunk2.d.ts#RuledVariant
 type Runner: build/core.chunk.d.ts#Runner
 type RunnerOptions: build/core.chunk.d.ts#RunnerOptions
+STANDARD_ACTIONS: build/index.chunk2.d.ts#STANDARD_ACTIONS
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
 STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
+STANDARD_POLICY: build/index.chunk2.d.ts#STANDARD_POLICY
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Scope: build/core.chunk.d.ts#Scope
 type ScopeDecision: build/core.chunk.d.ts#ScopeDecision
@@ -629,6 +667,7 @@ WIFI_LINK: build/counts.chunk.d.ts#WIFI_LINK
 WIFI_SIGNAL_BINS: build/core.chunk.d.ts#WIFI_SIGNAL_BINS
 WIFI_STATES: build/counts.chunk.d.ts#WIFI_STATES
 WIFI_WIDTHS: build/counts.chunk.d.ts#WIFI_WIDTHS
+type WaitOn: build/index.chunk2.d.ts#WaitOn
 WifiBand: build/counts.chunk.d.ts#WifiBand
 type WifiChange: build/core.chunk.d.ts#WifiChange
 type WifiChangeKind: build/core.chunk.d.ts#WifiChangeKind
@@ -638,6 +677,7 @@ WifiLink: build/counts.chunk.d.ts#WifiLink
 type WifiSignalSummary: build/core.chunk.d.ts#WifiSignalSummary
 WifiState: build/counts.chunk.d.ts#WifiState
 ackSamples: build/core.chunk.d.ts#ackSamples
+actionCost: build/index.chunk2.d.ts#actionCost
 addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
@@ -652,6 +692,10 @@ binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
 canonicalHost: build/counts.chunk.d.ts#canonicalHost
 causeVariants: build/index.chunk2.d.ts#causeVariants
+checkActions: build/index.chunk2.d.ts#checkActions
+checkPolicy: build/index.chunk2.d.ts#checkPolicy
+chooseAction: build/index.chunk2.d.ts#chooseAction
+chooseByCost: build/index.chunk2.d.ts#chooseByCost
 cidrContains: build/index.chunk.d.ts#cidrContains
 cidrSet: build/index.chunk.d.ts#cidrSet
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
@@ -669,12 +713,15 @@ featuresOf: build/core.chunk.d.ts#featuresOf
 formatCidr: build/index.chunk.d.ts#formatCidr
 formatTarget: build/counts.chunk.d.ts#formatTarget
 grantProblems: build/core.chunk.d.ts#grantProblems
+harmOf: build/index.chunk2.d.ts#harmOf
+harmfulOf: build/index.chunk2.d.ts#harmfulOf
 hostKind: build/counts.chunk.d.ts#hostKind
 ipVersion: build/index.chunk.d.ts#ipVersion
 ipdv: build/core.chunk.d.ts#ipdv
 isFactOf: build/counts.chunk.d.ts#isFactOf
 isLayer: build/layer.chunk.d.ts#isLayer
 isLocalName: build/core.chunk.d.ts#isLocalName
+kindProbabilities: build/index.chunk2.d.ts#kindProbabilities
 labBars: build/index.chunk2.d.ts#labBars
 labGate: build/index.chunk2.d.ts#labGate
 labRecordOf: build/index.chunk2.d.ts#labRecordOf
@@ -704,6 +751,8 @@ readOrigin: build/core.chunk.d.ts#readOrigin
 resolvedGrant: build/core.chunk.d.ts#resolvedGrant
 rfc3550Jitter: build/core.chunk.d.ts#rfc3550Jitter
 rtoOf: build/core.chunk.d.ts#rtoOf
+ruleOf: build/index.chunk2.d.ts#ruleOf
+ruledVariants: build/index.chunk2.d.ts#ruledVariants
 sameTarget: build/counts.chunk.d.ts#sameTarget
 scopeOf: build/core.chunk.d.ts#scopeOf
 scoreLab: build/index.chunk2.d.ts#scoreLab
@@ -711,6 +760,7 @@ scoredCause: build/index.chunk2.d.ts#scoredCause
 secureBase: build/core.chunk.d.ts#secureBase
 serviceFor: build/core.chunk.d.ts#serviceFor
 target: build/counts.chunk.d.ts#target
+temper: build/index.chunk2.d.ts#temper
 widen: build/core.chunk.d.ts#widen
 wifiChanges: build/core.chunk.d.ts#wifiChanges
 wifiSignalOf: build/core.chunk.d.ts#wifiSignalOf
@@ -735,10 +785,18 @@ parseCidr: build/index.chunk.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
 
+ACTION_KINDS: build/index.chunk2.d.ts#ACTION_KINDS
 ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
 ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
+type Action: build/index.chunk2.d.ts#Action
+type ActionChoice: build/index.chunk2.d.ts#ActionChoice
+type ActionCosts: build/index.chunk2.d.ts#ActionCosts
+type ActionKind: build/index.chunk2.d.ts#ActionKind
+type ActionPolicy: build/index.chunk2.d.ts#ActionPolicy
+type ActionRule: build/index.chunk2.d.ts#ActionRule
 type AlikeBand: build/index.chunk2.d.ts#AlikeBand
 type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
+type Calibration: build/index.chunk2.d.ts#Calibration
 type Candidate: build/index.chunk2.d.ts#Candidate
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
@@ -756,6 +814,7 @@ type Fault: build/index.chunk2.d.ts#Fault
 type Feature: build/index.chunk2.d.ts#Feature
 GAIN_RESOLUTION: build/index.chunk2.d.ts#GAIN_RESOLUTION
 type Hypothesis: build/index.chunk2.d.ts#Hypothesis
+type KindShare: build/index.chunk2.d.ts#KindShare
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
 LAYERS: build/layer.chunk.d.ts#LAYERS
@@ -776,6 +835,7 @@ type LossDegree: build/index.chunk2.d.ts#LossDegree
 type LossStep: build/index.chunk2.d.ts#LossStep
 MAX_JOINT_VALUES: build/index.chunk2.d.ts#MAX_JOINT_VALUES
 NONE: build/index.chunk2.d.ts#NONE
+NO_CALIBRATION: build/index.chunk2.d.ts#NO_CALIBRATION
 type Observable: build/index.chunk2.d.ts#Observable
 PARTS: build/index.chunk2.d.ts#PARTS
 type Part: build/index.chunk2.d.ts#Part
@@ -785,32 +845,47 @@ REACHES: build/index.chunk2.d.ts#REACHES
 type RankOptions: build/index.chunk2.d.ts#RankOptions
 type Reach: build/index.chunk2.d.ts#Reach
 type ReachShare: build/index.chunk2.d.ts#ReachShare
+type RuledVariant: build/index.chunk2.d.ts#RuledVariant
+STANDARD_ACTIONS: build/index.chunk2.d.ts#STANDARD_ACTIONS
 STANDARD_CATALOG: build/index.chunk2.d.ts#STANDARD_CATALOG
 STANDARD_CATALOG_SPEC: build/index.chunk2.d.ts#STANDARD_CATALOG_SPEC
 STANDARD_FAULTS: build/index.chunk2.d.ts#STANDARD_FAULTS
 STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
+STANDARD_POLICY: build/index.chunk2.d.ts#STANDARD_POLICY
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Strength: build/index.chunk2.d.ts#Strength
 UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
+type WaitOn: build/index.chunk2.d.ts#WaitOn
+actionCost: build/index.chunk2.d.ts#actionCost
 alikeBand: build/index.chunk2.d.ts#alikeBand
 alikeCauses: build/index.chunk2.d.ts#alikeCauses
 alikeDistance: build/index.chunk2.d.ts#alikeDistance
 alikeMargin: build/index.chunk2.d.ts#alikeMargin
 bandProblems: build/index.chunk2.d.ts#bandProblems
 causeVariants: build/index.chunk2.d.ts#causeVariants
+checkActions: build/index.chunk2.d.ts#checkActions
+checkPolicy: build/index.chunk2.d.ts#checkPolicy
+chooseAction: build/index.chunk2.d.ts#chooseAction
+chooseByCost: build/index.chunk2.d.ts#chooseByCost
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
 diagnose: build/index.chunk2.d.ts#diagnose
 expand: build/index.chunk2.d.ts#expand
 explain: build/index.chunk2.d.ts#explain
+harmOf: build/index.chunk2.d.ts#harmOf
+harmfulOf: build/index.chunk2.d.ts#harmfulOf
 isLayer: build/layer.chunk.d.ts#isLayer
+kindProbabilities: build/index.chunk2.d.ts#kindProbabilities
 labBars: build/index.chunk2.d.ts#labBars
 labGate: build/index.chunk2.d.ts#labGate
 labRecordOf: build/index.chunk2.d.ts#labRecordOf
 layerRank: build/layer.chunk.d.ts#layerRank
 predictive: build/index.chunk2.d.ts#predictive
 rankProbes: build/index.chunk2.d.ts#rankProbes
+ruleOf: build/index.chunk2.d.ts#ruleOf
+ruledVariants: build/index.chunk2.d.ts#ruledVariants
 scoreLab: build/index.chunk2.d.ts#scoreLab
 scoredCause: build/index.chunk2.d.ts#scoredCause
+temper: build/index.chunk2.d.ts#temper
 
 ## ./tools (build/tools.d.ts): names
 
@@ -2073,11 +2148,69 @@ declare function ipVersion(text: string): 0 | 4 | 6;
 ### build/index.chunk.d.ts#parseCidr
 declare function parseCidr(text: string): Result<Cidr, string>;
 
+### build/index.chunk2.d.ts#ACTION_KINDS
+declare const ACTION_KINDS: readonly ActionKind[];
+
 ### build/index.chunk2.d.ts#ALIKE_EPSILON
 declare const ALIKE_EPSILON = 1e-6;
 
 ### build/index.chunk2.d.ts#ALIKE_MARGIN
 declare const ALIKE_MARGIN = 100;
+
+### build/index.chunk2.d.ts#Action
+type Action = {
+  readonly kind: "none";
+} | {
+  readonly kind: "retry";
+} | {
+  readonly kind: "back-off";
+  readonly leastMs: number;
+} | {
+  readonly kind: "change-path";
+  readonly prefer?: string | undefined;
+} | {
+  readonly kind: "change-copy";
+} | {
+  readonly kind: "wait-network";
+  readonly on: WaitOn;
+} | {
+  readonly kind: "stop";
+  readonly forMs: number | null;
+};
+
+### build/index.chunk2.d.ts#ActionChoice
+interface ActionChoice {
+  readonly action: Action;
+  readonly confidence: number;
+  readonly cost: number;
+  readonly kinds: readonly KindShare[];
+}
+
+### build/index.chunk2.d.ts#ActionCosts
+interface ActionCosts {
+  readonly none: number;
+  readonly useless: number;
+  readonly harmful: number;
+}
+
+### build/index.chunk2.d.ts#ActionKind
+type ActionKind = "none" | "retry" | "back-off" | "change-path" | "change-copy" | "wait-network" | "stop";
+
+### build/index.chunk2.d.ts#ActionPolicy
+interface ActionPolicy {
+  readonly calibration: Calibration;
+  readonly costs: ActionCosts;
+}
+
+### build/index.chunk2.d.ts#ActionRule
+interface ActionRule {
+  readonly cause: string;
+  readonly reaches?: readonly Reach[] | undefined;
+  readonly degrees?: readonly string[] | undefined;
+  readonly action: Action;
+  readonly harmful?: readonly ActionKind[] | undefined;
+  readonly why: string;
+}
 
 ### build/index.chunk2.d.ts#AlikeBand
 interface AlikeBand {
@@ -2093,6 +2226,12 @@ interface AlikeMargin {
   readonly inner: number;
   readonly outer?: number | undefined;
   readonly nearest?: string | undefined;
+}
+
+### build/index.chunk2.d.ts#Calibration
+interface Calibration {
+  readonly cause: number;
+  readonly variant: number;
 }
 
 ### build/index.chunk2.d.ts#Candidate
@@ -2226,6 +2365,13 @@ interface Hypothesis {
   readonly degree?: readonly string[] | undefined;
 }
 
+### build/index.chunk2.d.ts#KindShare
+interface KindShare {
+  readonly kind: ActionKind;
+  readonly probability: number;
+  readonly cost: number;
+}
+
 ### build/index.chunk2.d.ts#LAB_BAR_STEP
 declare const LAB_BAR_STEP = .001;
 
@@ -2328,6 +2474,9 @@ declare const MAX_JOINT_VALUES = 65536;
 ### build/index.chunk2.d.ts#NONE
 declare const NONE = "none";
 
+### build/index.chunk2.d.ts#NO_CALIBRATION
+declare const NO_CALIBRATION: Calibration;
+
 ### build/index.chunk2.d.ts#Observable
 interface Observable {
   readonly feature: string;
@@ -2367,6 +2516,15 @@ interface ReachShare {
   readonly probability: number;
 }
 
+### build/index.chunk2.d.ts#RuledVariant
+interface RuledVariant {
+  readonly rule: ActionRule;
+  readonly probability: number;
+}
+
+### build/index.chunk2.d.ts#STANDARD_ACTIONS
+declare const STANDARD_ACTIONS: readonly ActionRule[];
+
 ### build/index.chunk2.d.ts#STANDARD_CATALOG
 declare const STANDARD_CATALOG: Catalog;
 
@@ -2379,6 +2537,9 @@ declare const STANDARD_FAULTS: readonly Fault[];
 ### build/index.chunk2.d.ts#STANDARD_FEATURES
 declare const STANDARD_FEATURES: readonly Feature[];
 
+### build/index.chunk2.d.ts#STANDARD_POLICY
+declare const STANDARD_POLICY: ActionPolicy;
+
 ### build/index.chunk2.d.ts#STRENGTHS
 declare const STRENGTHS: Readonly<Record<Strength, number>>;
 
@@ -2387,6 +2548,12 @@ type Strength = "sure" | "strong" | "usual" | "weak";
 
 ### build/index.chunk2.d.ts#UNKNOWN
 declare const UNKNOWN = "unknown";
+
+### build/index.chunk2.d.ts#WaitOn
+type WaitOn = "network" | "resolver" | "upstream";
+
+### build/index.chunk2.d.ts#actionCost
+declare function actionCost(catalog: Catalog, rule: ActionRule, kind: ActionKind, costs: ActionCosts): number;
 
 ### build/index.chunk2.d.ts#alikeBand
 declare function alikeBand(records: readonly LabRecord[]): AlikeBand;
@@ -2406,6 +2573,18 @@ declare function bandProblems(band: AlikeBand, epsilon?: number, margin?: number
 ### build/index.chunk2.d.ts#causeVariants
 declare function causeVariants(cause: Cause): readonly CauseVariant[];
 
+### build/index.chunk2.d.ts#checkActions
+declare function checkActions(catalog: Catalog, rules: readonly ActionRule[]): string[];
+
+### build/index.chunk2.d.ts#checkPolicy
+declare function checkPolicy(policy: ActionPolicy): string[];
+
+### build/index.chunk2.d.ts#chooseAction
+declare function chooseAction(catalog: Catalog, diagnosis: Diagnosis, rules: readonly ActionRule[], policy?: ActionPolicy): ActionChoice;
+
+### build/index.chunk2.d.ts#chooseByCost
+declare function chooseByCost(catalog: Catalog, variants: readonly RuledVariant[], costs: ActionCosts): ActionChoice;
+
 ### build/index.chunk2.d.ts#compileCatalog
 declare function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]>;
 
@@ -2417,6 +2596,15 @@ declare function expand(feature: Feature, prediction: Prediction): Result<Distri
 
 ### build/index.chunk2.d.ts#explain
 declare function explain(catalog: Catalog, evidence: readonly Evidence[], hypothesis: string, versus?: string): Contribution[];
+
+### build/index.chunk2.d.ts#harmOf
+declare function harmOf(catalog: Catalog, rule: ActionRule): readonly ActionKind[];
+
+### build/index.chunk2.d.ts#harmfulOf
+declare function harmfulOf(catalog: Catalog, rule: ActionRule): readonly ActionKind[];
+
+### build/index.chunk2.d.ts#kindProbabilities
+declare function kindProbabilities(variants: readonly RuledVariant[]): Partial<Record<ActionKind, number>>;
 
 ### build/index.chunk2.d.ts#labBars
 declare function labBars(scores: readonly LabRecalls[], options?: LabBarsOptions): Result<LabBars, string[]>;
@@ -2433,11 +2621,20 @@ declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: str
 ### build/index.chunk2.d.ts#rankProbes
 declare function rankProbes(catalog: Catalog, diagnosis: Diagnosis, candidates: readonly Candidate[], options?: RankOptions): ProbeChoice[];
 
+### build/index.chunk2.d.ts#ruleOf
+declare function ruleOf(rules: readonly ActionRule[], cause: string, reach?: Reach, degree?: string): ActionRule;
+
+### build/index.chunk2.d.ts#ruledVariants
+declare function ruledVariants(diagnosis: Diagnosis, rules: readonly ActionRule[], calibration?: Calibration): RuledVariant[];
+
 ### build/index.chunk2.d.ts#scoreLab
 declare function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Result<LabScore, string[]>;
 
 ### build/index.chunk2.d.ts#scoredCause
 declare function scoredCause(record: LabRecord): string;
+
+### build/index.chunk2.d.ts#temper
+declare function temper(variants: readonly RuledVariant[], calibration: Calibration): RuledVariant[];
 
 ### build/index.d.ts#ConnectOptions
 interface ConnectOptions {
