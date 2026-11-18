@@ -206,6 +206,7 @@ export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[
   "http.ttfb": [[HTTP_RESPONSE.kind, TCP_CONNECT.kind]],
   "link.state": [[LINK_STATE.kind]],
   "gateway.reply": [[ICMP_ECHO.kind]],
+  "gateway.loss": [[ICMP_ECHO.kind], [PATH_REPORT.kind]],
   "icmp.reply": [[ICMP_ECHO.kind]],
   "path.loss": [[ICMP_ECHO.kind], [PATH_REPORT.kind]],
   "path.mtu": [[PATH_MTU.kind]],
@@ -216,8 +217,8 @@ export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[
 /** The options of `featuresOf`. */
 export interface FeaturesOptions {
   /**
-   * This option tells if the ICMP echo facts are of the gateway (`true`) or of another address (`false`). The default
-   * gives the features of the two.
+   * This option tells if the ICMP echo facts and the path reports are of the gateway (`true`) or of another address
+   * (`false`). The default gives the features of the two.
    */
   readonly gateway?: boolean | undefined;
 }
@@ -228,11 +229,17 @@ export interface FeaturesOptions {
  */
 export function featuresOf(kinds: readonly string[], options: FeaturesOptions = {}): string[] {
   const have = new Set(kinds);
+  const excluded = options.gateway === undefined ? new Set<string>() : options.gateway ? OTHER_ADDRESS_FEATURES : GATEWAY_FEATURES;
   return Object.entries(FEATURE_SOURCES)
-    .filter(([feature]) => !(feature === "gateway.reply" && options.gateway === false) && !(feature === "icmp.reply" && options.gateway === true))
-    .filter(([, sources]) => sources.some((source) => source.every((kind) => have.has(kind))))
+    .filter(([feature, sources]) => !excluded.has(feature) && sources.some((source) => source.every((kind) => have.has(kind))))
     .map(([feature]) => feature);
 }
+
+/** The features that the echo facts and the path reports give for the gateway only. */
+const GATEWAY_FEATURES: ReadonlySet<string> = new Set(["gateway.reply", "gateway.loss"]);
+
+/** The features that the echo facts and the path reports give for each address other than the gateway. */
+const OTHER_ADDRESS_FEATURES: ReadonlySet<string> = new Set(["icmp.reply", "path.loss"]);
 
 const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["dns", DNS_ANSWER],
@@ -255,6 +262,8 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - For `dns.answer`, one answer `ok` of a name and a resolver decides. For `dns.address`, one private address decides.
  * - The order of the facts is the order of the runner. A ratio uses the last TCP connect before the handshake or the request.
  * - An ICMP echo fact gives `gateway.reply` for the gateway, and `icmp.reply` for each other address.
+ * - The loss to the gateway, from ping or from mtr, gives `gateway.loss`, not `path.loss`. Thus a loss past the
+ *   gateway shows as a loss of the path with no loss to the gateway.
  * - A link fact gives `link.state`, one for each gateway.
  * - An ICMP echo fact with replies to `LOSS_MIN_SENT` requests or more gives `path.loss`. A report of `mtr` gives it from
  *   the last hop, when the address answered there.
@@ -397,7 +406,9 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     if (!lossFacts.has(fact)) continue;
     const loss = lossOf(fact);
     if (typeof loss === "string") skipped.push({ fact: fact.id, reason: loss });
-    else if (loss !== undefined && !ofBrokenFamily(fact, loss.address)) note("path.loss", loss.address, fact, binOf(PATH_LOSS_BINS, loss.share));
+    else if (loss !== undefined && !ofBrokenFamily(fact, loss.address)) {
+      note(loss.address === gateway ? "gateway.loss" : "path.loss", loss.address, fact, binOf(PATH_LOSS_BINS, loss.share));
+    }
   }
 
   for (const fact of sorted.mtu) {

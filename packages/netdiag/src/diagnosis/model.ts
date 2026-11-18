@@ -15,6 +15,11 @@ export interface Feature {
   readonly summary: string;
   readonly values: readonly string[];
   readonly healthy: Distribution;
+  /**
+   * This field tells that the feature is an observation of the local network: of this computer, its link or its gateway.
+   * A fault with the reach `upstream` does not change it.
+   */
+  readonly local?: boolean | undefined;
 }
 
 /** The parts of the model. Each fault is in one part. */
@@ -27,12 +32,14 @@ export type Part = (typeof PARTS)[number];
  * The reach of a fault.
  *
  * - `shared`: the fault changes the observations of each host, for example a TLS proxy of the local network.
+ * - `upstream`: the fault changes the observations of each host past the gateway, for example a loss in the network of
+ *   the provider. The local features, for example `gateway.loss`, stay healthy.
  * - `target`: the fault changes only the observations of the primary target, for example a slow server.
  */
-export type Reach = "shared" | "target";
+export type Reach = "shared" | "upstream" | "target";
 
 /** The reaches, in the order of the variants of a fault. */
-export const REACHES: readonly Reach[] = ["shared", "target"];
+export const REACHES: readonly Reach[] = ["shared", "upstream", "target"];
 
 /** The probability of one reach of a cause. The probabilities of the reaches of a cause add up to the probability of the cause. */
 export interface ReachShare {
@@ -90,6 +97,11 @@ export interface Fault {
    * client is shared, and a loss near the target is not. The model then sums the variants of each reach.
    */
   readonly reach: Reach | readonly Reach[];
+  /**
+   * The weight of each reach in the prior of the fault. A reach with no weight gets 1, so by default the reaches share
+   * the prior equally. For example, a loss in the local network, upstream and near the target can get 1, 1 and 2.
+   */
+  readonly reachShares?: Partial<Readonly<Record<Reach, number>>> | undefined;
   /** The cause in plain words, for example "No program listens on the port." */
   readonly summary: string;
   /** The next step for the user in plain words. */
@@ -160,12 +172,16 @@ export interface Catalog {
   readonly hypotheses: readonly Hypothesis[];
   /**
    * This function gives the probability of a value of a feature under a hypothesis, for a primary or a reference host.
-   * With `reach`, it gives the probability under the variant of that reach. Without it, it gives the mean over the reaches.
+   * With `reach`, it gives the probability under the variant of that reach. Without it, it gives the mean over the
+   * reaches, with their shares.
    * With `degree`, it gives the probability under that degree. Without it, it gives the mean over the degrees, with their shares.
    */
   likelihood(hypothesis: string, feature: string, value: string, primary: boolean, reach?: Reach, degree?: string): number;
-  /** This function gives the prior of a hypothesis. With `degree`, it gives the part of the prior of that degree. */
-  prior(hypothesis: string, degree?: string): number;
+  /**
+   * This function gives the prior of a hypothesis. With `degree`, it gives the part of the prior of that degree. With
+   * `reach`, it gives the part of the prior of that reach.
+   */
+  prior(hypothesis: string, degree?: string, reach?: Reach): number;
 }
 
 /** The lowest probability of a value. With a probability of 0, one wrong observation removes a cause. */
@@ -230,6 +246,8 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
   const hypotheses: Hypothesis[] = [{ id: NONE, kind: "none", summary: "The network has no fault.", step: "No step is necessary." }];
   const priors = new Map<string, number>([[NONE, spec.priors?.none ?? 1]]);
   const forms = new Map<string, readonly Form[]>();
+  /** The share of each reach of each fault in the prior of the fault. The shares of a fault add up to 1. */
+  const reachShares = new Map<string, ReadonlyMap<Reach, number>>();
   for (const fault of spec.faults) {
     if (!ID.test(fault.id) || fault.id === NONE || fault.id === UNKNOWN) problems.push(`"${fault.id}" is not a valid fault id.`);
     if (priors.has(fault.id)) problems.push(`The fault ${fault.id} is repeated.`);
@@ -237,9 +255,16 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
     priors.set(fault.id, fault.prior ?? 1);
     const reaches: readonly Reach[] = typeof fault.reach === "string" ? [fault.reach] : fault.reach;
     if (reaches.length === 0 || new Set(reaches).size !== reaches.length || reaches.some((reach) => !REACHES.includes(reach))) {
-      problems.push(`The fault ${fault.id} has the reach ${JSON.stringify(fault.reach)}. It must be one or more different values of ${REACHES.join(" and ")}.`);
+      problems.push(`The fault ${fault.id} has the reach ${JSON.stringify(fault.reach)}. It must be one or more different values of ${REACHES.join(", ")}.`);
     }
     const reach = REACHES.filter((each) => reaches.includes(each));
+    for (const [each, share] of Object.entries(fault.reachShares ?? {})) {
+      if (!reach.includes(each as Reach)) problems.push(`The fault ${fault.id} has a share of the reach ${each}, but the fault does not have that reach.`);
+      if (share !== undefined && (!Number.isFinite(share) || share <= 0)) problems.push(`The share of the reach ${each} of ${fault.id} is ${share}. It must be more than 0.`);
+    }
+    const weights = reach.map((each) => fault.reachShares?.[each] ?? 1);
+    const weightSum = weights.reduce((a, b) => a + b, 0);
+    reachShares.set(fault.id, new Map(reach.map((each, index) => [each, (weights[index] ?? 0) / weightSum])));
     const degree = fault.degrees?.map((each) => each.id);
     hypotheses.push({
       id: fault.id,
@@ -290,8 +315,8 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
     version: spec.version,
     features,
     hypotheses,
-    prior(hypothesis, degree) {
-      const whole = (priors.get(hypothesis) ?? 0) / total;
+    prior(hypothesis, degree, reach) {
+      const whole = ((priors.get(hypothesis) ?? 0) / total) * (reach === undefined ? 1 : (reachShares.get(hypothesis)?.get(reach) ?? 0));
       if (degree === undefined) return whole;
       return whole * (forms.get(hypothesis)?.find((form) => form.id === degree)?.share ?? 0);
     },
@@ -306,9 +331,11 @@ export function compileCatalog(spec: CatalogSpec): Result<Catalog, string[]> {
       if (reaches.length === 0) return degree === undefined ? (feature.healthy[value] ?? Number.NaN) : Number.NaN;
       const of = (each: Reach, form: Form): number => {
         const changed = form.table.get(featureId);
-        return ((primary || each === "shared") && changed !== undefined ? changed : feature.healthy)[value] ?? Number.NaN;
+        const changes = each === "upstream" && feature.local === true ? false : primary || each !== "target";
+        return (changes && changed !== undefined ? changed : feature.healthy)[value] ?? Number.NaN;
       };
-      const overReaches = (form: Form): number => (reach !== undefined ? of(reach, form) : reaches.reduce((sum, each) => sum + of(each, form), 0) / reaches.length);
+      const shares = reachShares.get(hypothesis);
+      const overReaches = (form: Form): number => (reach !== undefined ? of(reach, form) : reaches.reduce((sum, each) => sum + (shares?.get(each) ?? 0) * of(each, form), 0));
       return chosen.reduce((sum, form) => sum + form.share * overReaches(form), 0);
     },
   });
@@ -418,17 +445,15 @@ interface VariantLog {
 
 /**
  * This function gives the variants of a hypothesis: one for each reach and each degree of a fault, or the hypothesis
- * itself. The reaches of a fault share each part of its prior equally, and its degrees share it by their shares.
+ * itself. The reaches and the degrees of a fault share its prior by their shares.
  */
 function variantLogs(catalog: Catalog, used: readonly Evidence[], hypothesis: Hypothesis): VariantLog[] {
   const reaches = hypothesis.reach ?? [];
   if (reaches.length === 0) return [{ reach: undefined, degree: undefined, log: Math.log(catalog.prior(hypothesis.id)) + logLikelihood(catalog, used, hypothesis.id) }];
-  const share = Math.log(reaches.length);
   const degrees = hypothesis.degree ?? [undefined];
-  return degrees.flatMap((degree) => {
-    const prior = Math.log(catalog.prior(hypothesis.id, degree));
-    return reaches.map((reach) => ({ reach, degree, log: prior - share + logLikelihood(catalog, used, hypothesis.id, reach, degree) }));
-  });
+  return degrees.flatMap((degree) =>
+    reaches.map((reach) => ({ reach, degree, log: Math.log(catalog.prior(hypothesis.id, degree, reach)) + logLikelihood(catalog, used, hypothesis.id, reach, degree) })),
+  );
 }
 
 /** This function adds the probabilities of the variants with the same key, in the order of the first variant of each key. */

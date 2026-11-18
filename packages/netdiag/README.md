@@ -234,7 +234,9 @@ After a DNS timeout, the ping of the gateway comes first. Its reply tells a down
 
 Evidence with `primary: false` comes from a reference host, for example a second public server. A fault with the reach `target` does not change the reference host. A fault with the reach `shared` changes both hosts. Thus a slow TLS handshake on both hosts points to a TLS proxy.
 
-A fault can have the two reaches. For example, a loss can be near the client or near the target. The diagnosis then gives one variant of the fault for each reach, with an equal part of its prior. The probability of the fault is the sum of its variants. `Cause.reaches` gives the probability of each reach, and `causeVariants` gives the variants of a cause. The choice of the next probe and `predictive` use these variants.
+A fault with the reach `upstream` changes both hosts past the gateway. It does not change the local features, for example `gateway.loss`. Thus a loss of the path with no loss to the gateway points to a loss past the gateway.
+
+A fault can have more than one reach. For example, a loss can be in the local network, past the gateway or near the target. The diagnosis then gives one variant of the fault for each reach, with its share of the prior from `Fault.reachShares`, or an equal share. The probability of the fault is the sum of its variants. `Cause.reaches` gives the probability of each reach, and `causeVariants` gives the variants of a cause. The choice of the next probe and `predictive` use these variants.
 
 A fault can also have degrees, for example a light loss and a heavy loss. Each degree has a part of the prior of the fault, and predictions that replace the predictions of the fault. A heavy loss makes DNS, TCP and HTTP time out together, and a light loss does not. Thus the model sees the timeouts together. The variants of a fault are each pair of a reach and a degree. `Cause.degrees` gives the probability of each degree.
 
@@ -265,9 +267,10 @@ const result = diagnose(STANDARD_CATALOG, [
 | `http.status`, `http.ttfb` | The class of the status, and the time to the first byte divided by the time of the TCP connect. |
 | `link.state` | The link fact of each gateway. An interface that is up on the network of the gateway gives `up`. With no gateway, an interface that is up and not loopback gives `up`. |
 | `gateway.reply` | The echo requests to the address of the option `gateway`. An unreachable gateway gives `none`. |
+| `gateway.loss` | The share of the echo requests to the gateway with a reply, with the bins of `path.loss`. A report of `mtr` to the gateway gives it too. |
 | `icmp.reply` | The echo requests to each other address: `reply`, `none` or `unreachable`. |
 | `path.mtu` | A measured MTU: `full` at the ceiling, `reduced` with a message of a router, `silent` with no message. `silent` tells an MTU black hole. |
-| `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. |
+| `path.loss` | The share of the echo requests with a reply, for 20 requests or more: `none`, `some` (up to 5 % loss) or `high`. A report of `mtr` that reached the address gives it from its last hop. The gateway gives `gateway.loss` in its place. |
 | `wifi.signal` | The signal level of each connected Wi-Fi interface: `strong` at -60 dBm or more, `weak` below -75 dBm. The quality of Windows changes to dBm. |
 | `wifi.state` | `connected` when a Wi-Fi fact tells of a connected interface. A fact `wifi.interfaces` with no connected interface gives `none`. Then `wifi.weak` is not the cause. |
 

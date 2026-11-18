@@ -10,6 +10,7 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "link.state",
     layer: "link",
+    local: true,
     summary: "The state of the link of the network interface.",
     values: ["up", "down"],
     healthy: { up: 0.999, down: 0.001 },
@@ -17,6 +18,7 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "wifi.signal",
     layer: "wifi",
+    local: true,
     summary: "The strength of the Wi-Fi signal: strong at -60 dBm or more, weak below -75 dBm.",
     values: ["strong", "fair", "weak"],
     healthy: { strong: 0.7, fair: 0.25, weak: 0.05 },
@@ -24,6 +26,7 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "wifi.state",
     layer: "wifi",
+    local: true,
     summary: "The Wi-Fi of this computer: connected when a Wi-Fi interface is connected, none when the Wi-Fi tool finds no connected interface.",
     values: ["connected", "none"],
     healthy: { connected: 0.6, none: 0.4 },
@@ -31,9 +34,19 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "gateway.reply",
     layer: "route",
+    local: true,
     summary: "The gateway answers an ICMP echo request.",
     values: ["reply", "none"],
     healthy: { reply: 0.97, none: 0.03 },
+  },
+  {
+    // A loss past the gateway does not change the loss to the gateway. So this feature tells where a loss starts.
+    id: "gateway.loss",
+    layer: "route",
+    local: true,
+    summary: "The packet loss to the gateway, with the bins and the healthy distribution of `path.loss`.",
+    values: ["none", "some", "high"],
+    healthy: { none: 0.9, some: 0.08, high: 0.02 },
   },
   {
     id: "path.loss",
@@ -130,25 +143,39 @@ export const STANDARD_FEATURES: readonly Feature[] = [
 
 /**
  * This function gives the degrees of a fault that loses packets, with the predictions of the fault for each degree.
+ * A loss does the same to TCP and HTTP at each place where it starts. The place can be the radio, the local network
+ * or a network on the path. So each fault with a loss takes these degrees.
  *
  * Under a light loss, each try passes after a few repeats, so DNS, TCP and HTTP succeed. Under a heavy loss, each DNS
  * try, each SYN and each request can fail. Thus the timeouts come together with the loss, at each host that the loss
  * reaches. Most losses in the field are light, so the degree light has 3 parts of the prior and the degree heavy 1.
+ *
+ * A loss does not slow a connect: each SYN passes at once, or the client sends it again after 1 s. Under a loss s in
+ * both directions, a SYN passes at once with the probability (1 - s)^2. Thus a light loss mostly gives short, and a
+ * heavy loss retry. A lost segment of the answer waits for its next send, so the first byte of the answer comes late.
  */
-function lossDegrees(light: Readonly<Record<string, Prediction>>, heavy: Readonly<Record<string, Prediction>>): readonly Degree[] {
+function lossDegrees(): readonly Degree[] {
+  const signs: Readonly<Record<string, Prediction>> = { "http.ttfb": { expect: ["mid", "high"], strength: "weak" } };
   return [
-    { id: "light", summary: "A small share of the packets is lost. Each try passes after a few repeats.", share: 3, predicts: light },
+    {
+      id: "light",
+      summary: "A small share of the packets is lost. Each try passes after a few repeats.",
+      share: 3,
+      predicts: { ...signs, "tcp.time": { short: 0.7, retry: 0.25, long: 0.05 } },
+    },
     {
       id: "heavy",
       summary: "A large share of the packets is lost, so DNS, TCP and HTTP can time out.",
       share: 1,
       predicts: {
+        ...signs,
+        "tcp.time": { short: 0.25, retry: 0.7, long: 0.05 },
         "path.loss": { expect: "high", strength: "strong" },
+        "gateway.loss": { expect: "high", strength: "strong" },
         "dns.answer": { expect: ["ok", "timeout"], strength: "strong" },
         "tcp.connect": { expect: ["connected", "timeout"], strength: "strong" },
         "tls.handshake": { expect: ["ok", "timeout"], strength: "strong" },
         "http.status": { expect: ["ok", "none"], strength: "strong" },
-        ...heavy,
       },
     },
   ];
@@ -184,12 +211,14 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Move nearer to the access point, or use a cable.",
     predicts: {
       "wifi.signal": { expect: "weak", strength: "strong" },
-      "wifi.state": { expect: "connected", strength: "sure" },
+      // A weak Wi-Fi needs a Wi-Fi link. With no connected Wi-Fi interface, only a wrong read gives this fault.
+      "wifi.state": { connected: 0.999, none: 0.001 },
+      // The radio is the first link, so the loss starts before the gateway.
       "path.loss": { expect: ["some", "high"], strength: "usual" },
-      // The radio sends each lost frame again, so a connect is slow, or the client sends the SYN again.
-      "tcp.time": { expect: ["long", "retry"], strength: "usual" },
+      "gateway.loss": { expect: ["some", "high"], strength: "usual" },
     },
-    degrees: lossDegrees({}, {}),
+    // A frame that the radio loses is a lost packet for TCP, so the signs of the loss in TCP and HTTP are those of `path.loss`.
+    degrees: lossDegrees(),
   },
   {
     id: "gateway.down",
@@ -313,16 +342,17 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     id: "path.loss",
     part: "path",
     layer: "path",
-    reach: ["shared", "target"],
+    // A loss in the local network is shared and shows at the gateway. A loss in the network of the provider is upstream.
+    // The two are the places near the client. Together they have the same part of the prior as a loss near the target.
+    reach: ["shared", "upstream", "target"],
+    reachShares: { target: 2 },
     summary: "A network on the path loses packets.",
     step: "Find the first hop with loss, and tell the provider of that network.",
     predicts: {
       "path.loss": { expect: ["some", "high"], strength: "strong" },
-      "http.ttfb": { expect: ["mid", "high"], strength: "weak" },
+      "gateway.loss": { expect: ["some", "high"], strength: "strong" },
     },
-    // A loss does not slow a connect: each SYN passes at once, or the client sends it again after 1 s. Under a loss s in
-    // both directions, a SYN passes at once with the probability (1 - s)^2. Thus a light loss mostly gives short, and a heavy loss retry.
-    degrees: lossDegrees({ "tcp.time": { short: 0.7, retry: 0.25, long: 0.05 } }, { "tcp.time": { short: 0.25, retry: 0.7, long: 0.05 } }),
+    degrees: lossDegrees(),
   },
   {
     id: "path.mtu",
@@ -424,7 +454,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "9",
+  version: "10",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

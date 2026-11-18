@@ -41,6 +41,7 @@ export const FEATURE_NAMES: Readonly<Record<string, string>> = {
   "wifi.signal": "The Wi-Fi signal",
   "wifi.state": "The state of the Wi-Fi",
   "gateway.reply": "A ping of the gateway",
+  "gateway.loss": "The packet loss to the gateway",
   "path.loss": "The packet loss",
   "path.mtu": "The MTU of the path",
   "dns.answer": "The DNS answer",
@@ -186,7 +187,7 @@ export interface Probe extends Candidate {
   readonly label: string;
   /** The fact kinds that the probe gives. `featuresOf(kinds, { gateway })` of netdiag gives the features, and a test holds them. */
   readonly kinds: readonly string[];
-  /** For an ICMP probe: `true` when it pings the gateway, `false` when it pings the target. */
+  /** For an ICMP or mtr probe: `true` when it reaches the gateway, `false` when it reaches the target. */
   readonly gateway?: boolean | undefined;
   /** The time of the probe in seconds. It is the cost of the candidate. */
   readonly cost: number;
@@ -217,9 +218,9 @@ export const PROBES: readonly Probe[] = [
     cost: 3,
     observes: target("tcp.connect", "tcp.time", "tls.handshake", "tls.trust", "tls.ratio", "http.status", "http.ttfb"),
   },
-  { id: "ping-gateway", label: "Ping the gateway 20 times", kinds: ["icmp.echo"], gateway: true, cost: 20, observes: target("gateway.reply", "path.loss") },
+  { id: "ping-gateway", label: "Ping the gateway 20 times", kinds: ["icmp.echo"], gateway: true, cost: 20, observes: target("gateway.reply", "gateway.loss") },
   { id: "ping-target", label: "Ping the target 20 times", kinds: ["icmp.echo"], gateway: false, cost: 20, observes: target("icmp.reply", "path.loss") },
-  { id: "mtr", label: "Measure the path with mtr", kinds: ["path.report"], cost: 20, observes: target("path.loss") },
+  { id: "mtr", label: "Measure the path with mtr", kinds: ["path.report"], gateway: false, cost: 20, observes: target("path.loss") },
   // The search for the MTU takes approximately 1 second on most paths, and up to 30 seconds on an MTU black hole.
   { id: "mtu", label: "Find the MTU of the path", kinds: ["path.mtu"], cost: 10, observes: target("path.mtu") },
   {
@@ -254,13 +255,13 @@ export function hiddenTruth(seed: string): string {
 }
 
 /**
- * This function gives the reach of the fault of a world. A fault with more than one reach gets one reach for each seed,
+ * This function gives the reach of the fault of a world. It draws the reach by its part of the prior, one for each seed,
  * so each feature of the world agrees on it. A hypothesis with no reach gives no reach.
  */
 export function worldReach(truth: string, seed: string): Reach | undefined {
   const reaches = hypothesisOf(truth).reach ?? [];
   if (reaches.length < 2) return reaches[0];
-  return random(`netdiag-demo/reach/${seed}/${truth}`).pick(reaches);
+  return reaches[random(`netdiag-demo/reach/${seed}/${truth}`).weighted(reaches.map((reach) => CATALOG.prior(truth, undefined, reach)))];
 }
 
 /**
