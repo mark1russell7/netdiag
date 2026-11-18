@@ -159,7 +159,7 @@ node packages/lab/src/bars-main.ts --out bars-out/kernel.json runs/*
 
 ### The bars in the repository
 
-The files `bars/loopback.json` and `bars/kernel.json` keep the bars of the two labs. Each file comes from 5 runs in CI: the runs [43773608651](https://github.com/mark1russell7/netdiag/actions/runs/43773608651) (loopback) and [43773578029](https://github.com/mark1russell7/netdiag/actions/runs/43773578029) (kernel).
+The files `bars/loopback.json` and `bars/kernel.json` keep the bars of the two labs. Each file comes from 5 runs in CI: the runs [43773608651](https://github.com/metrograph-labs/netdiag/actions/runs/43773608651) (loopback) and [43773578029](https://github.com/metrograph-labs/netdiag/actions/runs/43773578029) (kernel).
 
 - Each lab job passes its file with `--bars`. A recall below its bar fails the job, and thus the pull request.
 - The bars hold for 5 rounds. A job with a different number of rounds gets no file, and thus no gate.
