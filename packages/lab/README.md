@@ -204,7 +204,8 @@ The ladder also has a row for each class that the fault grammar gives and the ca
 
 A cell is impossible only by a query. Nobody marks a cell by hand.
 
-- `LAYER_FACTS` of `src/ladder.ts` keeps the name, the proofs, the limits, the tools and the state of each layer, from S7. This copy stays until harness 0.16.10 exports `LAYER_FACTS`.
+- `LAYER_FACTS` of the entry `@mark1russell7/harness/layers` gives the name, the proofs, the limits, the tools and the state of each layer, from S7. The lab keeps no copy.
+- `LAYER_STATE_TEXT` gives the text of each state for the site. The text of `waiting` names no person.
 - `LAYER_LIMITS` gives the traits that each layer cannot have. Each limit is an item of the column "What it cannot prove" of S7, with its row as the source.
 - A cell is impossible when its class needs a trait of a limit of its layer.
 - When nobody verified a limit, the cell stays a gap. For example, Wi-Fi is not impossible on E1 to E3, because `mac80211_hwsim` can possibly make a Wi-Fi link.

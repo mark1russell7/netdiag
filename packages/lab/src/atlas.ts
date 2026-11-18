@@ -1,4 +1,4 @@
-import type { Layer } from "@mark1russell7/netdiag";
+import type { Layer } from "@mark1russell7/netdiag/core";
 import { fault, faults, type FaultTerm } from "./grammar.ts";
 
 // The fault atlas (ND-17, step 1): the faults of real networks, as data. Each entry has its layer, the class of the
