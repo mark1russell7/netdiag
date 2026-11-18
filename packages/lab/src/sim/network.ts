@@ -158,11 +158,39 @@ export class SimNetwork {
   readonly faults: readonly PlacedFault[];
   readonly setup: SimSetup;
   private readonly random: Random;
+  /** The draws of the share of each fault in the visit, and the draws where the fault acted. */
+  private readonly tally = new Map<PlacedFault, { draws: number; acts: number }>();
 
   constructor(setup: SimSetup, random: Random) {
     this.setup = setup;
     this.random = random;
     this.faults = placedFaults(setup.term);
+  }
+
+  /**
+   * This method draws if a fault with a share acts on one packet, query, connection or request, and it records the
+   * draw. The share is the probability of an act.
+   */
+  private act(fault: PlacedFault): boolean {
+    const acted = this.random.chance(share(fault.values));
+    this.record(fault, acted);
+    return acted;
+  }
+
+  private record(fault: PlacedFault, acted: boolean): void {
+    const count = this.tally.get(fault) ?? { draws: 0, acts: 0 };
+    this.tally.set(fault, { draws: count.draws + 1, acts: count.acts + (acted ? 1 : 0) });
+  }
+
+  /**
+   * This method gives the faults that passed each of their draws in the visit. Such a fault gave no sign, so no diagnosis
+   * of the visit can name it. A fault with no draw acts on each packet that gets to it, so it is not silent.
+   */
+  silent(): readonly PlacedFault[] {
+    return this.faults.filter((fault) => {
+      const count = this.tally.get(fault);
+      return count !== undefined && count.acts === 0;
+    });
   }
 
   /** This method tells if the term has a fault of the option, at one of the places when the list is not empty. */
@@ -268,11 +296,11 @@ export class SimNetwork {
       case "link/down":
         return { fate: "lost" };
       case "wifi/loss":
-        return fault.values["kind"] === "multicast" ? undefined : this.random.chance(share(fault.values)) ? { fate: "lost" } : undefined;
+        return fault.values["kind"] === "multicast" ? undefined : this.act(fault) ? { fate: "lost" } : undefined;
       case "path/loss": {
         const way = fault.values["direction"];
         const applies = way === "both" || way === direction;
-        return applies && this.random.chance(share(fault.values)) ? { fate: "lost" } : undefined;
+        return applies && this.act(fault) ? { fate: "lost" } : undefined;
       }
       case "ip/filter":
         return toTarget && packet.kind === "echo" ? { fate: "lost" } : undefined;
@@ -314,7 +342,7 @@ export class SimNetwork {
       if (fault.option === "tls/intercept") return { hop: index };
       if (fault.option === "http/refuse" && (fault.place === "gateway" || fault.place === "provider") && end === "target" && fault.values["kind"] === "error") {
         // A device of the network can give an HTTP status for an HTTPS site only as a TLS proxy that the clients trust.
-        return { hop: index, ...(this.random.chance(share(fault.values)) ? { status: 503 } : {}) };
+        return { hop: index, ...(this.act(fault) ? { status: 503 } : {}) };
       }
     }
     return undefined;
@@ -340,7 +368,7 @@ export class SimNetwork {
     if (end !== "target") return undefined;
     const hops = this.hops(end);
     const fault = this.has("tcp/refuse", "gateway", "provider", "transit", "remote");
-    if (fault === undefined || !this.random.chance(share(fault.values))) return undefined;
+    if (fault === undefined || !this.act(fault)) return undefined;
     return hops.findIndex((hop) => hop.place === fault.place);
   }
 
@@ -356,13 +384,14 @@ export class SimNetwork {
     if (end !== "target") return 200;
     const refuse = this.has("http/refuse", "remote", "server");
     if (refuse === undefined || refuse.values["kind"] !== "error") return 200;
-    return this.random.chance(share(refuse.values)) ? 503 : 200;
+    return this.act(refuse) ? 503 : 200;
   }
 
-  /** The signal of the radio of the client in dBm. A weak signal is from -90 to -76 dBm. */
+  /** The signal of the radio of the client in dBm. A weak signal is from -90 to -76 dBm. A weak signal is an act of its fault. */
   signalDbm(): number {
-    const weak = this.faults.some((each) => each.option === "wifi/loss" && each.values["signal"] === "weak" && each.values["kind"] === "all");
-    return Math.round(weak ? this.random.range(-90, -76) : this.random.range(-58, -42));
+    const weak = this.faults.filter((each) => each.option === "wifi/loss" && each.values["signal"] === "weak" && each.values["kind"] === "all");
+    for (const fault of weak) this.record(fault, true);
+    return Math.round(weak.length > 0 ? this.random.range(-90, -76) : this.random.range(-58, -42));
   }
 
   /** The answer of the DNS of the world to one query of the client, with its time. */
@@ -387,7 +416,7 @@ export class SimNetwork {
     const portal = this.portalAt();
     const refused = (place: "gateway" | "resolver"): boolean => {
       const fault = this.has("dns/refuse", place);
-      return fault !== undefined && this.random.chance(share(fault.values));
+      return fault !== undefined && this.act(fault);
     };
     if (this.has("dns/down", "gateway") !== undefined) return undefined;
     if (refused("gateway")) return { code: "EREFUSED", addresses: [], ms };

@@ -11,7 +11,7 @@
   "host.down": 0.954,
   "filter.drop": 0.954,
   "filter.icmp": 0.954,
-  "filter.reset": 0.878,
+  "filter.reset": 0.954,
   "path.loss": 0.821,
   "path.mtu": 0.954,
   "ipv6.broken": 0.954,
@@ -19,6 +19,6 @@
   "tls.cert-invalid": 0.954,
   "tls.mismatch": 0.954,
   "server.slow": 0.954,
-  "server.error": 0.862,
-  "proxy.error": 0.844
+  "server.error": 0.954,
+  "proxy.error": 0.954
 }

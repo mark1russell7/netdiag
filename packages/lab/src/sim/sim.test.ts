@@ -1,13 +1,14 @@
 import { readFileSync } from "node:fs";
 import { DNS_TRIES, STANDARD_CATALOG, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
+import { random } from "@mark1russell7/rigor-generators";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
 import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
 import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
-import { baseRtt, type Medium } from "./network.ts";
-import { barsText, placeHits, simRuns } from "./report.ts";
-import { visitSim } from "./world.ts";
+import { baseRtt, SimNetwork, type Medium } from "./network.ts";
+import { barsText, placeHits, silentVisits, simRuns } from "./report.ts";
+import { SIM_VISITS, simVisit, visitSim } from "./world.ts";
 
 /** The term with no fault. */
 const HEALTHY: FaultTerm = { space: GRAMMAR_ENGINE, stages: {} };
@@ -133,6 +134,44 @@ describe("the plan of the simulated world", () => {
   });
 });
 
+describe("the draws of the faults", () => {
+  const network = (term: FaultTerm): SimNetwork => new SimNetwork({ term, medium: "wired", ipv6: false }, random("sim-test:silent"));
+  const refuse = (share: number): FaultTerm => fault("http/refuse", { place: "server", kind: "error", share });
+
+  it("give each fault with a share that passed each of its draws, and never a fault with no draw", () => {
+    const rare = network(refuse(0.001));
+    expect(rare.silent()).toEqual([]);
+    expect(rare.serverStatus("target")).toBe(200);
+    expect(rare.silent().map((each) => each.option)).toEqual(["http/refuse"]);
+    const sure = network(refuse(1));
+    expect(sure.serverStatus("target")).toBe(503);
+    expect(sure.silent()).toEqual([]);
+    expect(network(fault("tcp/missing", { place: "server" })).silent()).toEqual([]);
+  });
+
+  it("count a weak signal as an act of its fault", () => {
+    const weak = network(fault("wifi/loss", { place: "link", kind: "all", signal: "weak", share: 0.1 }));
+    expect(weak.signalDbm()).toBeLessThanOrEqual(-76);
+    expect(weak.silent()).toEqual([]);
+  });
+
+  it("give a visit again when a fault passed each of its draws", async () => {
+    // In the plan of the seed 2, the first two visits of this case got a status 200.
+    const labCase = simCases(2).find((each) => each.id === "server.error#11")!;
+    const result = await simVisit(labCase);
+    expect([result.visits, result.silent]).toEqual([3, []]);
+    expect(readVisit(labCase, 0, result.visit, STANDARD_CATALOG)).toMatchObject({ status: "read", record: { predicted: "server.error" } });
+  });
+
+  it("give no read when a fault is silent in each of SIM_VISITS visits", async () => {
+    const labCase = simCase(refuse(0.001));
+    const result = await simVisit(labCase);
+    expect(result.visits).toBe(SIM_VISITS);
+    expect(result.silent.map((each) => each.option)).toEqual(["http/refuse"]);
+    expect(readVisit(labCase, 0, result.visit, STANDARD_CATALOG)).toMatchObject({ status: "no-read", reason: "The faults http/refuse at server passed each of their draws in 10 visits." });
+  });
+});
+
 describe("the bars of the simulated world", () => {
   it("are in bars/sim.json. To change them, start pnpm --filter @netdiag/lab sim --write, and tell the reason", async () => {
     const runs = await simRuns();
@@ -140,6 +179,8 @@ describe("the bars of the simulated world", () => {
     expect(runs.bars.tag).toBe("ok");
     if (runs.bars.tag !== "ok") return;
     expect(barsText(runs.bars.value)).toBe(readFileSync(new URL("sim.json", BARS_FOLDER), "utf8"));
+    // A change of the world that makes the faults silent more often changes this count. Tell the reason in the PR.
+    expect(silentVisits(runs.outcomes)).toBe(20);
     const labels = new Set(placeHits(runs.outcomes).map((each) => each.label));
     for (const label of SIM_CLASSES.filter((each) => each !== NO_FAULT)) expect(labels.has(label), label).toBe(true);
   }, 180_000);
