@@ -1,6 +1,6 @@
 {
   "none": 0.954,
-  "interface.down": 0.523,
+  "interface.down": 0.954,
   "wifi.weak": 0.622,
   "gateway.down": 0.954,
   "captive.portal": 0.954,

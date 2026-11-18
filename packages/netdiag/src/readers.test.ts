@@ -413,7 +413,6 @@ describe("the readers and the model", () => {
     diagnose(STANDARD_CATALOG, readEvidence(factsOf(entries), { primary }).evidence).causes[0]?.id;
 
   it("names the cause of each typical case", () => {
-    expect(top([dns("example.com", "A", "unreachable")])).toBe("resolver.down");
     expect(top([dns("example.com", "A", "nxdomain")])).toBe("name.missing");
     expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "refused", 20)])).toBe("port.closed");
     expect(top([dns("example.com", "A", "ok", ["93.184.216.34"]), tcp("93.184.216.34", 443, "connected", 20), tls("93.184.216.34", "cert-error", 40, "public")])).toBe("tls.cert-invalid");
@@ -428,6 +427,15 @@ describe("the readers and the model", () => {
     expect(cause([dns("example.com", "A", "timeout")])).not.toBe("resolver.down");
     expect(cause([dns("example.com", "A", "timeout"), echo(gateway, "reply")])).toBe("resolver.down");
     expect(cause([dns("example.com", "A", "timeout"), echo(gateway, "none")])).toMatch(/^(interface|gateway)\.down$/);
+  });
+
+  it("names a resolver with no DNS service only when the gateway replies, because a down interface also gives unreachable", () => {
+    const gateway = "192.0.2.254";
+    const causes = (entries: readonly Entry[]): string[] => diagnose(STANDARD_CATALOG, readEvidence(factsOf(entries), { gateway }).evidence).causes.map((each) => each.id);
+    // c-ares gives ECONNREFUSED when no DNS service listens, and also when the computer has no route for the query.
+    expect(causes([dns("example.com", "A", "unreachable")]).slice(0, 2).sort()).toEqual(["interface.down", "resolver.down"]);
+    expect(causes([dns("example.com", "A", "unreachable"), echo(gateway, "reply")])[0]).toBe("resolver.down");
+    expect(causes([dns("example.com", "A", "unreachable"), echo(gateway, "none")])[0]).toBe("interface.down");
   });
 
   it("names a captive portal: a private address and a certificate with no root of the store", () => {

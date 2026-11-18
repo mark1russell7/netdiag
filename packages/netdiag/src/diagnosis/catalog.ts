@@ -52,7 +52,7 @@ export const STANDARD_FEATURES: readonly Feature[] = [
   {
     id: "dns.answer",
     layer: "dns",
-    summary: "The result of the DNS lookup of the name of the target. The value unreachable tells that no DNS service listens on the resolver.",
+    summary: "The result of the DNS lookup of the name of the target. The value unreachable tells that the computer cannot send the query, or that no DNS service listens on the resolver.",
     values: ["ok", "nxdomain", "servfail", "refused", "timeout", "unreachable"],
     healthy: { ok: 0.965, nxdomain: 0.01, servfail: 0.005, refused: 0.005, timeout: 0.01, unreachable: 0.005 },
   },
@@ -143,7 +143,8 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     predicts: {
       "link.state": { expect: "down", strength: "sure" },
       "gateway.reply": { expect: "none", strength: "sure" },
-      "dns.answer": { expect: "timeout", strength: "strong" },
+      // With no route, c-ares cannot send the query and gives ECONNREFUSED. A link with no carrier keeps its routes, so its queries time out.
+      "dns.answer": { expect: ["unreachable", "timeout"], strength: "strong" },
       "icmp.reply": { expect: ["none", "unreachable"], strength: "sure" },
       "tcp.connect": { expect: ["unreachable", "timeout"], strength: "sure" },
     },
@@ -381,7 +382,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "5",
+  version: "6",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };
