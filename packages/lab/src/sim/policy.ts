@@ -33,7 +33,8 @@ export const SIM_UNIT_COSTS: Omit<ActionCosts, "harmful" | "needless"> = { none:
  * The needless costs of the third sweep, from the least. The first is the cost of a useless action: the rule before the
  * needless cost. A needless cost over the harmful cost raises the harmful cost to it, because a harmful action is the worst.
  */
-export const SIM_NEEDLESS_COSTS: readonly number[] = [1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 70, 100];
+// The fair baseline of #81: only the first step, the cost of a useless action, as before #81.
+export const SIM_NEEDLESS_COSTS: readonly number[] = [1];
 
 /** The file of `STANDARD_POLICY` in the package `@mark1russell7/netdiag`. The command of the sim writes it with --write. */
 export const STANDARD_POLICY_FILE: URL = new URL("../../../netdiag/src/diagnosis/standard-policy.ts", import.meta.url);

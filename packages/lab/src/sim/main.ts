@@ -42,7 +42,8 @@ const LIMITS_FILE = new URL("action-limits.json", BARS_FOLDER);
 // fit of the policy and the gate use the catalog with them.
 const fitRuns = await simRuns(SIM_FIT_SEEDS);
 const concentrations = repeatConcentrations(fitRuns.outcomes);
-const catalog = concentrationCatalog(concentrations);
+// The fair baseline of #81: the catalog has no concentrations, so the repeats are independent, as before #81.
+const catalog = concentrationCatalog([]);
 const fit = fitPolicy(withCatalog(fitRuns.outcomes, catalog));
 const runs = await simRuns(SIM_SEEDS, fit.policy, catalog);
 const limitRuns: string[] = [];
