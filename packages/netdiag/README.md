@@ -216,7 +216,9 @@ The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It impor
 | --- | --- |
 | `diagnose(catalog, evidence)` | The probability of each hypothesis, from the most probable. The model is naive Bayes with logarithms. |
 | `explain(catalog, evidence, id)` | The weight of each observation for a cause: the `log10` of its likelihood ratio against `none`. |
-| `alikeCauses(catalog, diagnosis, id, epsilon)` | The causes with the same likelihood of the evidence as a cause. Only their priors put them in an order. The default bound is `ALIKE_EPSILON`. |
+| `alikeCauses(catalog, diagnosis, id, epsilon)` | The causes that the read probes cannot tell apart from a cause: each cause at the distance `epsilon` or less. The default bound is `ALIKE_EPSILON`. |
+| `alikeDistance(catalog, diagnosis, first, second)` | The largest difference of the logarithms of the predictions of the likeliest variants of two causes, over each value of each read feature. |
+| `alikeMargin(catalog, diagnosis, id, epsilon)` | The largest distance of an alike cause, and the smallest distance of another cause, with its id. |
 | `predictive(catalog, diagnosis, feature, primary)` | The probability of each value of a feature before a probe observes it. |
 | `rankProbes(catalog, diagnosis, candidates, options)` | The candidate probes from the largest expected information gain over the causes, in bits. The first candidate is the next probe. |
 
@@ -241,7 +243,7 @@ A fault can have more than one reach. For example, a loss can be in the local ne
 
 A fault can also have degrees. A degree is a severity, for example the size of a loss, or a mode, for example a silent or an absent resolver. Each degree has a part of the prior of the fault, and predictions that replace the predictions of the fault. The model sees the timeouts together: a large loss makes DNS, TCP and HTTP time out together, and a small loss does not. The variants of a fault are each pair of a reach and a degree. `Cause.degrees` gives the probability of each degree.
 
-A mode is the same on each subject of a visit. A down resolver drops each query, or its host refuses each query. Thus each mode is a degree with one expected value, and the model counts the mode once for each visit. `interface.down`, `gateway.down`, `resolver.down`, `resolver.failing` and `host.down` each have two modes.
+A mode is the same on each subject of a visit. A down resolver drops each query, or its host refuses each query. Thus each mode is a degree with one expected value, and the model counts the mode once for each visit. `interface.down`, `gateway.down`, `resolver.down`, `resolver.failing`, `host.down` and `filter.drop` each have two modes. A filter drops only the packets to the port, or each packet to the host, also the ping.
 
 The degrees of a loss are a grid of the chance q that one exchange loses a packet. `LOSS_DEGREES` has the grid: 0.05, 0.15, 0.3, 0.5, 0.7 and 0.9. Each degree below 0.5 has 3 parts of the prior, and each other degree has 1. The predictions of each degree come from the tries of each step of a visit, in `LOSS_STEPS`. A step with k tries times out with the chance q^k. A step that passes was late when it lost its first try, and its time lands in the late bins of the step.
 
@@ -355,14 +357,19 @@ A lab makes one fault on purpose. Then netdiag must name it. The entry `@mark1ru
 
 | Function | What it gives |
 | --- | --- |
-| `labRecordOf(catalog, case, truth, diagnosis, epsilon)` | The record of one run: the true hypothesis, the predicted cause, the rank of the truth and the probability of each cause. It also has the alike causes of the truth. |
+| `labRecordOf(catalog, case, truth, diagnosis, epsilon)` | The record of one run: the true hypothesis, the predicted cause, the rank of the truth and the probability of each cause. It also has the alike causes of the truth and the distances around the truth. |
 | `scoredCause(record)` | The cause that the score counts as the prediction of a record. |
-| `scoreLab(catalog, records)` | The confusion table, the recall of each hypothesis with its Wilson interval, the accuracy and the mean Brier score. |
+| `scoreLab(catalog, records)` | The confusion table, the recall of each hypothesis with its Wilson interval, the accuracy, the mean Brier score and the alike band of the records. |
+| `alikeBand(records)` | The largest distance of an alike cause and the smallest distance of another cause over the records, with their cases. |
+| `bandProblems(band, epsilon, margin)` | A problem for each cause in the band from `epsilon / margin` to `epsilon * margin`. The default factor is `ALIKE_MARGIN`. |
 | `labGate(score, bars)` | A verdict for each hypothesis with a bar: `pass`, `fail` or `no-read`. |
 | `labBars(scores, options)` | The bars of the gate from the scores of 5 or more runs of one lab. |
 
 - The recall of a hypothesis is the part of its runs where the diagnosis names it.
 - In some worlds, the facts cannot tell two causes apart. The record then gets these causes from `alikeCauses` as `alike`. The run is a hit when the truth and its alike causes are the first causes of the diagnosis.
+- When the truth is alike to each possible cause, the probes told no cause apart. The score then counts the predicted cause.
+- Two causes are alike when their likeliest variants give each value of each read feature the same probability. A tie of the evidence alone is not sufficient.
+- The distances of the standard catalog are 0, or 0.0123 and more. Thus the band from `ALIKE_EPSILON / ALIKE_MARGIN` to `ALIKE_EPSILON * ALIKE_MARGIN` is empty. A lab fails when a cause is in this band.
 - A hypothesis passes when the lower end of its recall interval is its bar or more.
 - A hypothesis with no runs gets `no-read`, and the gate does not pass.
 - A hypothesis with no bar goes in `unbarred`, for example a fault that no lab can make.

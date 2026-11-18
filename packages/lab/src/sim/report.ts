@@ -1,8 +1,8 @@
-import { labBars, scoredCause, STANDARD_CATALOG, type LabBars, type LabRecalls } from "@mark1russell7/netdiag";
+import { alikeBand, labBars, scoredCause, STANDARD_CATALOG, type AlikeBand, type LabBars, type LabRecalls, type LabRecord } from "@mark1russell7/netdiag";
 import type { Result } from "@mark1russell7/optional";
 import { countOf } from "@mark1russell7/text";
 import { faultsOf, faultValues } from "../grammar.ts";
-import { labReport } from "../report.ts";
+import { bandLine, labReport } from "../report.ts";
 import { runRounds, type LabRound } from "../run.ts";
 import { SIM_BANDS, simCases, type SimCase } from "./cases.ts";
 import { simVisit } from "./world.ts";
@@ -25,11 +25,12 @@ export interface SimOutcome {
   readonly visits: number;
 }
 
-/** The runs of the seeds: the outcome of each case, the score of each seed, the bars, and the problems. */
+/** The runs of the seeds: the outcome of each case, the score of each seed, the bars, the alike band and the problems. */
 export interface SimRuns {
   readonly outcomes: readonly SimOutcome[];
   readonly scores: readonly LabRecalls[];
   readonly bars: Result<LabBars, string[]>;
+  readonly band: AlikeBand;
   readonly problems: readonly string[];
 }
 
@@ -38,6 +39,7 @@ export async function simRuns(seeds: number = SIM_SEEDS): Promise<SimRuns> {
   const scores: LabRecalls[] = [];
   const outcomes: SimOutcome[] = [];
   const problems: string[] = [];
+  const records: LabRecord[] = [];
   for (let seed = 1; seed <= seeds; seed++) {
     const cases = simCases(seed);
     const byId = new Map(cases.map((each) => [each.id, each]));
@@ -53,6 +55,7 @@ export async function simRuns(seeds: number = SIM_SEEDS): Promise<SimRuns> {
     };
     const runs = await runRounds(cases, 1, () => Promise.resolve(round), STANDARD_CATALOG);
     const report = labReport(STANDARD_CATALOG, runs, 1, cases.length);
+    records.push(...report.records);
     for (const run of runs) {
       const labCase = byId.get(run.case);
       if (labCase === undefined) continue;
@@ -65,7 +68,7 @@ export async function simRuns(seeds: number = SIM_SEEDS): Promise<SimRuns> {
   }
   const bars = labBars(scores);
   if (bars.tag === "err") problems.push(...bars.error);
-  return { outcomes, scores, bars, problems };
+  return { outcomes, scores, bars, band: alikeBand(records), problems };
 }
 
 /** The hits of one option at one place: the cases of the option at the place, and the cases with the correct class. */
@@ -124,6 +127,7 @@ export function simSummary(runs: SimRuns, seeds: number = SIM_SEEDS): string {
     const list = [...others].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`);
     lines.push(`| ${label} | ${percent(hits, mine.length)} | ${bars[label] ?? "–"} | ${silentVisits(mine)} | ${list.join(", ")} |`);
   }
+  lines.push("", bandLine(runs.band));
   lines.push("", "## The hits of each option at each place", "", "| Class | Option | Place | Hits | Cases |", "| --- | --- | --- | --- | --- |");
   for (const group of placeHits(outcomes)) lines.push(`| ${group.label} | ${group.option} | ${group.place} | ${percent(group.hits, group.cases)} | ${group.cases} |`);
   lines.push("", "## The bands", "", "| Option | Param | Range | Reason |", "| --- | --- | --- | --- |");

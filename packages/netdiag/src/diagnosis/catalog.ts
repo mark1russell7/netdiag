@@ -474,7 +474,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     degrees: [
       {
         id: "silent",
-        summary: "The host, or a filter near it, drops each packet.",
+        summary: "The host does not answer, and no router sends an ICMP message for it.",
         share: 1,
         predicts: {
           "tcp.connect": { expect: "timeout", strength: "strong" },
@@ -501,8 +501,18 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Examine the firewall rules of the host and of each network on the path.",
     predicts: {
       "tcp.connect": { expect: "timeout", strength: "strong" },
-      "icmp.reply": { reply: 0.5, none: 0.45, unreachable: 0.05 },
     },
+    // The filter drops the ping too, or it does not. This mode is the same for each ping of a visit, so it is a degree.
+    // The degree all gives the facts of the degree silent of host.down: the two causes are alike for these probes.
+    degrees: [
+      { id: "port", summary: "The filter drops only the packets to the port. The ping passes.", share: 1 },
+      {
+        id: "all",
+        summary: "The filter drops each packet to the host, also the ping.",
+        share: 1,
+        predicts: { "icmp.reply": { expect: "none", strength: "strong" } },
+      },
+    ],
   },
   {
     id: "filter.icmp",

@@ -8,8 +8,11 @@
 
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
 ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
+ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
+type AlikeBand: build/index.chunk2.d.ts#AlikeBand
+type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Availability: build/counts.chunk.d.ts#Availability
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
 type Bin: build/core.chunk.d.ts#Bin
@@ -300,7 +303,11 @@ addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
+alikeBand: build/index.chunk2.d.ts#alikeBand
 alikeCauses: build/index.chunk2.d.ts#alikeCauses
+alikeDistance: build/index.chunk2.d.ts#alikeDistance
+alikeMargin: build/index.chunk2.d.ts#alikeMargin
+bandProblems: build/index.chunk2.d.ts#bandProblems
 bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
@@ -392,8 +399,11 @@ wifiSignalOf: build/core.chunk.d.ts#wifiSignalOf
 
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
 ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
+ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
+type AlikeBand: build/index.chunk2.d.ts#AlikeBand
+type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Availability: build/counts.chunk.d.ts#Availability
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
 type Bin: build/core.chunk.d.ts#Bin
@@ -632,7 +642,11 @@ addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
+alikeBand: build/index.chunk2.d.ts#alikeBand
 alikeCauses: build/index.chunk2.d.ts#alikeCauses
+alikeDistance: build/index.chunk2.d.ts#alikeDistance
+alikeMargin: build/index.chunk2.d.ts#alikeMargin
+bandProblems: build/index.chunk2.d.ts#bandProblems
 bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
@@ -722,6 +736,9 @@ parseCidr: build/index.chunk.d.ts#parseCidr
 ## ./diagnosis (build/diagnosis.d.ts): names
 
 ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
+ALIKE_MARGIN: build/index.chunk2.d.ts#ALIKE_MARGIN
+type AlikeBand: build/index.chunk2.d.ts#AlikeBand
+type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Candidate: build/index.chunk2.d.ts#Candidate
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
@@ -775,7 +792,11 @@ STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Strength: build/index.chunk2.d.ts#Strength
 UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
+alikeBand: build/index.chunk2.d.ts#alikeBand
 alikeCauses: build/index.chunk2.d.ts#alikeCauses
+alikeDistance: build/index.chunk2.d.ts#alikeDistance
+alikeMargin: build/index.chunk2.d.ts#alikeMargin
+bandProblems: build/index.chunk2.d.ts#bandProblems
 causeVariants: build/index.chunk2.d.ts#causeVariants
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
 diagnose: build/index.chunk2.d.ts#diagnose
@@ -2053,7 +2074,26 @@ declare function ipVersion(text: string): 0 | 4 | 6;
 declare function parseCidr(text: string): Result<Cidr, string>;
 
 ### build/index.chunk2.d.ts#ALIKE_EPSILON
-declare const ALIKE_EPSILON = .01;
+declare const ALIKE_EPSILON = 1e-6;
+
+### build/index.chunk2.d.ts#ALIKE_MARGIN
+declare const ALIKE_MARGIN = 100;
+
+### build/index.chunk2.d.ts#AlikeBand
+interface AlikeBand {
+  readonly inner: number;
+  readonly innerCase?: string | undefined;
+  readonly outer?: number | undefined;
+  readonly outerCase?: string | undefined;
+  readonly nearest?: string | undefined;
+}
+
+### build/index.chunk2.d.ts#AlikeMargin
+interface AlikeMargin {
+  readonly inner: number;
+  readonly outer?: number | undefined;
+  readonly nearest?: string | undefined;
+}
 
 ### build/index.chunk2.d.ts#Candidate
 interface Candidate {
@@ -2239,6 +2279,7 @@ interface LabRecord {
   readonly rank: number;
   readonly causes: readonly LabCause[];
   readonly alike?: readonly string[] | undefined;
+  readonly margin?: AlikeMargin | undefined;
 }
 
 ### build/index.chunk2.d.ts#LabScore
@@ -2250,6 +2291,7 @@ interface LabScore {
   readonly table: Confusion<string>;
   readonly classes: readonly ClassScore<string>[];
   readonly brier: number | undefined;
+  readonly band: AlikeBand;
 }
 
 ### build/index.chunk2.d.ts#LabStatus
@@ -2346,8 +2388,20 @@ type Strength = "sure" | "strong" | "usual" | "weak";
 ### build/index.chunk2.d.ts#UNKNOWN
 declare const UNKNOWN = "unknown";
 
+### build/index.chunk2.d.ts#alikeBand
+declare function alikeBand(records: readonly LabRecord[]): AlikeBand;
+
 ### build/index.chunk2.d.ts#alikeCauses
 declare function alikeCauses(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon?: number): readonly string[];
+
+### build/index.chunk2.d.ts#alikeDistance
+declare function alikeDistance(catalog: Catalog, diagnosis: Diagnosis, first: string, second: string): number;
+
+### build/index.chunk2.d.ts#alikeMargin
+declare function alikeMargin(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon?: number): AlikeMargin | undefined;
+
+### build/index.chunk2.d.ts#bandProblems
+declare function bandProblems(band: AlikeBand, epsilon?: number, margin?: number): string[];
 
 ### build/index.chunk2.d.ts#causeVariants
 declare function causeVariants(cause: Cause): readonly CauseVariant[];

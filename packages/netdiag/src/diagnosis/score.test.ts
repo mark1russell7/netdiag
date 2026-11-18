@@ -1,7 +1,7 @@
 import { wilson } from "@mark1russell7/rigor-statistics";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { LAB_RECORD_FORMAT, STANDARD_CATALOG, alikeCauses, diagnose, labBars, labGate, labRecordOf, scoreLab, scoredCause, type LabRecalls, type LabRecord, type LabScore } from "./index.ts";
+import { LAB_RECORD_FORMAT, STANDARD_CATALOG, ALIKE_EPSILON, alikeBand, alikeCauses, alikeMargin, bandProblems, diagnose, labBars, labGate, labRecordOf, scoreLab, scoredCause, type AlikeMargin, type LabRecalls, type LabRecord, type LabScore } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
 const ids = catalog.hypotheses.map((hypothesis) => hypothesis.id);
@@ -55,10 +55,47 @@ describe("labRecordOf", () => {
     expect(wide.tag === "ok" && wide.value.alike?.length).toBe(ids.length - 1);
   });
 
+  it("gives the record the distances around the truth", () => {
+    const diagnosis = diagnose(catalog, [{ feature: "tcp.connect", value: "refused", primary: true }]);
+    const result = labRecordOf(catalog, "port.closed/refused", "port.closed", diagnosis);
+    expect(result.tag === "ok" && result.value.margin).toEqual(alikeMargin(catalog, diagnosis, "port.closed"));
+  });
+
   it("refuses a truth that is not a hypothesis, and a diagnosis with no cause", () => {
     const diagnosis = diagnose(catalog, []);
     expect(labRecordOf(catalog, "lab", "dns.slow", diagnosis)).toMatchObject({ tag: "err" });
     expect(labRecordOf(catalog, "lab", "none", { causes: [], used: [], ignored: [] })).toMatchObject({ tag: "err" });
+  });
+});
+
+describe("alikeBand and bandProblems", () => {
+  const withMargin = (caseId: string, margin: AlikeMargin): LabRecord => ({ ...record("port.closed", "port.closed", caseId), margin });
+
+  it("gives the largest inner distance and the smallest outer distance of the records, with their cases", () => {
+    const band = alikeBand([
+      withMargin("a", { inner: 0, outer: 0.5, nearest: "host.down" }),
+      withMargin("b", { inner: 1e-9, outer: 0.02, nearest: "none" }),
+      withMargin("c", { inner: 0 }),
+      record("none", "none", "d"),
+    ]);
+    expect(band).toEqual({ inner: 1e-9, innerCase: "b", outer: 0.02, outerCase: "b", nearest: "none" });
+    expect(alikeBand([])).toEqual({ inner: 0 });
+    expect(bandProblems(band)).toEqual([]);
+  });
+
+  it("gives a problem for an alike cause above epsilon / margin, and for another cause below epsilon * margin", () => {
+    const inner = alikeBand([withMargin("a", { inner: ALIKE_EPSILON / 10, outer: 1, nearest: "none" })]);
+    expect(bandProblems(inner)).toHaveLength(1);
+    expect(bandProblems(inner)[0]).toContain("a");
+    const outer = alikeBand([withMargin("b", { inner: 0, outer: ALIKE_EPSILON * 10, nearest: "host.down" })]);
+    expect(bandProblems(outer)).toHaveLength(1);
+    expect(bandProblems(outer)[0]).toContain("host.down");
+    expect(bandProblems(outer, ALIKE_EPSILON, 5)).toEqual([]);
+  });
+
+  it("is a field of the score", () => {
+    const records = [withMargin("a", { inner: 0, outer: 0.3, nearest: "none" }), ...RECORDS];
+    expect(scored(records).band).toEqual(alikeBand(records));
   });
 });
 
@@ -106,6 +143,17 @@ describe("scoreLab", () => {
     const score = scored([tie, first, apart]);
     expect(score.correct).toBe(2);
     expect(score.classes.find((scores) => scores.label === "host.down")?.predicted).toBe(0);
+  });
+
+  it("counts the predicted cause when the truth is alike to each cause, because the probes told no cause apart", () => {
+    // With no evidence, the diagnosis reads no feature, so each cause is alike to the truth.
+    const diagnosis = diagnose(catalog, []);
+    const result = labRecordOf(catalog, "lab", "port.closed", diagnosis);
+    if (result.tag !== "ok") throw new Error(result.error.join(" "));
+    expect(result.value.alike?.length).toBe(ids.length - 1);
+    expect(scoredCause(result.value)).toBe(result.value.predicted);
+    expect(scoredCause(result.value)).not.toBe("port.closed");
+    expect(scored([result.value]).correct).toBe(0);
   });
 
   it("keeps the sums of the table, and a Brier score from 0 to 2", () => {

@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "@mark1russell7/optional";
 import { type ClassScore, type Confusion, type Proportion, brier, classScores, confusion, noiseFloor, wilson } from "@mark1russell7/rigor-statistics";
-import { ALIKE_EPSILON, alikeCauses, type Catalog, type Diagnosis } from "./model.ts";
+import { ALIKE_EPSILON, ALIKE_MARGIN, alikeCauses, alikeMargin, type AlikeMargin, type Catalog, type Diagnosis } from "./model.ts";
 
 /** The format of a lab record. */
 export const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
@@ -31,12 +31,14 @@ export interface LabRecord {
    * them from the truth. A record without this field has no such cause.
    */
   readonly alike?: readonly string[] | undefined;
+  /** The distances around the truth (refer to `alikeMargin`). `scoreLab` gives the extremes of the records. */
+  readonly margin?: AlikeMargin | undefined;
 }
 
 /**
  * This function makes the record of one run of a lab case. The truth must be a hypothesis of the catalog, and the
- * diagnosis must have a cause. The record gets the alike causes of the truth: the result of `alikeCauses` with the
- * bound `epsilon`.
+ * diagnosis must have a cause. The record gets the alike causes of the truth and the distances around the truth: the
+ * results of `alikeCauses` and `alikeMargin` with the bound `epsilon`.
  */
 export function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, epsilon: number = ALIKE_EPSILON): Result<LabRecord, string> {
   if (!catalog.hypotheses.some((hypothesis) => hypothesis.id === truth)) return err(`The truth "${truth}" is not a hypothesis of the catalog ${catalog.version}.`);
@@ -45,6 +47,7 @@ export function labRecordOf(catalog: Catalog, caseId: string, truth: string, dia
   const index = diagnosis.causes.findIndex((cause) => cause.id === truth);
   if (index < 0) return err(`The diagnosis has no cause "${truth}".`);
   const alike = alikeCauses(catalog, diagnosis, truth, epsilon);
+  const margin = alikeMargin(catalog, diagnosis, truth, epsilon);
   return ok({
     format: LAB_RECORD_FORMAT,
     case: caseId,
@@ -54,6 +57,7 @@ export function labRecordOf(catalog: Catalog, caseId: string, truth: string, dia
     rank: index + 1,
     causes: diagnosis.causes.map((cause) => ({ id: cause.id, probability: cause.probability })),
     ...(alike.length > 0 ? { alike } : {}),
+    ...(margin !== undefined ? { margin } : {}),
   });
 }
 
@@ -61,10 +65,12 @@ export function labRecordOf(catalog: Catalog, caseId: string, truth: string, dia
  * This function gives the cause that the score counts as the prediction of a record. Without alike causes, it is the
  * predicted cause. With alike causes, the truth and the alike causes are a set of `k` causes. The score counts the truth
  * when the first `k` causes of the diagnosis are this set. Else it counts the first of these `k` causes that is not in
- * the set.
+ * the set. When the set has each cause with a probability above 0, the probes told no cause apart. The score then counts
+ * the predicted cause.
  */
 export function scoredCause(record: LabRecord): string {
   const set = new Set([record.truth, ...(record.alike ?? [])]);
+  if (record.causes.every((cause) => cause.probability <= 0 || set.has(cause.id))) return record.predicted;
   const outside = record.causes.slice(0, set.size).find((cause) => !set.has(cause.id));
   return outside?.id ?? (set.has(record.predicted) ? record.truth : record.predicted);
 }
@@ -85,6 +91,49 @@ export interface LabScore {
   readonly classes: readonly ClassScore<string>[];
   /** The mean Brier score of the records: the squared distance of the probabilities from the truth, from 0 to 2. */
   readonly brier: number | undefined;
+  /** The extremes of the distances around the truths of the records. */
+  readonly band: AlikeBand;
+}
+
+/** The extremes of the distances around the truths of a set of lab records (refer to `alikeMargin`). */
+export interface AlikeBand {
+  /** The largest distance of an alike cause. It is 0 when no record has an alike cause. */
+  readonly inner: number;
+  /** The record with the distance `inner`. */
+  readonly innerCase?: string | undefined;
+  /** The smallest distance of a cause that is not alike. It is absent when no record has such a cause. */
+  readonly outer?: number | undefined;
+  /** The record with the distance `outer`. */
+  readonly outerCase?: string | undefined;
+  /** The cause at the distance `outer`. */
+  readonly nearest?: string | undefined;
+}
+
+/** This function gives the extremes of the distances around the truths of the records. A record with no margin does not count. */
+export function alikeBand(records: readonly LabRecord[]): AlikeBand {
+  let band: AlikeBand = { inner: 0 };
+  for (const record of records) {
+    const margin = record.margin;
+    if (margin === undefined) continue;
+    if (margin.inner > band.inner) band = { ...band, inner: margin.inner, innerCase: record.case };
+    if (margin.outer !== undefined && (band.outer === undefined || margin.outer < band.outer)) band = { ...band, outer: margin.outer, outerCase: record.case, nearest: margin.nearest };
+  }
+  return band;
+}
+
+/**
+ * This function gives the problems of a band: an alike cause above `epsilon / margin`, or another cause below
+ * `epsilon * margin`. With such a cause, a small change of the catalog can change an alike set silently.
+ */
+export function bandProblems(band: AlikeBand, epsilon: number = ALIKE_EPSILON, margin: number = ALIKE_MARGIN): string[] {
+  const problems: string[] = [];
+  if (band.inner > epsilon / margin) {
+    problems.push(`The record ${band.innerCase ?? "?"} has an alike cause at the distance ${band.inner.toExponential(2)}, above the limit ${(epsilon / margin).toExponential(2)}.`);
+  }
+  if (band.outer !== undefined && band.outer < epsilon * margin) {
+    problems.push(`The record ${band.outerCase ?? "?"} has the cause ${band.nearest ?? "?"} at the distance ${band.outer.toExponential(2)}, below the limit ${(epsilon * margin).toExponential(2)}.`);
+  }
+  return problems;
 }
 
 /**
@@ -123,6 +172,7 @@ export function scoreLab(catalog: Catalog, records: readonly LabRecord[]): Resul
     table,
     classes: classScores(table),
     brier: records.length === 0 ? undefined : brier(forecasts) * ids.length,
+    band: alikeBand(records),
   });
 }
 

@@ -2,6 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
   ALIKE_EPSILON,
+  ALIKE_MARGIN,
   FLOOR,
   LOSS_DEGREES,
   LOSS_STEPS,
@@ -12,6 +13,8 @@ import {
   STRENGTHS,
   UNKNOWN,
   alikeCauses,
+  alikeDistance,
+  alikeMargin,
   causeVariants,
   compileCatalog,
   diagnose,
@@ -652,30 +655,48 @@ describe("the properties of the model", () => {
 
 describe("alikeCauses", () => {
   const twin = (id: string, prior: number) => ({ id, part: "service" as const, layer: "tcp" as const, reach: "target" as const, summary: "", step: "", prior, predicts: { "tcp.connect": { expect: "timeout", strength: "strong" as const } } });
-  const compiled = compileCatalog({ version: "t", features: [tcp], faults: [twin("a", 1), twin("b", 3), { ...twin("c", 1), predicts: { "tcp.connect": { expect: "refused", strength: "strong" } } }] });
+  // The fault d gives the timeout the same probability as a and b (0.9), but it moves the rest to refused.
+  const tied = { ...twin("d", 1), predicts: { "tcp.connect": { connected: 0.001, refused: 0.099, timeout: 0.9 } } };
+  const compiled = compileCatalog({ version: "t", features: [tcp], faults: [twin("a", 1), twin("b", 3), { ...twin("c", 1), predicts: { "tcp.connect": { expect: "refused", strength: "strong" } } }, tied] });
   const small = compiled.tag === "ok" ? compiled.value : catalog;
 
-  it("gives the causes with the same likelihood of the evidence, also when their priors are not the same", () => {
+  it("gives the causes with the same predictions of the read features, also when their priors are not the same", () => {
     const diagnosis = diagnose(small, [e("tcp.connect", "timeout")]);
     expect(diagnosis.causes.map((cause) => cause.id).slice(0, 2)).toEqual(["b", "a"]);
     expect(alikeCauses(small, diagnosis, "a")).toEqual(["b"]);
     expect(alikeCauses(small, diagnosis, "b")).toEqual(["a"]);
     expect(alikeCauses(small, diagnosis, "c")).toEqual([]);
-    // With no evidence, the likelihood of each cause is 1, so each cause is alike to each other cause.
+    expect(alikeDistance(small, diagnosis, "a", "b")).toBe(0);
+    // With no evidence, the diagnosis read no feature, so each cause is alike to each other cause.
     const empty = diagnose(small, []);
     expect(alikeCauses(small, empty, NONE)).toEqual(empty.causes.map((cause) => cause.id).filter((id) => id !== NONE));
     expect(alikeCauses(small, empty, NONE)).toContain(UNKNOWN);
   });
 
+  it("does not make a tie of the likelihoods of the evidence alone an alike cause", () => {
+    const diagnosis = diagnose(small, [e("tcp.connect", "timeout")]);
+    const p = new Map(diagnosis.causes.map((cause) => [cause.id, cause.probability]));
+    expect(p.get("d")).toBeCloseTo(p.get("a") ?? 0, 12);
+    expect(alikeCauses(small, diagnosis, "a")).not.toContain("d");
+    // The rest of a goes mostly to connected (the healthy distribution), and d gives connected the probability 0.001.
+    expect(alikeDistance(small, diagnosis, "a", "d")).toBeGreaterThan(ALIKE_EPSILON * ALIKE_MARGIN);
+    const margin = alikeMargin(small, diagnosis, "a");
+    expect(margin?.inner).toBe(0);
+    expect(margin?.outer).toBe(Math.min(...["c", "d", NONE, UNKNOWN].map((id) => alikeDistance(small, diagnosis, "a", id))));
+  });
+
   it("gives no alike cause for a cause that is not in the diagnosis, and refuses a bound below 0", () => {
     const diagnosis = diagnose(small, [e("tcp.connect", "timeout")]);
     expect(alikeCauses(small, diagnosis, "dns.slow")).toEqual([]);
+    expect(alikeMargin(small, diagnosis, "dns.slow")).toBeUndefined();
+    expect(alikeDistance(small, diagnosis, "a", "dns.slow")).toBe(Number.POSITIVE_INFINITY);
     expect(() => alikeCauses(small, diagnosis, "a", -1)).toThrow(RangeError);
+    expect(() => alikeMargin(small, diagnosis, "a", -1)).toThrow(RangeError);
   });
 
   it("finds host.down alike to filter.drop on the evidence of a target that drops each packet", () => {
-    // The kernel world of filter.drop gave this evidence in each round. A host that is down behind a router that
-    // sends no ICMP message gives the same facts: the degree silent of host.down.
+    // The kernel world of filter.drop gave this evidence in each round. The degree all of filter.drop and the degree
+    // silent of host.down have the same predictions, so the read probes cannot tell them apart.
     const evidence = [
       "dns.answer=ok@target", "dns.answer=ok@reference", "tcp.connect=timeout@target", "tcp.connect=connected@reference",
       "tcp.time=short@reference", "tls.handshake=ok@reference", "tls.trust=public@reference", "tls.ratio=mid@reference",
@@ -688,22 +709,30 @@ describe("alikeCauses", () => {
     });
     const diagnosis = diagnose(catalog, evidence);
     expect(diagnosis.ignored).toEqual([]);
+    expect(diagnosis.causes.map((cause) => cause.id).slice(0, 2)).toEqual(["filter.drop", "host.down"]);
     expect(alikeCauses(catalog, diagnosis, "filter.drop")).toEqual(["host.down"]);
     expect(alikeCauses(catalog, diagnosis, "host.down")).toEqual(["filter.drop"]);
-    expect(alikeCauses(catalog, diagnosis, "filter.drop", 0)).toEqual([]);
+    expect(alikeCauses(catalog, diagnosis, "filter.drop", 0)).toEqual(["host.down"]);
+    const margin = alikeMargin(catalog, diagnosis, "filter.drop");
+    expect(margin?.inner).toBe(0);
+    expect(margin?.outer).toBeGreaterThan(ALIKE_EPSILON * ALIKE_MARGIN);
   });
 
-  it("is a symmetric relation, and the odds of two alike causes are the ratio of their priors", () => {
+  it("is a symmetric relation that agrees with alikeDistance and alikeMargin", () => {
     const ids = catalog.hypotheses.map((h) => h.id);
     fc.assert(
       fc.property(evidenceArb, fc.constantFrom(...ids), (evidence, id) => {
         const diagnosis = diagnose(catalog, evidence);
-        const p = new Map(diagnosis.causes.map((cause) => [cause.id, cause.probability]));
-        for (const other of alikeCauses(catalog, diagnosis, id)) {
-          expect(alikeCauses(catalog, diagnosis, other)).toContain(id);
-          const odds = Math.log(p.get(id) ?? Number.NaN) - Math.log(p.get(other) ?? Number.NaN);
-          expect(Math.abs(odds - Math.log(catalog.prior(id)) + Math.log(catalog.prior(other)))).toBeLessThanOrEqual(ALIKE_EPSILON + 1e-12);
-        }
+        const alike = alikeCauses(catalog, diagnosis, id);
+        for (const other of alike) expect(alikeCauses(catalog, diagnosis, other)).toContain(id);
+        const live = diagnosis.causes.filter((cause) => cause.probability > 0 && cause.id !== id).map((cause) => cause.id);
+        if (!live.length || !((diagnosis.causes.find((cause) => cause.id === id)?.probability ?? 0) > 0)) return;
+        const distances = live.map((other) => ({ other, d: alikeDistance(catalog, diagnosis, id, other) }));
+        expect(new Set(alike)).toEqual(new Set(distances.filter((each) => each.d <= ALIKE_EPSILON).map((each) => each.other)));
+        for (const { other, d } of distances) expect(alikeDistance(catalog, diagnosis, other, id)).toBe(d);
+        const margin = alikeMargin(catalog, diagnosis, id);
+        const outside = distances.filter((each) => each.d > ALIKE_EPSILON).map((each) => each.d);
+        expect(margin?.outer).toBe(outside.length > 0 ? Math.min(...outside) : undefined);
       }),
       { seed: 20261118, numRuns: 200 },
     );

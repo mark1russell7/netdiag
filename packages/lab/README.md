@@ -38,6 +38,8 @@ On a computer with no set-up, `--hosts local` uses addresses of `127.0.0.0/8`. T
 
 The command writes `runs.ndjson`, `records.ndjson`, `score.json` and `summary.md`. With `--bars <file>`, it also writes `gate.json`, and a failed gate gives the exit code 1.
 
+The summary tells the largest distance of an alike cause and the smallest distance of another cause. A cause in the band around the alike bound is a problem, and the exit code is then 2. Refer to `bandProblems` of netdiag.
+
 ### The sample reports of the site
 
 The command `samples-main.ts` starts the world of each loopback case. Then it starts `netdiag check` in the world, as a user does:
@@ -76,7 +78,7 @@ Each round starts one world. Each case adds its fault to the world, starts the a
 | Case | Fault |
 | --- | --- |
 | `none` | No fault. |
-| `filter.drop` | The harness drops each packet of the target. The client gets no answer, as from a host that is down behind a silent router. Thus each record gets `host.down` as `alike`. |
+| `filter.drop` | The harness drops each packet of the target. The client gets no answer, as from a host that is down behind a silent router. The degree `all` of `filter.drop` and the degree `silent` of `host.down` have the same predictions. Thus each record gets `host.down` as `alike`. |
 | `filter.icmp` | The target ignores each echo request (`net.ipv4.icmp_echo_ignore_all`). |
 | `path.loss` | `netem` drops 20% of the packets of the target. |
 | `path.mtu` | The router drops each TCP packet above 1200 bytes toward the two servers. |
@@ -333,6 +335,7 @@ pnpm --filter @netdiag/lab sim [--out <folder>] [--write]
 ```
 
 - The command prints the hits of each class, the hits of each option at each place, and the bands.
+- The command also prints the alike band of the records of all seeds. A cause in the band around the alike bound is a problem of the runs.
 - Without `--write`, the exit code is 1 when `bars/sim.json` does not have the bars of the runs.
 - A unit test of `src/sim/sim.test.ts` does the same check. Thus the job `ci / checks` stops a fall of a bar.
 - To change the bars, start the command with `--write`. Tell the reason in the pull request.
