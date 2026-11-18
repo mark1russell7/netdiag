@@ -339,7 +339,7 @@ pnpm --filter @netdiag/lab sim [--out <folder>] [--write]
 - Without `--write`, the exit code is 1 when `bars/sim.json` does not have the bars of the runs.
 - A unit test of `src/sim/sim.test.ts` does the same check. Thus the job `ci / checks` stops a fall of a bar.
 - To change the bars, start the command with `--write`. Tell the reason in the pull request.
-- The workflow `sim.yml` starts the command with `--write` on each pull request that changes the sim, the catalog or the bars. Its summary gives the diff of each file of the bars, and its artifact has the files.
+- The workflow `sim.yml` starts the command with `--write` on each pull request. Its summary gives the diff of each file of the bars, and its artifact has the files.
 - With `--out`, the command also writes `summary.md` and the outcome of each case into the folder. Each outcome has the number of its visits.
 
 A class with a bar above 0 is covered on E0. Each class has a bar above 0 today.

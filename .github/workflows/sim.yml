@@ -8,12 +8,8 @@
 name: Sim
 
 on:
+  # No path filter (the rule gate-trigger): the job starts on each pull request.
   pull_request:
-    paths:
-      - packages/netdiag/src/**
-      - packages/lab/src/**
-      - packages/lab/bars/**
-      - .github/workflows/sim.yml
   workflow_dispatch:
     inputs:
       limits:
