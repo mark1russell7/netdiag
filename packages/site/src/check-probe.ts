@@ -47,8 +47,10 @@ click("#search-best");
 check("the best probe runs once", await until(() => $$("#search-steps .step").length === 1), $$("#search-steps .step").length);
 
 // 3. Score the catalog
-check("the lab scores 420 runs", text("#lab-result").includes("420 runs"), text("#lab-result"));
-check("the lab has a row for each hypothesis", $$("#lab-rows .recall").length === 22, $$("#lab-rows .recall").length);
+// The lab scores 20 runs of each hypothesis, so the count of the runs comes from the count of the rows.
+const labRows = $$("#lab-rows .recall").length;
+check("the lab has a row for each hypothesis", labRows === 22, labRows);
+check("the lab scores 20 runs of each hypothesis", text("#lab-result").includes(`${labRows * 20} runs`), text("#lab-result"));
 for (const box of $$("#lab-probes input")) if ((box as HTMLInputElement).checked) click(box);
 check("with no probe, the gate fails", await until(() => text("#lab-result").includes("No probe observes the network")), text("#lab-result"));
 set("#lab-bar", "0");
