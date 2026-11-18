@@ -18,9 +18,6 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - "@mark1russell7/*"
   - "@procedures/*"
-  # polite-crawler is our own package (mark1russell7/crawler) outside our scopes. Version 0.7.6 of 2026-11-15 was
-  # newer than the release age when netdiag-cli took it (ND-11). Only this version is excluded. Remove the line on 2026-11-18.
-  - polite-crawler@0.7.6
 
 # An install fails when a new version has less trust evidence than an earlier version of the same package: for
 # example, a version with no provenance after versions from a trusted publisher. Such a version can be a stolen token.

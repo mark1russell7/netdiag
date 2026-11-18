@@ -236,6 +236,8 @@ Evidence with `primary: false` comes from a reference host, for example a second
 
 A fault can have the two reaches. For example, a loss can be near the client or near the target. The diagnosis then gives one variant of the fault for each reach, with an equal part of its prior. The probability of the fault is the sum of its variants. `Cause.reaches` gives the probability of each reach, and `causeVariants` gives the variants of a cause. The choice of the next probe and `predictive` use these variants.
 
+A fault can also have degrees, for example a light loss and a heavy loss. Each degree has a part of the prior of the fault, and predictions that replace the predictions of the fault. A heavy loss makes DNS, TCP and HTTP time out together, and a light loss does not. Thus the model sees the timeouts together. The variants of a fault are each pair of a reach and a degree. `Cause.degrees` gives the probability of each degree.
+
 The standard catalog `STANDARD_CATALOG` has 15 features and 20 faults. The rules of practice give its first likelihoods, and each hypothesis has the same prior. The lab runs (ND-7) then fit these numbers.
 
 ```ts
