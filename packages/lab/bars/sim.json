@@ -1,7 +1,7 @@
 {
   "none": 0.954,
   "interface.down": 0.523,
-  "wifi.weak": 0.488,
+  "wifi.weak": 0.492,
   "gateway.down": 0.954,
   "captive.portal": 0.954,
   "resolver.down": 0.954,
@@ -12,7 +12,7 @@
   "filter.drop": 0.954,
   "filter.icmp": 0.954,
   "filter.reset": 0.878,
-  "path.loss": 0.333,
+  "path.loss": 0.487,
   "path.mtu": 0.35,
   "ipv6.broken": 0.954,
   "tls.proxy": 0.954,

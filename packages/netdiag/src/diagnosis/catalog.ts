@@ -283,8 +283,6 @@ export const STANDARD_FAULTS: readonly Fault[] = [
       "path.loss": { expect: ["some", "high"], strength: "strong" },
       // A loss does not slow a connect: each SYN passes at once, or the client sends it again after 1 s.
       "tcp.time": { expect: ["short", "retry"], strength: "strong" },
-      // A lost segment of the TLS handshake waits for a retransmit, so the handshake takes longer than the connect.
-      "tls.ratio": { expect: ["mid", "high"], strength: "weak" },
       "http.ttfb": { expect: ["mid", "high"], strength: "weak" },
     },
   },
