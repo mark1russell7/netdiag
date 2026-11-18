@@ -43,7 +43,7 @@ netdiag runs active probes only against targets that you own or that you name. T
 
 ## The site
 
-The site is at [mark1russell7.github.io/netdiag](https://mark1russell7.github.io/netdiag/). Its Status page shows the items of the plan.
+The site is at [metrograph-labs.github.io/netdiag](https://metrograph-labs.github.io/netdiag/). Its Status page shows the items of the plan.
 
 ## License
 

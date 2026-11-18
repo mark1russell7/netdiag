@@ -59,6 +59,6 @@ describe("the port of RDAP over polite-crawler", () => {
   });
 
   it("names netdiag, its version and its page in the User-Agent", () => {
-    expect(userAgentOf("0.5.2")).toBe("netdiag/0.5.2 (+https://github.com/mark1russell7/netdiag)");
+    expect(userAgentOf("0.5.2")).toBe("netdiag/0.5.2 (+https://github.com/metrograph-labs/netdiag)");
   });
 });
