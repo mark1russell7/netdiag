@@ -264,14 +264,25 @@ export function worldReach(truth: string, seed: string): Reach | undefined {
 }
 
 /**
+ * This function gives the degree of the fault of a world, for example a light or a heavy loss. It draws the degree by
+ * its part of the prior, one for each seed, so each feature of the world agrees on it. A fault with no degrees gives no degree.
+ */
+export function worldDegree(truth: string, seed: string): string | undefined {
+  const degrees = hypothesisOf(truth).degree ?? [];
+  if (degrees.length < 2) return degrees[0];
+  return degrees[random(`netdiag-demo/degree/${seed}/${truth}`).weighted(degrees.map((degree) => CATALOG.prior(truth, degree)))];
+}
+
+/**
  * This function gives the value that a world with a true hypothesis gives for one feature. It draws the value from the
- * likelihoods of the catalog, for the reach of the world. Each feature, role and seed has its own stream, so the order
- * of the probes does not change a value.
+ * likelihoods of the catalog, for the reach and the degree of the world. Each feature, role and seed has its own stream,
+ * so the order of the probes does not change a value.
  */
 export function observe(truth: string, seed: string, feature: string, primary: boolean): string {
   const { values } = featureOf(feature);
   const reach = worldReach(truth, seed);
-  const weights = values.map((value) => CATALOG.likelihood(truth, feature, value, primary, reach));
+  const degree = worldDegree(truth, seed);
+  const weights = values.map((value) => CATALOG.likelihood(truth, feature, value, primary, reach, degree));
   const value = values[random(`netdiag-demo/world/${seed}/${truth}/${feature}/${primary ? "target" : "reference"}`).weighted(weights)];
   if (value === undefined) throw new RangeError(`No value of ${feature}`);
   return value;

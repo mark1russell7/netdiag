@@ -46,6 +46,8 @@ DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
 DNS_OUTCOMES: build/counts.chunk.d.ts#DNS_OUTCOMES
 DNS_PROBE: build/index.d.ts#DNS_PROBE
 DNS_TRIES: build/index.d.ts#DNS_TRIES
+type Degree: build/index.chunk2.d.ts#Degree
+type DegreeShare: build/index.chunk2.d.ts#DegreeShare
 type DelayMetrics: build/core.chunk.d.ts#DelayMetrics
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Dial: build/index.d.ts#Dial
@@ -413,6 +415,8 @@ DEFAULT_PING_COUNT: build/counts.chunk.d.ts#DEFAULT_PING_COUNT
 DNS_ANSWER: build/counts.chunk.d.ts#DNS_ANSWER
 DNS_ANSWER_VALUES: build/core.chunk.d.ts#DNS_ANSWER_VALUES
 DNS_OUTCOMES: build/counts.chunk.d.ts#DNS_OUTCOMES
+type Degree: build/index.chunk2.d.ts#Degree
+type DegreeShare: build/index.chunk2.d.ts#DegreeShare
 type DelayMetrics: build/core.chunk.d.ts#DelayMetrics
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Distribution: build/index.chunk2.d.ts#Distribution
@@ -709,6 +713,8 @@ type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
 type Cause: build/index.chunk2.d.ts#Cause
 type CauseVariant: build/index.chunk2.d.ts#CauseVariant
 type Contribution: build/index.chunk2.d.ts#Contribution
+type Degree: build/index.chunk2.d.ts#Degree
+type DegreeShare: build/index.chunk2.d.ts#DegreeShare
 type Diagnosis: build/index.chunk2.d.ts#Diagnosis
 type Distribution: build/index.chunk2.d.ts#Distribution
 type Evidence: build/index.chunk2.d.ts#Evidence
@@ -2037,8 +2043,8 @@ interface Catalog {
   readonly version: string;
   readonly features: ReadonlyMap<string, Feature>;
   readonly hypotheses: readonly Hypothesis[];
-  likelihood(hypothesis: string, feature: string, value: string, primary: boolean, reach?: Reach): number;
-  prior(hypothesis: string): number;
+  likelihood(hypothesis: string, feature: string, value: string, primary: boolean, reach?: Reach, degree?: string): number;
+  prior(hypothesis: string, degree?: string): number;
 }
 
 ### build/index.chunk2.d.ts#CatalogSpec
@@ -2056,11 +2062,14 @@ interface CatalogSpec {
 interface Cause extends Hypothesis {
   readonly probability: number;
   readonly reaches?: readonly ReachShare[] | undefined;
+  readonly degrees?: readonly DegreeShare[] | undefined;
+  readonly variants?: readonly CauseVariant[] | undefined;
 }
 
 ### build/index.chunk2.d.ts#CauseVariant
 interface CauseVariant {
   readonly reach: Reach | undefined;
+  readonly degree?: string | undefined;
   readonly probability: number;
 }
 
@@ -2068,6 +2077,20 @@ interface CauseVariant {
 interface Contribution {
   readonly evidence: Evidence;
   readonly weight: number;
+}
+
+### build/index.chunk2.d.ts#Degree
+interface Degree {
+  readonly id: string;
+  readonly summary: string;
+  readonly share: number;
+  readonly predicts?: Readonly<Record<string, Prediction>> | undefined;
+}
+
+### build/index.chunk2.d.ts#DegreeShare
+interface DegreeShare {
+  readonly degree: string;
+  readonly probability: number;
 }
 
 ### build/index.chunk2.d.ts#Diagnosis
@@ -2110,6 +2133,7 @@ interface Fault {
   readonly step: string;
   readonly prior?: number | undefined;
   readonly predicts: Readonly<Record<string, Prediction>>;
+  readonly degrees?: readonly Degree[] | undefined;
 }
 
 ### build/index.chunk2.d.ts#Feature
@@ -2133,6 +2157,7 @@ interface Hypothesis {
   readonly part?: Part | undefined;
   readonly layer?: Layer | undefined;
   readonly reach?: readonly Reach[] | undefined;
+  readonly degree?: readonly string[] | undefined;
 }
 
 ### build/index.chunk2.d.ts#LAB_BAR_STEP

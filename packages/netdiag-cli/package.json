@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "@mark1russell7/netdiag-cli",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "description": "The command line of netdiag: one command takes a target and gives the probable causes of a fault and the next step.",
   "keywords": [
     "network",

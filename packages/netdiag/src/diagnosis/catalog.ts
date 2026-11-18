@@ -1,4 +1,4 @@
-import { compileCatalog, type Catalog, type CatalogSpec, type Feature, type Fault } from "./model.ts";
+import { compileCatalog, type Catalog, type CatalogSpec, type Degree, type Feature, type Fault, type Prediction } from "./model.ts";
 
 /**
  * The features of the standard catalog.
@@ -129,6 +129,32 @@ export const STANDARD_FEATURES: readonly Feature[] = [
 ];
 
 /**
+ * This function gives the degrees of a fault that loses packets, with the predictions of the fault for each degree.
+ *
+ * Under a light loss, each try passes after a few repeats, so DNS, TCP and HTTP succeed. Under a heavy loss, each DNS
+ * try, each SYN and each request can fail. Thus the timeouts come together with the loss, at each host that the loss
+ * reaches. Most losses in the field are light, so the degree light has 3 parts of the prior and the degree heavy 1.
+ */
+function lossDegrees(light: Readonly<Record<string, Prediction>>, heavy: Readonly<Record<string, Prediction>>): readonly Degree[] {
+  return [
+    { id: "light", summary: "A small share of the packets is lost. Each try passes after a few repeats.", share: 3, predicts: light },
+    {
+      id: "heavy",
+      summary: "A large share of the packets is lost, so DNS, TCP and HTTP can time out.",
+      share: 1,
+      predicts: {
+        "path.loss": { expect: "high", strength: "strong" },
+        "dns.answer": { expect: ["ok", "timeout"], strength: "strong" },
+        "tcp.connect": { expect: ["connected", "timeout"], strength: "strong" },
+        "tls.handshake": { expect: ["ok", "timeout"], strength: "strong" },
+        "http.status": { expect: ["ok", "none"], strength: "strong" },
+        ...heavy,
+      },
+    },
+  ];
+}
+
+/**
  * The faults of the standard catalog. Each prediction is a rule of practice. The lab runs (ND-7) then fit the
  * distributions, and the priors.
  */
@@ -160,8 +186,10 @@ export const STANDARD_FAULTS: readonly Fault[] = [
       "wifi.signal": { expect: "weak", strength: "strong" },
       "wifi.state": { expect: "connected", strength: "sure" },
       "path.loss": { expect: ["some", "high"], strength: "usual" },
+      // The radio sends each lost frame again, so a connect is slow, or the client sends the SYN again.
       "tcp.time": { expect: ["long", "retry"], strength: "usual" },
     },
+    degrees: lossDegrees({}, {}),
   },
   {
     id: "gateway.down",
@@ -290,10 +318,11 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Find the first hop with loss, and tell the provider of that network.",
     predicts: {
       "path.loss": { expect: ["some", "high"], strength: "strong" },
-      // A loss does not slow a connect: each SYN passes at once, or the client sends it again after 1 s.
-      "tcp.time": { expect: ["short", "retry"], strength: "strong" },
       "http.ttfb": { expect: ["mid", "high"], strength: "weak" },
     },
+    // A loss does not slow a connect: each SYN passes at once, or the client sends it again after 1 s. Under a loss s in
+    // both directions, a SYN passes at once with the probability (1 - s)^2. Thus a light loss mostly gives short, and a heavy loss retry.
+    degrees: lossDegrees({ "tcp.time": { short: 0.7, retry: 0.25, long: 0.05 } }, { "tcp.time": { short: 0.25, retry: 0.7, long: 0.05 } }),
   },
   {
     id: "path.mtu",
@@ -382,7 +411,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "6",
+  version: "7",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

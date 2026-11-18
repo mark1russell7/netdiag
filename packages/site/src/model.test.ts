@@ -22,6 +22,7 @@ import {
   search,
   searchDone,
   usualValue,
+  worldDegree,
 } from "./model.ts";
 
 describe("the board", () => {
@@ -86,6 +87,18 @@ describe("the probes", () => {
     expect(TRUTHS).not.toContain(UNKNOWN);
     const values = ["1", "2", "3"].map((seed) => observe("port.closed", seed, "tcp.connect", true));
     expect(["1", "2", "3"].map((seed) => observe("port.closed", seed, "tcp.connect", true))).toEqual(values);
+  });
+
+  it("draw one degree for each world of a fault with degrees, by its part of the prior", () => {
+    const seeds = Array.from({ length: 200 }, (_, i) => String(i));
+    const degrees = seeds.map((seed) => worldDegree("path.loss", seed));
+    expect(seeds.map((seed) => worldDegree("path.loss", seed))).toEqual(degrees);
+    const heavy = degrees.filter((degree) => degree === "heavy").length;
+    expect(degrees.filter((degree) => degree === "light").length + heavy).toBe(seeds.length);
+    // The degree heavy has 1 part of 4. With 200 worlds, its count is from 30 to 70 in more than 99 of 100 draws.
+    expect(heavy).toBeGreaterThanOrEqual(30);
+    expect(heavy).toBeLessThanOrEqual(70);
+    expect(worldDegree("port.closed", "1")).toBeUndefined();
   });
 
   it("rank the probes from the largest gain", () => {
