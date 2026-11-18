@@ -34,7 +34,7 @@ import {
   type SimActionRate,
   type SimCalibration,
 } from "./report.ts";
-import { concentrationCatalog, concentrationsSource, concentrationSummary, repeatConcentrations, STANDARD_CONCENTRATIONS_FILE } from "./repeats.ts";
+import { concentrationCatalog, concentrationIntervals, concentrationsSource, concentrationSummary, repeatConcentrations, repeatUnits, STANDARD_CONCENTRATIONS_FILE } from "./repeats.ts";
 
 const { values } = parseArgs({ options: { out: { type: "string" }, write: { type: "boolean", default: false }, limits: { type: "string" } } });
 const LIMITS_FILE = new URL("action-limits.json", BARS_FOLDER);
@@ -61,7 +61,7 @@ const limits = await readFile(LIMITS_FILE, "utf8").then(
   (text) => JSON.parse(text) as ActionLimits,
   () => undefined,
 );
-const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}\n${falseActionSummary(runs.outcomes, fit.policy, limits?.limits[NO_FAULT])}\n${concentrationSummary(concentrations, runs.outcomes, catalog)}`;
+const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}\n${falseActionSummary(runs.outcomes, fit.policy, limits?.limits[NO_FAULT])}\n${concentrationSummary(concentrations, runs.outcomes, catalog, concentrationIntervals(repeatUnits(fitRuns.outcomes), concentrations))}`;
 if (values.out !== undefined) {
   await mkdir(values.out, { recursive: true });
   await writeFile(join(values.out, "summary.md"), summary);
