@@ -16,6 +16,7 @@ The labs of netdiag: the simulated world, the loopback lab and the kernel lab. E
 - The range `203.0.113.0/24` is a documentation range. The readers see it as public, so the lab hosts stand for hosts on the internet.
 - The probes count the lab root as a public root (the option `publicRoots`). The root of the TLS proxy is a root that the user trusts (the option `roots`).
 - `netem` adds 10 ms to each packet on `lo` in CI. Thus the ratios of the times are the ratios of a real path.
+- Each visit reads the link of the computer first, as `netdiag check` does. Without the link, a resolver with no DNS service and a down interface give the same evidence.
 
 ### The signs of a case
 
@@ -347,16 +348,16 @@ The hits come from 5 seeds of 80 cases, thus 400 visits for each class.
 
 | Class | Hits | The other answers | The cause |
 | --- | --- | --- | --- |
-| `path.mtu` | 58 % | `none` | The catalog has no evidence for each address family. A black hole of IPv4 with a good IPv6 reads as `none`. Each miss is a case with IPv6. |
-| `interface.down` | 70 % | `unknown` | When an interface is down, c-ares gives `ECONNREFUSED`. The catalog expects a DNS timeout. |
 | `path.loss` | 88 % | `resolver.down`, `filter.drop` | A heavy loss reads as a down resolver or a filter. In 9 of 10 of these answers, the loss is 44 % or more. |
 | `wifi.weak` | 86 % | `unknown` | In 9 of 10 misses, the radio loss is 35 % or more. The cause of each miss is a later step. |
 | `server.error` | 98 % | `tls.proxy` | A proxy at the gateway that refuses the request also ends the TLS session with its own certificate. |
 
-Five changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last three with 80:
+Seven changes of ND-17 closed weak points. The first two are measures with 12 cases of each class, and the last five with 80:
 
 - A fault can have more than one reach. The diagnosis sums one variant for each reach. `path.loss`, `path.mtu`, `ipv6.broken` and `tls.proxy` have the reaches `shared` and `target`. `tls.proxy` went from 73 % to 100 %.
 - When `ip.family` marks a family as broken, the facts of its addresses give only `ip.family`. Before, they also gave `tcp.connect` and `icmp.reply`, so the model counted one failure two times. `ipv6.broken` went from 72 % to 100 %.
 - A loss does not slow a TCP connect: each SYN passes at once, or the client sends it again after 1 s. Thus `path.loss` expects `tcp.time` `short` or `retry`, not `long` or `retry`. `path.loss` went from 59 % to 68 %. The kernel lab read 5 of its 70 recorded loss cases as `server.slow`, and with the new rule it reads all 70 correctly.
 - The DNS probe sends a query again after a loss, 3 times or fewer. The DNS of the simulated world does the same. `wifi.weak` went from 69 % to 85 %, and `path.loss` from 68 % to 79 %.
 - The Wi-Fi probe also gives the list of the Wi-Fi interfaces. With no connected interface, the feature `wifi.state` is `none`, so `wifi.weak` is not the cause. `path.loss` went from 79 % to 88 %. Before, 42 wired cases read as `wifi.weak`, and 0 do so after the change.
+- When an interface is down, the computer has no route, so c-ares cannot send the query and gives `ECONNREFUSED`. Thus `interface.down` expects the DNS values `unreachable` and `timeout`. `interface.down` went from 70 % to 100 %.
+- Each miss of `path.mtu` was an IPv6 link with an MTU below 1280 bytes. RFC 8200 forbids it, but a tunnel with no fragmentation can make it. Before, the MTU search stopped when 1280 bytes failed. When 1280 bytes fail, the search tries a plain echo request of 104 bytes, and then finds the MTU below 1280. `path.mtu` went from 58 % to 100 %.

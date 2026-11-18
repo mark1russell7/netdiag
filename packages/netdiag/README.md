@@ -254,7 +254,7 @@ const result = diagnose(STANDARD_CATALOG, [
 
 | Feature | The source of the value |
 | --- | --- |
-| `dns.answer` | The outcome of each DNS query. One answer `ok` for a name and a resolver decides. `nodata` gives `ok`, because the name exists. |
+| `dns.answer` | The outcome of each DNS query. One answer `ok` for a name and a resolver decides. `nodata` gives `ok`, because the name exists. c-ares gives `unreachable` when it cannot send the query, or when no DNS service listens on the resolver. |
 | `dns.address` | The addresses of a public name. One private address decides. A local name, for example `nas.local`, gives no value. |
 | `ip.family` | The TCP connects to the IPv4 and the IPv6 addresses of one name. When one family is broken, the other facts of its addresses give no second feature. |
 | `tcp.connect`, `tcp.time` | The outcome and the time of each TCP connect. A time of 900 ms or more tells that the SYN went again. |
@@ -330,10 +330,12 @@ const rto = rtoOf(ackSamples(capture), { minMs: 200 });
 `nextMtuSize(tries, bounds)` gives the next size of a search, and `mtuOf(address, tries, bounds)` gives the value of a fact `path.mtu`. The state of a search is its list of tries, so a test can replay a search with no tool.
 
 - Each size is the size of an IP packet. The floor is 68 bytes for IPv4 and 1280 bytes for IPv6. The default ceiling is 1500 bytes.
+- The second size is the floor. When the floor of IPv6 fails, the search tries a plain echo request of 104 bytes.
+- A path that passes 104 bytes and drops 1280 bytes has a link with an MTU below the minimum of IPv6. The search finds that MTU.
 - The first size is the ceiling. Most paths pass it, so most searches end after one try.
 - A message of a router can tell the MTU. The search tries that MTU and one byte above it.
 - A path that drops a large packet with no message is an MTU black hole. The search finds its MTU by halves.
-- After a false message, the search uses no message. A search has at most `4 + 3 * ceil(log2(ceiling - floor))` tries.
+- After a false message, the search uses no message. A search has at most `4 + 3 * ceil(log2(ceiling - floor))` tries. With `least`, it has one more try, and `least` replaces `floor`.
 
 ## The lab score
 

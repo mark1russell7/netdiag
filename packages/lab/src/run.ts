@@ -3,6 +3,7 @@ import { errorMessage } from "@mark1russell7/text";
 import {
   DNS_ANSWER,
   DNS_PROBE,
+  LINK_PROBE,
   STANDARD_CATALOG,
   createRunner,
   describeOutcome,
@@ -239,6 +240,9 @@ async function visitName(world: World, options: RunOptions, runner: ReturnType<t
 /**
  * This function starts the world of a loopback case, examines the target and the reference host, and stops the world.
  * The scope of the runner has the ranges of the lab hosts only.
+ *
+ * The visit reads the link of the computer first, as each visit of netdiag does. Without the link, a resolver with no
+ * DNS service and a down interface give the same evidence.
  */
 export async function visitLoopback(labCase: LabCase, options: RunOptions): Promise<Visit> {
   const grants: Grant[] = options.hosts.ranges.map((cidr) => ({ kind: "range", cidr, basis: "owned", note: "a host of the lab" }));
@@ -252,10 +256,12 @@ export async function visitLoopback(labCase: LabCase, options: RunOptions): Prom
   }
   try {
     const runner = createRunner({ scope: scope.value, clock: options.clock ?? realClock });
+    const link = await runner.run(LINK_PROBE, {});
+    const linkProblems = link.status === "done" ? [] : [`The read of the link did not end: ${describeOutcome(link)}.`];
     const target = await visitName(world, options, runner, TARGET_NAME, world.targetPort);
     const reference = await visitName(world, options, runner, REFERENCE_NAME, world.referencePort);
     const primary = new Set(target.facts.map((fact) => fact.id));
-    return { status: "visited", facts: runner.facts(), read: { primary: (fact) => primary.has(fact.id) }, problems: [...target.problems, ...reference.problems] };
+    return { status: "visited", facts: runner.facts(), read: { primary: (fact) => primary.has(fact.id) }, problems: [...linkProblems, ...target.problems, ...reference.problems] };
   } finally {
     await world.close();
   }

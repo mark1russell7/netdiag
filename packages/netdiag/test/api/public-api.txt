@@ -1566,6 +1566,7 @@ declare const MTU_TRY_RESULTS: readonly ["reply", "too-big", "none", "error"];
 ### build/counts.chunk.d.ts#MtuBounds
 interface MtuBounds {
   readonly floor: number;
+  readonly least?: number | undefined;
   readonly ceiling: number;
 }
 
