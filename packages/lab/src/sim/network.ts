@@ -366,29 +366,38 @@ export class SimNetwork {
   }
 
   /** The answer of the DNS of the world to one query of the client, with its time. */
-  dns(name: string, record: "A" | "AAAA", timeoutMs: number): DnsResult {
+  dns(name: string, record: "A" | "AAAA", eachMs: number, tries: number): DnsResult {
     if (this.localError(4) !== undefined) return { code: "ECONNREFUSED", addresses: [], ms: 0.1 };
-    const timeout: DnsResult = { code: "ETIMEOUT", addresses: [], ms: timeoutMs };
+    // As c-ares does, only a lost query or a lost answer starts the next try. An error answer ends the query.
+    for (let done = 0; done < tries; done += 1) {
+      const answer = this.dnsTry(name, record);
+      if (answer !== undefined) return { ...answer, ms: done * eachMs + answer.ms };
+    }
+    return { code: "ETIMEOUT", addresses: [], ms: tries * eachMs };
+  }
+
+  /** The answer of one try of a DNS query, or `undefined` when the query, the answer or the resolver is silent. */
+  private dnsTry(name: string, record: "A" | "AAAA"): DnsResult | undefined {
     const query: Packet = { end: "gateway", family: 4, kind: "dns", size: 80, df: false };
     const answer: Packet = { ...query, size: 120 };
     const gatewayHops = pathOf("gateway", this.setup.medium);
     const first = this.roundTrip(query, answer, gatewayHops);
-    if (first.fate !== "arrive") return timeout;
+    if (first.fate !== "arrive") return undefined;
     let ms = first.ms + 0.2;
     const portal = this.portalAt();
     const refused = (place: "gateway" | "resolver"): boolean => {
       const fault = this.has("dns/refuse", place);
       return fault !== undefined && this.random.chance(share(fault.values));
     };
-    if (this.has("dns/down", "gateway") !== undefined) return timeout;
+    if (this.has("dns/down", "gateway") !== undefined) return undefined;
     if (refused("gateway")) return { code: "EREFUSED", addresses: [], ms };
     if (portal === "gateway") return this.portalAnswer(record, ms);
     // The forwarder of the gateway asks the resolver of the provider. The query crosses the hop of the provider.
     const upstream = pathOf("resolver", this.setup.medium);
     const second = this.roundTrip({ ...query, end: "resolver" }, { ...answer, end: "resolver" }, upstream, upstream.length - 1);
-    if (second.fate !== "arrive") return timeout;
+    if (second.fate !== "arrive") return undefined;
     ms += second.ms - first.ms + 0.5;
-    if (this.has("dns/down", "resolver") !== undefined) return timeout;
+    if (this.has("dns/down", "resolver") !== undefined) return undefined;
     if (refused("resolver")) return { code: "ESERVFAIL", addresses: [], ms };
     if (portal === "provider") return this.portalAnswer(record, ms);
     const end = name === TARGET_NAME ? "target" : name === REFERENCE_NAME ? "reference" : undefined;

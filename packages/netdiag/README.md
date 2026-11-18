@@ -93,7 +93,7 @@ The native probes use only the `node:` modules. They need no outside tool.
 
 | Probe | Id | Facts |
 | --- | --- | --- |
-| `DNS_PROBE` | `dns.query` | `dns.answer`: the outcome, the addresses and the lowest TTL of one query for `A` or `AAAA` records. |
+| `DNS_PROBE` | `dns.query` | `dns.answer`: the outcome, the addresses, the lowest TTL and the tries of one query for `A` or `AAAA` records. |
 | `tcpProbe()` | `tcp.connect` | `tcp.connect`: the outcome and the time of one connect. |
 | `tlsProbe()` | `tls.handshake` | `tcp.connect` and `tls.handshake`: the time of the handshake, the version, the cipher, ALPN and the certificate. |
 | `httpProbe()` | `http.request` | `tcp.connect`, `tls.handshake` for `https`, and `http.response`: the status, some fields of the head and the time to the first byte. |
@@ -101,6 +101,9 @@ The native probes use only the `node:` modules. They need no outside tool.
 
 - A probe connects only to an IP address. The DNS probe gives the addresses of a name first. Thus the runner examines each address against the scope.
 - The peer of the DNS probe is the resolver, not the name.
+- The DNS probe sends a query again after a loss, `DNS_TRIES` (3) times or fewer. The input `tries` changes the count, from 1 to `MAX_DNS_TRIES` (10).
+- The tries share the time limit of the query, and the wait does not double. An error answer, for example `SERVFAIL`, starts no new try. `nodeResolveTxt` does the same.
+- With one try, a loss of 30 % in each direction makes 51 % of the queries time out. With 3 tries, it makes 13 % time out.
 - A time limit or a stop of the signal closes the socket. The probe then gives the outcome `timeout`, or the runner gives `aborted`.
 - The TLS probe does not refuse a certificate that is not valid. It records the problem, for example `expired`, `name` or `untrusted`.
 - The trust tells the root of the chain. `public` is a root of Node.js. `private` is a different root, for example the root of a proxy that examines TLS.

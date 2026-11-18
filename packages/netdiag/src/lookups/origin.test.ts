@@ -2,7 +2,7 @@ import { fakeClock } from "@mark1russell7/algebra/clock";
 import { startDnsServer, type DnsServer } from "@netdiag/fixtures";
 import fc from "fast-check";
 import { afterEach, describe, expect, it } from "vitest";
-import { PATH_ORIGIN, addressBytes, createRunner, isFactOf, scopeOf, type Fact, type Grant, type PathOrigin, type Runner } from "../index.ts";
+import { DNS_TRIES, PATH_ORIGIN, addressBytes, createRunner, isFactOf, scopeOf, type Fact, type Grant, type PathOrigin, type Runner } from "../index.ts";
 import { nodeResolveTxt } from "../probes/native.ts";
 import { CYMRU_ZONES, originQuery, readOrigin } from "./cymru.ts";
 import { ORIGIN_CONCURRENCY, originProbe, type OriginInput, type TxtAnswer, type TxtQuery, type TxtResolve } from "./origin.ts";
@@ -182,7 +182,7 @@ describe("the probe of the origins", () => {
       "1.0.0.1.origin.asn.cymru.com",
       "4.4.8.8.origin.asn.cymru.com",
     ]);
-    expect(port.queries[0]).toEqual({ name: "31.108.90.216.origin.asn.cymru.com", resolver: RESOLVER, port: 53, timeoutMs: 5000 });
+    expect(port.queries[0]).toEqual({ name: "31.108.90.216.origin.asn.cymru.com", resolver: RESOLVER, port: 53, timeoutMs: 5000, tries: DNS_TRIES });
     expect(port.peak()).toBe(ORIGIN_CONCURRENCY);
     expect(outcome.raw.resolver).toBe(`${RESOLVER}:53`);
   });
@@ -218,12 +218,13 @@ describe("the probe of the origins", () => {
     expect(port.queries).toEqual([]);
   });
 
-  it("refuses an input with an address that is not an IP address, a bad resolver, a bad time limit or too many addresses", async () => {
+  it("refuses an input with an address that is not an IP address, a bad resolver, a bad time limit, a bad count of tries or too many addresses", async () => {
     const run = (input: OriginInput) => runnerWith().run(originProbe(fakePort().resolve), input);
     expect(await run({ addresses: ["8.8.8.8", "example.com"], resolver: RESOLVER })).toEqual({ status: "failed", stage: "probe", error: '"example.com" is not an IP address.' });
     expect(await run({ addresses: ["8.8.8.8"], resolver: "dns.example" })).toEqual({ status: "failed", stage: "probe", error: '"dns.example" is not an IP address of a resolver.' });
     expect((await run({ addresses: ["8.8.8.8"], resolver: RESOLVER, port: 0 })).status).toBe("failed");
     expect((await run({ addresses: ["8.8.8.8"], resolver: RESOLVER, timeoutMs: 0 })).status).toBe("failed");
+    expect((await run({ addresses: ["8.8.8.8"], resolver: RESOLVER, tries: 0 })).status).toBe("failed");
     expect((await run({ addresses: Array.from({ length: 65 }, (_, index) => `8.8.${index}.1`), resolver: RESOLVER })).status).toBe("failed");
   });
 

@@ -10,6 +10,10 @@ function isCount(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
+function isTries(value: unknown): value is number {
+  return isCount(value) && value >= 1;
+}
+
 function isOneOf<T extends string>(values: readonly T[], value: unknown): value is T {
   return typeof value === "string" && (values as readonly string[]).includes(value);
 }
@@ -44,6 +48,8 @@ export interface DnsAnswer {
   readonly ms: number;
   /** The error code of the platform for a failure, for example `ENOTFOUND`. */
   readonly code?: string | undefined;
+  /** The most tries of the query. Only a loss starts a new try, so a timeout comes after each try. */
+  readonly tries?: number | undefined;
 }
 
 /** The fact kind `dns.answer`. */
@@ -61,7 +67,8 @@ export const DNS_ANSWER: FactKind<DnsAnswer> = defineFactKind<DnsAnswer>({
     (value["outcome"] !== "ok" || value["addresses"].length > 0) &&
     optional(value["ttl"], isDuration) &&
     isDuration(value["ms"]) &&
-    optional(value["code"], isText),
+    optional(value["code"], isText) &&
+    optional(value["tries"], isTries),
 });
 
 /** The outcomes of a TCP connect. */
