@@ -1,6 +1,6 @@
 import { err, ok, type Result } from "@mark1russell7/optional";
 import { type ClassScore, type Confusion, type Proportion, brier, classScores, confusion, noiseFloor, wilson } from "@mark1russell7/rigor-statistics";
-import type { Catalog, Diagnosis } from "./model.ts";
+import { ALIKE_EPSILON, alikeCauses, type Catalog, type Diagnosis } from "./model.ts";
 
 /** The format of a lab record. */
 export const LAB_RECORD_FORMAT = "netdiag.lab-record/1";
@@ -27,26 +27,24 @@ export interface LabRecord {
   /** The probability of each cause, from the most probable. */
   readonly causes: readonly LabCause[];
   /**
-   * The causes with the same facts as the truth in the world of the case. The facts cannot tell them from the truth. A
-   * record without this field has no such cause.
+   * The causes with the same likelihood of the evidence as the truth (refer to `alikeCauses`). The evidence cannot tell
+   * them from the truth. A record without this field has no such cause.
    */
   readonly alike?: readonly string[] | undefined;
 }
 
 /**
  * This function makes the record of one run of a lab case. The truth must be a hypothesis of the catalog, and the
- * diagnosis must have a cause. `alike` has the causes with the same facts as the truth in the world of the case.
+ * diagnosis must have a cause. The record gets the alike causes of the truth: the result of `alikeCauses` with the
+ * bound `epsilon`.
  */
-export function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, alike: readonly string[] = []): Result<LabRecord, string> {
+export function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, epsilon: number = ALIKE_EPSILON): Result<LabRecord, string> {
   if (!catalog.hypotheses.some((hypothesis) => hypothesis.id === truth)) return err(`The truth "${truth}" is not a hypothesis of the catalog ${catalog.version}.`);
   const first = diagnosis.causes[0];
   if (first === undefined) return err("The diagnosis has no cause.");
   const index = diagnosis.causes.findIndex((cause) => cause.id === truth);
   if (index < 0) return err(`The diagnosis has no cause "${truth}".`);
-  for (const id of alike) {
-    if (id === truth) return err(`The alike cause "${id}" is the truth.`);
-    if (!diagnosis.causes.some((cause) => cause.id === id)) return err(`The diagnosis has no alike cause "${id}".`);
-  }
+  const alike = alikeCauses(catalog, diagnosis, truth, epsilon);
   return ok({
     format: LAB_RECORD_FORMAT,
     case: caseId,
@@ -55,7 +53,7 @@ export function labRecordOf(catalog: Catalog, caseId: string, truth: string, dia
     predicted: first.id,
     rank: index + 1,
     causes: diagnosis.causes.map((cause) => ({ id: cause.id, probability: cause.probability })),
-    ...(alike.length > 0 ? { alike: [...new Set(alike)] } : {}),
+    ...(alike.length > 0 ? { alike } : {}),
   });
 }
 

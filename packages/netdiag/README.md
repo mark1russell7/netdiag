@@ -216,6 +216,7 @@ The entry `@mark1russell7/netdiag/diagnosis` has the probability model. It impor
 | --- | --- |
 | `diagnose(catalog, evidence)` | The probability of each hypothesis, from the most probable. The model is naive Bayes with logarithms. |
 | `explain(catalog, evidence, id)` | The weight of each observation for a cause: the `log10` of its likelihood ratio against `none`. |
+| `alikeCauses(catalog, diagnosis, id, epsilon)` | The causes with the same likelihood of the evidence as a cause. Only their priors put them in an order. The default bound is `ALIKE_EPSILON`. |
 | `predictive(catalog, diagnosis, feature, primary)` | The probability of each value of a feature before a probe observes it. |
 | `rankProbes(catalog, diagnosis, candidates, options)` | The candidate probes from the largest expected information gain over the causes, in bits. The first candidate is the next probe. |
 
@@ -354,14 +355,14 @@ A lab makes one fault on purpose. Then netdiag must name it. The entry `@mark1ru
 
 | Function | What it gives |
 | --- | --- |
-| `labRecordOf(catalog, case, truth, diagnosis, alike)` | The record of one run: the true hypothesis, the predicted cause, the rank of the truth and the probability of each cause. `alike` has the causes with the same facts as the truth. |
+| `labRecordOf(catalog, case, truth, diagnosis, epsilon)` | The record of one run: the true hypothesis, the predicted cause, the rank of the truth and the probability of each cause. It also has the alike causes of the truth. |
 | `scoredCause(record)` | The cause that the score counts as the prediction of a record. |
 | `scoreLab(catalog, records)` | The confusion table, the recall of each hypothesis with its Wilson interval, the accuracy and the mean Brier score. |
 | `labGate(score, bars)` | A verdict for each hypothesis with a bar: `pass`, `fail` or `no-read`. |
 | `labBars(scores, options)` | The bars of the gate from the scores of 5 or more runs of one lab. |
 
 - The recall of a hypothesis is the part of its runs where the diagnosis names it.
-- In some worlds, the facts cannot tell two causes apart. A case of such a world names the other causes as `alike`. The run is a hit when the truth and its alike causes are the first causes of the diagnosis.
+- In some worlds, the facts cannot tell two causes apart. The record then gets these causes from `alikeCauses` as `alike`. The run is a hit when the truth and its alike causes are the first causes of the diagnosis.
 - A hypothesis passes when the lower end of its recall interval is its bar or more.
 - A hypothesis with no runs gets `no-read`, and the gate does not pass.
 - A hypothesis with no bar goes in `unbarred`, for example a fault that no lab can make.

@@ -7,6 +7,7 @@
 ## . (build/index.d.ts): names
 
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
+ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
 type Availability: build/counts.chunk.d.ts#Availability
@@ -299,6 +300,7 @@ addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
+alikeCauses: build/index.chunk2.d.ts#alikeCauses
 bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
@@ -389,6 +391,7 @@ wifiSignalOf: build/core.chunk.d.ts#wifiSignalOf
 ## ./core (build/core.d.ts): names
 
 ADDRESS_CLASSES: build/index.chunk.d.ts#ADDRESS_CLASSES
+ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
 AddressClass: build/index.chunk.d.ts#AddressClass
 AddressFamily: build/index.chunk.d.ts#AddressFamily
 type Availability: build/counts.chunk.d.ts#Availability
@@ -629,6 +632,7 @@ addressBytes: build/index.chunk.d.ts#addressBytes
 addressClass: build/index.chunk.d.ts#addressClass
 addressFamily: build/index.chunk.d.ts#addressFamily
 addressKind: build/index.chunk.d.ts#addressKind
+alikeCauses: build/index.chunk2.d.ts#alikeCauses
 bandwidthOf: build/core.chunk.d.ts#bandwidthOf
 binOf: build/core.chunk.d.ts#binOf
 canonicalAddress: build/index.chunk.d.ts#canonicalAddress
@@ -717,6 +721,7 @@ parseCidr: build/index.chunk.d.ts#parseCidr
 
 ## ./diagnosis (build/diagnosis.d.ts): names
 
+ALIKE_EPSILON: build/index.chunk2.d.ts#ALIKE_EPSILON
 type Candidate: build/index.chunk2.d.ts#Candidate
 type Catalog: build/index.chunk2.d.ts#Catalog
 type CatalogSpec: build/index.chunk2.d.ts#CatalogSpec
@@ -770,6 +775,7 @@ STANDARD_FEATURES: build/index.chunk2.d.ts#STANDARD_FEATURES
 STRENGTHS: build/index.chunk2.d.ts#STRENGTHS
 type Strength: build/index.chunk2.d.ts#Strength
 UNKNOWN: build/index.chunk2.d.ts#UNKNOWN
+alikeCauses: build/index.chunk2.d.ts#alikeCauses
 causeVariants: build/index.chunk2.d.ts#causeVariants
 compileCatalog: build/index.chunk2.d.ts#compileCatalog
 diagnose: build/index.chunk2.d.ts#diagnose
@@ -2046,6 +2052,9 @@ declare function ipVersion(text: string): 0 | 4 | 6;
 ### build/index.chunk.d.ts#parseCidr
 declare function parseCidr(text: string): Result<Cidr, string>;
 
+### build/index.chunk2.d.ts#ALIKE_EPSILON
+declare const ALIKE_EPSILON = .01;
+
 ### build/index.chunk2.d.ts#Candidate
 interface Candidate {
   readonly id: string;
@@ -2337,6 +2346,9 @@ type Strength = "sure" | "strong" | "usual" | "weak";
 ### build/index.chunk2.d.ts#UNKNOWN
 declare const UNKNOWN = "unknown";
 
+### build/index.chunk2.d.ts#alikeCauses
+declare function alikeCauses(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon?: number): readonly string[];
+
 ### build/index.chunk2.d.ts#causeVariants
 declare function causeVariants(cause: Cause): readonly CauseVariant[];
 
@@ -2359,7 +2371,7 @@ declare function labBars(scores: readonly LabRecalls[], options?: LabBarsOptions
 declare function labGate(score: LabRecalls, bars: LabBars): Result<LabGate, string[]>;
 
 ### build/index.chunk2.d.ts#labRecordOf
-declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, alike?: readonly string[]): Result<LabRecord, string>;
+declare function labRecordOf(catalog: Catalog, caseId: string, truth: string, diagnosis: Diagnosis, epsilon?: number): Result<LabRecord, string>;
 
 ### build/index.chunk2.d.ts#predictive
 declare function predictive(catalog: Catalog, diagnosis: Diagnosis, feature: string, primary: boolean): Distribution;

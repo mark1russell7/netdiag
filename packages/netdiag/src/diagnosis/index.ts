@@ -4,12 +4,14 @@
  * This entry imports no `node:` module, so a browser can also use it.
  */
 export {
+  ALIKE_EPSILON,
   FLOOR,
   NONE,
   PARTS,
   REACHES,
   STRENGTHS,
   UNKNOWN,
+  alikeCauses,
   causeVariants,
   compileCatalog,
   diagnose,

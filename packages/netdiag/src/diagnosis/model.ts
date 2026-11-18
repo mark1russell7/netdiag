@@ -520,6 +520,31 @@ export function causeVariants(cause: Cause): readonly CauseVariant[] {
   return cause.reaches !== undefined && cause.reaches.length > 0 ? cause.reaches : [{ reach: undefined, probability: cause.probability }];
 }
 
+/**
+ * The default bound of `alikeCauses`, as a difference of natural logarithms. The floor of a prediction and the small
+ * shares of the other degrees of a fault give smaller differences.
+ */
+export const ALIKE_EPSILON = 0.01;
+
+/**
+ * This function gives the causes of a diagnosis with the same likelihood of the evidence as `cause`, from the most
+ * probable. Two likelihoods are the same when the difference of their natural logarithms is `epsilon` or less.
+ *
+ * - The evidence cannot tell these causes from `cause`. Only their priors put them in an order.
+ * - The likelihood of a cause is its probability divided by its prior, by the rule of Bayes. For a fault with variants,
+ *   it is the sum of the variants, by their shares of the prior.
+ * - A cause that is not in the diagnosis, or that has the probability 0, has no alike cause.
+ * - A bound below 0 is a `RangeError`.
+ */
+export function alikeCauses(catalog: Catalog, diagnosis: Diagnosis, cause: string, epsilon: number = ALIKE_EPSILON): readonly string[] {
+  if (!(epsilon >= 0)) throw new RangeError(`The bound of the alike causes is ${epsilon}. It must be 0 or more.`);
+  const logLikelihood = (each: Cause): number => Math.log(each.probability) - Math.log(catalog.prior(each.id));
+  const self = diagnosis.causes.find((each) => each.id === cause);
+  if (self === undefined || !(self.probability > 0)) return [];
+  const base = logLikelihood(self);
+  return diagnosis.causes.filter((each) => each.id !== cause && each.probability > 0 && Math.abs(logLikelihood(each) - base) <= epsilon).map((each) => each.id);
+}
+
 /** The part of one observation in the comparison of two hypotheses. */
 export interface Contribution {
   readonly evidence: Evidence;

@@ -1,7 +1,7 @@
 import { wilson } from "@mark1russell7/rigor-statistics";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { LAB_RECORD_FORMAT, STANDARD_CATALOG, diagnose, labBars, labGate, labRecordOf, scoreLab, scoredCause, type LabRecalls, type LabRecord, type LabScore } from "./index.ts";
+import { LAB_RECORD_FORMAT, STANDARD_CATALOG, alikeCauses, diagnose, labBars, labGate, labRecordOf, scoreLab, scoredCause, type LabRecalls, type LabRecord, type LabScore } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
 const ids = catalog.hypotheses.map((hypothesis) => hypothesis.id);
@@ -44,14 +44,15 @@ describe("labRecordOf", () => {
     expect(result.tag === "ok" && result.value.rank).toBeGreaterThan(1);
   });
 
-  it("keeps the alike causes of a case, and refuses an alike cause that is the truth or not a cause", () => {
-    const diagnosis = diagnose(catalog, [{ feature: "tcp.connect", value: "timeout", primary: true }]);
-    const result = labRecordOf(catalog, "filter.drop/all", "filter.drop", diagnosis, ["host.down", "host.down"]);
-    expect(result.tag === "ok" && result.value.alike).toEqual(["host.down"]);
-    const plain = labRecordOf(catalog, "lab", "filter.drop", diagnosis);
-    expect(plain.tag === "ok" && "alike" in plain.value).toBe(false);
-    expect(labRecordOf(catalog, "lab", "filter.drop", diagnosis, ["filter.drop"])).toMatchObject({ tag: "err" });
-    expect(labRecordOf(catalog, "lab", "filter.drop", diagnosis, ["dns.slow"])).toMatchObject({ tag: "err" });
+  it("gives the record the alike causes of the truth, and no field when the truth has none", () => {
+    // The record keeps the result of alikeCauses for its truth. A wide bound makes each cause alike.
+    const diagnosis = diagnose(catalog, [{ feature: "tcp.connect", value: "refused", primary: true }]);
+    const alike = alikeCauses(catalog, diagnosis, "port.closed");
+    const result = labRecordOf(catalog, "port.closed/refused", "port.closed", diagnosis);
+    expect(result.tag === "ok" && (result.value.alike ?? [])).toEqual(alike);
+    expect(result.tag === "ok" && "alike" in result.value).toBe(alike.length > 0);
+    const wide = labRecordOf(catalog, "lab", "port.closed", diagnosis, 100);
+    expect(wide.tag === "ok" && wide.value.alike?.length).toBe(ids.length - 1);
   });
 
   it("refuses a truth that is not a hypothesis, and a diagnosis with no cause", () => {

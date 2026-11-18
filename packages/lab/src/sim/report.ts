@@ -1,4 +1,4 @@
-import { labBars, STANDARD_CATALOG, type LabBars, type LabRecalls } from "@mark1russell7/netdiag";
+import { labBars, scoredCause, STANDARD_CATALOG, type LabBars, type LabRecalls } from "@mark1russell7/netdiag";
 import type { Result } from "@mark1russell7/optional";
 import { countOf } from "@mark1russell7/text";
 import { faultsOf, faultValues } from "../grammar.ts";
@@ -14,8 +14,8 @@ import { simVisit } from "./world.ts";
 export const SIM_SEEDS = 5;
 
 /**
- * The result of one case in one seed: the class that netdiag gave, or the reason of a visit with no read. `visits` is 1,
- * or more when a fault passed each of its draws in a visit.
+ * The result of one case in one seed: the class that the score counts (refer to `scoredCause`), or the reason of a visit
+ * with no read. `visits` is 1, or more when a fault passed each of its draws in a visit.
  */
 export interface SimOutcome {
   readonly seed: number;
@@ -57,7 +57,7 @@ export async function simRuns(seeds: number = SIM_SEEDS): Promise<SimRuns> {
       const labCase = byId.get(run.case);
       if (labCase === undefined) continue;
       const count = visits.get(run.case) ?? 1;
-      outcomes.push(run.status === "read" ? { seed, case: labCase, predicted: run.record.predicted, visits: count } : { seed, case: labCase, predicted: undefined, reason: run.reason, visits: count });
+      outcomes.push(run.status === "read" ? { seed, case: labCase, predicted: scoredCause(run.record), visits: count } : { seed, case: labCase, predicted: undefined, reason: run.reason, visits: count });
     }
     if (report.noReads.length > 0) problems.push(`The seed ${seed} has ${countOf(report.noReads.length, "case")} with no read.`);
     for (const problem of report.problems) problems.push(`The seed ${seed}: ${problem}`);

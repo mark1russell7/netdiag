@@ -32,12 +32,6 @@ describe("readVisit", () => {
     if (run.status === "read") expect("alike" in run.record).toBe(false);
   });
 
-  it("gives the record the causes with the same facts as the truth", () => {
-    const alike: CaseBase = { ...REFUSED, alike: { causes: ["host.down"], reason: "A test." } };
-    const run = readVisit(alike, 0, visited([connect("f1", "refused")]), STANDARD_CATALOG);
-    expect(run.status === "read" && run.record.alike).toEqual(["host.down"]);
-  });
-
   it("gives no read for a missing sign, a problem of a probe and no visit", () => {
     const missing = readVisit(REFUSED, 0, visited([connect("f1", "connected")]), STANDARD_CATALOG);
     expect(missing).toMatchObject({ status: "no-read", reason: "The world did not show the signs tcp.connect=refused@target." });
