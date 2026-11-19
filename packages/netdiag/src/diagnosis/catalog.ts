@@ -603,8 +603,10 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     predicts: {
       "tls.ratio": { expect: ["mid", "high"], strength: "usual" },
       // The device gives a certificate from a root that the client was made to trust, or from no trusted root. A public
-      // root needs a public certificate that an authority gave in error. The rules of the public authorities forbid such
-      // a certificate, and the browsers remove an authority that gives one. Thus a public trust gets the floor.
+      // root needs a public certificate that an authority gave in error. Section 3.2.2.4 of the Baseline Requirements of
+      // the CA/Browser Forum lets an authority give a certificate only after a check that the applicant controls the name.
+      // Browsers remove an authority that breaks this rule, as Chrome did with CNNIC in 2015 after a proxy used its
+      // certificates. Thus a public trust gets the floor.
       "tls.trust": { private: 1 - FLOOR, public: FLOOR },
       "tls.root": { expect: "changed", strength: "usual" },
       "tcp.time": { expect: "short", strength: "strong" },
