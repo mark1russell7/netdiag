@@ -1,12 +1,13 @@
 // The fit of the action policy of netdiag on the simulated world (ND-18). The fit uses seeds that the gate does not
-// use. A coordinate descent on a grid of pairs of temperatures finds the calibration map, and then a sweep of harmful
-// costs finds the least cost that keeps the harm of each class at the limit or under it, on each fit set. A last sweep
-// of needless costs finds the least cost that keeps the false actions on healthy targets at the limit or under it.
+// use. A coordinate descent on a grid of pairs of temperatures finds the calibration map. At each pair, a fit by maximum
+// likelihood gives the scale of each kind of action. Then a sweep of harmful costs finds the least cost that keeps the
+// harm of each class at the limit or under it, on each fit set. A last sweep of needless costs finds the least cost
+// that keeps the false actions on healthy targets at the limit or under it.
 
-import { checkPolicy, type ActionCosts, type ActionPolicy, type Calibration } from "@mark1russell7/netdiag";
-import { brier } from "@mark1russell7/rigor-statistics";
+import { ACTION_KINDS, checkPolicy, kindProbabilities, temper, type ActionCosts, type ActionKind, type ActionPolicy, type Calibration, type KindScale } from "@mark1russell7/netdiag";
+import { brier, vectorScaling, type ClassForecast, type VectorScalingFit } from "@mark1russell7/rigor-statistics";
 import { faultsOf, faultValues, NO_FAULT } from "../grammar.ts";
-import { actionClasses, falseHighOf, harmHighOf, SIM_HARM_LIMIT, truthForecasts, withPolicy, type SimOutcome } from "./report.ts";
+import { actionClasses, falseHighOf, harmHighOf, SIM_HARM_LIMIT, truthForecasts, withPolicy, type SimOutcome, type SimTruth } from "./report.ts";
 
 /**
  * The sets of five seeds of the fit of the policy: 101 to 125. The gate examines one set of five seeds, thus the harmful
@@ -38,10 +39,36 @@ export const SIM_NEEDLESS_COSTS: readonly number[] = [1, 1.5, 2, 3, 4, 5, 6, 8, 
 /** The file of `STANDARD_POLICY` in the package `@mark1russell7/netdiag`. The command of the sim writes it with --write. */
 export const STANDARD_POLICY_FILE: URL = new URL("../../../netdiag/src/diagnosis/standard-policy.ts", import.meta.url);
 
-/** One step of the descent on the grid: the calibration map, and the Brier score of the kind probabilities of the fit with it. */
+/** One step of the descent on the grid: a pair of temperatures, and its score with the best scales of the kinds at the pair. */
 export interface TemperatureStep {
-  readonly calibration: Calibration;
-  readonly brier: number;
+  readonly cause: number;
+  readonly variant: number;
+  /**
+   * The mean log loss of the kind probabilities of the fit cases, with 4 places. A pair whose temperatures give the
+   * probability 0 to more correct kinds than the diagnosis does has no score: `null`.
+   */
+  readonly logLoss: number | null;
+}
+
+/** The scale of one kind at the chosen pair of temperatures, with the standard errors of the fit. */
+export interface KindScaleStep extends KindScale {
+  readonly kind: ActionKind;
+  readonly slopeSe: number;
+  readonly biasSe: number;
+}
+
+/** The fit of the scales of the kinds at the chosen pair of temperatures. */
+export interface ScaleFit {
+  readonly kinds: readonly KindScaleStep[];
+  /** The fit cases with a truth. */
+  readonly cases: number;
+  /** The cases whose diagnosis gives the probability 0 to the correct kind. The fit does not use them. */
+  readonly skipped: number;
+  readonly iterations: number;
+  readonly converged: boolean;
+  /** The Brier score of the kind probabilities at the chosen pair, before the scales and after them. */
+  readonly brierBefore: number;
+  readonly brierAfter: number;
 }
 
 /**
@@ -68,11 +95,12 @@ export interface CostStep {
 export interface PolicyFit {
   readonly sets: readonly (readonly number[])[];
   /**
-   * The policy of the fit. It has the calibration map with the least Brier score, and the least harmful cost that keeps
+   * The policy of the fit. It has the calibration map with the least log loss, and the least harmful cost that keeps
    * the harm at the limit. It also has the least needless cost that keeps the false actions at the limit.
    */
   readonly policy: ActionPolicy;
   readonly temperatures: readonly TemperatureStep[];
+  readonly scale: ScaleFit;
   readonly costs: readonly CostStep[];
   /** The steps of the sweep of needless costs, up to the first cost that keeps the false actions and the harm at the limit. */
   readonly needless: readonly CostStep[];
@@ -82,6 +110,18 @@ export interface PolicyFit {
 
 const third = (value: number): number => Math.round(value * 1000) / 1000;
 const fourth = (value: number): number => Math.round(value * 10_000) / 10_000;
+
+/** This function gives the forecast of the correct kind of each truth, with the temperatures of a calibration map and no scales. */
+export function kindRows(truths: readonly SimTruth[], cause: number, variant: number): ClassForecast[] {
+  return truths.map((truth) => {
+    const sums = kindProbabilities(temper(truth.variants, { cause, variant }));
+    return { probabilities: ACTION_KINDS.map((kind) => sums[kind] ?? 0), label: ACTION_KINDS.indexOf(truth.rule.action.kind) };
+  });
+}
+
+/** This function gives the scale of each kind from a fit, with 3 places. A scale with 3 places is the scale of `STANDARD_POLICY`. */
+const scaleOf = (scaled: VectorScalingFit): Partial<Record<ActionKind, KindScale>> =>
+  Object.fromEntries(ACTION_KINDS.map((kind, index) => [kind, { slope: third(scaled.slopes[index] as number), bias: third(scaled.biases[index] as number) }]));
 
 /** This function gives the Brier score of the kind probabilities of the outcomes with a truth, with a calibration map. */
 export function kindBrier(outcomes: readonly SimOutcome[], calibration: Calibration): number {
@@ -149,12 +189,15 @@ export function sweepNeedless(outcomes: readonly SimOutcome[], calibration: Cali
 /**
  * This function fits the policy on the outcomes of the fit seeds.
  *
- * - The calibration map comes from a coordinate descent on the pairs of `SIM_TEMPERATURES`, from the pair (1, 1). Each
+ * - The temperatures come from a coordinate descent on the pairs of `SIM_TEMPERATURES`, from the pair (1, 1). Each
  *   round finds the best cause temperature for the variant temperature, and then the best variant temperature for it.
  *   The descent stops when a round changes no temperature.
- * - The Brier scores have 4 places. The data cannot tell apart two maps with the same score, thus a tie goes to the
+ * - At each pair, `vectorScaling` of `@mark1russell7/rigor-statistics` fits the slope and the bias of each kind by
+ *   maximum likelihood. The score of the pair is the mean log loss after these scales. This fit is a profile likelihood.
+ * - The log loss is a proper score, and it is the objective of the scales. Thus the temperatures and the scales have one objective.
+ * - The scores have 4 places. The data cannot tell apart two pairs with the same score, thus a tie goes to the
  *   temperature nearest 1. That map changes the diagnosis least.
- * - The Brier score is of the outcomes of all fit sets.
+ * - The score is of the outcomes of all fit sets.
  * - The harmful cost is the least cost of `SIM_HARM_COSTS` whose harm high end is at `SIM_HARM_LIMIT` or under it, on each set.
  * - With no such cost, the fit takes the highest cost and gives a problem. A set with no outcomes also gives a problem.
  * - The needless cost is the least cost of `SIM_NEEDLESS_COSTS` that keeps two rates at `SIM_HARM_LIMIT` or under it, on
@@ -163,34 +206,57 @@ export function sweepNeedless(outcomes: readonly SimOutcome[], calibration: Cali
  *   actions do not increase, and the sweep stops at the first cost that passes.
  */
 export function fitPolicy(outcomes: readonly SimOutcome[], sets: readonly (readonly number[])[] = SIM_FIT_SETS): PolicyFit {
+  const truths = outcomes.flatMap((each) => (each.truth === undefined ? [] : [each.truth]));
+  // A temperature keeps a probability of 0 at 0. Thus each pair skips these cases, and a pair that skips more lost a correct kind to underflow.
+  const zeros = truths.filter((truth) => !truth.variants.some((each) => each.probability > 0 && each.rule.action.kind === truth.rule.action.kind)).length;
   const temperatures: TemperatureStep[] = [];
-  const scoreOf = (calibration: Calibration): number => {
-    const known = temperatures.find((step) => step.calibration.cause === calibration.cause && step.calibration.variant === calibration.variant);
-    if (known !== undefined) return known.brier;
-    const step = { calibration, brier: fourth(kindBrier(outcomes, calibration)) };
-    temperatures.push(step);
-    return step.brier;
+  const scoreOf = (cause: number, variant: number): number => {
+    let step = temperatures.find((each) => each.cause === cause && each.variant === variant);
+    if (step === undefined) {
+      const scaled = vectorScaling(ACTION_KINDS.length, kindRows(truths, cause, variant));
+      step = { cause, variant, logLoss: scaled.skipped > zeros ? null : fourth(-scaled.logLikelihood / (truths.length - zeros)) };
+      temperatures.push(step);
+    }
+    return step.logLoss ?? Number.POSITIVE_INFINITY;
   };
-  const bestOf = (axis: keyof Calibration, make: (temperature: number) => Calibration): Calibration =>
+  type Pair = { readonly cause: number; readonly variant: number };
+  const bestOf = (axis: keyof Pair, make: (temperature: number) => Pair): Pair =>
     SIM_TEMPERATURES.map(make).reduce((best, each) => {
-      const [score, bestScore] = [scoreOf(each), scoreOf(best)];
+      const [score, bestScore] = [scoreOf(each.cause, each.variant), scoreOf(best.cause, best.variant)];
       return score < bestScore || (score === bestScore && Math.abs(Math.log(each[axis])) < Math.abs(Math.log(best[axis]))) ? each : best;
     });
-  let calibration: Calibration = { cause: 1, variant: 1 };
+  let pair: Pair = { cause: 1, variant: 1 };
   for (let round = 0; round < SIM_TEMPERATURES.length; round++) {
-    const cause = bestOf("cause", (temperature) => ({ cause: temperature, variant: calibration.variant })).cause;
+    const cause = bestOf("cause", (temperature) => ({ cause: temperature, variant: pair.variant })).cause;
     const next = bestOf("variant", (temperature) => ({ cause, variant: temperature }));
-    if (next.cause === calibration.cause && next.variant === calibration.variant) break;
-    calibration = next;
+    if (next.cause === pair.cause && next.variant === pair.variant) break;
+    pair = next;
   }
   const problems: string[] = [];
   for (const seeds of sets) {
     if (!outcomes.some((each) => seeds.includes(each.seed))) problems.push(`The fit set of the seeds ${seeds.join(", ")} has no outcomes.`);
   }
   const ends = [SIM_TEMPERATURES[0], SIM_TEMPERATURES[SIM_TEMPERATURES.length - 1]];
-  for (const [name, temperature] of Object.entries(calibration)) {
+  for (const [name, temperature] of Object.entries(pair)) {
     if (ends.includes(temperature)) problems.push(`The ${name} temperature ${temperature} is at an end of the sweep. Make the sweep wider.`);
   }
+  const scaled = vectorScaling(ACTION_KINDS.length, kindRows(truths, pair.cause, pair.variant));
+  if (!scaled.converged) problems.push(`The fit of the scales of the kinds did not converge in ${scaled.iterations} steps.`);
+  const calibration: Calibration = { ...pair, scale: scaleOf(scaled) };
+  const scale: ScaleFit = {
+    kinds: ACTION_KINDS.map((kind, index) => ({
+      kind,
+      ...(calibration.scale?.[kind] as KindScale),
+      slopeSe: third(scaled.slopeSe[index] as number),
+      biasSe: third(scaled.biasSe[index] as number),
+    })),
+    cases: truths.length,
+    skipped: scaled.skipped,
+    iterations: scaled.iterations,
+    converged: scaled.converged,
+    brierBefore: fourth(kindBrier(outcomes, pair)),
+    brierAfter: fourth(kindBrier(outcomes, calibration)),
+  };
   const costs = SIM_HARM_COSTS.map((harmful) => costStep(outcomes, policyAt(calibration, harmful), sets));
   const passed = costs.find((step) => step.harmHigh <= SIM_HARM_LIMIT);
   if (passed === undefined) problems.push(`No harmful cost of the sweep keeps the harm of each class at ${SIM_HARM_LIMIT} or under it on each fit set.`);
@@ -202,17 +268,22 @@ export function fitPolicy(outcomes: readonly SimOutcome[], sets: readonly (reado
   }
   const policy = policyAt(calibration, harmful, last?.needless ?? SIM_UNIT_COSTS.useless);
   problems.push(...checkPolicy(policy));
-  return { sets, policy, temperatures, costs, needless, problems };
+  return { sets, policy, temperatures, scale, costs, needless, problems };
 }
 
-/** This function gives the text of the file `bars/policy.json`: the seed sets, the policy and the steps of the three sweeps. */
+/** This function gives the text of the file `bars/policy.json`: the seed sets, the policy, the steps of the sweeps and the scales. */
 export function policyText(fit: PolicyFit): string {
-  return `${JSON.stringify({ sets: fit.sets, policy: fit.policy, temperatures: fit.temperatures, costs: fit.costs, needless: fit.needless }, null, 2)}\n`;
+  return `${JSON.stringify({ sets: fit.sets, policy: fit.policy, temperatures: fit.temperatures, scale: fit.scale, costs: fit.costs, needless: fit.needless }, null, 2)}\n`;
 }
 
 /** This function gives the text of the file of `STANDARD_POLICY` for a policy. */
 export function policySource(policy: ActionPolicy): string {
   const { calibration, costs } = policy;
+  const scales = ACTION_KINDS.flatMap((kind) => {
+    const scale = calibration.scale?.[kind];
+    return scale === undefined ? [] : [`      ${/^[a-z]+$/.test(kind) ? kind : JSON.stringify(kind)}: { slope: ${scale.slope}, bias: ${scale.bias} },`];
+  });
+  const scaleLines = scales.length === 0 ? "" : `\n    scale: {\n${scales.join("\n")}\n    },`;
   return `// This file is data. The command of the simulated world of the lab writes it with --write, from seeds that its gate does not use.
 
 import type { ActionPolicy } from "./actions.ts";
@@ -220,32 +291,45 @@ import type { ActionPolicy } from "./actions.ts";
 /**
  * The policy of \`chooseAction\` for \`STANDARD_CATALOG\` and \`STANDARD_ACTIONS\`.
  *
- * - The two temperatures give the least Brier score of the kind probabilities on the held-out seeds of the sim.
+ * - The two temperatures and the scale of each kind give the least log loss of the kind probabilities on the held-out
+ *   seeds of the sim. Each pair of temperatures gets the scales that fit best at it.
  * - The harmful cost is the least cost that keeps the harm of each class at the limit or under it, on each seed set.
  * - The needless cost is the least cost that keeps the false actions on healthy targets at the limit or under it.
  */
-export const STANDARD_POLICY: ActionPolicy = { calibration: { cause: ${calibration.cause}, variant: ${calibration.variant} }, costs: { none: ${costs.none}, useless: ${costs.useless}, needless: ${costs.needless}, harmful: ${costs.harmful} } };
+export const STANDARD_POLICY: ActionPolicy = {
+  calibration: {
+    cause: ${calibration.cause},
+    variant: ${calibration.variant},${scaleLines}
+  },
+  costs: { none: ${costs.none}, useless: ${costs.useless}, needless: ${costs.needless}, harmful: ${costs.harmful} },
+};
 `;
 }
 
-/** This function gives the summary of the fit as Markdown: the policy, a grid of the Brier scores, and a table of the costs. */
+/** This function gives the summary of the fit as Markdown: the policy, a grid of log losses, the scales and the costs. */
 export function policySummary(fit: PolicyFit): string {
-  const { policy } = fit;
+  const { policy, scale } = fit;
   const { cause, variant } = policy.calibration;
   const cellOf = (c: number, v: number): string => {
-    const step = fit.temperatures.find((each) => each.calibration.cause === c && each.calibration.variant === v);
-    return step === undefined ? "–" : `${step.brier}${c === cause && v === variant ? " (chosen)" : ""}`;
+    const step = fit.temperatures.find((each) => each.cause === c && each.variant === v);
+    return step === undefined ? "–" : `${step.logLoss ?? "∞"}${c === cause && v === variant ? " (chosen)" : ""}`;
   };
   const lines = [
     "## The policy of the actions",
     "",
     `The fit uses ${fit.sets.length} sets of seeds, from ${fit.sets[0]?.[0]} to ${fit.sets.at(-1)?.at(-1)}. The gate does not use them. The policy has the cause temperature ${cause}, the variant temperature ${variant}, the harmful cost ${policy.costs.harmful} and the needless cost ${policy.costs.needless}.`,
     "",
-    "The Brier score of the kind probabilities at each pair of temperatures of the descent. The rows are the cause temperatures, and the columns are the variant temperatures.",
+    "The mean log loss of the kind probabilities at each pair of temperatures of the descent, after the scales that fit at the pair. The rows are the cause temperatures, and the columns are the variant temperatures. A pair with ∞ gives the probability 0 to a correct kind.",
     "",
     `| Cause \\ variant | ${SIM_TEMPERATURES.join(" | ")} |`,
     `| --- | ${SIM_TEMPERATURES.map(() => "---").join(" | ")} |`,
-    ...SIM_TEMPERATURES.filter((c) => fit.temperatures.some((step) => step.calibration.cause === c)).map((c) => `| ${c} | ${SIM_TEMPERATURES.map((v) => cellOf(c, v)).join(" | ")} |`),
+    ...SIM_TEMPERATURES.filter((c) => fit.temperatures.some((step) => step.cause === c)).map((c) => `| ${c} | ${SIM_TEMPERATURES.map((v) => cellOf(c, v)).join(" | ")} |`),
+    "",
+    `The scale of each kind at the chosen pair, from ${scale.cases - scale.skipped} of ${scale.cases} cases. The fit skips ${scale.skipped} cases whose diagnosis gives the probability 0 to the correct kind. It ${scale.converged ? "converged" : "did not converge"} in ${scale.iterations} steps. The Brier score of the kind probabilities is ${scale.brierBefore} before the scales and ${scale.brierAfter} after them.`,
+    "",
+    "| Kind | Slope | Its standard error | Bias | Its standard error |",
+    "| --- | --- | --- | --- | --- |",
+    ...scale.kinds.map((each) => `| ${each.kind} | ${each.slope} | ${each.slopeSe} | ${each.bias} | ${each.biasSe} |`),
     "",
     `| Harmful cost | The class with the most harm | Its harm high end | The worst high end of each set | Correct, all classes |`,
     "| --- | --- | --- | --- | --- |",

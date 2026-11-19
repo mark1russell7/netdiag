@@ -276,12 +276,16 @@ const result = diagnose(STANDARD_CATALOG, [
 
 The probabilities go through a calibration map first. `calibration.cause` tempers the probability of each cause, and `calibration.variant` tempers the share of each variant in its cause. A temperature t raises each probability to the power 1 / t, and then the map divides each by their sum.
 
+Then `calibration.scale` gives each kind of action a slope and a bias. A kind with the probability p gets the weight `p ** slope * e ** bias`, and the map divides each weight by their sum. This map is the vector scaling of Guo and others (2017). Each variant keeps its share in its kind. A slope changes the certainty of one kind, and a bias moves probability between the kinds.
+
 `STANDARD_POLICY` is data. The simulated world of the lab fits it on five sets of seeds that its gate does not use.
 
-- The two temperatures give the least Brier score of the probabilities of the kinds, on the cases of all five sets.
+- At each pair of temperatures, `vectorScaling` of `@mark1russell7/rigor-statistics` fits the scales of the kinds by maximum likelihood.
+- The pair of temperatures with its scales gives the least log loss of the probabilities of the kinds, on the cases of all five sets.
 - The harmful cost is the least cost that keeps the harm of each class at 0.05 or under it, on each set.
 - The harm of a class is the higher high end of two intervals. One is a Wilson interval. The other is a bootstrap that draws the terms again.
 - The gate of the sim also holds the correct low end of each class, and the calibration error of the chosen kinds of all cases.
+- Each bin of the chosen kinds with 30 cases or more gets an exact test of its hits. The Holm correction over the bins holds the level 0.05.
 
 ## Readers
 

@@ -1,4 +1,5 @@
 import { causeVariants, NONE, UNKNOWN, type Catalog, type Diagnosis, type Reach } from "./model.ts";
+import { scaledProbabilities } from "@mark1russell7/rigor-statistics";
 import { STANDARD_POLICY } from "./standard-policy.ts";
 
 /**
@@ -80,14 +81,32 @@ export interface ActionCosts {
 }
 
 /**
- * The calibration map of the probabilities of the variants: two temperatures. A temperature `t` raises each probability
- * to the power `1 / t`, and then it divides each by their sum. A temperature over 1 makes a probability less certain.
+ * The calibration map of the probabilities of the variants: two temperatures, and a scale for each kind of action. A
+ * temperature `t` raises each probability to the power `1 / t`, and then it divides each by their sum. A temperature
+ * over 1 makes a probability less certain.
+ *
+ * The scales come after the temperatures. They are the vector scaling of Guo and others (2017), from `vectorScaling`
+ * of `@mark1russell7/rigor-statistics`. A kind with the probability `p` gets the weight `p ** slope * e ** bias`. Then
+ * the map divides each weight by their sum. Each variant keeps its share in its kind.
+ *
+ * A temperature changes the certainty of all kinds together. A scale changes the certainty of one kind and moves
+ * probability between the kinds. A kind with no scale has the slope 1 and the bias 0.
  */
 export interface Calibration {
   /** The temperature of the probability of each cause: the sum of the probabilities of its variants. */
   readonly cause: number;
   /** The temperature of the share of each variant in its cause: its reach and its degree. */
   readonly variant: number;
+  /** The scale of each kind of action. The map applies the scales to the probability of each kind after the temperatures. */
+  readonly scale?: Readonly<Partial<Record<ActionKind, KindScale>>> | undefined;
+}
+
+/** The scale of one kind of action in a calibration map: the slope of the logarithm of its probability, and a bias. */
+export interface KindScale {
+  /** The slope. A slope over 1 makes the kind more certain where its probability is high. It must be over 0. */
+  readonly slope: number;
+  /** The bias, as a natural logarithm. A bias over 0 moves probability to the kind. */
+  readonly bias: number;
 }
 
 /** The calibration map that keeps each probability. */
@@ -108,15 +127,22 @@ export interface ActionPolicy {
 /**
  * This function gives the problems of a policy. An empty list tells that the policy is correct.
  *
- * - Each temperature is a finite number over 0.
+ * - Each temperature is a finite number over 0. Each bias is a finite number of a kind of action.
  * - The cost of `none` is over 0. A useless action costs as much as `none` or more. A harmful action costs more than a useless action.
  * - A needless action costs as much as a useless action or more, and not more than a harmful action.
  */
 export function checkPolicy(policy: ActionPolicy): string[] {
   const problems: string[] = [];
   const { calibration, costs } = policy;
-  for (const [name, temperature] of Object.entries(calibration)) {
+  for (const name of ["cause", "variant"] as const) {
+    const temperature = calibration[name];
     if (!Number.isFinite(temperature) || temperature <= 0) problems.push(`The temperature of the ${name} is ${temperature}. It must be a finite number over 0.`);
+  }
+  for (const [kind, scale] of Object.entries(calibration.scale ?? {})) {
+    if (!(ACTION_KINDS as readonly string[]).includes(kind)) problems.push(`The calibration map has a scale of ${kind}, which is not a kind of action.`);
+    else if (!(scale !== undefined && scale.slope > 0 && Number.isFinite(scale.slope) && Number.isFinite(scale.bias))) {
+      problems.push(`The scale of ${kind} has the slope ${scale?.slope} and the bias ${scale?.bias}. The slope must be a finite number over 0, and the bias a finite number.`);
+    }
   }
   if (!(costs.none > 0) || !Number.isFinite(costs.none)) problems.push(`The cost of none is ${costs.none}. It must be a finite number over 0.`);
   if (!(costs.useless >= costs.none) || !Number.isFinite(costs.useless)) problems.push(`The cost of a useless action is ${costs.useless}. It must be finite, and not less than the cost of none.`);
@@ -288,6 +314,7 @@ export interface RuledVariant {
  * - The map tempers the probability of each cause with `calibration.cause`.
  * - The map tempers the share of each variant in its cause with `calibration.variant`.
  * - The probability of a variant is the probability of its cause multiplied by its share.
+ * - The map applies `calibration.scale` to the probability of each kind. Each variant keeps its share in its kind.
  *
  * A temperature `t` raises each value to the power `1 / t`, and then it divides each by their sum. The function uses
  * logarithms, so a very small value does not become 0. A sweep of maps applies it many times, thus it uses plain loops.
@@ -346,7 +373,25 @@ export function temper(variants: readonly RuledVariant[], calibration: Calibrati
     const g = group[i] as number;
     result[i] = { rule: (kept[i] as RuledVariant).rule, probability: ((causeWeight[g] as number) / total) * ((share[i] as number) / (sum[g] as number)) };
   }
-  return result;
+  return calibration.scale === undefined ? result : scaleKinds(result, calibration.scale);
+}
+
+/**
+ * This function applies the scales of a calibration map to the probability of each kind. Each variant gets a factor:
+ * the scaled probability of its kind over the probability of its kind. Thus each variant keeps its share in its kind.
+ */
+function scaleKinds(variants: readonly RuledVariant[], scale: Readonly<Partial<Record<ActionKind, KindScale>>>): RuledVariant[] {
+  const sums = kindProbabilities(variants);
+  const present = ACTION_KINDS.filter((kind) => (sums[kind] ?? 0) > 0);
+  const scaled = scaledProbabilities(
+    present.map((kind) => sums[kind] as number),
+    { slopes: present.map((kind) => scale[kind]?.slope ?? 1), biases: present.map((kind) => scale[kind]?.bias ?? 0) },
+  );
+  const factor: Partial<Record<ActionKind, number>> = {};
+  present.forEach((kind, index) => {
+    factor[kind] = (scaled[index] as number) / (sums[kind] as number);
+  });
+  return variants.map(({ rule, probability }) => ({ rule, probability: probability * (factor[rule.action.kind] ?? 0) }));
 }
 
 /**

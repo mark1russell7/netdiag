@@ -67,6 +67,7 @@ export {
   type ActionPolicy,
   type ActionRule,
   type Calibration,
+  type KindScale,
   type KindShare,
   type RuledVariant,
   type WaitOn,

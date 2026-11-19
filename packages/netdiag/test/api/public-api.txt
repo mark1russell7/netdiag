@@ -123,6 +123,7 @@ type InterfaceAddress: build/index.d.ts#InterfaceAddress
 type InterfaceTable: build/index.d.ts#InterfaceTable
 JITTER_GAIN: build/core.chunk.d.ts#JITTER_GAIN
 KEPT_FIELDS: build/index.d.ts#KEPT_FIELDS
+type KindScale: build/index.chunk2.d.ts#KindScale
 type KindShare: build/index.chunk2.d.ts#KindShare
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
@@ -535,6 +536,7 @@ IPV4_MIN_MTU: build/counts.chunk.d.ts#IPV4_MIN_MTU
 IPV6_MIN_MTU: build/counts.chunk.d.ts#IPV6_MIN_MTU
 IcmpEcho: build/counts.chunk.d.ts#IcmpEcho
 JITTER_GAIN: build/core.chunk.d.ts#JITTER_GAIN
+type KindScale: build/index.chunk2.d.ts#KindScale
 type KindShare: build/index.chunk2.d.ts#KindShare
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
@@ -844,6 +846,7 @@ type Fault: build/index.chunk2.d.ts#Fault
 type Feature: build/index.chunk2.d.ts#Feature
 GAIN_RESOLUTION: build/index.chunk2.d.ts#GAIN_RESOLUTION
 type Hypothesis: build/index.chunk2.d.ts#Hypothesis
+type KindScale: build/index.chunk2.d.ts#KindScale
 type KindShare: build/index.chunk2.d.ts#KindShare
 LAB_BAR_STEP: build/index.chunk2.d.ts#LAB_BAR_STEP
 LAB_RECORD_FORMAT: build/index.chunk2.d.ts#LAB_RECORD_FORMAT
@@ -2334,6 +2337,7 @@ interface AlikeMargin {
 interface Calibration {
   readonly cause: number;
   readonly variant: number;
+  readonly scale?: Readonly<Partial<Record<ActionKind, KindScale>>> | undefined;
 }
 
 ### build/index.chunk2.d.ts#Candidate
@@ -2466,6 +2470,12 @@ interface Hypothesis {
   readonly layer?: Layer | undefined;
   readonly reach?: readonly Reach[] | undefined;
   readonly degree?: readonly string[] | undefined;
+}
+
+### build/index.chunk2.d.ts#KindScale
+interface KindScale {
+  readonly slope: number;
+  readonly bias: number;
 }
 
 ### build/index.chunk2.d.ts#KindShare

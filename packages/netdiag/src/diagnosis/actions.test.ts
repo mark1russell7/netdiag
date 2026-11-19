@@ -17,6 +17,7 @@ import {
   harmOf,
   harmfulOf,
   ruleOf,
+  temper,
   type ActionPolicy,
   type ActionRule,
   type Catalog,
@@ -184,6 +185,13 @@ describe("actionCost and checkPolicy", () => {
     expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { ...policy.costs, needless: 20 } })).toHaveLength(1);
     expect(checkPolicy({ calibration: { cause: Number.NaN, variant: -1 }, costs: { none: 0, useless: 1, needless: 1, harmful: Number.POSITIVE_INFINITY } })).toHaveLength(4);
   });
+
+  it("finds a scale of each kind correct, and a scale with a bad kind, slope or bias not correct", () => {
+    const scaled = (scale: Record<string, { slope: number; bias: number }>): ActionPolicy => ({ ...policy, calibration: { ...NO_CALIBRATION, scale } });
+    expect(checkPolicy(scaled({ stop: { slope: 1.5, bias: -0.3 }, none: { slope: 0.4, bias: 2 } }))).toEqual([]);
+    expect(checkPolicy(scaled({ jump: { slope: 1, bias: 0 } }))).toEqual(["The calibration map has a scale of jump, which is not a kind of action."]);
+    expect(checkPolicy(scaled({ stop: { slope: 0, bias: 0 }, retry: { slope: 1, bias: Number.NaN }, none: { slope: Number.POSITIVE_INFINITY, bias: 0 } }))).toHaveLength(3);
+  });
 });
 
 describe("chooseAction", () => {
@@ -239,6 +247,40 @@ describe("chooseAction", () => {
     expect(share(warm, "wait-network")).toBeCloseTo(0.8 * 0.675, 3);
     expect(share(warm, "back-off")).toBeCloseTo(0.8 * 0.325, 3);
     expect(share(warm, "none")).toBeCloseTo(0.2);
+  });
+
+  it("scales the probability of a kind with its slope and its bias after the temperatures", () => {
+    const diagnosis = diagnosisOf([
+      { cause: "wifi.weak", reach: "shared", degree: "loss-70", probability: 0.72 },
+      { cause: "wifi.weak", reach: "shared", degree: "loss-50", probability: 0.08 },
+      { cause: NONE, probability: 0.2 },
+    ]);
+    const share = (choice: ReturnType<typeof chooseAction>, kind: string): number => choice.kinds.find((each) => each.kind === kind)?.probability ?? 0;
+    const at = (scale: Record<string, { slope: number; bias: number }>) => chooseAction(catalog, diagnosis, STANDARD_ACTIONS, { ...policy, calibration: { ...NO_CALIBRATION, scale } });
+    // The weights are 0.72 ** 2, 0.08 and 0.2. Each probability is its weight over their sum.
+    const sharp = at({ "wait-network": { slope: 2, bias: 0 } });
+    expect(share(sharp, "wait-network")).toBeCloseTo(0.5184 / 0.7984, 12);
+    expect(share(sharp, "none")).toBeCloseTo(0.2 / 0.7984, 12);
+    // A bias of log 2 doubles the weight of none: 0.4 of 1.2.
+    expect(share(at({ none: { slope: 1, bias: Math.log(2) } }), "none")).toBeCloseTo(1 / 3, 12);
+    const identity = at({ "wait-network": { slope: 1, bias: 0 }, none: { slope: 1, bias: 0 } });
+    expect(identity.kinds).toEqual(chooseAction(catalog, diagnosis, STANDARD_ACTIONS, policy).kinds.map((each) => ({ ...each, probability: expect.closeTo(each.probability, 12), cost: expect.closeTo(each.cost, 12) })));
+  });
+
+  it("keeps the share of each variant in its kind when it scales the kind", () => {
+    const [first, second] = STANDARD_ACTIONS.filter((rule) => rule.action.kind === "back-off");
+    const none = ruleOf(STANDARD_ACTIONS, NONE);
+    if (first === undefined || second === undefined) throw new Error("The standard actions have fewer than two back-off rules.");
+    const out = temper(
+      [
+        { rule: first, probability: 0.3 },
+        { rule: second, probability: 0.1 },
+        { rule: none, probability: 0.6 },
+      ],
+      { cause: 1, variant: 1, scale: { "back-off": { slope: 1, bias: Math.log(3) } } },
+    );
+    // The kind back-off has 0.4, with the weight 1.2 against 0.6. It gets 2/3, and its variants keep their shares 3/4 and 1/4.
+    expect(out.map((each) => each.probability)).toEqual([expect.closeTo(0.5, 12), expect.closeTo(1 / 6, 12), expect.closeTo(1 / 3, 12)]);
   });
 
   it("takes a kind that is not harmful when it is more probable than none", () => {
