@@ -183,7 +183,7 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 - The reasons of the impossible cells:
   1. E4 cannot prove "A physical NIC". Thus it cannot have a physical NIC or its firmware. Source: S7, the table "The layers", row E4, column "What it cannot prove".
 - The worlds: Simulated network (E0), Loopback (E1), Kernel (E1), Kernel, where cases (E1).
-- The control `none`. Simulated network: 80 cases, a bar. Loopback: 1 case, a bar. Kernel: 1 case, a bar. Kernel, where cases: 1 case, no bar.
+- The control `none`. Simulated network: 80 cases, a bar. Loopback: 1 case, a bar. Kernel: 1 case, a bar. Kernel, where cases: 1 case, a bar.
 
 <!-- coverage:end -->
 

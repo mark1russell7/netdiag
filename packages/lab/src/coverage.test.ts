@@ -85,11 +85,11 @@ describe("coverage", () => {
       { world: "sim", cases: simCases("path.loss"), bar: true },
       { world: "loopback", cases: [], bar: false },
       { world: "kernel", cases: ["path.loss"], bar: true },
-      { world: "where", cases: ["loss.last-link", "loss.first-link"], bar: false },
+      { world: "where", cases: ["loss.last-link", "loss.first-link"], bar: true },
     ]);
     const where = coverage({ catalog: STANDARD_CATALOG, worlds: labWorlds((name) => (name === "where" ? { "loss.last-link": 0.5 } : readBars(name))) });
     expect(where.rows.find((row) => row.hypothesis === "path.loss")?.worlds[3]?.bar).toBe(false);
-    expect(TODAY.controls.map((cell) => cell.bar)).toEqual([true, true, true, false]);
+    expect(TODAY.controls.map((cell) => cell.bar)).toEqual([true, true, true, true]);
   });
 
   it("gives no bar for a bar of 0, because a bar of 0 holds nothing", () => {
@@ -188,7 +188,7 @@ describe("the ladder", () => {
       state: "covered",
       worlds: [
         { world: "kernel", cases: ["path.loss"], bar: true },
-        { world: "where", cases: ["loss.last-link", "loss.first-link"], bar: false },
+        { world: "where", cases: ["loss.last-link", "loss.first-link"], bar: true },
       ],
       limits: [],
     });
