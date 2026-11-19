@@ -4,17 +4,32 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_JOINT_VALUES,
   STANDARD_CATALOG,
+  STANDARD_CATALOG_SPEC,
   STANDARD_FEATURES,
+  compileCatalog,
   diagnose,
   predictive,
   rankProbes,
   type Candidate,
+  type Catalog,
   type Diagnosis,
   type Evidence,
+  type Feature,
   type Observable,
 } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
+
+/** The standard catalog with a concentration for each feature from `of`. No value gives independent repeats. */
+function withConcentrations(of: (feature: Feature, index: number) => number | undefined): Catalog {
+  const compiled = compileCatalog({ ...STANDARD_CATALOG_SPEC, features: STANDARD_FEATURES.map((feature, index) => ({ ...feature, concentration: of(feature, index) })) });
+  if (compiled.tag === "err") throw new Error(compiled.error.join(" "));
+  return compiled.value;
+}
+
+const independent = withConcentrations(() => undefined);
+const mixed = withConcentrations((_, index) => [undefined, 0.05, 2, 50][index % 4]);
+const copies = withConcentrations(() => 1e-9);
 
 /** The entropy of the causes of a diagnosis, with the causes after the first `top` causes of `groups` in one group. */
 function entropyOf(diagnosis: Diagnosis, groups: readonly string[] | undefined): number {
@@ -24,25 +39,26 @@ function entropyOf(diagnosis: Diagnosis, groups: readonly string[] | undefined):
 }
 
 /** The expected fall of the entropy of the causes from the observation of some features, from `diagnose` and `predictive`. */
-function expectedFall(evidence: readonly Evidence[], observes: readonly Observable[], top?: number): number {
-  const before = diagnose(catalog, evidence);
+function expectedFall(evidence: readonly Evidence[], observes: readonly Observable[], top?: number, model: Catalog = catalog): number {
+  const before = diagnose(model, evidence);
   const groups = top === undefined ? undefined : before.causes.slice(0, top).map((cause) => cause.id);
   let after = 0;
   const walk = (index: number, known: readonly Evidence[], p: number): void => {
     const item = observes[index];
     if (item === undefined) {
-      after += p * entropyOf(diagnose(catalog, known), groups);
+      after += p * entropyOf(diagnose(model, known), groups);
       return;
     }
-    const dist = predictive(catalog, diagnose(catalog, known), item.feature, item.primary);
+    const dist = predictive(model, diagnose(model, known), item.feature, item.primary);
     for (const [value, q] of Object.entries(dist)) walk(index + 1, [...known, { feature: item.feature, value, primary: item.primary }], p * q);
   };
   walk(0, evidence, 1);
   return entropyOf(before, groups) - after;
 }
 
-const gainOf = (evidence: readonly Evidence[], observes: readonly Observable[], top?: number): number =>
-  rankProbes(catalog, diagnose(catalog, evidence), [{ id: "c", observes }], { top })[0]?.gain ?? Number.NaN;
+const gainOf = (evidence: readonly Evidence[], observes: readonly Observable[], top?: number, model: Catalog = catalog): number =>
+  rankProbes(model, diagnose(model, evidence), [{ id: "c", observes }], { top })[0]?.gain ?? Number.NaN;
+const model = fc.constantFrom(independent, mixed, copies);
 
 const evidenceItem = fc
   .tuple(fc.constantFrom(...STANDARD_FEATURES), fc.boolean(), fc.nat())
@@ -51,21 +67,22 @@ const observable = fc.record({ feature: fc.constantFrom(...STANDARD_FEATURES.map
 const key = (item: Observable): string => `${item.feature}|${String(item.primary)}`;
 
 describe("rankProbes", () => {
-  it("gives the expected fall of the entropy of the causes", () => {
+  it("gives the expected fall of the entropy of the causes, with repeats in the evidence and in the candidate", () => {
+    // The evidence draws its features from a small set, thus most candidates repeat a feature and role of the evidence.
+    const near = fc.record({ feature: fc.constantFrom("tcp.connect", "tls.trust", "dns.answer"), primary: fc.boolean() });
+    const nearItem = near.chain((item) => fc.constantFrom(...(catalog.features.get(item.feature)?.values ?? [])).map((value): Evidence => ({ ...item, value })));
     fc.assert(
-      fc.property(fc.array(evidenceItem, { maxLength: 4 }), fc.uniqueArray(observable, { minLength: 1, maxLength: 2, selector: key }), fc.option(fc.integer({ min: 1, max: 5 }), { nil: undefined }), (evidence, observes, top) => {
-        const fresh = observes.filter((item) => !evidence.some((e) => key(e) === key(item)));
-        expect(gainOf(evidence, observes, top)).toBeCloseTo(fresh.length === 0 ? 0 : expectedFall(evidence, fresh, top), 9);
+      fc.property(model, fc.array(fc.oneof(evidenceItem, nearItem), { maxLength: 4 }), fc.array(fc.oneof(observable, near), { minLength: 1, maxLength: 2 }), fc.option(fc.integer({ min: 1, max: 5 }), { nil: undefined }), (each, evidence, observes, top) => {
+        expect(gainOf(evidence, observes, top, each)).toBeCloseTo(expectedFall(evidence, observes, top, each), 9);
       }),
-      { seed: 20261115, numRuns: 120 },
+      { seed: 20261115, numRuns: 150 },
     );
   });
 
   it("gives the expected fall of the entropy for 3 and 4 features, with each feature of the candidate as a digit", () => {
     fc.assert(
-      fc.property(fc.array(evidenceItem, { maxLength: 2 }), fc.uniqueArray(observable, { minLength: 3, maxLength: 4, selector: key }), fc.option(fc.constant(3), { nil: undefined }), (evidence, observes, top) => {
-        const fresh = observes.filter((item) => !evidence.some((e) => key(e) === key(item)));
-        expect(gainOf(evidence, observes, top)).toBeCloseTo(fresh.length === 0 ? 0 : expectedFall(evidence, fresh, top), 9);
+      fc.property(model, fc.array(evidenceItem, { maxLength: 2 }), fc.array(observable, { minLength: 3, maxLength: 4 }), fc.option(fc.constant(3), { nil: undefined }), (each, evidence, observes, top) => {
+        expect(gainOf(evidence, observes, top, each)).toBeCloseTo(expectedFall(evidence, observes, top, each), 9);
       }),
       { seed: 20261117, numRuns: 30 },
     );
@@ -96,16 +113,19 @@ describe("rankProbes", () => {
     );
   });
 
-  it("gives 0 to a feature that the evidence has with the same role", () => {
+  it("gives nearly 0 to a copy of a feature that the evidence has, and a gain to an independent repeat", () => {
     const evidence = [{ feature: "tcp.connect", value: "timeout", primary: true }];
-    const [choice] = rankProbes(catalog, diagnose(catalog, evidence), [{ id: "again", observes: [{ feature: "tcp.connect", primary: true }] }]);
-    expect(choice).toMatchObject({ gain: 0, counted: [] });
-    expect(gainOf(evidence, [{ feature: "tcp.connect", primary: false }])).toBeGreaterThan(0);
+    const again = [{ feature: "tcp.connect", primary: true }];
+    expect(gainOf(evidence, again, undefined, copies)).toBeLessThan(1e-6);
+    expect(gainOf(evidence, again, undefined, independent)).toBeGreaterThan(0.01);
+    expect(gainOf(evidence, [{ feature: "tcp.connect", primary: false }], undefined, copies)).toBeGreaterThan(0.01);
   });
 
-  it("counts a feature once when a candidate names it twice", () => {
-    const once = gainOf([], [{ feature: "dns.answer", primary: true }]);
-    expect(gainOf([], [{ feature: "dns.answer", primary: true }, { feature: "dns.answer", primary: true }])).toBeCloseTo(once, 12);
+  it("gives a feature that a candidate names two times the gain of one copy, or more for independent repeats", () => {
+    const one = [{ feature: "dns.answer", primary: true }];
+    const two = [...one, ...one];
+    expect(gainOf([], two, undefined, copies)).toBeCloseTo(gainOf([], one, undefined, copies), 6);
+    expect(gainOf([], two, undefined, independent)).toBeGreaterThan(gainOf([], one, undefined, independent) + 1e-6);
   });
 
   it("puts the ping of the gateway first after a DNS timeout", () => {

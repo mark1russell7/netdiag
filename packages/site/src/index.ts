@@ -325,16 +325,17 @@ function showSearch(): void {
   const most = Math.max(GAIN_RESOLUTION, ...state.ranked.map((choice) => choice.gain));
   byId("search-probes").replaceChildren(
     ...state.ranked.map((choice, index) => {
-      const counted = new Set(choice.counted.map((item) => `${item.feature}/${String(item.primary)}`));
+      const probe = PROBES.find((each) => each.id === choice.candidate.id);
+      const observes = probe?.observes ?? choice.candidate.observes;
+      const counted = new Set(choice.candidate.observes.map((item) => `${item.feature}/${String(item.primary)}`));
       const best = index === 0 && choice.gain > GAIN_RESOLUTION && !done;
       const run = h("button", { type: "button", class: best ? "primary" : "" }, "Run");
-      run.disabled = choice.counted.length === 0;
-      run.setAttribute("aria-label", `Run: ${PROBES.find((each) => each.id === choice.candidate.id)?.label ?? choice.candidate.id}`);
+      run.disabled = choice.candidate.observes.length === 0;
+      run.setAttribute("aria-label", `Run: ${probe?.label ?? choice.candidate.id}`);
       run.addEventListener("click", () => {
         runs = [...runs, choice.candidate.id];
         showSearch();
       });
-      const probe = PROBES.find((each) => each.id === choice.candidate.id);
       return h(
         "li",
         { class: best ? "probe best" : "probe" },
@@ -351,10 +352,10 @@ function showSearch(): void {
         h(
           "p",
           { class: "probe-features" },
-          choice.candidate.observes.map((item) =>
+          observes.map((item) =>
             counted.has(`${item.feature}/${String(item.primary)}`) ? h("code", {}, item.feature) : h("code", { class: "seen", title: "Observed before" }, item.feature),
           ),
-          choice.candidate.observes[0]?.primary === false ? h("span", { class: "tag" }, "second host") : null,
+          observes[0]?.primary === false ? h("span", { class: "tag" }, "second host") : null,
         ),
       );
     }),

@@ -7500,7 +7500,7 @@
     "tcp/mismatch": "A middlebox removes or changes TCP options, for example the window scale, so the connection is slow or stops.",
     "tcp/intercept": "A transparent proxy ends the TCP connection and opens its own connection to the server.",
     "tls/expire": "A certificate of the chain expires: the certificate of the server, or a root that old clients trust.",
-    "tls/wrong": "The server gives a certificate for a different name, or a chain with no intermediate certificate.",
+    "tls/wrong": "The server gives a certificate for a different name, a chain with no intermediate certificate, or a chain to a private root. A private root that the clients trust is no fault alone.",
     "tls/mismatch": "The client and the server have no TLS version or cipher in common.",
     "tls/intercept": "A device ends the TLS connection and gives a certificate from a root that the clients were made to trust.",
     "tls/skew": "The clock of the client is wrong, so valid certificates seem not yet valid or expired.",

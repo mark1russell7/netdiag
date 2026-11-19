@@ -1,14 +1,16 @@
 import { readFileSync } from "node:fs";
-import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
+import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CONCENTRATIONS, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { random } from "@mark1russell7/rigor-generators";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
 import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
 import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
+import { gapOf, SIM_GAPS } from "./gaps.ts";
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
 import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
 import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
+import { concentrationCatalog, concentrationRecord, concentrationsSource, repeatConcentrations, STANDARD_CONCENTRATIONS_FILE } from "./repeats.ts";
 import {
   actionCalibration,
   actionLimits,
@@ -16,11 +18,15 @@ import {
   actionsText,
   barsText,
   calibrationText,
+  closedGaps,
+  gapsText,
+  gateCalibration,
   limitProblems,
   placeHits,
   SIM_HARM_LIMIT,
   silentVisits,
   simRuns,
+  withCatalog,
   topForecast,
   type ActionLimits,
   type SimActionRate,
@@ -110,6 +116,11 @@ describe("the visits of the simulated world", () => {
     expect(values(missing, "dns.answer").filter((each) => each["name"] === "www.shop-lab.net").map((each) => each["outcome"])).toEqual(["nxdomain", "nxdomain"]);
     const chain = await visitSim(simCase(fault("tls/wrong", { place: "server", kind: "chain" })));
     expect(values(chain, "tls.handshake", TARGET)[0]).toMatchObject({ outcome: "cert-error", certificate: { trust: "none" } });
+    // A private root that the client trusts by design is no fault: the handshake passes, and the trust is private.
+    const term = fault("tls/wrong", { place: "server", kind: "private" });
+    expect(termClasses(term)).toEqual([NO_FAULT]);
+    const own = await visitSim(simCase(term));
+    expect(values(own, "tls.handshake", TARGET)[0]).toMatchObject({ outcome: "ok", certificate: { trust: "private", issuer: "CN=Sim Private Root" } });
   });
 });
 
@@ -205,10 +216,13 @@ describe("the draws of the faults", () => {
 });
 
 describe("the bars of the simulated world", () => {
-  it("have the policy of the actions that the held-out seed sets give, in bars/policy.json and in STANDARD_POLICY", async () => {
+  it("have the concentrations of the repeats and the policy of the actions that the held-out seed sets give, in STANDARD_CONCENTRATIONS, bars/policy.json and STANDARD_POLICY", async () => {
     const runs = await simRuns(SIM_FIT_SEEDS);
     expect(runs.problems).toEqual([]);
-    const fit = fitPolicy(runs.outcomes);
+    const concentrations = repeatConcentrations(runs.outcomes);
+    expect(concentrationRecord(concentrations)).toEqual(STANDARD_CONCENTRATIONS);
+    expect(concentrationsSource(concentrations)).toBe(readFileSync(STANDARD_CONCENTRATIONS_FILE, "utf8"));
+    const fit = fitPolicy(withCatalog(runs.outcomes, concentrationCatalog(concentrations)));
     expect(fit.problems).toEqual([]);
     expect(policyText(fit)).toBe(readFileSync(new URL("policy.json", BARS_FOLDER), "utf8"));
     expect(STANDARD_POLICY).toEqual(fit.policy);
@@ -220,6 +234,8 @@ describe("the bars of the simulated world", () => {
     expect(runs.bars.tag).toBe("ok");
     if (runs.bars.tag !== "ok") return;
     expect(barsText(runs.bars.value)).toBe(readFileSync(new URL("sim.json", BARS_FOLDER), "utf8"));
+    // Each known gap has its own bars, its cause and its end in bars/sim-gaps.json.
+    expect(gapsText(runs)).toBe(readFileSync(new URL("sim-gaps.json", BARS_FOLDER), "utf8"));
     // A change of the world that makes the faults silent more often changes this count. Tell the reason in the PR.
     expect(silentVisits(runs.outcomes)).toBe(20);
     const labels = new Set(placeHits(runs.outcomes).map((each) => each.label));
@@ -232,8 +248,29 @@ describe("the bars of the simulated world", () => {
     // The limits of the correct low end and of the calibration errors come from five seed sets. Change them only with --limits and a reason in the PR.
     expect(calibrationText(runs.outcomes)).toBe(readFileSync(new URL("calibration.json", BARS_FOLDER), "utf8"));
     const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
-    expect(limitProblems(rates, actionCalibration(runs.outcomes), limits)).toEqual([]);
+    expect(limitProblems(rates, gateCalibration(runs.outcomes), limits)).toEqual([]);
   }, 180_000);
+});
+
+describe("the known gaps of the simulated world", () => {
+  const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
+  const brokenChain = fault("tls/wrong", { place: "server", kind: "chain" });
+
+  it("hold the healthy cases with a private root, and no case of another class or of another kind", () => {
+    expect(gapOf(simCase(privateRoot))?.id).toBe("none/private-root");
+    expect(gapOf(simCase(brokenChain))).toBeUndefined();
+    expect(gapOf(simCase(HEALTHY))).toBeUndefined();
+    expect(gapOf({ truth: "tls.proxy", term: privateRoot })).toBeUndefined();
+  });
+
+  it("give a problem when the bar of a gap gets to the bar of its class", () => {
+    const gap = SIM_GAPS[0];
+    if (gap === undefined) throw new Error("SIM_GAPS has no gap.");
+    const runsOf = (bar: number) => [{ gap, scores: [], bars: { tag: "ok" as const, value: { [gap.label]: bar } } }];
+    const bars = { tag: "ok" as const, value: { [gap.label]: 0.95 } };
+    expect(closedGaps(bars, runsOf(0))).toEqual([]);
+    expect(closedGaps(bars, runsOf(0.95))).toEqual([`The gap ${gap.id} is closed: its bar 0.95 is at the bar 0.95 of its class or over it. Remove it from SIM_GAPS.`]);
+  });
 });
 
 describe("the limits of the actions", () => {

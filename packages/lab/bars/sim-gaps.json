@@ -1,0 +1,24 @@
+[
+  {
+    "id": "none/private-root",
+    "label": "none",
+    "option": "tls/wrong",
+    "when": {
+      "kind": [
+        "private"
+      ]
+    },
+    "cause": "A certificate from a private root that the clients trust has the same facts as an interception at a remote hop. The trust is private at the target and public at the reference. The model gives these cases a probability of no fault near 0.01.",
+    "end": "A baseline stage of the facts: the issuer of the target is the same as in the last good check, changed, or unknown.",
+    "cases": 53,
+    "hits": 0,
+    "bars": {
+      "none": 0
+    },
+    "calibration": {
+      "cases": 53,
+      "top": 0.9901,
+      "kinds": 0.2513
+    }
+  }
+]

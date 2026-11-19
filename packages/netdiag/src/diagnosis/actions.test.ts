@@ -5,20 +5,24 @@ import {
   NONE,
   STANDARD_ACTIONS,
   STANDARD_CATALOG,
+  STANDARD_CATALOG_SPEC,
   STANDARD_POLICY,
   UNKNOWN,
   actionCost,
   checkActions,
   checkPolicy,
   chooseAction,
+  compileCatalog,
   diagnose,
   harmOf,
   harmfulOf,
   ruleOf,
   type ActionPolicy,
   type ActionRule,
+  type Catalog,
   type Cause,
   type Diagnosis,
+  type Evidence,
 } from "./index.ts";
 
 const catalog = STANDARD_CATALOG;
@@ -154,24 +158,30 @@ describe("harmOf", () => {
 });
 
 /** A policy with no calibration map and a harmful cost of 10. The tests of the choice use it, so a new fit does not change them. */
-const policy: ActionPolicy = { calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, harmful: 10 } };
+const policy: ActionPolicy = { calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, needless: 1, harmful: 10 } };
 
 describe("actionCost and checkPolicy", () => {
-  it("gives 0 for the correct kind, the unit for none, and the harmful cost for a harmful kind", () => {
+  it("gives 0 for the correct kind, the unit for none, the harmful cost for a harmful kind, and the needless cost for an action on no fault", () => {
     const rule = ruleOf(STANDARD_ACTIONS, "name.missing", "target");
     expect(actionCost(catalog, rule, "stop", policy.costs)).toBe(0);
     expect(actionCost(catalog, rule, "none", policy.costs)).toBe(1);
     expect(actionCost(catalog, rule, "retry", policy.costs)).toBe(1);
     expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "stop", policy.costs)).toBe(10);
     expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "none", policy.costs)).toBe(0);
+    const costs = { ...policy.costs, needless: 3 };
+    expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "back-off", costs)).toBe(3);
+    expect(actionCost(catalog, ruleOf(STANDARD_ACTIONS, NONE), "stop", costs)).toBe(10);
+    expect(actionCost(catalog, rule, "retry", costs)).toBe(1);
   });
 
   it("finds the standard policy correct and a bad policy not correct", () => {
     expect(checkPolicy(STANDARD_POLICY)).toEqual([]);
     expect(checkPolicy({ calibration: { cause: 0, variant: 1 }, costs: policy.costs })).toHaveLength(1);
-    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 0.5, harmful: 10 } })).toHaveLength(1);
-    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, harmful: 1 } })).toHaveLength(1);
-    expect(checkPolicy({ calibration: { cause: Number.NaN, variant: -1 }, costs: { none: 0, useless: 1, harmful: Number.POSITIVE_INFINITY } })).toHaveLength(4);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 0.5, needless: 1, harmful: 10 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { none: 1, useless: 1, needless: 1, harmful: 1 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { ...policy.costs, needless: 0.5 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: NO_CALIBRATION, costs: { ...policy.costs, needless: 20 } })).toHaveLength(1);
+    expect(checkPolicy({ calibration: { cause: Number.NaN, variant: -1 }, costs: { none: 0, useless: 1, needless: 1, harmful: Number.POSITIVE_INFINITY } })).toHaveLength(4);
   });
 });
 
@@ -192,6 +202,12 @@ describe("chooseAction", () => {
       ["none", 0.85],
       ["stop", 1.5],
     ]);
+  });
+
+  it("asks for more certainty for an action on a healthy target when a needless action costs more", () => {
+    const diagnosis = diagnosisOf([{ cause: "resolver.failing", probability: 0.6 }, { cause: NONE, probability: 0.4 }]);
+    expect(chooseAction(catalog, diagnosis, STANDARD_ACTIONS, policy).action.kind).toBe("back-off");
+    expect(chooseAction(catalog, diagnosis, STANDARD_ACTIONS, { ...policy, costs: { ...policy.costs, needless: 2 } }).action.kind).toBe("none");
   });
 
   it("asks for more certainty when a harmful action costs more", () => {
@@ -269,5 +285,41 @@ describe("chooseAction", () => {
     expect(choice.kinds.reduce((sum, share) => sum + share.probability, 0)).toBeCloseTo(1);
     expect(ACTION_KINDS).toContain(choice.action.kind);
     expect(choice.kinds[0]?.kind).toBe(choice.action.kind);
+  });
+});
+
+describe("the repeats of a private certificate by design", () => {
+  // A target with a private root by design gives tls.trust=private over IPv4 and over IPv6. The two observations are one fact.
+  const compiled = compileCatalog({ ...STANDARD_CATALOG_SPEC, features: STANDARD_CATALOG_SPEC.features.map((feature) => ({ ...feature, concentration: undefined })) });
+  if (compiled.tag === "err") throw new Error(compiled.error.join(" "));
+  const independent = compiled.value;
+  const healthy: Evidence[] = [...STANDARD_CATALOG.features.values()].flatMap((feature) => {
+    const value = Object.entries(feature.healthy).sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (value === undefined || feature.id === "tls.trust") return [];
+    return [true, false].map((primary) => ({ feature: feature.id, value, primary }));
+  });
+  const evidence = (privates: number): Evidence[] => [
+    ...healthy,
+    { feature: "tls.trust", value: "public", primary: false },
+    ...Array.from({ length: privates }, () => ({ feature: "tls.trust", value: "private", primary: true })),
+  ];
+  // The two causes of a proxy share the observation, so the odds of a proxy are the odds of the two causes together.
+  const proxyOdds = (model: Catalog, privates: number): number => {
+    const p = diagnose(model, evidence(privates))
+      .causes.filter((cause) => cause.id === "tls.proxy" || cause.id === "proxy.error")
+      .reduce((sum, cause) => sum + cause.probability, 0);
+    return p / (1 - p);
+  };
+
+  it("do not reach the confidence of a proxy through the repeat alone", () => {
+    expect(STANDARD_CATALOG.features.get("tls.trust")?.concentration).toBeDefined();
+    expect(proxyOdds(STANDARD_CATALOG, 2) / proxyOdds(STANDARD_CATALOG, 1)).toBeLessThan(2);
+    const one = chooseAction(STANDARD_CATALOG, diagnose(STANDARD_CATALOG, evidence(1)), STANDARD_ACTIONS);
+    const two = chooseAction(STANDARD_CATALOG, diagnose(STANDARD_CATALOG, evidence(2)), STANDARD_ACTIONS);
+    expect(two.action).toEqual(one.action);
+  });
+
+  it("reach it with independent repeats, the old count", () => {
+    expect(proxyOdds(independent, 2) / proxyOdds(independent, 1)).toBeGreaterThan(10);
   });
 });

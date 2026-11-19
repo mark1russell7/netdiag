@@ -28,6 +28,7 @@ import {
   type Reach,
 } from "./index.ts";
 import type { Layer } from "../layer.ts";
+import { repeatedLikelihood, repeatKey, tallies } from "./model.ts";
 
 const catalog = STANDARD_CATALOG;
 
@@ -630,6 +631,7 @@ describe("the properties of the model", () => {
   });
 
   // For a fault with two or more variants, the factor of one more observation is its likelihood under the posterior of the variants.
+  // For a feature with a concentration, the likelihood of a repeat is the predictive after the earlier observations of its feature and role.
   it("changes the odds of two causes by the ratio of their likelihoods for one more observation", () => {
     const ids = catalog.hypotheses.map((h) => h.id);
     fc.assert(
@@ -638,11 +640,17 @@ describe("the properties of the model", () => {
         const p = (evidence: readonly Evidence[], id: string): number => diagnose(catalog, evidence).causes.find((c) => c.id === id)?.probability ?? Number.NaN;
         const oddsBefore = Math.log(p(before, a)) - Math.log(p(before, b));
         const oddsAfter = Math.log(p([...before, extra], a)) - Math.log(p([...before, extra], b));
-        const causes = diagnose(catalog, before).causes;
+        const prior = diagnose(catalog, before);
+        const causes = prior.causes;
+        const tally = tallies(prior.used).get(repeatKey(extra));
+        const known = catalog.features.get(extra.feature);
         const factor = (id: string): number => {
           const cause = causes.find((c) => c.id === id);
           if (cause === undefined) return Number.NaN;
-          const sum = causeVariants(cause).reduce((s, v) => s + v.probability * catalog.likelihood(id, extra.feature, extra.value, extra.primary, v.reach, v.degree), 0);
+          const sum = causeVariants(cause).reduce((s, v) => {
+            const base = catalog.likelihood(id, extra.feature, extra.value, extra.primary, v.reach, v.degree);
+            return s + v.probability * repeatedLikelihood(known, base, tally?.values.get(extra.value) ?? 0, tally?.total ?? 0);
+          }, 0);
           return sum / cause.probability;
         };
         const ratio = Math.log(factor(a)) - Math.log(factor(b));

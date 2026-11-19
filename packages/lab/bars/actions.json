@@ -157,23 +157,23 @@
     },
     "correctLow": 0.99,
     "harmHigh": 0.01,
-    "brier": 0.0004
+    "brier": 0.0337
   },
   "path.loss": {
     "cases": 400,
-    "correct": 274,
+    "correct": 267,
     "harmful": 5,
     "wilson": {
-      "correctLow": 0.638,
+      "correctLow": 0.62,
       "harmHigh": 0.029
     },
     "bootstrap": {
-      "correctLow": 0.64,
+      "correctLow": 0.62,
       "harmHigh": 0.025
     },
-    "correctLow": 0.638,
+    "correctLow": 0.62,
     "harmHigh": 0.029,
-    "brier": 0.0533
+    "brier": 0.0532
   },
   "path.mtu": {
     "cases": 400,
@@ -321,34 +321,34 @@
   },
   "tls.proxy": {
     "cases": 400,
-    "correct": 347,
+    "correct": 305,
     "harmful": 0,
     "wilson": {
-      "correctLow": 0.831,
+      "correctLow": 0.718,
       "harmHigh": 0.01
     },
     "bootstrap": {
-      "correctLow": 0.596,
+      "correctLow": 0.277,
       "harmHigh": 0
     },
-    "correctLow": 0.596,
+    "correctLow": 0.277,
     "harmHigh": 0.01,
-    "brier": 0.0005
+    "brier": 0.0008
   },
   "wifi.weak": {
     "cases": 400,
-    "correct": 281,
+    "correct": 280,
     "harmful": 4,
     "wilson": {
-      "correctLow": 0.656,
+      "correctLow": 0.653,
       "harmHigh": 0.025
     },
     "bootstrap": {
       "correctLow": 0.655,
       "harmHigh": 0.02
     },
-    "correctLow": 0.655,
+    "correctLow": 0.653,
     "harmHigh": 0.025,
-    "brier": 0.0455
+    "brier": 0.0453
   }
 }

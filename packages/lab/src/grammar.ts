@@ -264,7 +264,14 @@ export const GRAMMAR_OPTIONS: readonly GrammarOption[] = [
   { layer: "tcp", mode: "intercept", summary: "A transparent proxy ends the TCP connection and opens its own connection to the server.", places: ["gateway", "provider", "remote"], labels: one("tcp.proxy") },
   // The handshake and the certificate of the server.
   { layer: "tls", mode: "expire", summary: "A certificate of the chain expires: the certificate of the server, or a root that old clients trust.", places: ["host", "server"], params: [kinds("leaf", "root")], labels: one("tls.cert-invalid") },
-  { layer: "tls", mode: "wrong", summary: "The server gives a certificate for a different name, or a chain with no intermediate certificate.", places: ["remote", "server"], params: [kinds("name", "chain")], labels: one("tls.cert-invalid") },
+  {
+    layer: "tls",
+    mode: "wrong",
+    summary: "The server gives a certificate for a different name, a chain with no intermediate certificate, or a chain to a private root. A private root that the clients trust is no fault alone.",
+    places: ["remote", "server"],
+    params: [kinds("name", "chain", "private")],
+    labels: [{ when: { kind: ["private"] }, label: NO_FAULT }, { label: "tls.cert-invalid" }],
+  },
   { layer: "tls", mode: "mismatch", summary: "The client and the server have no TLS version or cipher in common.", places: ["remote", "server"], labels: one("tls.mismatch") },
   { layer: "tls", mode: "intercept", summary: "A device ends the TLS connection and gives a certificate from a root that the clients were made to trust.", places: ["host", "gateway", "provider", "remote"], labels: one("tls.proxy") },
   { layer: "tls", mode: "skew", summary: "The clock of the client is wrong, so valid certificates seem not yet valid or expired.", places: ["host"], params: [real("skew-s", 60, 3_000_000_000, 31_536_000), { name: "ahead", kind: "bool", default: false }], labels: one("clock.wrong") },
@@ -440,6 +447,11 @@ function matches(values: Readonly<Record<string, ParamValue>>, when: Readonly<Re
     const value = values[param];
     return value !== undefined && accepted.includes(value);
   });
+}
+
+/** This function tells if a fault is of the option, and if its values match each condition of `when`. */
+export function faultMatches(choice: StageChoice, option: string, when?: Readonly<Record<string, readonly ParamValue[]>>): boolean {
+  return choice.option === option && matches(faultValues(choice), when);
 }
 
 /** This function gives the class of one fault: the label of the first rule of its option that matches. */
