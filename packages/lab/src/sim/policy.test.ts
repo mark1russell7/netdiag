@@ -15,7 +15,7 @@ const ruleOf = (cause: string): ActionRule => {
 const healthy = (resolver: number): SimOutcome[] =>
   classTerms(NO_FAULT, 1, 80).map((term, index) => ({
     seed: 1,
-    case: { id: `none#${index + 1}`, truth: NO_FAULT, signs: [], term, medium: "wired", ipv6: false, seed: `test:${index}` },
+    case: { id: `none#${index + 1}`, truth: NO_FAULT, signs: [], term, medium: "wired", ipv6: false, history: "unknown", seed: `test:${index}` },
     predicted: "resolver.failing",
     visits: 1,
     truth: {

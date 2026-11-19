@@ -315,6 +315,7 @@ function certificateOf(socket: tls.TLSSocket, store: TrustStore): TlsCertificate
     selfSigned: isSelfSigned(leaf.raw),
     chain,
     trust,
+    root: top.fingerprint256,
     ...(authorized ? {} : { problem: certProblem(codeOf(reason) ?? errorMessage(reason)) }),
   };
 }

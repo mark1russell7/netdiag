@@ -13,15 +13,16 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { BARS_FOLDER } from "../worlds.ts";
-import { NO_FAULT } from "../grammar.ts";
 import { falseActionSummary, fitPolicy, policySource, policySummary, policyText, SIM_FIT_SEEDS, STANDARD_POLICY_FILE } from "./policy.ts";
 import {
   actionLimits,
   actionLimitsText,
   actionRates,
   actionsText,
+  falseActionProblems,
   barsText,
   calibrationText,
+  gapSizeProblems,
   gapsText,
   gateCalibration,
   limitProblems,
@@ -31,10 +32,11 @@ import {
   simSummary,
   withCatalog,
   type ActionLimits,
+  type GapCount,
   type SimActionRate,
   type SimCalibration,
 } from "./report.ts";
-import { concentrationCatalog, concentrationsSource, concentrationSummary, repeatConcentrations, STANDARD_CONCENTRATIONS_FILE } from "./repeats.ts";
+import { concentrationCatalog, concentrationIntervals, concentrationsSource, concentrationSummary, repeatConcentrations, repeatUnits, STANDARD_CONCENTRATIONS_FILE } from "./repeats.ts";
 
 const { values } = parseArgs({ options: { out: { type: "string" }, write: { type: "boolean", default: false }, limits: { type: "string" } } });
 const LIMITS_FILE = new URL("action-limits.json", BARS_FOLDER);
@@ -61,7 +63,7 @@ const limits = await readFile(LIMITS_FILE, "utf8").then(
   (text) => JSON.parse(text) as ActionLimits,
   () => undefined,
 );
-const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}\n${falseActionSummary(runs.outcomes, fit.policy, limits?.limits[NO_FAULT])}\n${concentrationSummary(concentrations, runs.outcomes, catalog)}`;
+const summary = `${simSummary(runs, limits)}\n${policySummary(fit)}\n${falseActionSummary(runs.outcomes, fit.policy)}\n${concentrationSummary(concentrations, runs.outcomes, catalog, concentrationIntervals(repeatUnits(fitRuns.outcomes), concentrations))}`;
 if (values.out !== undefined) {
   await mkdir(values.out, { recursive: true });
   await writeFile(join(values.out, "summary.md"), summary);
@@ -72,6 +74,13 @@ process.stdout.write(summary);
 const problems = [...fitRuns.problems.map((problem) => `The fit: ${problem}`), ...fit.problems, ...runs.problems, ...limitRuns];
 if (limits === undefined) problems.push("The file bars/action-limits.json has no limits. Start the command with --limits <reason>.");
 else problems.push(...limitProblems(actionRates(runs.outcomes), gateCalibration(runs.outcomes), limits));
+problems.push(...falseActionProblems(runs.outcomes));
+// The counts of the gaps come from the file of the branch, before the command writes it. Thus --write cannot widen a gap.
+const counts = await readFile(new URL("sim-gaps.json", BARS_FOLDER), "utf8").then(
+  (text) => JSON.parse(text) as GapCount[],
+  () => undefined,
+);
+problems.push(...gapSizeProblems(runs.outcomes, counts));
 if (problems.length > 0 || runs.bars.tag === "err") {
   process.stderr.write(`${problems.join("\n")}\n`);
   process.exit(2);

@@ -44,8 +44,8 @@
     "costs": {
       "none": 1,
       "useless": 1,
-      "needless": 4,
-      "harmful": 12
+      "needless": 5,
+      "harmful": 40
     }
   },
   "temperatures": [
@@ -54,231 +54,231 @@
         "cause": 0.088,
         "variant": 1
       },
-      "brier": 0.0058
+      "brier": 0.0052
     },
     {
       "calibration": {
         "cause": 0.063,
         "variant": 1
       },
-      "brier": 0.0058
+      "brier": 0.0052
     },
     {
       "calibration": {
         "cause": 0.125,
         "variant": 1
       },
-      "brier": 0.0058
+      "brier": 0.0052
     },
     {
       "calibration": {
         "cause": 0.177,
         "variant": 1
       },
-      "brier": 0.0057
+      "brier": 0.0052
     },
     {
       "calibration": {
         "cause": 0.25,
         "variant": 1
       },
-      "brier": 0.0057
+      "brier": 0.0052
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 1
       },
-      "brier": 0.0057
+      "brier": 0.0052
     },
     {
       "calibration": {
         "cause": 0.5,
         "variant": 1
       },
-      "brier": 0.0058
+      "brier": 0.0053
     },
     {
       "calibration": {
         "cause": 0.707,
         "variant": 1
       },
-      "brier": 0.0064
+      "brier": 0.006
     },
     {
       "calibration": {
         "cause": 1,
         "variant": 1
       },
-      "brier": 0.009
+      "brier": 0.0085
     },
     {
       "calibration": {
         "cause": 1.414,
         "variant": 1
       },
-      "brier": 0.0158
+      "brier": 0.0151
     },
     {
       "calibration": {
         "cause": 2,
         "variant": 1
       },
-      "brier": 0.0278
+      "brier": 0.0266
     },
     {
       "calibration": {
         "cause": 2.828,
         "variant": 1
       },
-      "brier": 0.0431
+      "brier": 0.0414
     },
     {
       "calibration": {
         "cause": 4,
         "variant": 1
       },
-      "brier": 0.0596
+      "brier": 0.0577
     },
     {
       "calibration": {
         "cause": 5.657,
         "variant": 1
       },
-      "brier": 0.0746
+      "brier": 0.0727
     },
     {
       "calibration": {
         "cause": 8,
         "variant": 1
       },
-      "brier": 0.0867
+      "brier": 0.0851
     },
     {
       "calibration": {
         "cause": 11.314,
         "variant": 1
       },
-      "brier": 0.0953
+      "brier": 0.0941
     },
     {
       "calibration": {
         "cause": 16,
         "variant": 1
       },
-      "brier": 0.101
+      "brier": 0.1002
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.088
       },
-      "brier": 0.0074
+      "brier": 0.0068
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.063
       },
-      "brier": 0.0076
+      "brier": 0.007
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.125
       },
-      "brier": 0.0072
+      "brier": 0.0065
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.177
       },
-      "brier": 0.0068
+      "brier": 0.0062
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.25
       },
-      "brier": 0.0065
+      "brier": 0.0059
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.354
       },
-      "brier": 0.0062
+      "brier": 0.0055
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.5
       },
-      "brier": 0.0059
+      "brier": 0.0053
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 0.707
       },
-      "brier": 0.0058
+      "brier": 0.0052
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 1.414
       },
-      "brier": 0.0058
+      "brier": 0.0053
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 2
       },
-      "brier": 0.0061
+      "brier": 0.0055
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 2.828
       },
-      "brier": 0.0067
+      "brier": 0.006
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 4
       },
-      "brier": 0.0077
+      "brier": 0.0069
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 5.657
       },
-      "brier": 0.009
+      "brier": 0.0081
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 8
       },
-      "brier": 0.0104
+      "brier": 0.0095
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 11.314
       },
-      "brier": 0.0117
+      "brier": 0.0108
     },
     {
       "calibration": {
         "cause": 0.354,
         "variant": 16
       },
-      "brier": 0.0129
+      "brier": 0.0121
     }
   ],
   "costs": [
@@ -286,287 +286,287 @@
       "harmful": 1.5,
       "needless": 1,
       "worst": "none",
-      "harmHigh": 0.34,
+      "harmHigh": 0.207,
       "sets": [
-        0.34,
-        0.324,
-        0.315,
-        0.321,
-        0.295
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.971
+      "correct": 0.973
     },
     {
       "harmful": 2,
       "needless": 1,
       "worst": "none",
-      "harmHigh": 0.34,
+      "harmHigh": 0.207,
       "sets": [
-        0.34,
-        0.324,
-        0.315,
-        0.321,
-        0.295
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.971
+      "correct": 0.973
     },
     {
       "harmful": 3,
       "needless": 1,
       "worst": "none",
-      "harmHigh": 0.34,
+      "harmHigh": 0.207,
       "sets": [
-        0.34,
-        0.324,
-        0.315,
-        0.321,
-        0.295
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.971
+      "correct": 0.973
     },
     {
       "harmful": 4,
       "needless": 1,
       "worst": "none",
-      "harmHigh": 0.34,
+      "harmHigh": 0.207,
       "sets": [
-        0.34,
-        0.324,
-        0.315,
-        0.321,
-        0.295
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.971
+      "correct": 0.973
     },
     {
       "harmful": 5,
       "needless": 1,
       "worst": "none",
-      "harmHigh": 0.34,
+      "harmHigh": 0.207,
       "sets": [
-        0.34,
-        0.324,
-        0.315,
-        0.321,
-        0.295
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.97
+      "correct": 0.973
     },
     {
       "harmful": 6,
       "needless": 1,
       "worst": "none",
-      "harmHigh": 0.34,
+      "harmHigh": 0.207,
       "sets": [
-        0.34,
-        0.324,
-        0.315,
-        0.321,
-        0.295
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.97
+      "correct": 0.972
     },
     {
       "harmful": 8,
       "needless": 1,
       "worst": "none",
-      "harmHigh": 0.172,
+      "harmHigh": 0.207,
       "sets": [
-        0.168,
-        0.157,
-        0.172,
-        0.159,
-        0.169
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.963
+      "correct": 0.971
     },
     {
       "harmful": 10,
       "needless": 1,
-      "worst": "wifi.weak",
-      "harmHigh": 0.055,
+      "worst": "none",
+      "harmHigh": 0.207,
       "sets": [
-        0.029,
-        0.022,
-        0.055,
-        0.025,
-        0.036
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.957
+      "correct": 0.965
     },
     {
       "harmful": 12,
       "needless": 1,
-      "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "worst": "none",
+      "harmHigh": 0.207,
       "sets": [
-        0.029,
-        0.022,
-        0.042,
-        0.022,
-        0.029
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.965
     },
     {
       "harmful": 15,
       "needless": 1,
-      "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "worst": "none",
+      "harmHigh": 0.207,
       "sets": [
-        0.029,
-        0.022,
-        0.042,
-        0.018,
-        0.029
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.965
     },
     {
       "harmful": 20,
       "needless": 1,
-      "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "worst": "none",
+      "harmHigh": 0.207,
       "sets": [
-        0.029,
-        0.022,
-        0.042,
-        0.018,
-        0.029
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.965
     },
     {
       "harmful": 25,
       "needless": 1,
-      "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "worst": "none",
+      "harmHigh": 0.207,
       "sets": [
-        0.025,
-        0.022,
-        0.042,
-        0.018,
-        0.029
+        0.207,
+        0.179,
+        0.143,
+        0.207,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.965
     },
     {
       "harmful": 30,
       "needless": 1,
-      "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "worst": "none",
+      "harmHigh": 0.198,
       "sets": [
-        0.022,
-        0.022,
-        0.042,
-        0.018,
-        0.029
+        0.194,
+        0.179,
+        0.136,
+        0.198,
+        0.143
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.964
     },
     {
       "harmful": 40,
@@ -580,15 +580,15 @@
         0.018,
         0.025
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.955
+      "correct": 0.958
     },
     {
       "harmful": 50,
@@ -602,15 +602,15 @@
         0.018,
         0.025
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.95
+      "correct": 0.952
     },
     {
       "harmful": 70,
@@ -624,15 +624,15 @@
         0.018,
         0.018
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.948
+      "correct": 0.95
     },
     {
       "harmful": 100,
@@ -646,127 +646,149 @@
         0.014,
         0.014
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.942
+      "correct": 0.944
     }
   ],
   "needless": [
     {
-      "harmful": 12,
+      "harmful": 40,
       "needless": 1,
       "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "harmHigh": 0.039,
       "sets": [
-        0.029,
         0.022,
-        0.042,
-        0.022,
-        0.029
+        0.018,
+        0.039,
+        0.018,
+        0.025
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.958
     },
     {
-      "harmful": 12,
+      "harmful": 40,
       "needless": 1.5,
       "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "harmHigh": 0.039,
       "sets": [
-        0.029,
         0.022,
-        0.042,
-        0.022,
-        0.029
+        0.018,
+        0.039,
+        0.018,
+        0.025
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.958
     },
     {
-      "harmful": 12,
+      "harmful": 40,
       "needless": 2,
       "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "harmHigh": 0.039,
       "sets": [
-        0.029,
         0.022,
-        0.042,
-        0.022,
-        0.029
+        0.018,
+        0.039,
+        0.018,
+        0.025
       ],
-      "falseHigh": 0.333,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.333,
-        0.33,
-        0.328,
-        0.312,
-        0.292
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
       ],
-      "correct": 0.956
+      "correct": 0.958
     },
     {
-      "harmful": 12,
+      "harmful": 40,
       "needless": 3,
       "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "harmHigh": 0.039,
       "sets": [
-        0.029,
         0.022,
-        0.042,
-        0.022,
-        0.029
+        0.018,
+        0.039,
+        0.018,
+        0.025
       ],
-      "falseHigh": 0.172,
+      "falseHigh": 0.201,
       "falseSets": [
-        0.171,
-        0.172,
-        0.15,
-        0.157,
-        0.134
+        0.199,
+        0.182,
+        0.149,
+        0.201,
+        0.143
+      ],
+      "correct": 0.958
+    },
+    {
+      "harmful": 40,
+      "needless": 4,
+      "worst": "wifi.weak",
+      "harmHigh": 0.039,
+      "sets": [
+        0.022,
+        0.018,
+        0.039,
+        0.018,
+        0.025
+      ],
+      "falseHigh": 0.118,
+      "falseSets": [
+        0.118,
+        0.095,
+        0.084,
+        0.118,
+        0.069
       ],
       "correct": 0.959
     },
     {
-      "harmful": 12,
-      "needless": 4,
+      "harmful": 40,
+      "needless": 5,
       "worst": "wifi.weak",
-      "harmHigh": 0.042,
+      "harmHigh": 0.039,
       "sets": [
-        0.029,
         0.022,
-        0.042,
-        0.022,
-        0.029
+        0.018,
+        0.039,
+        0.018,
+        0.025
       ],
-      "falseHigh": 0.01,
+      "falseHigh": 0.033,
       "falseSets": [
-        0.01,
-        0.01,
-        0.01,
-        0.01,
+        0.022,
+        0.014,
+        0.033,
+        0.026,
         0.01
       ],
-      "correct": 0.962
+      "correct": 0.96
     }
   ]
 }

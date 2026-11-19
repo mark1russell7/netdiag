@@ -6,12 +6,13 @@
  */
 export const STANDARD_CONCENTRATIONS: Readonly<Record<string, number>> = {
   "path.loss": 0.124,
-  "path.mtu": 0.001,
-  "icmp.reply": 0.001,
-  "tcp.connect": 0.001,
+  "path.mtu": 0.000001,
+  "icmp.reply": 0.000001,
+  "tcp.connect": 0.000001,
   "tcp.time": 0.136,
   "tls.ratio": 0.0733,
-  "tls.trust": 0.001,
+  "tls.trust": 0.000001,
+  "tls.root": 0.000001,
   "http.status": 0.106,
   "http.ttfb": 0.0534,
 };

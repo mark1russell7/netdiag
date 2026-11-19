@@ -1,6 +1,7 @@
 {
   "captive.portal": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -17,6 +18,7 @@
   },
   "filter.drop": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -33,6 +35,7 @@
   },
   "filter.icmp": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -49,6 +52,7 @@
   },
   "filter.reset": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -65,6 +69,7 @@
   },
   "gateway.down": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -81,6 +86,7 @@
   },
   "host.down": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -97,6 +103,7 @@
   },
   "interface.down": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -113,6 +120,7 @@
   },
   "ipv6.broken": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -129,6 +137,7 @@
   },
   "name.missing": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -145,7 +154,8 @@
   },
   "none": {
     "cases": 400,
-    "correct": 400,
+    "counted": 373,
+    "correct": 373,
     "harmful": 0,
     "wilson": {
       "correctLow": 0.99,
@@ -157,26 +167,28 @@
     },
     "correctLow": 0.99,
     "harmHigh": 0.01,
-    "brier": 0.0337
+    "brier": 0.0191
   },
   "path.loss": {
     "cases": 400,
-    "correct": 267,
-    "harmful": 5,
+    "counted": 400,
+    "correct": 260,
+    "harmful": 3,
     "wilson": {
-      "correctLow": 0.62,
-      "harmHigh": 0.029
+      "correctLow": 0.602,
+      "harmHigh": 0.022
     },
     "bootstrap": {
-      "correctLow": 0.62,
-      "harmHigh": 0.025
+      "correctLow": 0.603,
+      "harmHigh": 0.018
     },
-    "correctLow": 0.62,
-    "harmHigh": 0.029,
+    "correctLow": 0.602,
+    "harmHigh": 0.022,
     "brier": 0.0532
   },
   "path.mtu": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -193,6 +205,7 @@
   },
   "port.closed": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -209,6 +222,7 @@
   },
   "proxy.error": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -225,6 +239,7 @@
   },
   "resolver.down": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -241,6 +256,7 @@
   },
   "resolver.failing": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -257,6 +273,7 @@
   },
   "server.error": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -273,6 +290,7 @@
   },
   "server.slow": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -289,6 +307,7 @@
   },
   "tls.cert-invalid": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -305,6 +324,7 @@
   },
   "tls.mismatch": {
     "cases": 400,
+    "counted": 400,
     "correct": 400,
     "harmful": 0,
     "wilson": {
@@ -321,6 +341,7 @@
   },
   "tls.proxy": {
     "cases": 400,
+    "counted": 400,
     "correct": 305,
     "harmful": 0,
     "wilson": {
@@ -333,22 +354,23 @@
     },
     "correctLow": 0.277,
     "harmHigh": 0.01,
-    "brier": 0.0008
+    "brier": 0.0003
   },
   "wifi.weak": {
     "cases": 400,
-    "correct": 280,
-    "harmful": 4,
+    "counted": 400,
+    "correct": 274,
+    "harmful": 2,
     "wilson": {
-      "correctLow": 0.653,
-      "harmHigh": 0.025
+      "correctLow": 0.638,
+      "harmHigh": 0.018
     },
     "bootstrap": {
-      "correctLow": 0.655,
-      "harmHigh": 0.02
+      "correctLow": 0.64,
+      "harmHigh": 0.013
     },
-    "correctLow": 0.653,
-    "harmHigh": 0.025,
+    "correctLow": 0.638,
+    "harmHigh": 0.018,
     "brier": 0.0453
   }
 }

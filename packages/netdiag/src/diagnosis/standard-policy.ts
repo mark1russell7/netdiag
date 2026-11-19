@@ -9,4 +9,4 @@ import type { ActionPolicy } from "./actions.ts";
  * - The harmful cost is the least cost that keeps the harm of each class at the limit or under it, on each seed set.
  * - The needless cost is the least cost that keeps the false actions on healthy targets at the limit or under it.
  */
-export const STANDARD_POLICY: ActionPolicy = { calibration: { cause: 0.354, variant: 1 }, costs: { none: 1, useless: 1, needless: 4, harmful: 12 } };
+export const STANDARD_POLICY: ActionPolicy = { calibration: { cause: 0.354, variant: 1 }, costs: { none: 1, useless: 1, needless: 5, harmful: 40 } };

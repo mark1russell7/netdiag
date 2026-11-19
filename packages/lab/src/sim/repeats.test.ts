@@ -1,6 +1,6 @@
 import { STANDARD_CATALOG } from "@mark1russell7/netdiag";
 import { describe, expect, it } from "vitest";
-import { concentrationCatalog, concentrationRecord, concentrationsSource, repeatGain, type ConcentrationFit } from "./repeats.ts";
+import { CONCENTRATION_LOW, concentrationCatalog, concentrationIntervals, concentrationRecord, concentrationsSource, concentrationText, intervalText, repeatGain, type CaseUnit, type ConcentrationFit } from "./repeats.ts";
 
 const fitOf = (feature: string, concentration: number | undefined): ConcentrationFit => ({ feature, concentration, repeats: 10, agree: 0.9, gain: 0 });
 
@@ -31,5 +31,38 @@ describe("the concentrations of the repeats", () => {
     expect(repeatGain(units, 0.01)).toBeGreaterThan(0.6);
     expect(repeatGain(units, undefined)).toBe(0);
     expect(repeatGain([], 0.01)).toBe(0);
+  });
+
+  it("give an interval of each fitted concentration that draws the cases, and no interval for an independent feature", () => {
+    const base = { a: 0.5, b: 0.5 };
+    // Four of five cases have copies, and one case has two different values. Each case has two roles, thus two units.
+    const units: CaseUnit[] = Array.from({ length: 10 }, (_, index) => {
+      const split = index >= 8;
+      return { case: String(Math.floor(index / 2)), base, observations: split ? ["a", "b"] : index % 4 < 2 ? ["a", "a", "a"] : ["b", "b", "b"] };
+    });
+    const map = new Map([["tls.root", units], ["tcp.connect", units]]);
+    const intervals = concentrationIntervals(map, [fitOf("tls.root", 0.5), fitOf("tcp.connect", undefined)], 50);
+    const root = intervals.get("tls.root");
+    expect(root?.runs).toBe(50);
+    expect(root?.level).toBe(0.95);
+    expect(root?.low).toBeLessThanOrEqual(root?.estimate ?? Number.NaN);
+    expect(root?.estimate).toBeLessThanOrEqual(root?.high ?? Number.NaN);
+    expect(intervals.has("tcp.connect")).toBe(false);
+    expect(concentrationIntervals(map, [fitOf("tls.root", 0.5)], 50).get("tls.root")).toEqual(root);
+  });
+
+  it("give the text of an interval with the count of its finite runs", () => {
+    const interval = { estimate: 0.01, low: 0.001, high: 0.0234, level: 0.95, runs: 200, finite: 200, seed: 1 };
+    expect(intervalText(interval)).toBe("0.00100 to 0.0234");
+    expect(intervalText({ ...interval, finite: 190 })).toBe("0.00100 to 0.0234 (190 of 200 runs finite)");
+    expect(intervalText(undefined)).toBe("-");
+    expect(intervalText({ ...interval, low: CONCENTRATION_LOW * 1.001 })).toBe("at or under 1e-6 to 0.0234");
+  });
+
+  it("give a fit at the low end of the search as at or under that end, and an interior fit as its value", () => {
+    expect(concentrationText(undefined)).toBe("independent");
+    expect(concentrationText(CONCENTRATION_LOW)).toBe("at or under 1e-6");
+    expect(concentrationText(0.0000101)).toBe("0.0000101");
+    expect(concentrationText(0.5)).toBe("0.5");
   });
 });

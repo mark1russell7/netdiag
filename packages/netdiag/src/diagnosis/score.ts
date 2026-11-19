@@ -97,9 +97,11 @@ export interface LabScore {
 
 /** The extremes of the distances around the truths of a set of lab records (refer to `alikeMargin`). */
 export interface AlikeBand {
+  /** The number of records with an alike cause. */
+  readonly alike: number;
   /** The largest distance of an alike cause. It is 0 when no record has an alike cause. */
   readonly inner: number;
-  /** The record with the distance `inner`. */
+  /** The first record with the distance `inner`. It is absent when no record has an alike cause. */
   readonly innerCase?: string | undefined;
   /** The smallest distance of a cause that is not alike. It is absent when no record has such a cause. */
   readonly outer?: number | undefined;
@@ -109,13 +111,19 @@ export interface AlikeBand {
   readonly nearest?: string | undefined;
 }
 
-/** This function gives the extremes of the distances around the truths of the records. A record with no margin does not count. */
+/**
+ * This function gives the extremes of the distances around the truths of the records. A record with no margin does not
+ * count. Causes with the same facts have the distance 0, so a record with an alike set counts also at the distance 0.
+ */
 export function alikeBand(records: readonly LabRecord[]): AlikeBand {
-  let band: AlikeBand = { inner: 0 };
+  let band: AlikeBand = { alike: 0, inner: 0 };
   for (const record of records) {
     const margin = record.margin;
     if (margin === undefined) continue;
-    if (margin.inner > band.inner) band = { ...band, inner: margin.inner, innerCase: record.case };
+    if ((record.alike?.length ?? 0) > 0 || margin.inner > 0) {
+      band = { ...band, alike: band.alike + 1 };
+      if (band.innerCase === undefined || margin.inner > band.inner) band = { ...band, inner: margin.inner, innerCase: record.case };
+    }
     if (margin.outer !== undefined && (band.outer === undefined || margin.outer < band.outer)) band = { ...band, outer: margin.outer, outerCase: record.case, nearest: margin.nearest };
   }
   return band;

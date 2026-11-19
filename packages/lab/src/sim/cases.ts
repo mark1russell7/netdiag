@@ -18,11 +18,27 @@ export const CASES_PER_CLASS = 80;
 /** The number of pings of a visit of the simulated world. A loss estimate needs `LOSS_MIN_SENT` requests. */
 export const SIM_PING_COUNT = 20;
 
-/** One case of the simulated world: a term of the grammar, the medium of the client, and if the world has IPv6. */
+/**
+ * The history of the good checks of the hosts of a case.
+ *
+ * - `unknown`: the caller keeps no history, as in a first check.
+ * - `known`: the history is of a good check of the world of the case without its faults.
+ * - `rotated`: the history is as `known`, but each authority moved to a new root after the good check.
+ */
+export type SimHistory = "unknown" | "known" | "rotated";
+
+/**
+ * The share of each history in the cases of a class. Half of the cases have a history, so the gate holds the two kinds of
+ * check. A small share of the histories is of the roots before a rotation, so the gate holds the actions on a rotation.
+ */
+export const SIM_HISTORY_SHARES: Readonly<Record<SimHistory, number>> = { unknown: 0.5, known: 0.45, rotated: 0.05 };
+
+/** One case of the simulated world: a term of the grammar, the medium of the client, if the world has IPv6, and the history. */
 export interface SimCase extends CaseBase {
   readonly term: FaultTerm;
   readonly medium: Medium;
   readonly ipv6: boolean;
+  readonly history: SimHistory;
   /** The seed of the random source of the network of the case. */
   readonly seed: string;
 }
@@ -154,17 +170,22 @@ export function classTerms(label: string, seed: number, n: number = CASES_PER_CL
   return terms;
 }
 
-/** This function gives the plan of one seed: the cases of each class, with a medium and IPv6 that each term needs. */
+/**
+ * This function gives the plan of one seed: the cases of each class, with a medium and IPv6 that each term needs. The
+ * history of each case comes from a random source of its own, so the history does not change the other draws.
+ */
 export function simCases(seed: number, n: number = CASES_PER_CLASS): readonly SimCase[] {
   const cases: SimCase[] = [];
   for (const label of SIM_CLASSES) {
     const draw = random(`sim:${seed}:${label}:world`);
+    const histories = random(`sim:${seed}:${label}:history`);
     classTerms(label, seed, n).forEach((term, index) => {
       const needs = termNeeds(term);
       const medium: Medium = needs.includes("wifi") || draw.chance(0.5) ? "wifi" : "wired";
       const ipv6 = needs.includes("ipv6") || draw.chance(0.5);
+      const history: SimHistory = histories.chance(SIM_HISTORY_SHARES.unknown) ? "unknown" : histories.chance(SIM_HISTORY_SHARES.rotated / (1 - SIM_HISTORY_SHARES.unknown)) ? "rotated" : "known";
       const id = `${label}#${index + 1}`;
-      cases.push({ id, truth: label, signs: [], term, medium, ipv6, seed: `sim:${seed}:${id}` });
+      cases.push({ id, truth: label, signs: [], term, medium, ipv6, history, seed: `sim:${seed}:${id}` });
     });
   }
   return cases;

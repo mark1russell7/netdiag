@@ -3,6 +3,8 @@ import { binOf, LOSS_MIN_SENT, PATH_LOSS_BINS, type Bin } from "./diagnosis/bins
 import type { Evidence } from "./diagnosis/model.ts";
 import { isFactOf, type Fact, type FactKind } from "./fact.ts";
 import { wifiSignalOf } from "./metrics/wifi.ts";
+import { HISTORY_KEYS, type HistoryHasher } from "./history.ts";
+import { formatTarget, target } from "./target.ts";
 import {
   DNS_ANSWER,
   HTTP_RESPONSE,
@@ -12,6 +14,7 @@ import {
   PATH_REPORT,
   PATH_TRACE,
   TCP_CONNECT,
+  BASELINE_KINDS,
   TLS_HANDSHAKE,
   WIFI_INTERFACES,
   WIFI_LINK,
@@ -29,6 +32,7 @@ import {
   type PathReport,
   type PathTrace,
   type TcpConnect,
+  type Baseline,
   type TlsHandshake,
   type Trust,
   type WifiInterfaces,
@@ -59,6 +63,11 @@ export interface ReadOptions {
    * ICMP echo facts of the other addresses give the feature `icmp.reply`.
    */
   readonly gateway?: string | undefined;
+  /**
+   * The keyed hash of the history of the caller. A baseline fact gives a comparison only with a hasher of its key. With no
+   * hasher, or with a different key, the features of the history have no value. They do not have the value `changed`.
+   */
+  readonly history?: HistoryHasher | undefined;
 }
 
 // The loss bins are data of the catalog, so they are in the entry ./diagnosis. The reader gives them here too.
@@ -162,6 +171,7 @@ interface Facts {
   readonly dns: Fact<DnsAnswer>[];
   readonly tcp: Fact<TcpConnect>[];
   readonly tls: Fact<TlsHandshake>[];
+  readonly baseline: Fact<Baseline>[];
   readonly http: Fact<HttpResponse>[];
   readonly icmp: Fact<IcmpEcho>[];
   readonly report: Fact<PathReport>[];
@@ -185,6 +195,7 @@ export const FEATURE_SOURCES: Readonly<Record<string, readonly (readonly string[
   "tls.handshake": [[TLS_HANDSHAKE.kind]],
   "tls.trust": [[TLS_HANDSHAKE.kind]],
   "tls.ratio": [[TLS_HANDSHAKE.kind, TCP_CONNECT.kind]],
+  ...Object.fromEntries(HISTORY_KEYS.map((key) => [key.feature, [[key.kind.kind, BASELINE_KINDS[key.kind.layer].kind]]])),
   "http.status": [[HTTP_RESPONSE.kind]],
   "http.ttfb": [[HTTP_RESPONSE.kind, TCP_CONNECT.kind]],
   "link.state": [[LINK_STATE.kind]],
@@ -228,6 +239,7 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
   ["dns", DNS_ANSWER],
   ["tcp", TCP_CONNECT],
   ["tls", TLS_HANDSHAKE],
+  ...Object.values(BASELINE_KINDS).map((kind): [keyof Facts, FactKind<unknown>] => ["baseline", kind]),
   ["http", HTTP_RESPONSE],
   ["icmp", ICMP_ECHO],
   ["report", PATH_REPORT],
@@ -257,13 +269,16 @@ const READ_KINDS: readonly [keyof Facts, FactKind<unknown>][] = [
  * - A Wi-Fi fact of a connected interface gives `wifi.signal`, one for each interface. A quality of Windows changes to dBm.
  * - A Wi-Fi fact of a connected interface gives `wifi.state` `connected`. A fact `wifi.interfaces` gives `none` when no
  *   fact tells of a connected interface. Only the list of the interfaces tells that a computer has no Wi-Fi link.
+ * - A fact with the value of a key of `HISTORY_KEYS` and a baseline of that key and host gives the feature of the key.
+ *   The feature is `same` when the baseline has the value, and `changed` when it does not. For example, a handshake
+ *   gives `tls.root`.
  * - A trace of `traceroute` gives no evidence. The catalog has no feature for the hops of a path.
  */
 export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}): Reading {
   const primaryOf = options.primary ?? (() => true);
   const slots = new Map<string, Slot>();
   const skipped: Skipped[] = [];
-  const sorted: Facts = { dns: [], tcp: [], tls: [], http: [], icmp: [], report: [], trace: [], link: [], mtu: [], wifi: [], radios: [] };
+  const sorted: Facts = { dns: [], tcp: [], tls: [], baseline: [], http: [], icmp: [], report: [], trace: [], link: [], mtu: [], wifi: [], radios: [] };
 
   for (const fact of facts) {
     const entry = READ_KINDS.find(([, kind]) => kind.kind === fact.kind);
@@ -272,8 +287,15 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
     else (sorted[entry[0]] as Fact[]).push(fact);
   }
 
+  /** For a fact and a feature that a key of the history explains, the feature of the key. */
+  const explained = new Map<string, string>();
   /** This function puts a value in the slot of a feature and a group. A `sticky` value stays when a later fact disagrees. */
   const note = (feature: string, group: string, fact: Fact, value: string, sticky?: string): void => {
+    const by = explained.get(`${fact.id}\u0000${feature}`);
+    if (by !== undefined) {
+      skipped.push({ fact: fact.id, reason: `The value of ${by} is the value of a good check, so it explains ${feature}.` });
+      return;
+    }
     const primary = primaryOf(fact);
     const key = `${feature}\u0000${primary ? 1 : 0}\u0000${group}`;
     const slot = slots.get(key);
@@ -341,6 +363,32 @@ export function readEvidence(facts: readonly Fact[], options: ReadOptions = {}):
   const ratio = (ms: number, tcp: Fact<TcpConnect>): number => ms / Math.max(tcp.value.ms, MIN_CONNECT_MS);
   // Karn's rule: the time of a connect that sent its SYN again is not a round trip, so it gives no ratio.
   const roundTrip = (tcp: Fact<TcpConnect> | undefined): Fact<TcpConnect> | undefined => (tcp === undefined || binOf(TCP_TIME_BINS, tcp.value.ms) === "retry" ? undefined : tcp);
+
+  // The baseline of a fact is the last baseline of its key, its host and its role. A baseline with a port compares only
+  // with its port. A baseline of another key of hashes gives no comparison: a lost key gives no value, not `changed`.
+  // The history comes before the other readers: a key that is `same` explains the features of its `explains`.
+  const hasher = options.history;
+  for (const fact of sorted.baseline) {
+    if (hasher === undefined || fact.value.key !== hasher.id) {
+      const why = hasher === undefined ? "The reader has no hasher of the history." : "The key of its hashes is not the key of the hasher of the reader.";
+      skipped.push({ fact: fact.id, reason: `${why} The baseline of ${fact.value.feature} gives no comparison.` });
+    }
+  }
+  for (const key of hasher === undefined ? [] : HISTORY_KEYS) {
+    const baselines = sorted.baseline.filter((each) => each.value.feature === key.feature && each.value.key === hasher?.id);
+    if (hasher === undefined || baselines.length === 0) continue;
+    for (const fact of facts) {
+      const read = key.read(fact);
+      if (read === undefined || (read.address !== undefined && ofBrokenFamily(fact, read.address))) continue;
+      const host = target(read.host).host;
+      const matches = baselines.filter((each) => each.subject.host === host && (each.subject.port === undefined || each.subject.port === read.port) && primaryOf(each) === primaryOf(fact));
+      const baseline = matches.at(-1);
+      if (baseline === undefined) continue;
+      const same = baseline.value.values.includes(hasher.hash(read.value));
+      note(key.feature, `${formatTarget(fact.subject)}\u0000${host}`, fact, same ? "same" : "changed");
+      if (same) for (const feature of key.explains) explained.set(`${fact.id}\u0000${feature}`, key.feature);
+    }
+  }
 
   for (const fact of sorted.tls) {
     const handshake = fact.value;

@@ -11,7 +11,9 @@ import {
   TRUTHS,
   autoSearch,
   diagnoseBoard,
+  evidenceOf,
   explainCause,
+  explainedOf,
   factorText,
   featureGroups,
   featureOf,
@@ -42,6 +44,17 @@ describe("the board", () => {
     const works = SCENARIOS[0]?.board.target ?? {};
     expect(Object.keys(works)).toHaveLength(CATALOG.features.size);
     expect(works["tcp.connect"]).toBe(usualValue(featureOf("tcp.connect")));
+  });
+
+  it("skips the trust of a host whose root is the root of a good check, as the reader does", () => {
+    expect([...explainedOf({ "tls.root": "same" })]).toEqual(["tls.trust"]);
+    expect(explainedOf({ "tls.root": "changed" }).size).toBe(0);
+    const board = { target: { "tls.trust": "private", "tls.root": "same" }, reference: { "tls.trust": "private", "tls.root": "changed" } };
+    expect(evidenceOf(board)).toEqual([
+      { feature: "tls.root", value: "same", primary: true },
+      { feature: "tls.trust", value: "private", primary: false },
+      { feature: "tls.root", value: "changed", primary: false },
+    ]);
   });
 
   it("explains a fault against no fault, and no fault against the most probable fault", () => {

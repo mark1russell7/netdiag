@@ -32,7 +32,7 @@ import { countOf } from "@mark1russell7/text";
 import { faultClass, faultsOf, faultValues, NO_FAULT, termVariant } from "../grammar.ts";
 import { bandLine, labReport } from "../report.ts";
 import { evidenceOfLabel, runRounds, type CaseRun, type LabRound } from "../run.ts";
-import { SIM_BANDS, simCases, type SimCase } from "./cases.ts";
+import { SIM_BANDS, SIM_HISTORY_SHARES, simCases, type SimCase } from "./cases.ts";
 import { gapOf, SIM_GAPS, type SimGap } from "./gaps.ts";
 import { simReach } from "./network.ts";
 import { simVisit } from "./world.ts";
@@ -270,7 +270,13 @@ export interface SimActionEnds {
 
 /** The actions of the cases of one class: the cases with an action, the correct and the harmful actions, their ends and the Brier score. */
 export interface SimActionRate {
+  /** The cases of the class with an action. The harmful actions and their ends are of these cases. */
   readonly cases: number;
+  /**
+   * The cases outside the known gaps. The correct actions and their ends are of these cases. A case of a gap has the facts
+   * of a case of a different class, thus no action is correct for the two.
+   */
+  readonly counted: number;
   readonly correct: number;
   readonly harmful: number;
   /** The ends of the Wilson intervals. Wilson takes each case as independent. */
@@ -368,7 +374,10 @@ export function calibrationText(outcomes: readonly SimOutcome[]): string {
   return `${JSON.stringify(gateCalibration(outcomes), null, 2)}\n`;
 }
 
-/** This function gives the text of the file `bars/sim-gaps.json`: each known gap with its cause, its end, its bars and its calibration. */
+/**
+ * This function gives the text of the file `bars/sim-gaps.json`. It has each known gap with its rule and its twin. It
+ * also has the cause, the end, the count of cases, the bars and the calibration of the gap.
+ */
 export function gapsText(runs: SimRuns): string {
   const gaps = runs.gaps.map(({ gap, bars }) => {
     const mine = runs.outcomes.filter((each) => gapOf(each.case) === gap);
@@ -378,6 +387,8 @@ export function gapsText(runs: SimRuns): string {
       label: gap.label,
       option: gap.option,
       when: gap.when ?? {},
+      histories: gap.histories ?? Object.keys(SIM_HISTORY_SHARES),
+      twin: gap.twin,
       cause: gap.cause,
       end: gap.end,
       cases: mine.length,
@@ -454,6 +465,10 @@ export function limitProblems(rates: Readonly<Record<string, SimActionRate>>, ca
     else if (calibration[name] > limit) problems.push(`The ${ERROR_TEXT[name]} is ${calibration[name]}, over its limit ${limit}.`);
   }
   for (const [label, rate] of Object.entries(rates)) {
+    if (rate.counted === 0) {
+      problems.push(`The class ${label} has no case outside the known gaps, thus the gate has no correct actions to examine.`);
+      continue;
+    }
     const limit = limits.limits[label];
     if (limit === undefined) problems.push(`The class ${label} has no limit of the correct low end in bars/action-limits.json.`);
     else if (rate.correctLow < limit) problems.push(`The class ${label} has the correct low end ${rate.correctLow}, under its limit ${limit}.`);
@@ -483,6 +498,7 @@ export function harmHighOf(label: string, rows: readonly SimOutcome[]): { readon
  * of a Wilson interval and of a bootstrap that draws the terms again.
  */
 export function correctLowOf(label: string, rows: readonly SimOutcome[]): { readonly wilson: number; readonly bootstrap: number } {
+  if (rows.length === 0) return { wilson: 0, bootstrap: 0 };
   const correct = rows.filter((each) => each.action?.taken === each.action?.correct).length;
   const drawn = bootstrapClusters(rows, termOf, (sample) => share(sample, (action) => action.taken === action.correct), { runs: SIM_BOOTSTRAP_RUNS, level: 0.95, seed: `actions:${label}:correct` });
   return { wilson: wilson(correct, rows.length).low, bootstrap: drawn.low };
@@ -490,14 +506,51 @@ export function correctLowOf(label: string, rows: readonly SimOutcome[]): { read
 
 /**
  * This function gives the high end of the gate of the false actions on healthy targets: the cases of the class `none`.
- * A false action is an action other than `none`. The high end is 1 minus the correct low end of the class `none`, thus
- * the gate of that class holds it. With no healthy case, the function gives -1.
+ * A false action is an action other than `none`. The high end is 1 minus the correct low end of each case of the class
+ * `none`, also the cases of the known gaps. `falseActionProblems` holds it. With no healthy case, the function gives -1.
  */
 export function falseHighOf(outcomes: readonly SimOutcome[]): number {
   const healthy = outcomes.filter((each) => each.action !== undefined && each.case.truth === NO_FAULT);
   if (healthy.length === 0) return -1;
   const ends = correctLowOf(NO_FAULT, healthy);
   return third(1 - Math.min(third(ends.wilson), third(ends.bootstrap)));
+}
+
+/**
+ * This function gives a problem when the false actions on healthy targets have a high end above `SIM_HARM_LIMIT`. The
+ * cases of the known gaps count. A needless action slows a live service, thus the harm limit applies, as in the fit.
+ */
+export function falseActionProblems(outcomes: readonly SimOutcome[]): readonly string[] {
+  const high = falseHighOf(outcomes);
+  if (high < 0) return ["The runs have no healthy case with an action, thus the gate has no false actions to examine."];
+  return high > SIM_HARM_LIMIT ? [`The false actions on healthy targets have the high end ${high}, over the limit ${SIM_HARM_LIMIT}.`] : [];
+}
+
+/** The count of the cases of one known gap in the file `bars/sim-gaps.json`. */
+export interface GapCount {
+  readonly id: string;
+  readonly cases: number;
+}
+
+/**
+ * This function gives a problem for each known gap with more cases than its count in the file `bars/sim-gaps.json` of
+ * the branch. The size of a gap can only fall, thus a wider rule or a new gap is a visible change of the gate. With no
+ * file, the gate cannot read the counts, and each gap with a case gives a problem.
+ */
+export function gapSizeProblems(outcomes: readonly SimOutcome[], counts: readonly GapCount[] | undefined, gaps: readonly SimGap[] = SIM_GAPS): readonly string[] {
+  const problems: string[] = [];
+  for (const gap of gaps) {
+    const cases = outcomes.filter((each) => gapOf(each.case, gaps) === gap).length;
+    const count = counts?.find((each) => each.id === gap.id)?.cases;
+    if (counts === undefined) {
+      if (cases > 0) problems.push(`The file bars/sim-gaps.json has no counts, thus the gate cannot read the size of the gap ${gap.id} (${cases} cases).`);
+    } else if (count === undefined) {
+      if (cases > 0) problems.push(`The gap ${gap.id} is new, with ${cases} cases. Write its count in bars/sim-gaps.json by hand, and tell the reason in the PR.`);
+    } else if (cases > count) {
+      problems.push(`The gap ${gap.id} has ${cases} cases of the gate seeds, over its count ${count} in bars/sim-gaps.json. The size of a gap can only fall.`);
+    }
+  }
+  return problems;
 }
 
 /** This function gives the outcomes with an action of each class, in the order of the classes. */
@@ -512,18 +565,23 @@ export function actionClasses(outcomes: readonly SimOutcome[]): readonly (readon
   return [...groups].sort((a, b) => a[0].localeCompare(b[0]));
 }
 
-/** This function gives the action rates of each class, in the order of the classes. Only a case with an action counts. */
+/**
+ * This function gives the action rates of each class, in the order of the classes. Only a case with an action counts.
+ * The harmful actions are of each case. The correct actions are of the cases outside the known gaps.
+ */
 export function actionRates(outcomes: readonly SimOutcome[]): Readonly<Record<string, SimActionRate>> {
   const rate = (label: string, rows: readonly SimOutcome[]): SimActionRate => {
-    const correct = rows.filter((each) => each.action?.taken === each.action?.correct).length;
+    const counted = outsideGaps(rows);
+    const correct = counted.filter((each) => each.action?.taken === each.action?.correct).length;
     const harmful = rows.filter((each) => each.action?.harmful === true).length;
-    const hits = correctLowOf(label, rows);
+    const hits = correctLowOf(label, counted);
     const harm = harmHighOf(label, rows);
     const wilsonEnds = { correctLow: third(hits.wilson), harmHigh: third(harm.wilson) };
     const bootstrapEnds = { correctLow: third(hits.bootstrap), harmHigh: third(harm.bootstrap) };
     const forecasts = rows.flatMap((each) => (each.action === undefined ? [] : kindForecasts(each.action)));
     return {
       cases: rows.length,
+      counted: counted.length,
       correct,
       harmful,
       wilson: wilsonEnds,
@@ -599,16 +657,17 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
     "",
     "The correct action is the action of the variant of the case. A harmful action is worse than none. A case with two faults has no action.",
     "",
+    "The correct actions are of the cases outside the known gaps. The harmful actions are of each case. The section of the known gaps has the actions of its cases.",
     "The ends are of 95 % intervals: Wilson, and a bootstrap that draws the terms of the class again. The gate takes the worse end of the two.",
     `A class with a harm high end above ${SIM_HARM_LIMIT} fails the test of the sim. The margin is ${SIM_HARM_LIMIT} minus the harm high end.`,
     "A class with a correct low end under its limit in `bars/action-limits.json` also fails the test. The Brier score is of the probability of each kind of action.",
     "",
-    "| Class | Cases | Correct | Correct, low end (Wilson, bootstrap) | Its limit | Harmful | Harmful, high end (Wilson, bootstrap) | Harm margin | Brier | The other actions |",
-    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    "| Class | Cases | Outside the gaps | Correct | Correct, low end (Wilson, bootstrap) | Its limit | Harmful | Harmful, high end (Wilson, bootstrap) | Harm margin | Brier | The other actions outside the gaps |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
   );
   for (const [label, rate] of Object.entries(actionRates(outcomes))) {
     const others = new Map<string, number>();
-    for (const each of outcomes) {
+    for (const each of outsideGaps(outcomes)) {
       if (each.case.truth !== label || each.action === undefined || each.action.taken === each.action.correct) continue;
       const name = `${each.action.taken}${each.action.harmful ? " (harmful)" : ""}`;
       others.set(name, (others.get(name) ?? 0) + 1);
@@ -616,7 +675,7 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
     const list = [...others].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`);
     const ends = (gate: number, wilsonEnd: number, bootstrapEnd: number): string => `${gate} (${wilsonEnd}, ${bootstrapEnd})`;
     lines.push(
-      `| ${label} | ${rate.cases} | ${percent(rate.correct, rate.cases)} | ${ends(rate.correctLow, rate.wilson.correctLow, rate.bootstrap.correctLow)} | ${limits?.limits[label] ?? "–"} | ${percent(rate.harmful, rate.cases)} | ${ends(rate.harmHigh, rate.wilson.harmHigh, rate.bootstrap.harmHigh)} | ${third(SIM_HARM_LIMIT - rate.harmHigh)} | ${rate.brier} | ${list.join(", ")} |`,
+      `| ${label} | ${rate.cases} | ${rate.counted} | ${percent(rate.correct, rate.counted)} | ${ends(rate.correctLow, rate.wilson.correctLow, rate.bootstrap.correctLow)} | ${limits?.limits[label] ?? "–"} | ${percent(rate.harmful, rate.cases)} | ${ends(rate.harmHigh, rate.wilson.harmHigh, rate.bootstrap.harmHigh)} | ${third(SIM_HARM_LIMIT - rate.harmHigh)} | ${rate.brier} | ${list.join(", ")} |`,
     );
   }
   const calibration = gateCalibration(outcomes);
@@ -639,17 +698,25 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
     "",
     "## The known gaps",
     "",
-    "A known gap is a cell where netdiag fails for a known cause. The gate examines its cases apart from the other cases, with a bar of their own.",
-    "The top-label error is of the cases of the gap only. When the bar of a gap gets to the bar of its class, the sim tells you to remove the gap.",
+    "A known gap is a rule over the fault and the history of a case. Its cases have the same facts as the cases of its twin, a fault of a different class. The gate examines its cases apart from the other cases, with a bar of their own.",
+    "The size of a gap can only fall: the gate holds its cases at or under its count in bars/sim-gaps.json. The top-label error is of the cases of the gap only. When the bar of a gap gets to the bar of its class, the sim tells you to remove the gap.",
     "",
-    "| Gap | Class | Cases | Hits | Bar | Top-label error | Cause | End |",
-    "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    "| Gap | Class | Twin | Cases | Hits | Bar | Actions | Top-label error | Cause | End |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
   );
   for (const { gap, bars: gapBars } of runs.gaps) {
     const mine = outcomes.filter((each) => gapOf(each.case) === gap);
     const hits = mine.filter((each) => each.predicted === gap.label).length;
     const bar = gapBars.tag === "ok" ? (gapBars.value[gap.label] ?? "–") : "–";
-    lines.push(`| ${gap.id} | ${gap.label} | ${mine.length} | ${percent(hits, mine.length)} | ${bar} | ${actionCalibration(mine).top} | ${gap.cause} | ${gap.end} |`);
+    const taken = new Map<string, number>();
+    for (const each of mine) {
+      if (each.action === undefined) continue;
+      const name = `${each.action.taken}${each.action.harmful ? " (harmful)" : ""}`;
+      taken.set(name, (taken.get(name) ?? 0) + 1);
+    }
+    const actions = [...taken].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`).join(", ") || "–";
+    const twin = `${gap.twin.label} (${gap.twin.option}, ${Object.entries(gap.twin.params).map(([name, value]) => `${name} ${String(value)}`).join(", ")})`;
+    lines.push(`| ${gap.id} | ${gap.label} | ${twin} | ${mine.length} | ${percent(hits, mine.length)} | ${bar} | ${actions} | ${actionCalibration(mine).top} | ${gap.cause} | ${gap.end} |`);
   }
   lines.push("", "## The hits of each option at each place", "", "| Class | Option | Place | Hits | Cases |", "| --- | --- | --- | --- | --- |");
   for (const group of placeHits(outcomes)) lines.push(`| ${group.label} | ${group.option} | ${group.place} | ${percent(group.hits, group.cases)} | ${group.cases} |`);

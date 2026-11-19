@@ -129,6 +129,13 @@ const FEATURES: readonly Feature[] = [
     healthy: { public: 0.97, private: 0.03 },
   },
   {
+    id: "tls.root",
+    layer: "tls",
+    summary: "The root of the certificate chain, compared with the roots of the good checks of the host: the same root, or a changed root.",
+    values: ["same", "changed"],
+    healthy: { same: 0.98, changed: 0.02 },
+  },
+  {
     id: "http.status",
     layer: "http",
     summary: "The class of the HTTP status: ok (2xx and 3xx), client-error (4xx), server-error (5xx), or none.",
@@ -403,6 +410,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
       "dns.address": { expect: "private", strength: "usual" },
       "tls.handshake": { expect: "cert-error", strength: "strong" },
       "tls.trust": { expect: "private", strength: "usual" },
+      "tls.root": { expect: "changed", strength: "usual" },
     },
   },
   {
@@ -594,7 +602,13 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Compare the issuer of the certificate with the issuer on a different network, and ask the owner of the network.",
     predicts: {
       "tls.ratio": { expect: ["mid", "high"], strength: "usual" },
-      "tls.trust": { expect: "private", strength: "usual" },
+      // The device gives a certificate from a root that the client was made to trust, or from no trusted root. A public
+      // root needs a public certificate that an authority gave in error. Section 3.2.2.4 of the Baseline Requirements of
+      // the CA/Browser Forum lets an authority give a certificate only after a check that the applicant controls the name.
+      // Browsers remove an authority that breaks this rule, as Chrome did with CNNIC in 2015 after a proxy used its
+      // certificates. Thus a public trust gets the floor.
+      "tls.trust": { private: 1 - FLOOR, public: FLOOR },
+      "tls.root": { expect: "changed", strength: "usual" },
       "tcp.time": { expect: "short", strength: "strong" },
     },
   },
@@ -603,11 +617,20 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     part: "service",
     layer: "tls",
     reach: "target",
-    summary: "The certificate of the server is not valid: it expired, or it is for a different name.",
-    step: "Renew the certificate of the server, or correct its names.",
+    summary: "The certificate of the server is not valid: it expired, it is for a different name, or its chain ends at no trusted root.",
+    step: "Renew the certificate of the server, or correct its names and its chain.",
     predicts: {
       "tls.handshake": { expect: "cert-error", strength: "strong" },
     },
+    degrees: [
+      { id: "kept-root", summary: "A certificate of the chain expired, or the certificate is for a different name. The root of the chain does not change.", share: 2 },
+      {
+        id: "chain",
+        summary: "The chain of the certificate ends at a root that the client does not trust.",
+        share: 1,
+        predicts: { "tls.trust": { expect: "private", strength: "usual" }, "tls.root": { expect: "changed", strength: "usual" } },
+      },
+    ],
   },
   {
     id: "tls.mismatch",
@@ -652,7 +675,9 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Ask the owner of the network to repair the proxy, and compare the site on a different network.",
     predicts: {
       // A device of the network can give an HTTP status for an HTTPS site only as a TLS proxy that the clients trust.
-      "tls.trust": { expect: "private", strength: "strong" },
+      // The root of that proxy is not the root of the site in a good check. A public trust gets the floor, as for tls.proxy.
+      "tls.trust": { private: 1 - FLOOR, public: FLOOR },
+      "tls.root": { expect: "changed", strength: "usual" },
       "http.status": { expect: "server-error", strength: "strong" },
     },
   },
@@ -660,7 +685,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "13",
+  version: "15",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

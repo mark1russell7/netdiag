@@ -3,6 +3,7 @@ import { factsOf, type Fact } from "./fact.ts";
 import { DNS_ANSWER, HTTP_RESPONSE, PATH_REPORT, TCP_CONNECT, TLS_HANDSHAKE, type RecordType } from "./kinds.ts";
 import { originProbe, type OriginInput, type OriginRaw, type TxtResolve } from "./lookups/origin.ts";
 import { MAX_OWNER_ADDRESSES, ownerProbe, type OwnerInput, type OwnerProbeOptions, type OwnerRaw, type RdapGet } from "./lookups/owner.ts";
+import { HISTORY_PROBE, type HistoryInput, type HistoryRaw } from "./probes/history.ts";
 import { LINK_SUBJECT, linkProbe, type InterfaceTable, type LinkInput, type LinkRaw } from "./probes/link.ts";
 import { DNS_PROBE, httpProbe, type DnsInput, type DnsRaw, type HttpInput, type HttpRaw, type TlsProbeOptions } from "./probes/native.ts";
 import type { Probe } from "./probe.ts";
@@ -43,6 +44,7 @@ export interface VisitProbes {
   readonly http: Probe<HttpInput, HttpRaw>;
   readonly owner: Probe<OwnerInput, OwnerRaw>;
   readonly origin: Probe<OriginInput, OriginRaw>;
+  readonly history: Probe<HistoryInput, HistoryRaw>;
 }
 
 /** The options of a visit. */
@@ -139,6 +141,7 @@ function stepsOf(role: VisitRole, host: string, what: string, outcome: ProbeOutc
  *
  * - First, it reads the state of the link of this computer, to the gateway when the input has it. This read sends no packet.
  * - Then it reads the Wi-Fi link of this computer with `wifiProbe`, when the options have `tools`. This read also sends no packet.
+ * - For each host with a history, it reads the history with the history probe first. This read sends no packet.
  * - For each name, it asks the resolver for the A records and then the AAAA records.
  * - When a host grant puts a name in the scope, the addresses of its answers go into the scope.
  * - For each address, it starts `ping`, then `mtr`, then one HTTP request. A probe of an address out of the scope gives a problem.
@@ -170,6 +173,7 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
   const dns = given.dns ?? DNS_PROBE;
   const scheme = options.scheme ?? "https";
   const link = given.link ?? linkProbe(options.interfaces);
+  const history = given.history ?? HISTORY_PROBE;
   const wifi = options.wifi === false ? undefined : (given.wifi ?? (tools === undefined ? undefined : wifiProbe(tools)));
   yield* stepsOf("local", input.gateway ?? LINK_SUBJECT, "read of the link", await run(link, { gateway: input.gateway }));
   if (wifi !== undefined) yield* stepsOf("local", LINK_SUBJECT, "read of the Wi-Fi link", await run(wifi, {}));
@@ -178,6 +182,9 @@ export async function* visitTarget(input: VisitInput, options: VisitOptions): As
     ...(input.references ?? []).map((host) => ({ role: "reference" as const, host })),
   ];
   for (const { role, host } of hosts) {
+    if (host.history !== undefined) {
+      yield* stepsOf(role, host.host, `read of the history of ${host.host}`, await run(history, { host: host.host, port: host.port, history: host.history }));
+    }
     const name = hostKind(host.host) === "name" ? host.host : undefined;
     const addresses: string[] = [];
     if (name === undefined) addresses.push(host.host);

@@ -408,7 +408,19 @@ export type ReachOf = (option: string, place: FaultPlace) => Reach;
 /** The options whose param `share` is a loss of packets. The degree of such a fault is a degree of `LOSS_DEGREES`. */
 const LOSS_OPTIONS: ReadonlySet<string> = new Set(["path/loss", "wifi/loss"]);
 
-/** The variant of one fault: the reach of its place, and the degree of a loss. A fault that is not a loss has no degree. */
+/**
+ * The degrees of the faults that are not a loss: the option, the values of its params that match, and the degree of the
+ * catalog. A fault that is not a loss and matches no entry has no degree.
+ */
+export const OPTION_DEGREES: readonly { readonly option: string; readonly when?: Readonly<Record<string, readonly ParamValue[]>>; readonly degree: string }[] = [
+  // An expired certificate, or a certificate for a different name, keeps the root of the chain.
+  { option: "tls/expire", degree: "kept-root" },
+  { option: "tls/wrong", when: { kind: ["name"] }, degree: "kept-root" },
+  // A chain with no intermediate certificate ends at the certificate of the server, not at the root of the history.
+  { option: "tls/wrong", when: { kind: ["chain"] }, degree: "chain" },
+];
+
+/** The variant of one fault: the reach of its place, and its degree. */
 export interface FaultVariant {
   readonly reach: Reach | undefined;
   readonly degree?: string | undefined;
@@ -420,13 +432,17 @@ export interface FaultVariant {
  * - The reach comes from `reachOf` of the world. A fault with no place has no reach.
  * - A loss in both directions loses an exchange with the probability 1 - (1 - s)^2. A loss in one direction loses it
  *   with the probability s. The degree is the degree of `LOSS_DEGREES` that is nearest to that probability.
+ * - Another fault takes the degree of the first entry of `OPTION_DEGREES` that matches it, or no degree.
  */
 export function faultVariant(choice: StageChoice, reachOf: ReachOf): FaultVariant {
   const values = faultValues(choice);
   const place = values["place"];
   const reach = typeof place === "string" && (FAULT_PLACES as readonly string[]).includes(place) ? reachOf(choice.option, place as FaultPlace) : undefined;
   const share = values["share"];
-  if (!LOSS_OPTIONS.has(choice.option) || typeof share !== "number") return { reach };
+  if (!LOSS_OPTIONS.has(choice.option) || typeof share !== "number") {
+    const rule = OPTION_DEGREES.find((each) => each.option === choice.option && matches(values, each.when));
+    return rule === undefined ? { reach } : { reach, degree: rule.degree };
+  }
   const q = values["direction"] === "out" || values["direction"] === "back" ? share : 1 - (1 - share) ** 2;
   const nearest = LOSS_DEGREES.reduce((best, each) => (Math.abs(each.loss - q) < Math.abs(best.loss - q) ? each : best));
   return { reach, degree: nearest.id };

@@ -42,6 +42,7 @@ export {
 export { createRunner, type ClockOrigin, type ProbeOutcome, type Runner, type RunnerOptions } from "./run.ts";
 export * from "./address/index.ts";
 export * from "./diagnosis/index.ts";
+export * from "./history.ts";
 export * from "./kinds.ts";
 export * from "./metrics/index.ts";
 export * from "./readers.ts";
@@ -63,6 +64,7 @@ export { DEFAULT_MTR_CYCLES, DEFAULT_PING_COUNT, MAX_MTR_CYCLES, MAX_PING_COUNT 
 export {
   MTU_SEARCHES,
   VISIT_ROLES,
+  type HostHistory,
   type MtuSearch,
   type VisitHost,
   type VisitInput,

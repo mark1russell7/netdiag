@@ -9,6 +9,7 @@ import {
   NONE,
   STANDARD_CATALOG,
   STANDARD_CATALOG_SPEC,
+  STANDARD_FAULTS,
   STANDARD_FEATURES,
   STRENGTHS,
   UNKNOWN,
@@ -27,6 +28,7 @@ import {
   type Feature,
   type Reach,
 } from "./index.ts";
+import { HISTORY_KEYS } from "../history.ts";
 import type { Layer } from "../layer.ts";
 import { repeatedLikelihood, repeatKey, tallies } from "./model.ts";
 
@@ -60,6 +62,29 @@ describe("the catalog", () => {
     const priors = catalog.hypotheses.map((h) => catalog.prior(h.id));
     expect(priors.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
     expect(new Set(priors).size).toBe(1);
+  });
+
+  it("gives a changed root to each fault and degree with a private trust: a root that the clients were made to trust is a new root", () => {
+    for (const fault of STANDARD_FAULTS) {
+      for (const predicts of [fault.predicts, ...(fault.degrees ?? []).map((degree) => degree.predicts)]) {
+        if (predicts?.["tls.trust"]?.expect === "private") expect(predicts["tls.root"]?.expect, fault.id).toBe("changed");
+      }
+    }
+  });
+
+  // A key of the history is one value of a host, for example the root of its chain. Each address of the host gives a read
+  // of the same value, so a repeat is not new evidence. The fitted concentration makes the repeats count as one read.
+  it("counts four identical reads of a key of the history at one role as one read, with the standard concentrations", () => {
+    for (const key of HISTORY_KEYS) {
+      for (const value of ["same", "changed"]) {
+        const reads = (count: number): Evidence[] => Array.from({ length: count }, () => ({ feature: key.feature, value, primary: true }));
+        const four = new Map(diagnose(STANDARD_CATALOG, reads(4)).causes.map((cause) => [cause.id, cause.probability]));
+        for (const cause of diagnose(STANDARD_CATALOG, reads(1)).causes) {
+          const shift = Math.abs(Math.log(four.get(cause.id) ?? Number.NaN) - Math.log(cause.probability));
+          expect(shift, `${key.feature}=${value}: ${cause.id}`).toBeLessThan(0.05);
+        }
+      }
+    }
   });
 
   it("gives each fault a summary and a step in plain words", () => {
@@ -225,6 +250,16 @@ describe("the rules of practice", () => {
     expect(top([e("tls.handshake", "ok"), e("tls.trust", "private"), e("http.status", "ok")])).toBe("tls.proxy");
     const reference = [e("tls.trust", "public", false), e("http.status", "ok", false)];
     expect(top([e("tls.trust", "private"), e("http.status", "server-error"), ...reference])).toBe("proxy.error");
+  });
+
+  // The rules of the public authorities forbid a certificate for an interception. A new root with a public trust is a
+  // rotation of the authority of the site, so it does not tell of a proxy.
+  it("gives a public trust the floor under a proxy, so a new public root with an error names the server", () => {
+    for (const cause of ["tls.proxy", "proxy.error"]) expect(STANDARD_CATALOG.likelihood(cause, "tls.trust", "public", true), cause).toBeCloseTo(FLOOR, 12);
+    const rotated = [e("tls.handshake", "ok"), e("tls.root", "changed"), e("tls.trust", "public"), e("http.status", "server-error")];
+    const causes = diagnose(STANDARD_CATALOG, rotated).causes;
+    expect(causes[0]?.id).toBe("server.error");
+    expect(causes.find((cause) => cause.id === "proxy.error")?.probability).toBeLessThan(0.1);
   });
 
   it("names a slow server when the first byte is slow and the handshakes are fast", () => {

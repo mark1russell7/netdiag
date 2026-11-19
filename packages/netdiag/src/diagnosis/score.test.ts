@@ -78,8 +78,15 @@ describe("alikeBand and bandProblems", () => {
       withMargin("c", { inner: 0 }),
       record("none", "none", "d"),
     ]);
-    expect(band).toEqual({ inner: 1e-9, innerCase: "b", outer: 0.02, outerCase: "b", nearest: "none" });
-    expect(alikeBand([])).toEqual({ inner: 0 });
+    expect(band).toEqual({ alike: 1, inner: 1e-9, innerCase: "b", outer: 0.02, outerCase: "b", nearest: "none" });
+    expect(alikeBand([])).toEqual({ alike: 0, inner: 0 });
+    expect(bandProblems(band)).toEqual([]);
+  });
+
+  it("counts the records with causes of the same facts, and names the first of them, also at the distance 0", () => {
+    const same = (caseId: string): LabRecord => ({ ...withMargin(caseId, { inner: 0, outer: 1, nearest: "none" }), alike: ["host.down"] });
+    const band = alikeBand([withMargin("a", { inner: 0, outer: 2, nearest: "none" }), same("b"), same("c")]);
+    expect(band).toEqual({ alike: 2, inner: 0, innerCase: "b", outer: 1, outerCase: "b", nearest: "none" });
     expect(bandProblems(band)).toEqual([]);
   });
 

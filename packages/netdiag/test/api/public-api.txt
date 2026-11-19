@@ -21,7 +21,9 @@ AddressFamily: build/index.chunk.d.ts#AddressFamily
 type AlikeBand: build/index.chunk2.d.ts#AlikeBand
 type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Availability: build/counts.chunk.d.ts#Availability
+BASELINE_KINDS: build/counts.chunk.d.ts#BASELINE_KINDS
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
+Baseline: build/counts.chunk.d.ts#Baseline
 type Bin: build/core.chunk.d.ts#Bin
 CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
@@ -88,12 +90,23 @@ GATEWAY_REPLY_VALUES: build/core.chunk.d.ts#GATEWAY_REPLY_VALUES
 type Grant: build/core.chunk.d.ts#Grant
 type GrantBasis: build/core.chunk.d.ts#GrantBasis
 HANDSHAKE_OUTCOMES: build/counts.chunk.d.ts#HANDSHAKE_OUTCOMES
+HISTORY_KEYS: build/core.chunk.d.ts#HISTORY_KEYS
+HISTORY_KEY_BYTES: build/index.d.ts#HISTORY_KEY_BYTES
+HISTORY_PROBE: build/index.d.ts#HISTORY_PROBE
 HTTP_OUTCOMES: build/counts.chunk.d.ts#HTTP_OUTCOMES
 HTTP_PROBE: build/index.d.ts#HTTP_PROBE
 HTTP_RESPONSE: build/counts.chunk.d.ts#HTTP_RESPONSE
 HTTP_TTFB_BINS: build/core.chunk.d.ts#HTTP_TTFB_BINS
 HandshakeOutcome: build/counts.chunk.d.ts#HandshakeOutcome
+HistoryHasher: build/core.chunk.d.ts#HistoryHasher
+type HistoryInput: build/index.d.ts#HistoryInput
+HistoryKey: build/core.chunk.d.ts#HistoryKey
+HistoryKeySpec: build/core.chunk.d.ts#HistoryKeySpec
+HistoryOptions: build/core.chunk.d.ts#HistoryOptions
+type HistoryRaw: build/index.d.ts#HistoryRaw
+HistoryRead: build/core.chunk.d.ts#HistoryRead
 type HostGrant: build/core.chunk.d.ts#HostGrant
+type HostHistory: build/core.chunk.d.ts#HostHistory
 type HostKind: build/counts.chunk.d.ts#HostKind
 type HttpInput: build/index.d.ts#HttpInput
 HttpOutcome: build/counts.chunk.d.ts#HttpOutcome
@@ -357,6 +370,9 @@ grantProblems: build/core.chunk.d.ts#grantProblems
 handshakeOutcome: build/index.d.ts#handshakeOutcome
 harmOf: build/index.chunk2.d.ts#harmOf
 harmfulOf: build/index.chunk2.d.ts#harmfulOf
+historyKey: build/core.chunk.d.ts#historyKey
+historyOf: build/core.chunk.d.ts#historyOf
+historyProbe: build/index.d.ts#historyProbe
 hostKind: build/counts.chunk.d.ts#hostKind
 httpProbe: build/index.d.ts#httpProbe
 interfaceOf: build/index.d.ts#interfaceOf
@@ -378,6 +394,7 @@ lossNetworks: build/core.chunk.d.ts#lossNetworks
 lossOf: build/core.chunk.d.ts#lossOf
 lossOrigins: build/core.chunk.d.ts#lossOrigins
 lossStart: build/core.chunk.d.ts#lossStart
+machineHasher: build/index.d.ts#machineHasher
 mtuOf: build/counts.chunk.d.ts#mtuOf
 namedGrant: build/core.chunk.d.ts#namedGrant
 networkQuery: build/core.chunk.d.ts#networkQuery
@@ -438,7 +455,9 @@ AddressFamily: build/index.chunk.d.ts#AddressFamily
 type AlikeBand: build/index.chunk2.d.ts#AlikeBand
 type AlikeMargin: build/index.chunk2.d.ts#AlikeMargin
 type Availability: build/counts.chunk.d.ts#Availability
+BASELINE_KINDS: build/counts.chunk.d.ts#BASELINE_KINDS
 type BandwidthEstimate: build/core.chunk.d.ts#BandwidthEstimate
+Baseline: build/counts.chunk.d.ts#Baseline
 type Bin: build/core.chunk.d.ts#Bin
 CAPTURE_OUTCOMES: build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 CAPTURE_PROTOCOLS: build/counts.chunk.d.ts#CAPTURE_PROTOCOLS
@@ -494,11 +513,18 @@ GATEWAY_REPLY_VALUES: build/core.chunk.d.ts#GATEWAY_REPLY_VALUES
 type Grant: build/core.chunk.d.ts#Grant
 type GrantBasis: build/core.chunk.d.ts#GrantBasis
 HANDSHAKE_OUTCOMES: build/counts.chunk.d.ts#HANDSHAKE_OUTCOMES
+HISTORY_KEYS: build/core.chunk.d.ts#HISTORY_KEYS
 HTTP_OUTCOMES: build/counts.chunk.d.ts#HTTP_OUTCOMES
 HTTP_RESPONSE: build/counts.chunk.d.ts#HTTP_RESPONSE
 HTTP_TTFB_BINS: build/core.chunk.d.ts#HTTP_TTFB_BINS
 HandshakeOutcome: build/counts.chunk.d.ts#HandshakeOutcome
+HistoryHasher: build/core.chunk.d.ts#HistoryHasher
+HistoryKey: build/core.chunk.d.ts#HistoryKey
+HistoryKeySpec: build/core.chunk.d.ts#HistoryKeySpec
+HistoryOptions: build/core.chunk.d.ts#HistoryOptions
+HistoryRead: build/core.chunk.d.ts#HistoryRead
 type HostGrant: build/core.chunk.d.ts#HostGrant
+type HostHistory: build/core.chunk.d.ts#HostHistory
 type HostKind: build/counts.chunk.d.ts#HostKind
 HttpOutcome: build/counts.chunk.d.ts#HttpOutcome
 HttpResponse: build/counts.chunk.d.ts#HttpResponse
@@ -717,6 +743,8 @@ formatTarget: build/counts.chunk.d.ts#formatTarget
 grantProblems: build/core.chunk.d.ts#grantProblems
 harmOf: build/index.chunk2.d.ts#harmOf
 harmfulOf: build/index.chunk2.d.ts#harmfulOf
+historyKey: build/core.chunk.d.ts#historyKey
+historyOf: build/core.chunk.d.ts#historyOf
 hostKind: build/counts.chunk.d.ts#hostKind
 ipVersion: build/index.chunk.d.ts#ipVersion
 ipdv: build/core.chunk.d.ts#ipdv
@@ -1060,8 +1088,50 @@ type Grant = HostGrant | RangeGrant;
 ### build/core.chunk.d.ts#GrantBasis
 type GrantBasis = "named" | "owned" | "configured" | "resolved";
 
+### build/core.chunk.d.ts#HISTORY_KEYS
+declare const HISTORY_KEYS: readonly HistoryKey[];
+
 ### build/core.chunk.d.ts#HTTP_TTFB_BINS
 declare const HTTP_TTFB_BINS: readonly Bin[];
+
+### build/core.chunk.d.ts#HistoryHasher
+interface HistoryHasher {
+  readonly id: string;
+  readonly hash: (value: string) => string;
+}
+
+### build/core.chunk.d.ts#HistoryKey
+interface HistoryKey {
+  readonly feature: string;
+  readonly kind: FactKind<unknown>;
+  readonly read: (fact: Fact) => HistoryRead | undefined;
+  readonly keeps: (fact: Fact) => boolean;
+  readonly explains: readonly string[];
+}
+
+### build/core.chunk.d.ts#HistoryKeySpec
+interface HistoryKeySpec<V> {
+  readonly feature: string;
+  readonly kind: FactKind<V>;
+  readonly read: (fact: Fact<V>) => HistoryRead | undefined;
+  readonly keeps: (fact: Fact<V>) => boolean;
+  readonly explains?: readonly string[] | undefined;
+}
+
+### build/core.chunk.d.ts#HistoryOptions
+interface HistoryOptions {
+  readonly checked: string;
+  readonly hasher: HistoryHasher;
+  readonly keys?: readonly HistoryKey[] | undefined;
+}
+
+### build/core.chunk.d.ts#HistoryRead
+interface HistoryRead {
+  readonly value: string;
+  readonly host: string;
+  readonly port?: number | undefined;
+  readonly address?: string | undefined;
+}
 
 ### build/core.chunk.d.ts#HostGrant
 interface HostGrant {
@@ -1070,6 +1140,13 @@ interface HostGrant {
   readonly subdomains?: boolean | undefined;
   readonly basis: GrantBasis;
   readonly note?: string | undefined;
+}
+
+### build/core.chunk.d.ts#HostHistory
+interface HostHistory {
+  readonly checked: string;
+  readonly key: string;
+  readonly values: Readonly<Record<string, readonly string[]>>;
 }
 
 ### build/core.chunk.d.ts#ICMP_REPLY_VALUES
@@ -1218,6 +1295,7 @@ interface RdapService {
 interface ReadOptions {
   readonly primary?: ((fact: Fact) => boolean) | undefined;
   readonly gateway?: string | undefined;
+  readonly history?: HistoryHasher | undefined;
 }
 
 ### build/core.chunk.d.ts#Reading
@@ -1300,6 +1378,7 @@ declare const VISIT_ROLES: readonly ["target", "reference", "gateway", "local"];
 interface VisitHost {
   readonly host: string;
   readonly port?: number | undefined;
+  readonly history?: HostHistory | undefined;
 }
 
 ### build/core.chunk.d.ts#VisitInput
@@ -1394,6 +1473,12 @@ declare function featuresOf(kinds: readonly string[], options?: FeaturesOptions)
 ### build/core.chunk.d.ts#grantProblems
 declare function grantProblems(grant: Grant): string[];
 
+### build/core.chunk.d.ts#historyKey
+declare function historyKey<V>(spec: HistoryKeySpec<V>): HistoryKey;
+
+### build/core.chunk.d.ts#historyOf
+declare function historyOf(steps: readonly VisitStep[], options: HistoryOptions): ReadonlyMap<string, HostHistory>;
+
 ### build/core.chunk.d.ts#ipdv
 declare function ipdv(delaysMs: readonly number[]): number[];
 
@@ -1479,6 +1564,17 @@ type Availability = {
   readonly available: false;
   readonly reason: string;
 };
+
+### build/counts.chunk.d.ts#BASELINE_KINDS
+declare const BASELINE_KINDS: Readonly<Record<Layer, FactKind<Baseline>>>;
+
+### build/counts.chunk.d.ts#Baseline
+interface Baseline {
+  readonly feature: string;
+  readonly values: readonly string[];
+  readonly checked: string;
+  readonly key: string;
+}
 
 ### build/counts.chunk.d.ts#CAPTURE_OUTCOMES
 declare const CAPTURE_OUTCOMES: readonly ["captured", "none", "error"];
@@ -1972,6 +2068,7 @@ interface TlsCertificate {
   readonly selfSigned: boolean;
   readonly chain: number;
   readonly trust: Trust;
+  readonly root?: string | undefined;
   readonly problem?: CertProblem | undefined;
 }
 
@@ -2218,6 +2315,7 @@ interface ActionRule {
 
 ### build/index.chunk2.d.ts#AlikeBand
 interface AlikeBand {
+  readonly alike: number;
   readonly inner: number;
   readonly innerCase?: string | undefined;
   readonly outer?: number | undefined;
@@ -2696,8 +2794,27 @@ interface DnsRaw {
   readonly tries?: number | undefined;
 }
 
+### build/index.d.ts#HISTORY_KEY_BYTES
+export declare const HISTORY_KEY_BYTES = 32;
+
+### build/index.d.ts#HISTORY_PROBE
+export declare const HISTORY_PROBE: Probe<HistoryInput, HistoryRaw>;
+
 ### build/index.d.ts#HTTP_PROBE
 export declare const HTTP_PROBE: Probe<HttpInput, HttpRaw>;
+
+### build/index.d.ts#HistoryInput
+interface HistoryInput {
+  readonly host: string;
+  readonly port?: number | undefined;
+  readonly history: HostHistory;
+}
+
+### build/index.d.ts#HistoryRaw
+interface HistoryRaw extends HistoryInput {
+  readonly start: number;
+  readonly end: number;
+}
 
 ### build/index.d.ts#HttpInput
 interface HttpInput {
@@ -2976,6 +3093,7 @@ interface VisitProbes {
   readonly http: Probe<HttpInput, HttpRaw>;
   readonly owner: Probe<OwnerInput, OwnerRaw>;
   readonly origin: Probe<OriginInput, OriginRaw>;
+  readonly history: Probe<HistoryInput, HistoryRaw>;
 }
 
 ### build/index.d.ts#certProblem
@@ -2993,6 +3111,9 @@ export declare function dnsOutcome(code: string | undefined): DnsOutcome;
 ### build/index.d.ts#handshakeOutcome
 export declare function handshakeOutcome(thrown: unknown, expired: boolean): HandshakeOutcome;
 
+### build/index.d.ts#historyProbe
+export declare function historyProbe(keys?: readonly HistoryKey[]): Probe<HistoryInput, HistoryRaw>;
+
 ### build/index.d.ts#httpProbe
 export declare function httpProbe(options?: TlsProbeOptions): Probe<HttpInput, HttpRaw>;
 
@@ -3007,6 +3128,9 @@ export declare function linkProbe(read?: () => InterfaceTable): Probe<LinkInput,
 
 ### build/index.d.ts#linkStateOf
 export declare function linkStateOf(interfaces: readonly LinkInterface[], gateway?: string): LinkState;
+
+### build/index.d.ts#machineHasher
+export declare function machineHasher(key: Uint8Array): HistoryHasher;
 
 ### build/index.d.ts#nodeResolveTxt
 export declare const nodeResolveTxt: TxtResolve;

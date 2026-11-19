@@ -1,20 +1,20 @@
 {
-  "cases": 8747,
-  "top": 0.0071,
-  "kinds": 0.0021,
-  "unsureCases": 623,
-  "unsure": 0.075,
+  "cases": 8773,
+  "top": 0.0075,
+  "kinds": 0.0019,
+  "unsureCases": 653,
+  "unsure": 0.0731,
   "bins": [
     {
       "low": 0,
       "high": 0.1,
-      "n": 101,
-      "stated": 0.0138,
-      "hits": 2,
-      "rate": 0.0198,
+      "n": 122,
+      "stated": 0.0191,
+      "hits": 5,
+      "rate": 0.041,
       "interval": {
-        "low": 0.0054,
-        "high": 0.0693
+        "low": 0.0176,
+        "high": 0.0924
       }
     },
     {
@@ -33,7 +33,7 @@
       "low": 0.2,
       "high": 0.3,
       "n": 12,
-      "stated": 0.2201,
+      "stated": 0.2202,
       "hits": 2,
       "rate": 0.1667,
       "interval": {
@@ -57,19 +57,19 @@
       "low": 0.4,
       "high": 0.5,
       "n": 17,
-      "stated": 0.4427,
-      "hits": 7,
-      "rate": 0.4118,
+      "stated": 0.4411,
+      "hits": 8,
+      "rate": 0.4706,
       "interval": {
-        "low": 0.2161,
-        "high": 0.6399
+        "low": 0.2617,
+        "high": 0.6904
       }
     },
     {
       "low": 0.5,
       "high": 0.6,
       "n": 134,
-      "stated": 0.5527,
+      "stated": 0.5529,
       "hits": 58,
       "rate": 0.4328,
       "interval": {
@@ -104,25 +104,25 @@
     {
       "low": 0.8,
       "high": 0.9,
-      "n": 37,
-      "stated": 0.8477,
-      "hits": 30,
-      "rate": 0.8108,
+      "n": 46,
+      "stated": 0.8542,
+      "hits": 39,
+      "rate": 0.8478,
       "interval": {
-        "low": 0.658,
-        "high": 0.9052
+        "low": 0.7178,
+        "high": 0.9243
       }
     },
     {
       "low": 0.9,
       "high": 1,
-      "n": 8124,
-      "stated": 0.9961,
+      "n": 8120,
+      "stated": 0.9963,
       "hits": 8108,
-      "rate": 0.998,
+      "rate": 0.9985,
       "interval": {
-        "low": 0.9968,
-        "high": 0.9988
+        "low": 0.9974,
+        "high": 0.9992
       }
     }
   ]

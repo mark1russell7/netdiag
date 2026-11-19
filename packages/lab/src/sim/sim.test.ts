@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
-import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, STANDARD_CATALOG, STANDARD_CONCENTRATIONS, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
+import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, readEvidence, STANDARD_CATALOG, STANDARD_CONCENTRATIONS, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { random } from "@mark1russell7/rigor-generators";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
+import { REFERENCE_NAME, TARGET_NAME } from "../cases.ts";
 import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
-import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type SimCase } from "./cases.ts";
-import { gapOf, SIM_GAPS } from "./gaps.ts";
+import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_HISTORY_SHARES, SIM_PING_COUNT, simCases, type SimCase, type SimHistory } from "./cases.ts";
+import { gapOf, SIM_GAPS, twinCase } from "./gaps.ts";
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
 import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
 import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
@@ -19,11 +20,15 @@ import {
   barsText,
   calibrationText,
   closedGaps,
+  falseActionProblems,
+  gapSizeProblems,
   gapsText,
   gateCalibration,
   limitProblems,
   placeHits,
   SIM_HARM_LIMIT,
+  SIM_LIMIT_SETS,
+  SIM_SEEDS,
   silentVisits,
   simRuns,
   withCatalog,
@@ -31,15 +36,16 @@ import {
   type ActionLimits,
   type SimActionRate,
   type SimCalibration,
+  type SimOutcome,
 } from "./report.ts";
-import { SIM_VISITS, simVisit, visitSim } from "./world.ts";
+import { caseHistory, SIM_HASHER, SIM_VISITS, simVisit, visitSim } from "./world.ts";
 
 /** The term with no fault. */
 const HEALTHY: FaultTerm = { space: GRAMMAR_ENGINE, stages: {} };
 
 /** This function gives a case of the simulated world for one term. */
-function simCase(term: FaultTerm, medium: Medium = "wired", ipv6 = false): SimCase {
-  return { id: "test", truth: termClasses(term)[0] ?? NO_FAULT, signs: [], term, medium, ipv6, seed: "sim-test:1" };
+function simCase(term: FaultTerm, medium: Medium = "wired", ipv6 = false, history: SimHistory = "unknown"): SimCase {
+  return { id: "test", truth: termClasses(term)[0] ?? NO_FAULT, signs: [], term, medium, ipv6, history, seed: "sim-test:1" };
 }
 
 /** This function gives the values of the facts of one kind, for one address or for each address. */
@@ -216,6 +222,14 @@ describe("the draws of the faults", () => {
 });
 
 describe("the bars of the simulated world", () => {
+  it("fit the costs, the temperatures and the concentrations on seeds that the gate and the limits do not read", () => {
+    // The gate reads SIM_SEEDS, and the limits read SIM_LIMIT_SETS. A fit seed in them lets a fit see the cases of its gate.
+    const fit = new Set(SIM_FIT_SEEDS);
+    expect(SIM_SEEDS.filter((seed) => fit.has(seed))).toEqual([]);
+    expect(SIM_LIMIT_SETS.flat().filter((seed) => fit.has(seed))).toEqual([]);
+    expect(fit.size).toBe(SIM_FIT_SEEDS.length);
+  });
+
   it("have the concentrations of the repeats and the policy of the actions that the held-out seed sets give, in STANDARD_CONCENTRATIONS, bars/policy.json and STANDARD_POLICY", async () => {
     const runs = await simRuns(SIM_FIT_SEEDS);
     expect(runs.problems).toEqual([]);
@@ -249,6 +263,9 @@ describe("the bars of the simulated world", () => {
     expect(calibrationText(runs.outcomes)).toBe(readFileSync(new URL("calibration.json", BARS_FOLDER), "utf8"));
     const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
     expect(limitProblems(rates, gateCalibration(runs.outcomes), limits)).toEqual([]);
+    expect(falseActionProblems(runs.outcomes)).toEqual([]);
+    // The size of a gap can only fall. A wider gap fails here, also after --write.
+    expect(gapSizeProblems(runs.outcomes, JSON.parse(readFileSync(new URL("sim-gaps.json", BARS_FOLDER), "utf8")) as { id: string; cases: number }[])).toEqual([]);
   }, 180_000);
 });
 
@@ -256,11 +273,42 @@ describe("the known gaps of the simulated world", () => {
   const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
   const brokenChain = fault("tls/wrong", { place: "server", kind: "chain" });
 
-  it("hold the healthy cases with a private root, and no case of another class or of another kind", () => {
+  it("hold the healthy cases with a private root and no history or a rotated history, and no case of another class or of another kind", () => {
     expect(gapOf(simCase(privateRoot))?.id).toBe("none/private-root");
+    expect(gapOf(simCase(privateRoot, "wired", false, "rotated"))?.id).toBe("none/private-root");
+    expect(gapOf(simCase(privateRoot, "wired", false, "known"))).toBeUndefined();
+    expect(gapOf({ truth: NO_FAULT, term: privateRoot })?.id).toBe("none/private-root");
     expect(gapOf(simCase(brokenChain))).toBeUndefined();
     expect(gapOf(simCase(HEALTHY))).toBeUndefined();
     expect(gapOf({ truth: "tls.proxy", term: privateRoot })).toBeUndefined();
+  });
+
+  it("have the facts of their twins: each case of a gap and its twin case give the same evidence", async () => {
+    const evidenceOf = async (labCase: SimCase): Promise<string[]> => {
+      const visit = await visitSim(labCase);
+      if (visit.status !== "visited") throw new Error(`The case ${labCase.id} has no visit.`);
+      return readEvidence(visit.facts, visit.read).evidence.map((each) => `${each.feature}=${each.value}@${each.primary ? 1 : 0}`).sort();
+    };
+    for (const gap of SIM_GAPS) {
+      const mine = simCases(1).filter((each) => gapOf(each) === gap);
+      expect(mine.length, gap.id).toBeGreaterThan(0);
+      for (const each of mine) {
+        const twin = twinCase(each, gap);
+        expect(termClasses(twin.term), each.id).toEqual([gap.twin.label]);
+        expect(await evidenceOf(twin), each.id).toEqual(await evidenceOf(each));
+      }
+    }
+  }, 60_000);
+
+  it("give a problem when a gap has more cases than its count, or no count", () => {
+    const gap = SIM_GAPS[0];
+    if (gap === undefined) throw new Error("SIM_GAPS has no gap.");
+    const outcomes = [simCase(privateRoot), simCase(privateRoot, "wired", false, "rotated"), simCase(HEALTHY)].map((each) => ({ case: each }) as SimOutcome);
+    expect(gapSizeProblems(outcomes, [{ id: gap.id, cases: 2 }])).toEqual([]);
+    expect(gapSizeProblems(outcomes, [{ id: gap.id, cases: 1 }])).toEqual([`The gap ${gap.id} has 2 cases of the gate seeds, over its count 1 in bars/sim-gaps.json. The size of a gap can only fall.`]);
+    expect(gapSizeProblems(outcomes, [])).toEqual([`The gap ${gap.id} is new, with 2 cases. Write its count in bars/sim-gaps.json by hand, and tell the reason in the PR.`]);
+    expect(gapSizeProblems(outcomes, undefined)).toEqual([`The file bars/sim-gaps.json has no counts, thus the gate cannot read the size of the gap ${gap.id} (2 cases).`]);
+    expect(gapSizeProblems([], undefined)).toEqual([]);
   });
 
   it("give a problem when the bar of a gap gets to the bar of its class", () => {
@@ -270,6 +318,56 @@ describe("the known gaps of the simulated world", () => {
     const bars = { tag: "ok" as const, value: { [gap.label]: 0.95 } };
     expect(closedGaps(bars, runsOf(0))).toEqual([]);
     expect(closedGaps(bars, runsOf(0.95))).toEqual([`The gap ${gap.id} is closed: its bar 0.95 is at the bar 0.95 of its class or over it. Remove it from SIM_GAPS.`]);
+  });
+});
+
+describe("the history of the simulated world", () => {
+  const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
+  const proxy = fault("tls/intercept", { place: "remote" });
+
+  /** This function gives the values of a feature in the evidence of a visit of a case. */
+  async function featureValues(labCase: SimCase, feature: string): Promise<string[]> {
+    const visit = await visitSim(labCase);
+    if (visit.status !== "visited") throw new Error("The case has no visit.");
+    return readEvidence(visit.facts, visit.read).evidence.filter((each) => each.feature === feature).map((each) => each.value);
+  }
+
+  it("draws each history in each class, near its share, from a source that does not change the other draws", () => {
+    const cases = simCases(1, 40);
+    for (const label of SIM_CLASSES) {
+      const mine = cases.filter((each) => each.truth === label);
+      expect(new Set(mine.map((each) => each.history)).has("unknown"), label).toBe(true);
+      expect(new Set(mine.map((each) => each.history)).has("known"), label).toBe(true);
+    }
+    for (const history of ["unknown", "known", "rotated"] as const) {
+      const share = cases.filter((each) => each.history === history).length / cases.length;
+      expect(Math.abs(share - SIM_HISTORY_SHARES[history]), history).toBeLessThan(0.05);
+    }
+    const strip = (each: SimCase) => ({ ...each, history: undefined });
+    expect(simCases(1, 40).map(strip)).toEqual(cases.map(strip));
+  });
+
+  it("gives no history to a case with the history unknown, and the hashes of the roots of a good check to a known case", async () => {
+    expect((await caseHistory(simCase(HEALTHY))).size).toBe(0);
+    const known = await caseHistory(simCase(proxy, "wired", false, "known"));
+    expect([...known.keys()].sort()).toEqual([REFERENCE_NAME, TARGET_NAME].sort());
+    for (const history of known.values()) expect(history).toEqual({ checked: "2026-11-16T00:00:00.000Z", key: SIM_HASHER.id, values: { "tls.root": [SIM_HASHER.hash("SIM-ROOT:public:0")] } });
+    // The good check of a world keeps its parts that are no fault: a private root that the clients trust.
+    const own = await caseHistory(simCase(privateRoot, "wired", false, "known"));
+    expect([...own.values()].map((each) => each.values["tls.root"])).toContainEqual([SIM_HASHER.hash("SIM-ROOT:private:0")]);
+    const rotated = await caseHistory(simCase(proxy, "wired", false, "rotated"));
+    for (const history of rotated.values()) expect(history.values["tls.root"]).toEqual([SIM_HASHER.hash("SIM-ROOT:public:1")]);
+  });
+
+  it("reads the root as the same in a healthy case with a private root, and as changed under an interception or a short chain", async () => {
+    const own = await featureValues(simCase(privateRoot, "wired", false, "known"), "tls.root");
+    expect(own.length).toBeGreaterThan(0);
+    expect(new Set(own)).toEqual(new Set(["same"]));
+    expect(await featureValues(simCase(privateRoot, "wired", false, "rotated"), "tls.root")).toContain("changed");
+    expect(await featureValues(simCase(proxy, "wired", false, "known"), "tls.root")).toContain("changed");
+    expect(await featureValues(simCase(fault("tls/wrong", { place: "server", kind: "chain" }), "wired", false, "known"), "tls.root")).toContain("changed");
+    expect(await featureValues(simCase(fault("tls/expire", { place: "server" }), "wired", false, "known"), "tls.root")).not.toContain("changed");
+    expect(await featureValues(simCase(privateRoot), "tls.root")).toEqual([]);
   });
 });
 
@@ -288,6 +386,36 @@ describe("the limits of the actions", () => {
       "The calibration error of the unsure cases is 0.0501, over its limit 0.05.",
       "The class a has the correct low end 0.59, under its limit 0.6.",
       "The class b has no limit of the correct low end in bars/action-limits.json.",
+    ]);
+  });
+
+  it("count the correct actions outside the known gaps, and the harm and the false actions of each case", () => {
+    const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
+    const outcome = (term: FaultTerm, history: SimHistory, taken: "none" | "back-off" | "stop", harmful = false): SimOutcome => ({
+      seed: 1,
+      case: simCase(term, "wired", false, history),
+      predicted: undefined,
+      visits: 1,
+      action: { taken, correct: "none", harmful, confidence: 1, probabilities: { [taken]: 1 } },
+    });
+    // 100 healthy cases outside the gaps take none. 4 cases of the gap take back-off, and 1 takes a harmful stop.
+    const outside = Array.from({ length: 100 }, () => outcome(HEALTHY, "known", "none"));
+    const inGap = [...Array.from({ length: 4 }, () => outcome(privateRoot, "unknown", "back-off")), outcome(privateRoot, "rotated", "stop", true)];
+    const rate = actionRates([...outside, ...inGap])[NO_FAULT];
+    expect(rate?.cases).toBe(105);
+    expect(rate?.counted).toBe(100);
+    expect(rate?.correct).toBe(100);
+    expect(rate?.harmful).toBe(1);
+    expect(rate?.harmHigh).toBeGreaterThan(1 / 105);
+    // The false actions count the cases of the gap: 5 of 105 is over the limit.
+    expect(falseActionProblems(outside)).toEqual([]);
+    expect(falseActionProblems([...outside, ...inGap])).toHaveLength(1);
+    expect(falseActionProblems([])).toEqual(["The runs have no healthy case with an action, thus the gate has no false actions to examine."]);
+    // A class with each case in a gap has no correct actions to examine. The gate does not pass it.
+    const onlyGap = actionRates(inGap);
+    const limits = actionLimits("test", [[1]], [{ [NO_FAULT]: { correctLow: 0.5, harmHigh: 0 } as SimActionRate }], [{ cases: 1, top: 1, kinds: 1, unsureCases: 1, unsure: 1, bins: [] }]);
+    expect(limitProblems(onlyGap, { cases: 1, top: 0, kinds: 0, unsureCases: 0, unsure: 0, bins: [] }, limits)).toEqual([
+      `The class ${NO_FAULT} has no case outside the known gaps, thus the gate has no correct actions to examine.`,
     ]);
   });
 
