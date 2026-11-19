@@ -8,17 +8,17 @@
         "private"
       ]
     },
-    "cause": "A certificate from a private root that the clients trust has the same facts as an interception at a remote hop. The trust is private at the target and public at the reference. The model gives these cases a probability of no fault near 0.01.",
-    "end": "A baseline stage of the facts: the issuer of the target is the same as in the last good check, changed, or unknown.",
-    "cases": 53,
+    "cause": "With no history, or a history of an old root, a certificate from a private root that the clients trust has the facts of an interception at a remote hop. The trust is private at the target and public at the reference. With the history of the root, the baseline stage tells the two apart.",
+    "end": "A probe of the logs of Certificate Transparency (ND-23): a name with public certificates in the logs and a private root at the check is an interception.",
+    "cases": 27,
     "hits": 0,
     "bars": {
       "none": 0
     },
     "calibration": {
-      "cases": 53,
-      "top": 0.9901,
-      "kinds": 0.2513
+      "cases": 27,
+      "top": 0.8067,
+      "kinds": 0.2777
     }
   }
 ]
