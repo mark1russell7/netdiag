@@ -1268,7 +1268,7 @@
                 "loss.last-link",
                 "loss.first-link"
               ],
-              "bar": false
+              "bar": true
             }
           ],
           "limits": []
