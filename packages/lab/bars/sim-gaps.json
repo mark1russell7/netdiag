@@ -8,6 +8,17 @@
         "private"
       ]
     },
+    "histories": [
+      "unknown",
+      "rotated"
+    ],
+    "twin": {
+      "label": "tls.proxy",
+      "option": "tls/intercept",
+      "params": {
+        "place": "remote"
+      }
+    },
     "cause": "With no history, or a history of an old root, a certificate from a private root that the clients trust has the facts of an interception at a remote hop. The trust is private at the target and public at the reference. With the history of the root, the baseline stage tells the two apart.",
     "end": "A probe of the logs of Certificate Transparency (ND-23): a name with public certificates in the logs and a private root at the check is an interception.",
     "cases": 27,

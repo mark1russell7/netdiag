@@ -22,6 +22,7 @@ import {
   falseActionProblems,
   barsText,
   calibrationText,
+  gapSizeProblems,
   gapsText,
   gateCalibration,
   limitProblems,
@@ -31,6 +32,7 @@ import {
   simSummary,
   withCatalog,
   type ActionLimits,
+  type GapCount,
   type SimActionRate,
   type SimCalibration,
 } from "./report.ts";
@@ -73,6 +75,12 @@ const problems = [...fitRuns.problems.map((problem) => `The fit: ${problem}`), .
 if (limits === undefined) problems.push("The file bars/action-limits.json has no limits. Start the command with --limits <reason>.");
 else problems.push(...limitProblems(actionRates(runs.outcomes), gateCalibration(runs.outcomes), limits));
 problems.push(...falseActionProblems(runs.outcomes));
+// The counts of the gaps come from the file of the branch, before the command writes it. Thus --write cannot widen a gap.
+const counts = await readFile(new URL("sim-gaps.json", BARS_FOLDER), "utf8").then(
+  (text) => JSON.parse(text) as GapCount[],
+  () => undefined,
+);
+problems.push(...gapSizeProblems(runs.outcomes, counts));
 if (problems.length > 0 || runs.bars.tag === "err") {
   process.stderr.write(`${problems.join("\n")}\n`);
   process.exit(2);

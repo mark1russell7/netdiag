@@ -32,7 +32,7 @@ import { countOf } from "@mark1russell7/text";
 import { faultClass, faultsOf, faultValues, NO_FAULT, termVariant } from "../grammar.ts";
 import { bandLine, labReport } from "../report.ts";
 import { evidenceOfLabel, runRounds, type CaseRun, type LabRound } from "../run.ts";
-import { SIM_BANDS, simCases, type SimCase } from "./cases.ts";
+import { SIM_BANDS, SIM_HISTORY_SHARES, simCases, type SimCase } from "./cases.ts";
 import { gapOf, SIM_GAPS, type SimGap } from "./gaps.ts";
 import { simReach } from "./network.ts";
 import { simVisit } from "./world.ts";
@@ -374,7 +374,10 @@ export function calibrationText(outcomes: readonly SimOutcome[]): string {
   return `${JSON.stringify(gateCalibration(outcomes), null, 2)}\n`;
 }
 
-/** This function gives the text of the file `bars/sim-gaps.json`: each known gap with its cause, its end, its bars and its calibration. */
+/**
+ * This function gives the text of the file `bars/sim-gaps.json`. It has each known gap with its rule and its twin. It
+ * also has the cause, the end, the count of cases, the bars and the calibration of the gap.
+ */
 export function gapsText(runs: SimRuns): string {
   const gaps = runs.gaps.map(({ gap, bars }) => {
     const mine = runs.outcomes.filter((each) => gapOf(each.case) === gap);
@@ -384,6 +387,8 @@ export function gapsText(runs: SimRuns): string {
       label: gap.label,
       option: gap.option,
       when: gap.when ?? {},
+      histories: gap.histories ?? Object.keys(SIM_HISTORY_SHARES),
+      twin: gap.twin,
       cause: gap.cause,
       end: gap.end,
       cases: mine.length,
@@ -519,6 +524,33 @@ export function falseActionProblems(outcomes: readonly SimOutcome[]): readonly s
   const high = falseHighOf(outcomes);
   if (high < 0) return ["The runs have no healthy case with an action, thus the gate has no false actions to examine."];
   return high > SIM_HARM_LIMIT ? [`The false actions on healthy targets have the high end ${high}, over the limit ${SIM_HARM_LIMIT}.`] : [];
+}
+
+/** The count of the cases of one known gap in the file `bars/sim-gaps.json`. */
+export interface GapCount {
+  readonly id: string;
+  readonly cases: number;
+}
+
+/**
+ * This function gives a problem for each known gap with more cases than its count in the file `bars/sim-gaps.json` of
+ * the branch. The size of a gap can only fall, thus a wider rule or a new gap is a visible change of the gate. With no
+ * file, the gate cannot read the counts, and each gap with a case gives a problem.
+ */
+export function gapSizeProblems(outcomes: readonly SimOutcome[], counts: readonly GapCount[] | undefined, gaps: readonly SimGap[] = SIM_GAPS): readonly string[] {
+  const problems: string[] = [];
+  for (const gap of gaps) {
+    const cases = outcomes.filter((each) => gapOf(each.case, gaps) === gap).length;
+    const count = counts?.find((each) => each.id === gap.id)?.cases;
+    if (counts === undefined) {
+      if (cases > 0) problems.push(`The file bars/sim-gaps.json has no counts, thus the gate cannot read the size of the gap ${gap.id} (${cases} cases).`);
+    } else if (count === undefined) {
+      if (cases > 0) problems.push(`The gap ${gap.id} is new, with ${cases} cases. Write its count in bars/sim-gaps.json by hand, and tell the reason in the PR.`);
+    } else if (cases > count) {
+      problems.push(`The gap ${gap.id} has ${cases} cases of the gate seeds, over its count ${count} in bars/sim-gaps.json. The size of a gap can only fall.`);
+    }
+  }
+  return problems;
 }
 
 /** This function gives the outcomes with an action of each class, in the order of the classes. */
@@ -666,11 +698,11 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
     "",
     "## The known gaps",
     "",
-    "A known gap is a cell where netdiag fails for a known cause. The gate examines its cases apart from the other cases, with a bar of their own.",
-    "The top-label error is of the cases of the gap only. When the bar of a gap gets to the bar of its class, the sim tells you to remove the gap.",
+    "A known gap is a rule over the fault and the history of a case. Its cases have the same facts as the cases of its twin, a fault of a different class. The gate examines its cases apart from the other cases, with a bar of their own.",
+    "The size of a gap can only fall: the gate holds its cases at or under its count in bars/sim-gaps.json. The top-label error is of the cases of the gap only. When the bar of a gap gets to the bar of its class, the sim tells you to remove the gap.",
     "",
-    "| Gap | Class | Cases | Hits | Bar | Actions | Top-label error | Cause | End |",
-    "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    "| Gap | Class | Twin | Cases | Hits | Bar | Actions | Top-label error | Cause | End |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
   );
   for (const { gap, bars: gapBars } of runs.gaps) {
     const mine = outcomes.filter((each) => gapOf(each.case) === gap);
@@ -683,7 +715,8 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
       taken.set(name, (taken.get(name) ?? 0) + 1);
     }
     const actions = [...taken].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`).join(", ") || "–";
-    lines.push(`| ${gap.id} | ${gap.label} | ${mine.length} | ${percent(hits, mine.length)} | ${bar} | ${actions} | ${actionCalibration(mine).top} | ${gap.cause} | ${gap.end} |`);
+    const twin = `${gap.twin.label} (${gap.twin.option}, ${Object.entries(gap.twin.params).map(([name, value]) => `${name} ${String(value)}`).join(", ")})`;
+    lines.push(`| ${gap.id} | ${gap.label} | ${twin} | ${mine.length} | ${percent(hits, mine.length)} | ${bar} | ${actions} | ${actionCalibration(mine).top} | ${gap.cause} | ${gap.end} |`);
   }
   lines.push("", "## The hits of each option at each place", "", "| Class | Option | Place | Hits | Cases |", "| --- | --- | --- | --- | --- |");
   for (const group of placeHits(outcomes)) lines.push(`| ${group.label} | ${group.option} | ${group.place} | ${percent(group.hits, group.cases)} | ${group.cases} |`);

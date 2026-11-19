@@ -7,7 +7,7 @@ import { REFERENCE_NAME, TARGET_NAME } from "../cases.ts";
 import { DNS_TIMEOUT_MS, readVisit, type Visit } from "../run.ts";
 import { BARS_FOLDER } from "../worlds.ts";
 import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_HISTORY_SHARES, SIM_PING_COUNT, simCases, type SimCase, type SimHistory } from "./cases.ts";
-import { gapOf, SIM_GAPS } from "./gaps.ts";
+import { gapOf, SIM_GAPS, twinCase } from "./gaps.ts";
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
 import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
 import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
@@ -21,6 +21,7 @@ import {
   calibrationText,
   closedGaps,
   falseActionProblems,
+  gapSizeProblems,
   gapsText,
   gateCalibration,
   limitProblems,
@@ -253,6 +254,8 @@ describe("the bars of the simulated world", () => {
     const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
     expect(limitProblems(rates, gateCalibration(runs.outcomes), limits)).toEqual([]);
     expect(falseActionProblems(runs.outcomes)).toEqual([]);
+    // The size of a gap can only fall. A wider gap fails here, also after --write.
+    expect(gapSizeProblems(runs.outcomes, JSON.parse(readFileSync(new URL("sim-gaps.json", BARS_FOLDER), "utf8")) as { id: string; cases: number }[])).toEqual([]);
   }, 180_000);
 });
 
@@ -268,6 +271,34 @@ describe("the known gaps of the simulated world", () => {
     expect(gapOf(simCase(brokenChain))).toBeUndefined();
     expect(gapOf(simCase(HEALTHY))).toBeUndefined();
     expect(gapOf({ truth: "tls.proxy", term: privateRoot })).toBeUndefined();
+  });
+
+  it("have the facts of their twins: each case of a gap and its twin case give the same evidence", async () => {
+    const evidenceOf = async (labCase: SimCase): Promise<string[]> => {
+      const visit = await visitSim(labCase);
+      if (visit.status !== "visited") throw new Error(`The case ${labCase.id} has no visit.`);
+      return readEvidence(visit.facts, visit.read).evidence.map((each) => `${each.feature}=${each.value}@${each.primary ? 1 : 0}`).sort();
+    };
+    for (const gap of SIM_GAPS) {
+      const mine = simCases(1).filter((each) => gapOf(each) === gap);
+      expect(mine.length, gap.id).toBeGreaterThan(0);
+      for (const each of mine) {
+        const twin = twinCase(each, gap);
+        expect(termClasses(twin.term), each.id).toEqual([gap.twin.label]);
+        expect(await evidenceOf(twin), each.id).toEqual(await evidenceOf(each));
+      }
+    }
+  }, 60_000);
+
+  it("give a problem when a gap has more cases than its count, or no count", () => {
+    const gap = SIM_GAPS[0];
+    if (gap === undefined) throw new Error("SIM_GAPS has no gap.");
+    const outcomes = [simCase(privateRoot), simCase(privateRoot, "wired", false, "rotated"), simCase(HEALTHY)].map((each) => ({ case: each }) as SimOutcome);
+    expect(gapSizeProblems(outcomes, [{ id: gap.id, cases: 2 }])).toEqual([]);
+    expect(gapSizeProblems(outcomes, [{ id: gap.id, cases: 1 }])).toEqual([`The gap ${gap.id} has 2 cases of the gate seeds, over its count 1 in bars/sim-gaps.json. The size of a gap can only fall.`]);
+    expect(gapSizeProblems(outcomes, [])).toEqual([`The gap ${gap.id} is new, with 2 cases. Write its count in bars/sim-gaps.json by hand, and tell the reason in the PR.`]);
+    expect(gapSizeProblems(outcomes, undefined)).toEqual([`The file bars/sim-gaps.json has no counts, thus the gate cannot read the size of the gap ${gap.id} (2 cases).`]);
+    expect(gapSizeProblems([], undefined)).toEqual([]);
   });
 
   it("give a problem when the bar of a gap gets to the bar of its class", () => {
