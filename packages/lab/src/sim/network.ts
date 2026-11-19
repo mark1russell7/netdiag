@@ -470,7 +470,6 @@ export class SimNetwork {
     return address === undefined ? { code: "ENODATA", addresses: [], ms } : { addresses: [address], ms, ttl: 60 };
   }
 
-  /** The name of the certificate of an end. */
   /**
    * This method gives the fingerprint of the root of the chain of a server that sends a full chain. The root is the root
    * of the authority of the epoch, a private root, or the root of an inspection device. A self-signed or short chain has
@@ -482,6 +481,7 @@ export class SimNetwork {
     return this.privateRoot(end) ? `SIM-ROOT:private:${epoch}` : `SIM-ROOT:public:${epoch}`;
   }
 
+  /** This method gives the name of the certificate of an end. */
   certificateName(end: End): string {
     if (end === "portal") return PORTAL_NAME;
     return end === "reference" ? REFERENCE_NAME : TARGET_NAME;

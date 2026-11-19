@@ -603,8 +603,9 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     predicts: {
       "tls.ratio": { expect: ["mid", "high"], strength: "usual" },
       // The device gives a certificate from a root that the client was made to trust, or from no trusted root. A public
-      // root needs a public certificate that an authority gave in error.
-      "tls.trust": { expect: "private", strength: "sure" },
+      // root needs a public certificate that an authority gave in error. The rules of the public authorities forbid such
+      // a certificate, and the browsers remove an authority that gives one. Thus a public trust gets the floor.
+      "tls.trust": { private: 1 - FLOOR, public: FLOOR },
       "tls.root": { expect: "changed", strength: "usual" },
       "tcp.time": { expect: "short", strength: "strong" },
     },
@@ -672,8 +673,8 @@ export const STANDARD_FAULTS: readonly Fault[] = [
     step: "Ask the owner of the network to repair the proxy, and compare the site on a different network.",
     predicts: {
       // A device of the network can give an HTTP status for an HTTPS site only as a TLS proxy that the clients trust.
-      // The root of that proxy is not the root of the site in a good check.
-      "tls.trust": { expect: "private", strength: "sure" },
+      // The root of that proxy is not the root of the site in a good check. A public trust gets the floor, as for tls.proxy.
+      "tls.trust": { private: 1 - FLOOR, public: FLOOR },
       "tls.root": { expect: "changed", strength: "usual" },
       "http.status": { expect: "server-error", strength: "strong" },
     },
@@ -682,7 +683,7 @@ export const STANDARD_FAULTS: readonly Fault[] = [
 
 /** The standard catalog: the rules of practice as the first likelihoods. Each hypothesis has the prior weight 1. */
 export const STANDARD_CATALOG_SPEC: CatalogSpec = {
-  version: "14",
+  version: "15",
   features: STANDARD_FEATURES,
   faults: STANDARD_FAULTS,
 };

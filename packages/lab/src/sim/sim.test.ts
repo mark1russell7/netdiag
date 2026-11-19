@@ -20,6 +20,7 @@ import {
   barsText,
   calibrationText,
   closedGaps,
+  falseActionProblems,
   gapsText,
   gateCalibration,
   limitProblems,
@@ -32,6 +33,7 @@ import {
   type ActionLimits,
   type SimActionRate,
   type SimCalibration,
+  type SimOutcome,
 } from "./report.ts";
 import { caseHistory, SIM_HASHER, SIM_VISITS, simVisit, visitSim } from "./world.ts";
 
@@ -250,6 +252,7 @@ describe("the bars of the simulated world", () => {
     expect(calibrationText(runs.outcomes)).toBe(readFileSync(new URL("calibration.json", BARS_FOLDER), "utf8"));
     const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
     expect(limitProblems(rates, gateCalibration(runs.outcomes), limits)).toEqual([]);
+    expect(falseActionProblems(runs.outcomes)).toEqual([]);
   }, 180_000);
 });
 
@@ -342,6 +345,36 @@ describe("the limits of the actions", () => {
       "The calibration error of the unsure cases is 0.0501, over its limit 0.05.",
       "The class a has the correct low end 0.59, under its limit 0.6.",
       "The class b has no limit of the correct low end in bars/action-limits.json.",
+    ]);
+  });
+
+  it("count the correct actions outside the known gaps, and the harm and the false actions of each case", () => {
+    const privateRoot = fault("tls/wrong", { place: "server", kind: "private" });
+    const outcome = (term: FaultTerm, history: SimHistory, taken: "none" | "back-off" | "stop", harmful = false): SimOutcome => ({
+      seed: 1,
+      case: simCase(term, "wired", false, history),
+      predicted: undefined,
+      visits: 1,
+      action: { taken, correct: "none", harmful, confidence: 1, probabilities: { [taken]: 1 } },
+    });
+    // 100 healthy cases outside the gaps take none. 4 cases of the gap take back-off, and 1 takes a harmful stop.
+    const outside = Array.from({ length: 100 }, () => outcome(HEALTHY, "known", "none"));
+    const inGap = [...Array.from({ length: 4 }, () => outcome(privateRoot, "unknown", "back-off")), outcome(privateRoot, "rotated", "stop", true)];
+    const rate = actionRates([...outside, ...inGap])[NO_FAULT];
+    expect(rate?.cases).toBe(105);
+    expect(rate?.counted).toBe(100);
+    expect(rate?.correct).toBe(100);
+    expect(rate?.harmful).toBe(1);
+    expect(rate?.harmHigh).toBeGreaterThan(1 / 105);
+    // The false actions count the cases of the gap: 5 of 105 is over the limit.
+    expect(falseActionProblems(outside)).toEqual([]);
+    expect(falseActionProblems([...outside, ...inGap])).toHaveLength(1);
+    expect(falseActionProblems([])).toEqual(["The runs have no healthy case with an action, thus the gate has no false actions to examine."]);
+    // A class with each case in a gap has no correct actions to examine. The gate does not pass it.
+    const onlyGap = actionRates(inGap);
+    const limits = actionLimits("test", [[1]], [{ [NO_FAULT]: { correctLow: 0.5, harmHigh: 0 } as SimActionRate }], [{ cases: 1, top: 1, kinds: 1, unsureCases: 1, unsure: 1, bins: [] }]);
+    expect(limitProblems(onlyGap, { cases: 1, top: 0, kinds: 0, unsureCases: 0, unsure: 0, bins: [] }, limits)).toEqual([
+      `The class ${NO_FAULT} has no case outside the known gaps, thus the gate has no correct actions to examine.`,
     ]);
   });
 

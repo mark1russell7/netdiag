@@ -252,6 +252,16 @@ describe("the rules of practice", () => {
     expect(top([e("tls.trust", "private"), e("http.status", "server-error"), ...reference])).toBe("proxy.error");
   });
 
+  // The rules of the public authorities forbid a certificate for an interception. A new root with a public trust is a
+  // rotation of the authority of the site, so it does not tell of a proxy.
+  it("gives a public trust the floor under a proxy, so a new public root with an error names the server", () => {
+    for (const cause of ["tls.proxy", "proxy.error"]) expect(STANDARD_CATALOG.likelihood(cause, "tls.trust", "public", true), cause).toBeCloseTo(FLOOR, 12);
+    const rotated = [e("tls.handshake", "ok"), e("tls.root", "changed"), e("tls.trust", "public"), e("http.status", "server-error")];
+    const causes = diagnose(STANDARD_CATALOG, rotated).causes;
+    expect(causes[0]?.id).toBe("server.error");
+    expect(causes.find((cause) => cause.id === "proxy.error")?.probability).toBeLessThan(0.1);
+  });
+
   it("names a slow server when the first byte is slow and the handshakes are fast", () => {
     expect(top([e("tcp.time", "short"), e("tls.ratio", "low"), e("http.status", "ok"), e("http.ttfb", "high")])).toBe("server.slow");
   });

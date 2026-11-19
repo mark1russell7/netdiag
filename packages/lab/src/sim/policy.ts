@@ -273,7 +273,7 @@ interface FalseRow {
  * the needless cost of a useless action (before) with the needless cost of the policy (after), for each fault of the
  * healthy cases. `noneLimit` is the correct limit of the class `none`.
  */
-export function falseActionSummary(outcomes: readonly SimOutcome[], policy: ActionPolicy, noneLimit?: number): string {
+export function falseActionSummary(outcomes: readonly SimOutcome[], policy: ActionPolicy): string {
   const before = withPolicy(outcomes, { ...policy, costs: { ...policy.costs, needless: policy.costs.useless } });
   const after = withPolicy(outcomes, policy);
   const faultOf = (each: SimOutcome): string =>
@@ -304,7 +304,7 @@ export function falseActionSummary(outcomes: readonly SimOutcome[], policy: Acti
       .map(([kind, n]) => `${kind} ${n}`)
       .join(", ") || "–";
   const count = (taken: Map<string, number>): number => [...taken.values()].reduce((sum, n) => sum + n, 0);
-  const limit = noneLimit === undefined ? "" : ` The limit is ${third(1 - noneLimit)}: 1 minus the correct limit of the class none.`;
+  const limit = ` The limit is ${SIM_HARM_LIMIT}, as in the fit. The cases of the known gaps count.`;
   const lines = [
     "## The false actions on healthy targets",
     "",
