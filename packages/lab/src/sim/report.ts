@@ -26,7 +26,7 @@ import {
 } from "@mark1russell7/netdiag";
 import type { Result } from "@mark1russell7/optional";
 import { canonicalJson } from "@mark1russell7/rigor-generators";
-import { bootstrapClusters, brier, wilson, type Forecast } from "@mark1russell7/rigor-statistics";
+import { bootstrapClusters, brier, calibrationError, reliability, wilson, type Forecast, type ReliabilityBin } from "@mark1russell7/rigor-statistics";
 import { countOf } from "@mark1russell7/text";
 import { faultsOf, faultValues, termVariant } from "../grammar.ts";
 import { bandLine, labReport } from "../report.ts";
@@ -208,6 +208,71 @@ export const SIM_HARM_LIMIT = 0.05;
 /** The number of draws of each bootstrap of the action rates. */
 export const SIM_BOOTSTRAP_RUNS = 4000;
 
+/** The number of bins of the reliability table and of the calibration errors of the actions. */
+export const SIM_CALIBRATION_BINS = 10;
+
+/** A top-label forecast under this probability is unsure. The near-certain cases above it dilute the pooled error. */
+export const SIM_UNSURE_BELOW = 0.9;
+
+/** The names of the calibration errors that the gate holds. */
+export const SIM_CALIBRATION_ERRORS = ["top", "kinds", "unsure"] as const;
+
+/** The name of one calibration error that the gate holds. */
+export type SimCalibrationError = (typeof SIM_CALIBRATION_ERRORS)[number];
+
+const ERROR_TEXT: Readonly<Record<SimCalibrationError, string>> = {
+  top: "top-label calibration error",
+  kinds: "kind calibration error",
+  unsure: "calibration error of the unsure cases",
+};
+
+/**
+ * The calibration of the actions of all cases with an action. The three errors are expected calibration errors to 4
+ * places. The forecasts of one class are not calibrated by design, because the class is a part of the truth.
+ */
+export interface SimCalibration {
+  readonly cases: number;
+  /** The error of the top label: the probability of the chosen kind, and if that kind is correct. */
+  readonly top: number;
+  /** The error of the kind forecasts: one for each kind of each case, as for the Brier score. */
+  readonly kinds: number;
+  /** The number of cases with a top-label probability under `SIM_UNSURE_BELOW`. */
+  readonly unsureCases: number;
+  /** The error of the top label of the unsure cases only. With no unsure case, it is 0. */
+  readonly unsure: number;
+  /** The reliability bins of the top label. */
+  readonly bins: readonly ReliabilityBin[];
+}
+
+/** This function gives the top-label forecast of an action: the probability of the chosen kind, and if that kind is correct. */
+export function topForecast(action: Pick<SimAction, "confidence" | "taken" | "correct">): Forecast {
+  return { p: action.confidence, hit: action.taken === action.correct };
+}
+
+/** This function gives the calibration of the actions of the outcomes. With no action, the errors are 0 and the table is empty. */
+export function actionCalibration(outcomes: readonly SimOutcome[]): SimCalibration {
+  const acted = outcomes.flatMap((each) => (each.action === undefined ? [] : [each.action]));
+  if (acted.length === 0) return { cases: 0, top: 0, kinds: 0, unsureCases: 0, unsure: 0, bins: [] };
+  const top = acted.map(topForecast);
+  const kinds = acted.flatMap(kindForecasts);
+  const unsure = top.filter((each) => each.p < SIM_UNSURE_BELOW);
+  const options = { bins: SIM_CALIBRATION_BINS };
+  const bins = reliability(top, options).map((bin) => ({ ...bin, stated: fourth(bin.stated), rate: fourth(bin.rate), interval: { ...bin.interval, low: fourth(bin.interval.low), high: fourth(bin.interval.high) } }));
+  return {
+    cases: acted.length,
+    top: fourth(calibrationError(top, options)),
+    kinds: fourth(calibrationError(kinds, options)),
+    unsureCases: unsure.length,
+    unsure: unsure.length === 0 ? 0 : fourth(calibrationError(unsure, options)),
+    bins,
+  };
+}
+
+/** This function gives the text of the file `bars/calibration.json`: the calibration of the actions. */
+export function calibrationText(outcomes: readonly SimOutcome[]): string {
+  return `${JSON.stringify(actionCalibration(outcomes), null, 2)}\n`;
+}
+
 /** The seed sets of the limits of the correct low end: the gate seeds, and four sets of the seeds 6 to 25. */
 export const SIM_LIMIT_SETS: readonly (readonly number[])[] = [SIM_SEEDS, ...[1, 2, 3, 4].map((set) => [1, 2, 3, 4, 5].map((seed) => set * 5 + seed))];
 
@@ -222,10 +287,16 @@ export interface ActionLimits {
   readonly highs: Readonly<Record<string, readonly number[]>>;
   /** The limit of the correct low end of each class: its worst low end minus the spread of its low ends, rounded down. */
   readonly limits: Readonly<Record<string, number>>;
+  /** The number of unsure cases on each limit set. */
+  readonly unsureCases: readonly number[];
+  /** The calibration errors of the actions on each limit set. */
+  readonly errors: Readonly<Record<SimCalibrationError, readonly number[]>>;
+  /** The limit of each calibration error: the highest error plus the spread of the errors, rounded up to 4 places. */
+  readonly errorLimits: Readonly<Record<SimCalibrationError, number>>;
 }
 
 /** This function gives the limits of the gate of the actions from the action rates of each limit set. */
-export function actionLimits(set: string, sets: readonly (readonly number[])[], rates: readonly Readonly<Record<string, SimActionRate>>[]): ActionLimits {
+export function actionLimits(set: string, sets: readonly (readonly number[])[], rates: readonly Readonly<Record<string, SimActionRate>>[], calibrations: readonly SimCalibration[]): ActionLimits {
   const lows: Record<string, number[]> = {};
   const highs: Record<string, number[]> = {};
   for (const each of rates) {
@@ -240,7 +311,13 @@ export function actionLimits(set: string, sets: readonly (readonly number[])[], 
       return [label, Math.floor((least - (most - least)) * 1000 + 1e-9) / 1000];
     }),
   );
-  return { set, sets, lows, highs, limits };
+  const upper = (values: readonly number[]): number => {
+    const [least, most] = [Math.min(...values), Math.max(...values)];
+    return Math.ceil((most + (most - least)) * 10_000 - 1e-9) / 10_000;
+  };
+  const errors = Object.fromEntries(SIM_CALIBRATION_ERRORS.map((name) => [name, calibrations.map((each) => each[name])])) as Record<SimCalibrationError, number[]>;
+  const errorLimits = Object.fromEntries(SIM_CALIBRATION_ERRORS.map((name) => [name, upper(errors[name])])) as Record<SimCalibrationError, number>;
+  return { set, sets, lows, highs, limits, unsureCases: calibrations.map((each) => each.unsureCases), errors, errorLimits };
 }
 
 /** This function gives the text of the file `bars/action-limits.json`. */
@@ -248,9 +325,18 @@ export function actionLimitsText(limits: ActionLimits): string {
   return `${JSON.stringify(limits, null, 2)}\n`;
 }
 
-/** This function gives a problem for each class with actions that has no limit, or a correct low end under its limit. */
-export function limitProblems(rates: Readonly<Record<string, SimActionRate>>, limits: ActionLimits): readonly string[] {
+/**
+ * This function gives a problem for each class with actions that has no limit, or a correct low end under its limit. It
+ * also gives a problem for a calibration error over its limit, and for runs with no action.
+ */
+export function limitProblems(rates: Readonly<Record<string, SimActionRate>>, calibration: SimCalibration, limits: ActionLimits): readonly string[] {
   const problems: string[] = [];
+  if (calibration.cases === 0) problems.push("The runs have no case with an action, thus the gate has no calibration to examine.");
+  for (const name of SIM_CALIBRATION_ERRORS) {
+    const limit = limits.errorLimits[name];
+    if (limit === undefined) problems.push(`The ${ERROR_TEXT[name]} has no limit in bars/action-limits.json.`);
+    else if (calibration[name] > limit) problems.push(`The ${ERROR_TEXT[name]} is ${calibration[name]}, over its limit ${limit}.`);
+  }
   for (const [label, rate] of Object.entries(rates)) {
     const limit = limits.limits[label];
     if (limit === undefined) problems.push(`The class ${label} has no limit of the correct low end in bars/action-limits.json.`);
@@ -392,6 +478,22 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
       `| ${label} | ${rate.cases} | ${percent(rate.correct, rate.cases)} | ${ends(rate.correctLow, rate.wilson.correctLow, rate.bootstrap.correctLow)} | ${limits?.limits[label] ?? "–"} | ${percent(rate.harmful, rate.cases)} | ${ends(rate.harmHigh, rate.wilson.harmHigh, rate.bootstrap.harmHigh)} | ${third(SIM_HARM_LIMIT - rate.harmHigh)} | ${rate.brier} | ${list.join(", ")} |`,
     );
   }
+  const calibration = actionCalibration(outcomes);
+  lines.push(
+    "",
+    "## The calibration of the actions",
+    "",
+    `The top-label forecast of a case is the probability of the chosen kind, and it hits when that kind is correct. The errors are expected calibration errors of ${SIM_CALIBRATION_BINS} bins, over all cases with an action.`,
+    "The forecasts of one class are not calibrated by design, because the class is a part of the truth. Thus the gate examines the errors of all cases.",
+    "",
+    `- The top-label error: ${calibration.top} (limit ${limits?.errorLimits.top ?? "–"}).`,
+    `- The kind error: ${calibration.kinds} (limit ${limits?.errorLimits.kinds ?? "–"}).`,
+    `- The error of the ${calibration.unsureCases} unsure cases, with a top probability under ${SIM_UNSURE_BELOW}: ${calibration.unsure} (limit ${limits?.errorLimits.unsure ?? "–"}).`,
+    "",
+    "| Bin of the top label | Cases | Mean probability | Hit rate | Wilson interval |",
+    "| --- | --- | --- | --- | --- |",
+    ...calibration.bins.map((bin) => `| ${bin.low.toFixed(1)} to ${bin.high.toFixed(1)} | ${bin.n} | ${bin.stated} | ${bin.rate} | ${bin.interval.low} to ${bin.interval.high} |`),
+  );
   lines.push("", "## The hits of each option at each place", "", "| Class | Option | Place | Hits | Cases |", "| --- | --- | --- | --- | --- |");
   for (const group of placeHits(outcomes)) lines.push(`| ${group.label} | ${group.option} | ${group.place} | ${percent(group.hits, group.cases)} | ${group.cases} |`);
   lines.push("", "## The bands", "", "| Option | Param | Range | Reason |", "| --- | --- | --- | --- |");

@@ -9,7 +9,23 @@ import { CASES_PER_CLASS, SIM_BANDS, SIM_CLASSES, SIM_PING_COUNT, simCases, type
 import { baseRtt, SimNetwork, type Medium } from "./network.ts";
 import { fitPolicy, policyText, SIM_FIT_SEEDS } from "./policy.ts";
 import { MIN_RTO_MS, SYN_TRIES_MS } from "./probes.ts";
-import { actionRates, actionsText, barsText, limitProblems, placeHits, SIM_HARM_LIMIT, silentVisits, simRuns, type ActionLimits } from "./report.ts";
+import {
+  actionCalibration,
+  actionLimits,
+  actionRates,
+  actionsText,
+  barsText,
+  calibrationText,
+  limitProblems,
+  placeHits,
+  SIM_HARM_LIMIT,
+  silentVisits,
+  simRuns,
+  topForecast,
+  type ActionLimits,
+  type SimActionRate,
+  type SimCalibration,
+} from "./report.ts";
 import { SIM_VISITS, simVisit, visitSim } from "./world.ts";
 
 /** The term with no fault. */
@@ -213,8 +229,39 @@ describe("the bars of the simulated world", () => {
     const rates = actionRates(runs.outcomes);
     for (const label of SIM_CLASSES) expect(rates[label]?.cases, label).toBeGreaterThan(0);
     for (const [label, rate] of Object.entries(rates)) expect(rate.harmHigh, label).toBeLessThanOrEqual(SIM_HARM_LIMIT);
-    // The limits of the correct low end come from five seed sets. Change them only with --limits and a reason in the PR.
+    // The limits of the correct low end and of the calibration errors come from five seed sets. Change them only with --limits and a reason in the PR.
+    expect(calibrationText(runs.outcomes)).toBe(readFileSync(new URL("calibration.json", BARS_FOLDER), "utf8"));
     const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
-    expect(limitProblems(rates, limits)).toEqual([]);
+    expect(limitProblems(rates, actionCalibration(runs.outcomes), limits)).toEqual([]);
   }, 180_000);
+});
+
+describe("the limits of the actions", () => {
+  const rate = (correctLow: number, harmHigh: number): SimActionRate => ({ correctLow, harmHigh }) as SimActionRate;
+  const calibration = (top: number, kinds: number, unsure = 0.05): SimCalibration => ({ cases: 1, top, kinds, unsureCases: 1, unsure, bins: [] });
+
+  it("take the worst low end minus the spread, and the highest error plus the spread", () => {
+    const limits = actionLimits("test", [[1], [2]], [{ a: rate(0.7, 0.02) }, { a: rate(0.65, 0.03) }], [calibration(0.01, 0.002), calibration(0.015, 0.003)]);
+    expect(limits.limits).toEqual({ a: 0.6 });
+    expect(limits.errorLimits).toEqual({ top: 0.02, kinds: 0.004, unsure: 0.05 });
+    expect(limits.unsureCases).toEqual([1, 1]);
+    expect(limitProblems({ a: rate(0.6, 0) }, calibration(0.02, 0.004), limits)).toEqual([]);
+    expect(limitProblems({ a: rate(0.59, 0), b: rate(1, 0) }, calibration(0.021, 0.004, 0.0501), limits)).toEqual([
+      "The top-label calibration error is 0.021, over its limit 0.02.",
+      "The calibration error of the unsure cases is 0.0501, over its limit 0.05.",
+      "The class a has the correct low end 0.59, under its limit 0.6.",
+      "The class b has no limit of the correct low end in bars/action-limits.json.",
+    ]);
+  });
+
+  it("give no calibration and a problem for runs with no action", () => {
+    expect(actionCalibration([])).toEqual({ cases: 0, top: 0, kinds: 0, unsureCases: 0, unsure: 0, bins: [] });
+    const limits = actionLimits("test", [[1]], [{}], [calibration(0, 0)]);
+    expect(limitProblems({}, actionCalibration([]), limits)).toEqual(["The runs have no case with an action, thus the gate has no calibration to examine."]);
+  });
+
+  it("take the probability of the chosen kind as the top-label forecast", () => {
+    expect(topForecast({ confidence: 0.8, taken: "retry", correct: "retry" })).toEqual({ p: 0.8, hit: true });
+    expect(topForecast({ confidence: 0, taken: "back-off", correct: "stop" })).toEqual({ p: 0, hit: false });
+  });
 });

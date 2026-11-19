@@ -14,7 +14,23 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { BARS_FOLDER } from "../worlds.ts";
 import { fitPolicy, policySource, policySummary, policyText, SIM_FIT_SEEDS, STANDARD_POLICY_FILE } from "./policy.ts";
-import { actionLimits, actionLimitsText, actionRates, actionsText, barsText, limitProblems, SIM_LIMIT_SETS, SIM_SEEDS, simRuns, simSummary, type ActionLimits, type SimActionRate } from "./report.ts";
+import {
+  actionCalibration,
+  actionLimits,
+  actionLimitsText,
+  actionRates,
+  actionsText,
+  barsText,
+  calibrationText,
+  limitProblems,
+  SIM_LIMIT_SETS,
+  SIM_SEEDS,
+  simRuns,
+  simSummary,
+  type ActionLimits,
+  type SimActionRate,
+  type SimCalibration,
+} from "./report.ts";
 
 const { values } = parseArgs({ options: { out: { type: "string" }, write: { type: "boolean", default: false }, limits: { type: "string" } } });
 const LIMITS_FILE = new URL("action-limits.json", BARS_FOLDER);
@@ -24,12 +40,14 @@ const runs = await simRuns(SIM_SEEDS, fit.policy);
 const limitRuns: string[] = [];
 if (values.limits !== undefined) {
   const rates: Readonly<Record<string, SimActionRate>>[] = [];
+  const calibrations: SimCalibration[] = [];
   for (const seeds of SIM_LIMIT_SETS) {
     const each = seeds === SIM_SEEDS ? runs : await simRuns(seeds, fit.policy);
     limitRuns.push(...each.problems.map((problem) => `The limit seeds ${seeds.join(", ")}: ${problem}`));
     rates.push(actionRates(each.outcomes));
+    calibrations.push(actionCalibration(each.outcomes));
   }
-  await writeFile(LIMITS_FILE, actionLimitsText(actionLimits(values.limits, SIM_LIMIT_SETS, rates)));
+  await writeFile(LIMITS_FILE, actionLimitsText(actionLimits(values.limits, SIM_LIMIT_SETS, rates, calibrations)));
 }
 const limits = await readFile(LIMITS_FILE, "utf8").then(
   (text) => JSON.parse(text) as ActionLimits,
@@ -45,7 +63,7 @@ if (values.out !== undefined) {
 process.stdout.write(summary);
 const problems = [...fitRuns.problems.map((problem) => `The fit: ${problem}`), ...fit.problems, ...runs.problems, ...limitRuns];
 if (limits === undefined) problems.push("The file bars/action-limits.json has no limits. Start the command with --limits <reason>.");
-else problems.push(...limitProblems(actionRates(runs.outcomes), limits));
+else problems.push(...limitProblems(actionRates(runs.outcomes), actionCalibration(runs.outcomes), limits));
 if (problems.length > 0 || runs.bars.tag === "err") {
   process.stderr.write(`${problems.join("\n")}\n`);
   process.exit(2);
@@ -54,6 +72,7 @@ let stale = false;
 for (const [file, text] of [
   [new URL("sim.json", BARS_FOLDER), barsText(runs.bars.value)],
   [new URL("actions.json", BARS_FOLDER), actionsText(runs.outcomes)],
+  [new URL("calibration.json", BARS_FOLDER), calibrationText(runs.outcomes)],
   [new URL("policy.json", BARS_FOLDER), policyText(fit)],
   [STANDARD_POLICY_FILE, policySource(fit.policy)],
 ] as const) {
