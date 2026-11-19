@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { DEFAULT_TIMEOUT_MS, DNS_TRIES, LOSS_STEPS, readEvidence, STANDARD_CATALOG, STANDARD_CONCENTRATIONS, STANDARD_POLICY, tryTimeoutOf, type Fact } from "@mark1russell7/netdiag";
 import { random } from "@mark1russell7/rigor-generators";
+import { reliabilityTest } from "@mark1russell7/rigor-statistics";
 import { describe, expect, it } from "vitest";
 import { fault, faults, faultsOf, faultValues, GRAMMAR_ENGINE, NO_FAULT, termClasses, termNeeds, type FaultTerm } from "../grammar.ts";
 import { REFERENCE_NAME, TARGET_NAME } from "../cases.ts";
@@ -18,6 +19,7 @@ import {
   actionRates,
   actionsText,
   barsText,
+  binProblems,
   calibrationText,
   closedGaps,
   falseActionProblems,
@@ -26,6 +28,7 @@ import {
   gateCalibration,
   limitProblems,
   placeHits,
+  SIM_BIN_TEST_COUNT,
   SIM_HARM_LIMIT,
   SIM_LIMIT_SETS,
   SIM_SEEDS,
@@ -263,6 +266,8 @@ describe("the bars of the simulated world", () => {
     expect(calibrationText(runs.outcomes)).toBe(readFileSync(new URL("calibration.json", BARS_FOLDER), "utf8"));
     const limits = JSON.parse(readFileSync(new URL("action-limits.json", BARS_FOLDER), "utf8")) as ActionLimits;
     expect(limitProblems(rates, gateCalibration(runs.outcomes), limits)).toEqual([]);
+    // Each bin of the top label with enough cases passes its calibration test, or is a known bin with its cause and its end.
+    expect(binProblems(gateCalibration(runs.outcomes))).toEqual([]);
     expect(falseActionProblems(runs.outcomes)).toEqual([]);
     // The size of a gap can only fall. A wider gap fails here, also after --write.
     expect(gapSizeProblems(runs.outcomes, JSON.parse(readFileSync(new URL("sim-gaps.json", BARS_FOLDER), "utf8")) as { id: string; cases: number }[])).toEqual([]);
@@ -416,6 +421,30 @@ describe("the limits of the actions", () => {
     const limits = actionLimits("test", [[1]], [{ [NO_FAULT]: { correctLow: 0.5, harmHigh: 0 } as SimActionRate }], [{ cases: 1, top: 1, kinds: 1, unsureCases: 1, unsure: 1, bins: [] }]);
     expect(limitProblems(onlyGap, { cases: 1, top: 0, kinds: 0, unsureCases: 0, unsure: 0, bins: [] }, limits)).toEqual([
       `The class ${NO_FAULT} has no case outside the known gaps, thus the gate has no correct actions to examine.`,
+    ]);
+  });
+
+  it("fail on a bin that fails its calibration test and is not known, and on a known bin that passes", () => {
+    const many = (p: number, count: number, hits: number) => Array.from({ length: count }, (_, i) => ({ p, hit: i < hits }));
+    // The bin from 0.2 is calibrated. The bin from 0.5 hits 5 of 40 at 0.55, and the bin from 0.9 hits 20 of 40 at 0.95.
+    const forecasts = [...many(0.25, 40, 10), ...many(0.55, 40, 5), ...many(0.95, 40, 20), ...many(0.75, SIM_BIN_TEST_COUNT - 1, 0)];
+    const bins = reliabilityTest(forecasts, { minCount: SIM_BIN_TEST_COUNT });
+    expect(bins.map((bin) => [bin.low, bin.p === undefined, bin.reject])).toEqual([
+      [0.2, false, false],
+      [0.5, false, true],
+      [0.7, true, false],
+      [0.9, false, true],
+    ]);
+    const tested: SimCalibration = { ...calibration(0, 0), bins };
+    const known = (low: number) => ({ low, cause: "a cause", end: "an end" });
+    expect(binProblems(tested, [known(0.5), known(0.9)])).toEqual([]);
+    const [unknown, ...others] = binProblems(tested, [known(0.5)]);
+    expect(others).toEqual([]);
+    expect(unknown).toMatch(/^The top-label bin 0\.9 to 1\.0 fails its calibration test: 40 cases state 0\.95 and hit at 0\.5, with the adjusted p /);
+    // A known bin that passes, and a known bin with too few cases for a test, each give a problem.
+    expect(binProblems(tested, [known(0.5), known(0.9), known(0.2), known(0.7)])).toEqual([
+      "The top-label bin from 0.2 passes its calibration test, or has no test. Remove it from SIM_UNCALIBRATED_BINS.",
+      "The top-label bin from 0.7 passes its calibration test, or has no test. Remove it from SIM_UNCALIBRATED_BINS.",
     ]);
   });
 
