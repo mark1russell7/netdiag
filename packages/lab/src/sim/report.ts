@@ -27,7 +27,7 @@ import {
 } from "@mark1russell7/netdiag";
 import type { Result } from "@mark1russell7/optional";
 import { canonicalJson } from "@mark1russell7/rigor-generators";
-import { bootstrapClusters, brier, calibrationError, reliability, wilson, type Forecast, type ReliabilityBin } from "@mark1russell7/rigor-statistics";
+import { bootstrapClusters, brier, calibrationError, reliabilityTest, wilson, type Forecast, type TestedBin } from "@mark1russell7/rigor-statistics";
 import { countOf } from "@mark1russell7/text";
 import { faultClass, faultsOf, faultValues, NO_FAULT, termVariant } from "../grammar.ts";
 import { bandLine, labReport } from "../report.ts";
@@ -305,6 +305,37 @@ export const SIM_CALIBRATION_BINS = 10;
 /** A top-label forecast under this probability is unsure. The near-certain cases above it dilute the pooled error. */
 export const SIM_UNSURE_BELOW = 0.9;
 
+/** A bin of the top label with this count of cases or more gets a calibration test. */
+export const SIM_BIN_TEST_COUNT = 30;
+
+/** The level of the family of the bin tests. The Holm correction over the tested bins holds it. */
+export const SIM_BIN_TEST_LEVEL = 0.05;
+
+/** A bin of the top label that fails its calibration test, with its cause and its end. */
+export interface UncalibratedBin {
+  /** The low end of the bin, a multiple of 1 / `SIM_CALIBRATION_BINS`. */
+  readonly low: number;
+  readonly cause: string;
+  readonly end: string;
+}
+
+/**
+ * The bins of the top label that fail their calibration test on the gate seeds. The gate fails on each other bin that
+ * fails. It also fails when a bin of this list passes, thus the list stays current.
+ */
+export const SIM_UNCALIBRATED_BINS: readonly UncalibratedBin[] = [
+  {
+    low: 0.5,
+    cause: "The calibration map states a higher probability than the hit rate of these cases.",
+    end: "The fix of the calibration map in ND-18. The fix comes before the probe of the most information.",
+  },
+  {
+    low: 0.9,
+    cause: "The calibration map states a lower probability than the hit rate of the near-certain cases.",
+    end: "The fix of the calibration map in ND-18. The fix comes before the probe of the most information.",
+  },
+];
+
 /** The names of the calibration errors that the gate holds. */
 export const SIM_CALIBRATION_ERRORS = ["top", "kinds", "unsure"] as const;
 
@@ -331,8 +362,8 @@ export interface SimCalibration {
   readonly unsureCases: number;
   /** The error of the top label of the unsure cases only. With no unsure case, it is 0. */
   readonly unsure: number;
-  /** The reliability bins of the top label. */
-  readonly bins: readonly ReliabilityBin[];
+  /** The reliability bins of the top label, each with its calibration test. */
+  readonly bins: readonly TestedBin[];
 }
 
 /** This function gives the top-label forecast of an action: the probability of the chosen kind, and if that kind is correct. */
@@ -348,7 +379,14 @@ export function actionCalibration(outcomes: readonly SimOutcome[]): SimCalibrati
   const kinds = acted.flatMap(kindForecasts);
   const unsure = top.filter((each) => each.p < SIM_UNSURE_BELOW);
   const options = { bins: SIM_CALIBRATION_BINS };
-  const bins = reliability(top, options).map((bin) => ({ ...bin, stated: fourth(bin.stated), rate: fourth(bin.rate), interval: { ...bin.interval, low: fourth(bin.interval.low), high: fourth(bin.interval.high) } }));
+  const tested = reliabilityTest(top, { ...options, minCount: SIM_BIN_TEST_COUNT, level: SIM_BIN_TEST_LEVEL });
+  const bins = tested.map(({ p, adjusted, ...bin }) => ({
+    ...bin,
+    stated: fourth(bin.stated),
+    rate: fourth(bin.rate),
+    interval: { ...bin.interval, low: fourth(bin.interval.low), high: fourth(bin.interval.high) },
+    ...(p === undefined || adjusted === undefined ? {} : { p: digits(p), adjusted: digits(adjusted) }),
+  }));
   return {
     cases: acted.length,
     top: fourth(calibrationError(top, options)),
@@ -476,8 +514,31 @@ export function limitProblems(rates: Readonly<Record<string, SimActionRate>>, ca
   return problems;
 }
 
+/** This function gives the text of a bin of the top label, for example "0.5 to 0.6". */
+function binText(bin: Pick<TestedBin, "low" | "high">): string {
+  return `${bin.low.toFixed(1)} to ${bin.high.toFixed(1)}`;
+}
+
+/**
+ * This function gives a problem for each bin of the top label that fails its calibration test and is not a known bin.
+ * It also gives a problem for each known bin that does not fail.
+ */
+export function binProblems(calibration: SimCalibration, known: readonly UncalibratedBin[] = SIM_UNCALIBRATED_BINS): readonly string[] {
+  const isKnown = (bin: TestedBin): boolean => known.some((each) => each.low === bin.low);
+  const problems = calibration.bins
+    .filter((bin) => bin.reject && !isKnown(bin))
+    .map((bin) => `The top-label bin ${binText(bin)} fails its calibration test: ${bin.n} cases state ${bin.stated} and hit at ${bin.rate}, with the adjusted p ${bin.adjusted}.`);
+  for (const each of known) {
+    if (calibration.bins.some((bin) => bin.low === each.low && bin.reject)) continue;
+    problems.push(`The top-label bin from ${each.low.toFixed(1)} passes its calibration test, or has no test. Remove it from SIM_UNCALIBRATED_BINS.`);
+  }
+  return problems;
+}
+
 const third = (value: number): number => Math.round(value * 1000) / 1000;
 const fourth = (value: number): number => Math.round(value * 10_000) / 10_000;
+/** This function gives a value with 4 significant digits. A p value of a large bin is too small for 4 places. */
+const digits = (value: number): number => Number(value.toPrecision(4));
 const share = (rows: readonly SimOutcome[], test: (action: SimAction) => boolean): number => rows.filter((each) => each.action !== undefined && test(each.action)).length / rows.length;
 const termOf = (each: SimOutcome): string => canonicalJson(each.case.term);
 
@@ -690,9 +751,15 @@ export function simSummary(runs: SimRuns, limits?: ActionLimits): string {
     `- The kind error: ${calibration.kinds} (limit ${limits?.errorLimits.kinds ?? "–"}).`,
     `- The error of the ${calibration.unsureCases} unsure cases, with a top probability under ${SIM_UNSURE_BELOW}: ${calibration.unsure} (limit ${limits?.errorLimits.unsure ?? "–"}).`,
     "",
-    "| Bin of the top label | Cases | Mean probability | Hit rate | Wilson interval |",
-    "| --- | --- | --- | --- | --- |",
-    ...calibration.bins.map((bin) => `| ${bin.low.toFixed(1)} to ${bin.high.toFixed(1)} | ${bin.n} | ${bin.stated} | ${bin.rate} | ${bin.interval.low} to ${bin.interval.high} |`),
+    `Each bin with ${SIM_BIN_TEST_COUNT} cases or more gets the exact two-sided test of its count of hits against the sum of its probabilities. The Holm correction over these bins holds the level ${SIM_BIN_TEST_LEVEL}. The gate fails on a bin that fails, unless SIM_UNCALIBRATED_BINS has the bin with its cause and its end.`,
+    "",
+    "| Bin of the top label | Cases | Mean probability | Hit rate | Wilson interval | p | Holm p | Test |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ...calibration.bins.map((bin) => {
+      const known = SIM_UNCALIBRATED_BINS.find((each) => each.low === bin.low);
+      const test = bin.p === undefined ? "no test" : bin.reject ? (known === undefined ? "fails" : "fails, known") : "passes";
+      return `| ${binText(bin)} | ${bin.n} | ${bin.stated} | ${bin.rate} | ${bin.interval.low} to ${bin.interval.high} | ${bin.p ?? "–"} | ${bin.adjusted ?? "–"} | ${test} |`;
+    }),
   );
   lines.push(
     "",

@@ -15,7 +15,10 @@
       "interval": {
         "low": 0.0176,
         "high": 0.0924
-      }
+      },
+      "reject": false,
+      "p": 0.1676,
+      "adjusted": 0.5028
     },
     {
       "low": 0.1,
@@ -27,7 +30,10 @@
       "interval": {
         "low": 0.1416,
         "high": 0.4207
-      }
+      },
+      "reject": false,
+      "p": 0.05953,
+      "adjusted": 0.2381
     },
     {
       "low": 0.2,
@@ -39,7 +45,8 @@
       "interval": {
         "low": 0.047,
         "high": 0.448
-      }
+      },
+      "reject": false
     },
     {
       "low": 0.3,
@@ -51,7 +58,8 @@
       "interval": {
         "low": 0.3,
         "high": 0.9032
-      }
+      },
+      "reject": false
     },
     {
       "low": 0.4,
@@ -63,7 +71,8 @@
       "interval": {
         "low": 0.2617,
         "high": 0.6904
-      }
+      },
+      "reject": false
     },
     {
       "low": 0.5,
@@ -75,7 +84,10 @@
       "interval": {
         "low": 0.352,
         "high": 0.5174
-      }
+      },
+      "reject": true,
+      "p": 0.006826,
+      "adjusted": 0.04095
     },
     {
       "low": 0.6,
@@ -87,7 +99,10 @@
       "interval": {
         "low": 0.509,
         "high": 0.6421
-      }
+      },
+      "reject": false,
+      "p": 0.02366,
+      "adjusted": 0.1183
     },
     {
       "low": 0.7,
@@ -99,7 +114,10 @@
       "interval": {
         "low": 0.7034,
         "high": 0.8822
-      }
+      },
+      "reject": false,
+      "p": 0.2271,
+      "adjusted": 0.5028
     },
     {
       "low": 0.8,
@@ -111,7 +129,10 @@
       "interval": {
         "low": 0.7178,
         "high": 0.9243
-      }
+      },
+      "reject": false,
+      "p": 1,
+      "adjusted": 1
     },
     {
       "low": 0.9,
@@ -123,7 +144,10 @@
       "interval": {
         "low": 0.9974,
         "high": 0.9992
-      }
+      },
+      "reject": true,
+      "p": 0.0002424,
+      "adjusted": 0.001697
     }
   ]
 }

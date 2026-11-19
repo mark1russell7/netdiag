@@ -267,8 +267,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1(zod@4.6.7)
       '@mark1russell7/rigor-statistics':
-        specifier: ^0.2.14
-        version: 0.2.14
+        specifier: ^0.2.15
+        version: 0.2.15
       '@mark1russell7/strategy-space':
         specifier: ^0.1.0
         version: 0.1.1
@@ -815,6 +815,10 @@ packages:
 
   '@mark1russell7/rigor-statistics@0.2.14':
     resolution: {integrity: sha512-qhBNau4VdFfJyCr087izw/wf6CyKQ51YcN05CMEUS2YECuy7711ag0xjIZACwZSC1/zlRpq4plVbMTFZhCj2eQ==}
+    engines: {node: '>=22'}
+
+  '@mark1russell7/rigor-statistics@0.2.15':
+    resolution: {integrity: sha512-5MTbooFdzq5n9N475oxDG7jY41zI5Gk7Tn44Apu5CcCfTtiHbfTyM5dxVU9O9qhstQrVQtEEOU53Mtn+vrO6tA==}
     engines: {node: '>=22'}
 
   '@mark1russell7/rigor-testkit@0.1.20':
@@ -2994,7 +2998,7 @@ snapshots:
     dependencies:
       '@mark1russell7/algebra': 0.8.8(zod@4.6.7)
       '@mark1russell7/optional': 1.2.0
-      '@mark1russell7/rigor-statistics': 0.2.14
+      '@mark1russell7/rigor-statistics': 0.2.15
     transitivePeerDependencies:
       - zod
 
@@ -3012,7 +3016,7 @@ snapshots:
       '@mark1russell7/quantity': 0.4.1(zod@4.6.7)
       '@mark1russell7/rigor-bench': 0.2.40(esbuild@0.28.2)
       '@mark1russell7/rigor-chaos': 0.3.4
-      '@mark1russell7/rigor-statistics': 0.2.14
+      '@mark1russell7/rigor-statistics': 0.2.15
       '@mark1russell7/rigor-testkit': 0.1.20(@mark1russell7/rigor-chaos@0.3.4)(@mark1russell7/rigor-generators@0.1.16)(@mark1russell7/rigor-proxy@0.2.1(zod@4.6.7))(@opentelemetry/api@1.10.0)(fast-check@4.10.2)
       testcontainers: 12.2.1(bare-buffer@3.7.2)(supports-color@7.2.0)
       zod: 4.6.7
@@ -3056,7 +3060,7 @@ snapshots:
   '@mark1russell7/rigor-bench@0.2.40(esbuild@0.28.2)':
     dependencies:
       '@mark1russell7/rigor-generators': 0.1.16
-      '@mark1russell7/rigor-statistics': 0.2.14
+      '@mark1russell7/rigor-statistics': 0.2.15
       '@mark1russell7/text': 0.0.6
     optionalDependencies:
       esbuild: 0.28.2
@@ -3064,12 +3068,12 @@ snapshots:
   '@mark1russell7/rigor-chaos@0.2.2':
     dependencies:
       '@mark1russell7/rigor-generators': 0.1.16
-      '@mark1russell7/rigor-statistics': 0.2.14
+      '@mark1russell7/rigor-statistics': 0.2.15
 
   '@mark1russell7/rigor-chaos@0.3.4':
     dependencies:
       '@mark1russell7/rigor-generators': 0.2.0
-      '@mark1russell7/rigor-statistics': 0.2.14
+      '@mark1russell7/rigor-statistics': 0.2.15
 
   '@mark1russell7/rigor-generators@0.1.16': {}
 
@@ -3087,6 +3091,10 @@ snapshots:
       '@mark1russell7/rigor-generators': 0.1.16
 
   '@mark1russell7/rigor-statistics@0.2.14':
+    dependencies:
+      '@mark1russell7/rigor-generators': 0.2.0
+
+  '@mark1russell7/rigor-statistics@0.2.15':
     dependencies:
       '@mark1russell7/rigor-generators': 0.2.0
 
@@ -3132,7 +3140,7 @@ snapshots:
 
   '@mark1russell7/site-pages@0.8.0':
     dependencies:
-      '@mark1russell7/rigor-statistics': 0.2.14
+      '@mark1russell7/rigor-statistics': 0.2.15
 
   '@mark1russell7/sqlite@0.3.7': {}
 
@@ -3144,7 +3152,7 @@ snapshots:
   '@mark1russell7/strategy-space@0.1.1':
     dependencies:
       '@mark1russell7/rigor-generators': 0.2.0
-      '@mark1russell7/rigor-statistics': 0.2.14
+      '@mark1russell7/rigor-statistics': 0.2.15
 
   '@mark1russell7/template-cli@0.1.9':
     dependencies:
