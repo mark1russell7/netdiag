@@ -323,18 +323,7 @@ export interface UncalibratedBin {
  * The bins of the top label that fail their calibration test on the gate seeds. The gate fails on each other bin that
  * fails. It also fails when a bin of this list passes, thus the list stays current.
  */
-export const SIM_UNCALIBRATED_BINS: readonly UncalibratedBin[] = [
-  {
-    low: 0.5,
-    cause: "The calibration map states a higher probability than the hit rate of these cases.",
-    end: "The fix of the calibration map in ND-18. The fix comes before the probe of the most information.",
-  },
-  {
-    low: 0.9,
-    cause: "The calibration map states a lower probability than the hit rate of the near-certain cases.",
-    end: "The fix of the calibration map in ND-18. The fix comes before the probe of the most information.",
-  },
-];
+export const SIM_UNCALIBRATED_BINS: readonly UncalibratedBin[] = [];
 
 /** The names of the calibration errors that the gate holds. */
 export const SIM_CALIBRATION_ERRORS = ["top", "kinds", "unsure"] as const;
