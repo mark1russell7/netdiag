@@ -27,6 +27,8 @@ import {
   limitProblems,
   placeHits,
   SIM_HARM_LIMIT,
+  SIM_LIMIT_SETS,
+  SIM_SEEDS,
   silentVisits,
   simRuns,
   withCatalog,
@@ -220,6 +222,14 @@ describe("the draws of the faults", () => {
 });
 
 describe("the bars of the simulated world", () => {
+  it("fit the costs, the temperatures and the concentrations on seeds that the gate and the limits do not read", () => {
+    // The gate reads SIM_SEEDS, and the limits read SIM_LIMIT_SETS. A fit seed in them lets a fit see the cases of its gate.
+    const fit = new Set(SIM_FIT_SEEDS);
+    expect(SIM_SEEDS.filter((seed) => fit.has(seed))).toEqual([]);
+    expect(SIM_LIMIT_SETS.flat().filter((seed) => fit.has(seed))).toEqual([]);
+    expect(fit.size).toBe(SIM_FIT_SEEDS.length);
+  });
+
   it("have the concentrations of the repeats and the policy of the actions that the held-out seed sets give, in STANDARD_CONCENTRATIONS, bars/policy.json and STANDARD_POLICY", async () => {
     const runs = await simRuns(SIM_FIT_SEEDS);
     expect(runs.problems).toEqual([]);
