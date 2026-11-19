@@ -157,21 +157,21 @@
     },
     "correctLow": 0.99,
     "harmHigh": 0.01,
-    "brier": 0.0004
+    "brier": 0.0337
   },
   "path.loss": {
     "cases": 400,
-    "correct": 269,
+    "correct": 267,
     "harmful": 5,
     "wilson": {
-      "correctLow": 0.625,
+      "correctLow": 0.62,
       "harmHigh": 0.029
     },
     "bootstrap": {
-      "correctLow": 0.625,
+      "correctLow": 0.62,
       "harmHigh": 0.025
     },
-    "correctLow": 0.625,
+    "correctLow": 0.62,
     "harmHigh": 0.029,
     "brier": 0.0532
   },

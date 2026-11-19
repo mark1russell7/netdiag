@@ -10,8 +10,8 @@ export const STANDARD_CONCENTRATIONS: Readonly<Record<string, number>> = {
   "icmp.reply": 0.001,
   "tcp.connect": 0.001,
   "tcp.time": 0.136,
-  "tls.ratio": 0.0732,
+  "tls.ratio": 0.0733,
   "tls.trust": 0.001,
   "http.status": 0.106,
-  "http.ttfb": 0.0533,
+  "http.ttfb": 0.0534,
 };
