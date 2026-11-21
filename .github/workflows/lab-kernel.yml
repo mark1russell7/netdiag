@@ -48,7 +48,7 @@ jobs:
       max-parallel: 3
       matrix:
         run: ${{ fromJSON(inputs.runs || '[1]') }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       ROUNDS: ${{ inputs.rounds || '5' }}
@@ -95,7 +95,7 @@ jobs:
       max-parallel: 3
       matrix:
         run: ${{ fromJSON(inputs.runs || '[1]') }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 60
     env:
       ROUNDS: ${{ inputs.rounds || '5' }}
