@@ -1,5 +1,21 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>mark1russell7/template//renovate/default"],
-  "schedule": ["before 6am on monday"]
+  "extends": [
+    "github>mark1russell7/template//renovate/default"
+  ],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "packageRules": [
+    {
+      "description": "The job e4 of lab-kernel.yml names one commit of mark1russell7/systems twice: in its uses line and in its input harness. Renovate moves only the uses line, so a person moves the two together. The end is SYS-145 of systems: vm-run.yml then reads its own commit, and the job drops the input harness and this rule.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "mark1russell7/systems"
+      ],
+      "enabled": false
+    }
+  ]
 }
