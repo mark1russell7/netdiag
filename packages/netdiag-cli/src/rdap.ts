@@ -14,7 +14,7 @@ export const RDAP_ACTIVE_HOSTS = 2;
 
 /** This function gives the User-Agent of the requests of netdiag, with the version and the page of the project. */
 export function userAgentOf(version: string): string {
-  return `netdiag/${version} (+https://github.com/mark1russell7/netdiag)`;
+  return `netdiag/${version} (+https://github.com/metrograph-labs/netdiag)`;
 }
 
 /** This function makes the port of the lookups of the owners from a pace and a transport of `polite-crawler/api`. A test gives a fake transport. */
