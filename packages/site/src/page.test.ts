@@ -13,7 +13,7 @@ describe("the home page", () => {
   it("links to the pages of site-pages and to the repository", () => {
     expect(page).toContain('href="./releases/"');
     expect(page).toContain('href="./status/"');
-    expect(page).toContain('href="https://github.com/mark1russell7/netdiag"');
+    expect(page).toContain('href="https://github.com/metrograph-labs/netdiag"');
   });
 
   it("has each element that the script finds by its id", () => {

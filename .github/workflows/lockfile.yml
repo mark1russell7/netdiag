@@ -2,7 +2,7 @@
 # on the branch when a merge of main conflicts in pnpm-lock.yaml, or a dependency changes, and this computer has no
 # memory for an install:
 #
-#   gh workflow run lockfile.yml -R mark1russell7/netdiag --ref <branch>
+#   gh workflow run lockfile.yml -R metrograph-labs/netdiag --ref <branch>
 #
 # The artifact "lockfile" has pnpm-lock.yaml and merge.txt. The header of the shared workflow tells the next steps.
 name: Lockfile
