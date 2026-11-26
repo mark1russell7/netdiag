@@ -36,7 +36,7 @@ export async function startTelemetry(options: TelemetryOptions): Promise<NodeCon
 }
 
 /**
- * This function runs a command in the span of a run, and gives its exit code. The span gets the attribute `process.exit.code`.
+ * This function starts a command in the span of a run, and gives its exit code. The span gets the attribute `process.exit.code`.
  * An exit code that is not 0, or an error, gives the span the status `error`.
  */
 export async function inRunSpan(work: () => Promise<number>): Promise<number> {

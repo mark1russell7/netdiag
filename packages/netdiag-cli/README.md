@@ -142,7 +142,7 @@ The entry `@mark1russell7/netdiag-cli/report` has the report functions only. It 
 
 ## The traces
 
-Each run of `netdiag` is one span of a trace, with the service name `netdiag` and the version of the package. The check runs in that span.
+Each run of `netdiag` is one span of a trace, with the service name `netdiag` and the version of the package. The check operates in that span.
 
 - With no value in `OTEL_EXPORTER_OTLP_ENDPOINT`, no span leaves the computer, and the program loads no exporter.
 - With a value, the program sends the spans to that OpenTelemetry collector over OTLP before it ends.
