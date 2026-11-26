@@ -140,6 +140,19 @@ The option `--json` writes the object `CheckReport` in the format `netdiag-check
 
 The entry `@mark1russell7/netdiag-cli/report` has the report functions only. It starts no probe, so a page can read a report with it.
 
+## The traces
+
+Each run of `netdiag` is one span of a trace, with the service name `netdiag` and the version of the package. The check operates in that span.
+
+- With no value in `OTEL_EXPORTER_OTLP_ENDPOINT`, no span leaves the computer, and the program loads no exporter.
+- With a value, the program sends the spans to that OpenTelemetry collector over OTLP before it ends.
+- The span has the exit code in the attribute `process.exit.code`. An exit code that is not 0 gives the status `error`.
+- The span has no argument of the command. A target can be the name of a private host.
+
+```text
+$ OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318 netdiag check shop.example.com
+```
+
 ## The API
 
 The pure parts of the command are also exports. A program can use them with its own probes.
