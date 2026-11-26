@@ -6,6 +6,7 @@ import { check, systemDeps } from "./check.ts";
 import type { CheckOptions } from "./plan.ts";
 import { formatReport, type CheckReport } from "./report.ts";
 import { SCHEMES } from "./scheme.ts";
+import { inRunSpan, startTelemetry } from "./telemetry.ts";
 import { packageVersion } from "./version.ts";
 
 export { packageVersion } from "./version.ts";
@@ -85,8 +86,17 @@ export function createNetdiagCli(options: NetdiagCliOptions): ProcedureCli {
   });
 }
 
-/** This function operates the command line on this computer, and gives the exit code. */
+/**
+ * This function operates the command line on this computer, and gives the exit code. The run is one span of a trace
+ * (`./telemetry.ts`). The stop of the context flushes the spans before the program ends.
+ */
 export async function main(argv: readonly string[]): Promise<number> {
-  const cli = createNetdiagCli({ version: packageVersion(), check: (options, signal) => check(options, { ...systemDeps(), signal }) });
-  return cli.run(argv);
+  const version = packageVersion();
+  const telemetry = await startTelemetry({ version });
+  try {
+    const cli = createNetdiagCli({ version, check: (options, signal) => check(options, { ...systemDeps(), signal }) });
+    return await inRunSpan(() => cli.run(argv));
+  } finally {
+    await telemetry.shutdown();
+  }
 }
