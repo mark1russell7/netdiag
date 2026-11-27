@@ -42,7 +42,7 @@ The statistics come from `@mark1russell7/rigor-statistics`. The timers and the b
 
 ### The ground truth
 
-The network labs of [mark1russell7/systems](https://github.com/mark1russell7/systems) inject each fault class on purpose:
+The network labs of [mark1russell7/systems](https://github.com/metrograph-labs/systems) inject each fault class on purpose:
 
 - `@mark1russell7/harness`: Docker topologies, Toxiproxy, and `iptables` and `tc netem` in a sidecar with `NET_ADMIN`.
 - `@mark1russell7/kind`: kind clusters with faults.
@@ -172,7 +172,7 @@ The ladder of the coverage comes from the data of the labs. `coverage` of `@netd
 | `cdn.wrong-content` | `http` | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ | ◌ |
 
 - The key: ✓ covered. ◐ a gap: a case and no bar. ○ a gap: no case. ◌ a gap: no class in the catalog. ⊘ impossible on the layer. A covered cell names its cases.
-- The layers, from [the table of S7](https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers):
+- The layers, from [the table of S7](https://github.com/metrograph-labs/systems/blob/main/docs/S7.md#the-layers):
   - E0: Code on a false clock. State: Today. It cannot prove: any real time.
   - E1: Processes and containers on one kernel. State: Today. It cannot prove: a second kernel, a separate clock, a reboot, a loss of power.
   - E2: A cluster of containers on one kernel. State: Today. It cannot prove: a kernel for each node, a loss of a node with no signal.

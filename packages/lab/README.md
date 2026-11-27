@@ -191,7 +191,7 @@ A case of a class that needs a trait counts only in a world with that trait. For
 
 ### The ladder: each class on each layer
 
-Each fault class must have a test on each layer E0 to E6 of the lab. The work of ND-17 ends only at zero gaps. The layers come from the table of [the plan S7](https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers). Their ids are `LAYERS` of `@mark1russell7/harness`.
+Each fault class must have a test on each layer E0 to E6 of the lab. The work of ND-17 ends only at zero gaps. The layers come from the table of [the plan S7](https://github.com/metrograph-labs/systems/blob/main/docs/S7.md#the-layers). Their ids are `LAYERS` of `@mark1russell7/harness`.
 
 The field `ladder` of the result has one cell for each class and each layer. The simulated world is on E0, and the other worlds of today are on E1. A cell has one of these states:
 
