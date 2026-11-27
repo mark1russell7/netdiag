@@ -1,14 +1,14 @@
 import { LAYER_FACTS, type Layer as LabLayer, type LayerState } from "@mark1russell7/harness/layers";
 import type { WorldTrait } from "./coverage.ts";
 
-// The ladder of the lab (ND-17): the layers E0 to E6 of the plan S7 of mark1russell7/systems, in `docs/S7.md`.
+// The ladder of the lab (ND-17): the layers E0 to E6 of the plan S7 of metrograph-labs/systems, in `docs/S7.md`.
 // The ids and the facts of the layers come from the entry `layers` of the harness. A test of the harness holds each
 // text equal to the table of S7. The limits of each layer come from the column "What it cannot prove" of S7.
 
 export { LAYERS as LAB_LAYERS, LAYER_FACTS, type Layer as LabLayer, type LayerFacts, type LayerState } from "@mark1russell7/harness/layers";
 
 /** The address of the table of the layers in the plan S7. */
-export const S7_LAYERS_URL = "https://github.com/mark1russell7/systems/blob/main/docs/S7.md#the-layers";
+export const S7_LAYERS_URL = "https://github.com/metrograph-labs/systems/blob/main/docs/S7.md#the-layers";
 
 /** The text of each state of a layer, for the site and the table of the coverage. The text of `waiting` names no person. */
 export const LAYER_STATE_TEXT: Readonly<Record<LayerState, string>> = {
